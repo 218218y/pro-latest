@@ -1,11 +1,11 @@
-<!doctype html>
+      <!doctype html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>עיצוב ארון - PRO (מתוקן - לוגיקה ויזואל)</title>
+  <title>עיצוב ארון ושידות - PRO (עם בחירת כיוון פתיחה)</title>
   <style>
-    :root { --primary: #2c3e50; --accent: #27ae60; --bg: #f4f6f8; --upgrade: #8e44ad; --custom: #d35400; --update-btn: #2980b9; --delete: #c0392b; --combo: #e67e22; }
+    :root { --primary: #2c3e50; --accent: #27ae60; --bg: #f4f6f8; --upgrade: #8e44ad; --custom: #d35400; --update-btn: #2980b9; --delete: #c0392b; --combo: #e67e22; --save-load: #16a085; --chest: #0d47a1; --model: #555; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); color: #333; height: 100vh; display: flex; flex-direction: column; }
     
     header { 
@@ -18,7 +18,21 @@
         align-items: center; 
         height: 60px;
     }
-    h1 { margin: 0; font-size: 1.1rem; color: var(--primary); }
+    h1 { margin: 0; font-size: 1.1rem; color: var(--primary); display:none; } 
+
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    
+    .project-name-input {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: bold;
+        color: var(--primary);
+        width: 250px;
+        background: #fdfdfd;
+    }
+    .project-name-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
 
     .header-actions { display: flex; gap: 10px; }
     .header-btn {
@@ -33,12 +47,17 @@
         align-items: center;
         gap: 5px;
     }
-    .btn-toggle-head { background: var(--accent); color: white; }
-    .btn-toggle-head:hover { background: #219150; }
-    .btn-save-head { background: var(--primary); color: white; }
-    .btn-save-head:hover { background: #1a252f; }
-    .btn-update-head { background: var(--update-btn); color: white; }
-    .btn-update-head:hover { background: #1f618d; }
+    
+    .btn-export { background: var(--primary); color: white; }
+    .btn-export:hover { background: #34495e; }
+    
+    .btn-snapshot { background: var(--upgrade); color: white; }
+    .btn-snapshot:hover { background: #6c3483; }
+    .btn-copy { background: var(--custom); color: white; }
+    .btn-copy:hover { background: #a04000; }
+    
+    .btn-project { background: var(--save-load); color: white; }
+    .btn-project:hover { background: #117a65; }
 
     .main-layout { display: flex; flex: 1; height: 100%; overflow: hidden; }
     
@@ -60,13 +79,27 @@
     .upgrade-group { background: #fdf8ff; border-color: #eaddf5; }
     .upgrade-group h3 { color: var(--upgrade); border-color: var(--upgrade); }
 
-    /* תאורה */
     .lighting-group { background: #fffde7; border-color: #f9e79f; }
     .lighting-group h3 { color: #f39c12; border-color: #f39c12; }
     
-    /* שילובי צבעים */
     .combo-group { background: #fff5e6; border-color: #ffe0b2; }
     .combo-group h3 { color: var(--combo); border-color: var(--combo); }
+    
+    .chest-group { background: #e3f2fd; border-color: #90caf9; }
+    .chest-group h3 { color: var(--chest); border-color: var(--chest); }
+
+    /* Model Management Styles */
+    .model-group { background: #eaecee; border-color: #d5d8dc; }
+    .model-group h3 { color: var(--model); border-color: var(--model); }
+    .model-actions { display: flex; gap: 5px; margin-top: 8px; }
+    .btn-model { flex: 1; padding: 5px; font-size: 0.75rem; border: none; border-radius: 4px; cursor: pointer; color: white; transition: 0.2s; }
+    .btn-model-save { background: var(--accent); }
+    .btn-model-save:hover { background: #219150; }
+    .btn-model-del { background: var(--delete); }
+    .btn-model-del:hover { background: #922b21; }
+    .btn-model-move { background: var(--primary); }
+    .btn-model-move:hover { background: #34495e; }
+
 
     .slider-row { margin-bottom: 10px; }
     .slider-row label { display: flex; justify-content: space-between; font-weight: normal; font-size: 0.8rem; margin-bottom: 2px; }
@@ -90,7 +123,6 @@
         background: transparent;
     }
     
-    /* מיני צבעים לשילובים */
     .mini-color-select {
         width: 100%;
         padding: 4px;
@@ -108,6 +140,7 @@
     .custom-toggle input[type="checkbox"]:checked + .toggle-switch { background: var(--custom); }
     .combo-toggle input[type="checkbox"]:checked + .toggle-switch { background: var(--combo); }
     .lighting-toggle input[type="checkbox"]:checked + .toggle-switch { background: #f39c12; }
+    .chest-toggle input[type="checkbox"]:checked + .toggle-switch { background: var(--chest); }
 
     .manual-override { border-color: #e67e22 !important; background: #fffdf9; }
 
@@ -124,11 +157,11 @@
     .module-title { font-size: 0.9rem; font-weight: bold; color: var(--primary); margin-bottom: 8px; }
     .sub-label { font-size: 0.75rem; color: #666; margin-top: 5px; margin-bottom: 2px;}
     
-    #viewer-container { flex: 1; position: relative; background: #eef2f5; overflow: hidden; cursor: pointer; }
+    #viewer-container { flex: 1; position: relative; background: #eefbf3; overflow: hidden; cursor: pointer; }
     canvas { display: block; width: 100%; height: 100%; outline: none; }
     .hidden { display: none !important; }
 
-    #grooveSelectionContainer, #drawerDividerSelectionContainer { margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #eaddf5; border-radius: 6px; }
+    #grooveSelectionContainer, #drawerDividerSelectionContainer, #splitDoorSelectionContainer { margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #eaddf5; border-radius: 6px; }
     .groove-module-group { border: 1px solid #f0e0fa; background: #fdf8ff; border-radius: 6px; padding: 8px; margin-bottom: 10px; }
     .groove-module-title { font-size: 0.8rem; font-weight: bold; color: var(--upgrade); margin-bottom: 5px; border-bottom: 1px dashed #eaddf5; padding-bottom: 3px; }
     .groove-doors-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
@@ -136,7 +169,6 @@
     .groove-check-label { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; cursor: pointer; background: #fff; padding: 3px 6px; border-radius: 4px; border: 1px solid #ddd; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
     .groove-check-label:hover { border-color: var(--upgrade); }
     
-    /* --- עיצוב כפתור מחיצה למגירה (CSS מעודכן) --- */
     .drawer-check-label {
         background: #fff9e6; 
         border-color: #f1c40f; 
@@ -156,9 +188,7 @@
     .drawer-check-label:hover {
         border-color: var(--accent);
     }
-    /* ------------------------------------------- */
 
-    /* עיצוב שורות צבעים */
     .color-row-item {
         margin-bottom: 8px;
         background: #fff;
@@ -244,11 +274,17 @@
 <body>
 
   <header>
-    <h1>מתכנן ארונות PRO</h1>
+    <div class="header-left">
+        <input type="text" id="projectName" class="project-name-input" placeholder="הקלד שם פרויקט...">
+        <button id="saveProjectBtn" class="header-btn btn-project">💾 שמור</button>
+        <button id="loadProjectBtn" class="header-btn btn-project">📂 טען</button>
+        <input type="file" id="loadProjectInput" accept=".json" style="display:none;" />
+    </div>
     <div class="header-actions">
-        <button id="toggleDoorsHeaderBtn" class="header-btn btn-toggle-head">🚪 פתח/סגור הכל</button>
-        <button id="exportHeaderBtn" class="header-btn btn-save-head">📸 שמור תמונה</button>
-        <button id="updateBtn" class="header-btn btn-update-head">🔄 עדכן תצוגה</button>
+        <button id="dualImageBtn" class="header-btn btn-export">📸 העתק פתוח וסגור ללוח</button>
+        <button id="renderSketchBtn" class="header-btn btn-export">🎨 העתק הדמיה ושחור/לבן ללוח</button>
+        <button id="snapshotBtn" class="header-btn btn-snapshot">🖼️ שמור תמונה</button>
+        <button id="copyClipboardBtn" class="header-btn btn-copy">📋 העתק ללוח</button>
     </div>
   </header>
 
@@ -260,8 +296,8 @@
       <div class="control-group">
         <h3>סוג ארון</h3>
         <div class="type-selector">
-            <div class="type-option selected" onclick="setWardrobeType('hinged')">🚪 פתיחה (צירים)</div>
-            <div class="type-option" onclick="setWardrobeType('sliding')">↔️ הזזה (מסילות)</div>
+            <div id="type_hinged" class="type-option selected" onclick="setWardrobeType('hinged')">🚪 פתיחה (צירים)</div>
+            <div id="type_sliding" class="type-option" onclick="setWardrobeType('sliding')">↔️ הזזה (מסילות)</div>
         </div>
       </div>
 
@@ -280,10 +316,29 @@
         </label>
       </div>
 
+      <div class="control-group model-group">
+          <h3>📂 דגם ארון (תבניות)</h3>
+          <select id="modelSelect">
+              <option value="">-- בחר דגם שמור --</option>
+          </select>
+          <div class="model-actions">
+              <button id="btnSaveModel" class="btn-model btn-model-save">💾 שמור דגם</button>
+              <button id="btnDeleteModel" class="btn-model btn-model-del">🗑️ מחק</button>
+              <button id="btnMoveModelUp" class="btn-model btn-model-move">⬆️</button>
+              <button id="btnMoveModelDown" class="btn-model btn-model-move">⬇️</button>
+          </div>
+      </div>
+
       <div class="control-group">
         <h3>מבנה ומידות</h3>
         <label>מספר דלתות / תאים</label>
         <input id="doors" type="number" value="4" min="2" max="8" step="1">
+
+        <div id="structureSelectionContainer" style="margin-top:10px; padding:10px; background:#f4f6f7; border-radius:4px; border:1px solid #ddd;">
+            <label style="margin-top:0; color:#2980b9;">חלוקת גוף הארון (תאים):</label>
+            <select id="structureSelect" style="background:#fff; font-weight:bold;">
+                </select>
+        </div>
 
         <div id="singleDoorControl" class="hidden">
             <label style="color:var(--accent);">מיקום דלת בודדת (40 ס"מ)</label>
@@ -302,11 +357,11 @@
         </select>
 
         <label>רוחב כולל (ס"מ)</label>
-        <input id="width" type="number" value="160" step="1" min="60" max="400">
+        <input id="width" type="number" value="160" step="1" min="40" max="400">
         <small style="font-size:0.75rem; color:#888;" id="width-hint">אוטומטי</small>
 
         <label>גובה (ס"מ)</label>
-        <input id="height" type="number" value="240" step="5" min="100" max="300">
+        <input id="height" type="number" value="240" step="5" min="40" max="300">
         
         <label>עומק (ס"מ)</label>
         <input id="depth" type="number" value="55" step="2" min="30" max="100">
@@ -346,6 +401,20 @@
         <hr style="border:0; border-top:1px solid #ddd; margin: 15px 0;">
         
         <div id="dynamicLayoutsContainer"></div>
+        
+        <div style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+            <label class="toggle-container" style="margin-bottom: 10px;">
+                <input type="checkbox" id="handleControlToggle">
+                <div class="toggle-switch"></div>
+                <span style="font-weight:bold; color:#2c3e50;">ניהול ידיות (רגיל / רוכב / ללא)</span>
+            </label>
+
+            <div id="handleControlsWrapper" class="hidden" style="background: #fdfefe; border: 1px solid #dae1e7; padding: 10px; border-radius: 6px;">
+                <small style="color:#666; display:block; margin-bottom:8px;">בחר סוג ידית לכל אלמנט:</small>
+                <div id="handleList"></div>
+            </div>
+        </div>
+
       </div>
 
       <div class="control-group upgrade-group">
@@ -363,6 +432,11 @@
               <div class="toggle-switch"></div>
               <span style="font-weight:bold; color:var(--upgrade);">דלתות חתוכות (לפי מדף 2 מלמעלה)</span>
             </label>
+
+            <div id="splitDoorSelectionContainer" class="hidden">
+                 <small style="color:#888;">בחר אילו דלתות לחתוך (הסר סימון כדי להשאיר דלת שלמה):</small>
+                 <div id="splitDoorsCheckboxes"></div>
+            </div>
             
             <label class="toggle-container upgrade-toggle" style="margin-top:15px; border-top:1px dashed #eaddf5; padding-top:10px;">
               <input type="checkbox" id="groovesToggle">
@@ -452,6 +526,30 @@
           </div>
       </div>
       
+       <div class="control-group chest-group">
+          <h3>🗄️ תכנון שידה ומגירות</h3>
+          
+          <label class="toggle-container chest-toggle">
+              <input type="checkbox" id="chestModeToggle">
+              <div class="toggle-switch"></div>
+              <span style="font-weight:bold; color:var(--chest);">הפעל מצב שידה</span>
+          </label>
+
+          <div id="chestControls" class="hidden" style="margin-top:15px; border-top:1px solid #bbdefb; padding-top:10px;">
+              <label>מספר מגירות לגובה:</label>
+              <input type="number" id="chestDrawersCount" value="4" min="2" max="10">
+              
+              <div style="margin-top:10px;">
+                  <label>🎨 צבע גוף השידה:</label>
+                  <select id="chestBodyColorSelect" class="mini-color-select"></select>
+              </div>
+
+              <div id="chestIndividualColorsContainer" style="margin-top:15px; border-top:1px dashed #90caf9; padding-top:10px;">
+                   <small style="color:#666; font-weight:bold;">🎨 צבע לכל מגירה בנפרד:</small>
+                   </div>
+          </div>
+      </div>
+      
     </div>
   </div>
 
@@ -466,24 +564,159 @@
     let wardrobeType = 'hinged'; 
     let customUploadedTexture = null; 
     let customUploadedDataURL = null; 
+    let hasUnsavedChanges = false; 
 
     let modulesConfiguration = []; 
     let groovesMap = {}; 
-    let drawerDividersMap = {}; // שמירת מיפוי מחיצות
-    let individualColors = {}; // שמירת צבעים פרטניים
+    let splitDoorsMap = {}; // מפה לניהול חיתוך דלתות
+    let drawerDividersMap = {}; 
+    let individualColors = {}; 
     let isMultiColorMode = false;
+    let hingeMap = {}; // מפה חדשה לניהול כיוון פתיחה בדלתות בודדות
     
     // ניהול רשימת צבעים שמורה
     let savedColors = []; 
+    
+    // --- ניהול דגמים (Models) ---
+    let savedModels = []; // רשימת הדגמים בזיכרון
+    const modelSelect = document.getElementById('modelSelect');
+    const btnSaveModel = document.getElementById('btnSaveModel');
+    const btnDeleteModel = document.getElementById('btnDeleteModel');
+    const btnMoveModelUp = document.getElementById('btnMoveModelUp');
+    const btnMoveModelDown = document.getElementById('btnMoveModelDown');
+
+    // --- משתנים לניהול ידיות ---
+    let handlesMap = {}; // המפה שתשמור את סוג הידית לכל מזהה
+    const handleControlToggle = document.getElementById('handleControlToggle');
+    const handleControlsWrapper = document.getElementById('handleControlsWrapper');
+    const handleList = document.getElementById('handleList');
+
+    // מאזין לאירוע הפעלת ניהול ידיות
+    if(handleControlToggle) {
+        handleControlToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                handleControlsWrapper.classList.remove('hidden');
+                renderHandleUI();
+            } else {
+                handleControlsWrapper.classList.add('hidden');
+            }
+            buildWardrobe();
+        });
+    }
+
+    // פונקציה לבניית ממשק בחירת הידיות
+    function renderHandleUI() {
+        handleList.innerHTML = '';
+        
+        // פונקציית עזר ליצירת שורת בחירה
+        const createHandleRow = (id, labelText) => {
+            const row = document.createElement('div');
+            row.style.marginBottom = '8px';
+            row.style.display = 'flex';
+            row.style.justifyContent = 'space-between';
+            row.style.alignItems = 'center';
+            row.style.borderBottom = '1px dashed #eee';
+            row.style.paddingBottom = '4px';
+
+            const lbl = document.createElement('span');
+            lbl.style.fontSize = '0.8rem';
+            lbl.innerText = labelText;
+
+            const select = document.createElement('select');
+            select.style.width = '110px';
+            select.style.fontSize = '0.8rem';
+            select.style.padding = '2px';
+            
+            const types = [
+                { val: 'standard', txt: 'רגיל' },
+                { val: 'edge', txt: 'ידית רוכבת' },
+                { val: 'none', txt: 'ללא ידית' }
+            ];
+
+            types.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.val;
+                opt.innerText = t.txt;
+                select.appendChild(opt);
+            });
+
+            // בדיקה אם קיים ערך שמור
+            if (handlesMap[id]) {
+                select.value = handlesMap[id];
+            } else {
+                select.value = 'standard';
+            }
+
+            select.addEventListener('change', (e) => {
+                handlesMap[id] = e.target.value;
+                buildWardrobe();
+            });
+
+            row.appendChild(lbl);
+            row.appendChild(select);
+            return row;
+        };
+
+        // לולאה על המודולים (דומה ללוגיקה של הצבעים)
+        if (wardrobeType === 'sliding') {
+             const numDoors = parseInt(doorsInput.value);
+             for (let i = 0; i < numDoors; i++) {
+                 handleList.appendChild(createHandleRow(`sliding_door_${i+1}`, `דלת הזזה ${i+1}`));
+             }
+        } else {
+            const isSplit = splitDoorsToggle.checked;
+            let globalDoorIndex = 1;
+
+            modulesConfiguration.forEach((mod, modIdx) => {
+                 const doorsInMod = mod.doors;
+                 const extDrawers = mod.extDrawers;
+                 const startDoorIndex = globalDoorIndex; 
+
+                 const title = document.createElement('div');
+                 title.innerHTML = `<strong>תא ${modIdx + 1}:</strong>`;
+                 title.style.fontSize = '0.85rem';
+                 title.style.marginTop = '10px';
+                 handleList.appendChild(title);
+
+                 for (let d = 0; d < doorsInMod; d++) {
+                     // בדיקה פרטנית אם דלת חתוכה או לא
+                     const shouldSplitThis = isSplit && splitDoorsMap[`split_d${globalDoorIndex}`] !== false;
+
+                     if (shouldSplitThis) {
+                         handleList.appendChild(createHandleRow(`d${globalDoorIndex}_top`, `דלת ${globalDoorIndex} עליונה`));
+                         handleList.appendChild(createHandleRow(`d${globalDoorIndex}_bot`, `דלת ${globalDoorIndex} תחתונה`));
+                     } else {
+                         handleList.appendChild(createHandleRow(`d${globalDoorIndex}_full`, `דלת ${globalDoorIndex}`));
+                     }
+                     globalDoorIndex++;
+                 }
+
+                 if (extDrawers > 0) {
+                     for (let k = 1; k <= extDrawers; k++) {
+                         handleList.appendChild(createHandleRow(`d${startDoorIndex}_draw_${k}`, `מגירה ${k} (תא ${modIdx+1})`));
+                     }
+                 }
+            });
+        }
+        
+        // אם אנחנו במצב שידה
+        if (document.getElementById('chestModeToggle').checked) {
+             handleList.innerHTML = '<strong>מגירות שידה:</strong>';
+             const count = parseInt(document.getElementById('chestDrawersCount').value);
+             for(let i=0; i<count; i++) {
+                handleList.appendChild(createHandleRow(`chest_drawer_${i}`, `מגירה ${i+1}`));
+             }
+        }
+    }
+
 
     // הגדרת משתנים לזיהוי לחיצה על האובייקט (Raycasting)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let mouseDownPos = { x: 0, y: 0 }; 
     
-    // --- הוספת משתנה חדש למעקב אחרי זמן הפתיחה (עבור דיליי) ---
     let isDoorsOpen = false;
-    let lastToggleTime = 0; // משתנה זמן כללי ללחיצה האחרונה
+    let lastToggleTime = 0; 
     let specificDrawerOpenId = null; 
 
     // UI Elements
@@ -497,7 +730,11 @@
     const upgradesContainer = document.getElementById('upgradesContainer');
     const baseTypeSelect = document.getElementById('baseType');
     const addCorniceToggle = document.getElementById('addCornice');
+    
+    // Split Doors UI
     const splitDoorsToggle = document.getElementById('splitDoorsToggle');
+    const splitDoorSelectionContainer = document.getElementById('splitDoorSelectionContainer');
+    
     const groovesToggle = document.getElementById('groovesToggle');
     const grooveSelectionContainer = document.getElementById('grooveSelectionContainer');
     const grooveCheckboxes = document.getElementById('grooveCheckboxes');
@@ -505,28 +742,23 @@
     const internalDrawersToggle = document.getElementById('internalDrawersToggle');
     const internalDrawersWrapper = document.getElementById('internalDrawersWrapper');
     
-    // Drawer Divider Elements
     const drawerDividerToggle = document.getElementById('drawerDividerToggle');
     const drawerDividerSelectionContainer = document.getElementById('drawerDividerSelectionContainer');
     const drawerDividerCheckboxes = document.getElementById('drawerDividerCheckboxes');
 
-    // Lighting Toggle & Wrapper
     const lightingControlToggle = document.getElementById('lightingControlToggle');
     const lightingControlsWrapper = document.getElementById('lightingControlsWrapper');
 
-    // Multi Color Elements
     const multiColorToggle = document.getElementById('multiColorToggle');
     const multiColorControls = document.getElementById('multiColorControls');
     const multiColorList = document.getElementById('multiColorList');
 
-    // Light UI Elements
     const lightAmbInput = document.getElementById('lightAmb');
     const lightDirInput = document.getElementById('lightDir');
     const lightXInput = document.getElementById('lightX');
     const lightYInput = document.getElementById('lightY');
     const lightZInput = document.getElementById('lightZ');
     
-    // Color Picker Elements
     const colorSelect = document.getElementById('color');
     const customColorContainer = document.getElementById('customColorContainer');
     const customColorPicker = document.getElementById('customColorPicker');
@@ -534,14 +766,55 @@
     const deleteColorBtnWrapper = document.getElementById('deleteColorBtnWrapper');
     const deleteColorBtn = document.getElementById('deleteColorBtn');
     
-    // Texture Elements
     const textureInput = document.getElementById('textureFile');
     const removeTextureBtn = document.getElementById('removeTextureBtn');
     const textureStatus = document.getElementById('textureStatus');
 
-    // אובייקטי תאורה
-    let ambLightObj, dirLightObj;
+    const saveProjectBtn = document.getElementById('saveProjectBtn');
+    const loadProjectBtn = document.getElementById('loadProjectBtn');
+    const loadProjectInput = document.getElementById('loadProjectInput');
+    const projectNameInput = document.getElementById('projectName');
+    
+    // --- משתנים לשידה ---
+    const chestModeToggle = document.getElementById('chestModeToggle');
+    const chestControls = document.getElementById('chestControls');
+    const chestDrawersCount = document.getElementById('chestDrawersCount');
+    const chestBodyColorSelect = document.getElementById('chestBodyColorSelect');
+    const chestIndividualColorsContainer = document.getElementById('chestIndividualColorsContainer'); 
+    
+    // --- משתנה חדש לשמירת החלוקה שנבחרה ---
+    const structureSelect = document.getElementById('structureSelect');
+    
+    // הגדרת אפשרויות חלוקה לפי מספר דלתות
+    const STRUCTURE_PATTERNS = {
+        2: [
+            { label: 'תא אחד רחב (80)', structure: [2] },
+            { label: '2 תאים צרים (40-40)', structure: [1, 1] }
+        ],
+        3: [
+            { label: 'ברירת מחדל (80-40 או 40-80)', structure: 'default' },
+            { label: '3 תאים צרים (40-40-40)', structure: [1, 1, 1] }
+        ],
+        4: [
+            { label: 'סטנדרט (80-80)', structure: [2, 2] },
+            { label: 'סימטרי: צר-רחב-צר (40-80-40)', structure: [1, 2, 1] },
+            { label: '4 תאים צרים (40-40-40-40)', structure: [1, 1, 1, 1] }
+        ],
+        5: [
+            { label: 'ברירת מחדל (80-80-40)', structure: 'default' },
+            { label: 'סימטרי: צר-רחב-רחב-צר (40-80-80-40)', structure: [1, 2, 2, 1] },
+            { label: 'סימטרי הפוך: 80-40-80', structure: [2, 1, 2] },
+            { label: 'כולו תאים צרים', structure: [1, 1, 1, 1, 1] }
+        ],
+        6: [
+            { label: 'סטנדרט (80-80-80)', structure: [2, 2, 2] },
+            { label: 'סימטרי: צר-רחב-רחב-רחב-צר (40-80-80-80-40)', structure: [1, 2, 2, 2, 1] },
+            { label: 'סימטרי: צר-80-80-צר (40-80-80-40)', structure: [1, 2, 2, 1] },
+            { label: 'מרכז צר: 80-40-40-80', structure: [2, 1, 1, 2] }
+        ]
+    };
 
+    let ambLightObj, dirLightObj;
     let isManualWidth = false;
 
     // --- הגדרות פריסה אפשריות ---
@@ -553,7 +826,6 @@
         { value: 'storage_shelf', label: 'אוגר מצעים (2 עליונים+תליה+אוגר)' }
     ];
 
-    // --- ניהול צבעים ---
     const DEFAULT_COLORS = [
         { value: "#ffffff", name: "לבן שלג" },
         { value: "#f2f0eb", name: "שמנת" },
@@ -574,6 +846,143 @@
         }
         populateColorSelect();
     }
+    
+    // --- לוגיקת דגמים (Models) ---
+    function loadSavedModelsFromLS() {
+        const stored = localStorage.getItem('wardrobeSavedModels');
+        if (stored) {
+            try {
+                savedModels = JSON.parse(stored);
+            } catch (e) {
+                console.error("Failed to load models", e);
+                savedModels = [];
+            }
+        }
+        renderModelUI();
+    }
+    
+    function renderModelUI() {
+        // ניקוי ושמירת האופציה הראשונה
+        modelSelect.innerHTML = '<option value="">-- בחר דגם שמור --</option>';
+        
+        savedModels.forEach(model => {
+            const opt = document.createElement('option');
+            opt.value = model.id;
+            opt.innerText = model.name;
+            modelSelect.appendChild(opt);
+        });
+    }
+
+    function saveCurrentAsModel() {
+        let name = prompt("תן שם לדגם החדש:", "הדגם שלי " + (savedModels.length + 1));
+        if(!name) return;
+
+        // בניית אובייקט נתונים ללא המטא-דאטה של הפרויקט
+        const modelData = {
+            id: 'model_' + Date.now(),
+            name: name,
+            settings: {
+                doors: document.getElementById('doors').value,
+                width: document.getElementById('width').value,
+                height: document.getElementById('height').value,
+                depth: document.getElementById('depth').value,
+                baseType: document.getElementById('baseType').value,
+                doorStyle: document.getElementById('doorStyle').value,
+                color: document.getElementById('color').value,
+                wardrobeType: wardrobeType,
+                isManualWidth: isManualWidth,
+                singleDoorPos: document.getElementById('singleDoorPos').value
+            },
+            toggles: {
+                sketchMode: document.getElementById('sketchModeToggle').checked,
+                addCornice: document.getElementById('addCornice').checked,
+                splitDoors: document.getElementById('splitDoorsToggle').checked,
+                grooves: document.getElementById('groovesToggle').checked,
+                drawerDivider: document.getElementById('drawerDividerToggle').checked,
+                internalDrawers: document.getElementById('internalDrawersToggle').checked,
+                multiColor: document.getElementById('multiColorToggle').checked,
+                handleControl: document.getElementById('handleControlToggle').checked,
+                chestMode: document.getElementById('chestModeToggle').checked
+            },
+            chestSettings: {
+                drawersCount: document.getElementById('chestDrawersCount').value,
+                bodyColor: document.getElementById('chestBodyColorSelect').value
+            },
+            modulesConfiguration: modulesConfiguration,
+            groovesMap: groovesMap,
+            splitDoorsMap: splitDoorsMap,
+            drawerDividersMap: drawerDividersMap,
+            individualColors: individualColors,
+            handlesMap: handlesMap,
+            hingeMap: hingeMap
+        };
+
+        savedModels.push(modelData);
+        localStorage.setItem('wardrobeSavedModels', JSON.stringify(savedModels));
+        renderModelUI();
+        modelSelect.value = modelData.id;
+        alert("הדגם נשמר בהצלחה!");
+    }
+
+    function deleteCurrentModel() {
+        const selectedId = modelSelect.value;
+        if (!selectedId) {
+            alert("לא נבחר דגם למחיקה");
+            return;
+        }
+        if (confirm("האם למחוק את הדגם הזה?")) {
+            savedModels = savedModels.filter(m => m.id !== selectedId);
+            localStorage.setItem('wardrobeSavedModels', JSON.stringify(savedModels));
+            renderModelUI();
+        }
+    }
+
+    function moveModel(direction) {
+        const selectedId = modelSelect.value;
+        if (!selectedId) return;
+        
+        const idx = savedModels.findIndex(m => m.id === selectedId);
+        if (idx === -1) return;
+
+        if (direction === 'up' && idx > 0) {
+            [savedModels[idx], savedModels[idx-1]] = [savedModels[idx-1], savedModels[idx]];
+        } else if (direction === 'down' && idx < savedModels.length - 1) {
+            [savedModels[idx], savedModels[idx+1]] = [savedModels[idx+1], savedModels[idx]];
+        } else {
+            return; 
+        }
+
+        localStorage.setItem('wardrobeSavedModels', JSON.stringify(savedModels));
+        renderModelUI();
+        modelSelect.value = selectedId;
+    }
+
+    function applySelectedModel() {
+        const selectedId = modelSelect.value;
+        if (!selectedId) return;
+
+        const modelData = savedModels.find(m => m.id === selectedId);
+        if (!modelData) return;
+
+        // שימוש בפונקציית הטעינה של הפרויקט, אבל עם הדאטה של המודל
+        // יש צורך לעטוף את זה במבנה שהפונקציה מכירה
+        const projectStructure = {
+            settings: modelData.settings,
+            toggles: modelData.toggles,
+            chestSettings: modelData.chestSettings,
+            modulesConfiguration: modelData.modulesConfiguration,
+            groovesMap: modelData.groovesMap,
+            splitDoorsMap: modelData.splitDoorsMap,
+            drawerDividersMap: modelData.drawerDividersMap,
+            individualColors: modelData.individualColors,
+            handlesMap: modelData.handlesMap,
+            hingeMap: modelData.hingeMap,
+            savedColors: savedColors // משמר צבעים קיימים
+        };
+
+        loadProjectData(projectStructure);
+    }
+    // --- סוף לוגיקת דגמים ---
 
     function populateColorSelect() {
         const currentValue = colorSelect.value;
@@ -639,9 +1048,8 @@
         customColorContainer.classList.add('hidden');
         deleteColorBtnWrapper.classList.remove('hidden'); 
         alert("הגוון נשמר בהצלחה!");
-        
-        // עדכון הרשימות בצביעה הפרטנית אם פתוח
         if(isMultiColorMode) renderMultiColorUI();
+        initChestEvents(); // Update chest dropdowns too
     }
 
     function deleteCustomColorHandler() {
@@ -655,10 +1063,9 @@
             colorSelect.value = "#ffffff"; 
             colorSelect.dispatchEvent(new Event('change'));
             if(isMultiColorMode) renderMultiColorUI();
+            initChestEvents(); // Update chest dropdowns too
         }
     }
-
-    // --- סיום ניהול צבעים ---
 
     function setWardrobeType(type) {
         wardrobeType = type;
@@ -666,31 +1073,74 @@
         options.forEach(opt => opt.classList.remove('selected'));
         
         if (type === 'hinged') {
-            options[0].classList.add('selected');
+            document.getElementById('type_hinged').classList.add('selected');
             hingedUpgradesWrapper.classList.remove('hidden');
             
             doorsInput.value = "4"; 
+            updateStructureOptions(); // עדכון הרשימה
+            
             if(!isManualWidth) {
                 widthInput.value = parseInt(doorsInput.value) * 40;
                 depthInput.value = 55;
             }
         } else {
-            options[1].classList.add('selected');
+            // זה החלק של ארון הזזה
+            document.getElementById('type_sliding').classList.add('selected');
             hingedUpgradesWrapper.classList.add('hidden'); 
             doorsInput.value = "2"; 
             widthInput.value = "160"; 
-            depthInput.value = "62"; 
+            
+            // --- כאן השינוי ---
+            depthInput.value = "60"; 
+            // ------------------
+            
             isManualWidth = false; 
             widthInput.classList.remove('manual-override');
             widthHint.innerText = "אוטומטי";
+            updateStructureOptions(); // הסתרה
         }
         refreshModulesAndBuild(true);
+    }
+    
+    // פונקציה לעדכון התפריט כשהדלתות משתנות
+    function updateStructureOptions() {
+        const count = parseInt(doorsInput.value);
+        structureSelect.innerHTML = '';
+        
+        if (wardrobeType === 'sliding') {
+            document.getElementById('structureSelectionContainer').classList.add('hidden');
+            return;
+        } else {
+            document.getElementById('structureSelectionContainer').classList.remove('hidden');
+        }
+
+        const patterns = STRUCTURE_PATTERNS[count];
+        
+        if (patterns) {
+            patterns.forEach((pat, idx) => {
+                const opt = document.createElement('option');
+                // שומרים את המבנה כסטרינג כדי שנוכל לקרוא אותו
+                opt.value = JSON.stringify(pat.structure); 
+                opt.innerText = pat.label;
+                structureSelect.appendChild(opt);
+            });
+        } else {
+            // ברירת מחדל לכמויות גדולות שלא הגדרנו ידנית
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify('default');
+            opt.innerText = 'חלוקה סטנדרטית (זוגות)';
+            structureSelect.appendChild(opt);
+        }
     }
 
     doorsInput.addEventListener('input', () => {
         const val = parseInt(doorsInput.value);
+        updateStructureOptions();
+
         if (wardrobeType === 'hinged') {
-            if (val % 2 !== 0) {
+            // בדיקה אם להציג בחירת מיקום דלת בודדת
+            const currentStruct = structureSelect.value ? JSON.parse(structureSelect.value) : 'default';
+            if (val % 2 !== 0 && currentStruct === 'default') {
                 singleDoorControl.classList.remove('hidden');
             } else {
                 singleDoorControl.classList.add('hidden');
@@ -700,6 +1150,20 @@
              singleDoorControl.classList.add('hidden');
              if (!isManualWidth) widthInput.value = val * 80;
         }
+        refreshModulesAndBuild(true); 
+    });
+    
+    // כשהמשתמש בוחר מבנה אחר מהרשימה
+    structureSelect.addEventListener('change', () => {
+        const val = parseInt(doorsInput.value);
+        const currentStruct = structureSelect.value ? JSON.parse(structureSelect.value) : 'default';
+        
+        if (val % 2 !== 0 && currentStruct === 'default') {
+            singleDoorControl.classList.remove('hidden');
+        } else {
+            singleDoorControl.classList.add('hidden');
+        }
+
         refreshModulesAndBuild(true); 
     });
 
@@ -725,7 +1189,6 @@
         buildWardrobe(); 
     });
     
-    // --- טיפול באירועי צבע מעודכנים ---
     colorSelect.addEventListener('change', (e) => {
         const val = e.target.value;
         
@@ -812,7 +1275,6 @@
         buildWardrobe();
     });
 
-    // --- טיפול בשילובי צבעים (מעודכן עם Select) ---
     multiColorToggle.addEventListener('change', (e) => {
         isMultiColorMode = e.target.checked;
         if (isMultiColorMode) {
@@ -827,7 +1289,6 @@
     function renderMultiColorUI() {
         multiColorList.innerHTML = '';
         
-        // --- טיפול בארון הזזה ---
         if (wardrobeType === 'sliding') {
              const numDoors = parseInt(doorsInput.value);
              const modDiv = document.createElement('div');
@@ -836,11 +1297,9 @@
              multiColorList.appendChild(modDiv);
 
              for (let i = 0; i < numDoors; i++) {
-                 // יצירת מזהה ייחודי לכל דלת הזזה
                  modDiv.appendChild(createColorSelectRow(`sliding_door_${i+1}`, `דלת הזזה ${i+1}`));
              }
         } 
-        // --- טיפול בארון פתיחה (קוד קיים) ---
         else {
             const isSplit = splitDoorsToggle.checked;
             let globalDoorIndex = 1;
@@ -856,7 +1315,10 @@
                  multiColorList.appendChild(modDiv);
 
                  for (let d = 0; d < doorsInMod; d++) {
-                     if (isSplit) {
+                     // בדיקה פרטנית האם הדלת חתוכה
+                     const shouldSplitThis = isSplit && splitDoorsMap[`split_d${globalDoorIndex}`] !== false;
+
+                     if (shouldSplitThis) {
                          modDiv.appendChild(createColorSelectRow(`d${globalDoorIndex}_top`, `דלת ${globalDoorIndex} עליונה`));
                          modDiv.appendChild(createColorSelectRow(`d${globalDoorIndex}_bot`, `דלת ${globalDoorIndex} תחתונה`));
                      } else {
@@ -873,7 +1335,6 @@
             });
         }
         
-        // --- תוספות כלליות (משותף לכולם) ---
         if (addCorniceToggle.checked || baseTypeSelect.value === 'plinth') {
              const extrasDiv = document.createElement('div');
              extrasDiv.style.marginTop = '15px';
@@ -904,7 +1365,15 @@
         const select = document.createElement('select');
         select.className = 'mini-color-select';
         
-        // יצירת אפשרויות בחירה (כמו בראשי)
+        // --- תוספת: אפשרות מראה ---
+        const mirrorOpt = document.createElement('option');
+        mirrorOpt.value = 'mirror';
+        mirrorOpt.innerText = '🪞 מראה (ללא ידית)';
+        mirrorOpt.style.fontWeight = 'bold';
+        mirrorOpt.style.color = '#2980b9';
+        select.appendChild(mirrorOpt);
+        // -------------------------
+
         const optGroupDefault = document.createElement('optgroup');
         optGroupDefault.label = "צבעים בסיסיים";
         DEFAULT_COLORS.forEach(c => {
@@ -927,13 +1396,10 @@
             select.appendChild(optGroupSaved);
         }
 
-        // הגדרת ערך קיים
         if (individualColors[id]) {
             select.value = individualColors[id];
         } else {
-             // ברירת מחדל - הראשי שנבחר
              const mainVal = colorSelect.value === 'custom' ? '#ffffff' : colorSelect.value;
-             // אם הערך הראשי קיים ברשימה, בחר אותו, אחרת לבן
              const exists = Array.from(select.options).some(o => o.value === mainVal);
              select.value = exists ? mainVal : DEFAULT_COLORS[0].value;
         }
@@ -949,18 +1415,115 @@
     }
 
 
-    // --- טיפול בתאורה ---
     lightingControlToggle.addEventListener('change', (e) => {
         if (e.target.checked) {
             lightingControlsWrapper.classList.remove('hidden');
         } else {
             lightingControlsWrapper.classList.add('hidden');
         }
-        // עדכון האורות בהתאם למצב
         setupLights(); 
     });
+    
+    // אתחול אירועים לשידה
+    function initChestEvents() {
+        // מילוי צבעים בתיבות הבחירה של גוף השידה
+        const fillColors = (selectParams) => {
+            selectParams.innerHTML = '';
+            DEFAULT_COLORS.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.value; opt.innerText = c.name;
+                selectParams.appendChild(opt);
+            });
+            // הוספת צבעים שמורים
+            if(savedColors.length > 0) {
+                const grp = document.createElement('optgroup'); grp.label = "שמורים";
+                savedColors.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id; opt.innerText = c.name;
+                    grp.appendChild(opt);
+                });
+                selectParams.appendChild(grp);
+            }
+        };
+        fillColors(chestBodyColorSelect);
+        
+        // פונקציה לבניית רשימת צבעים לכל מגירה
+        const renderChestColors = () => {
+            chestIndividualColorsContainer.innerHTML = '<small style="color:#666; font-weight:bold;">🎨 צבע לכל מגירה בנפרד:</small>';
+            const count = parseInt(chestDrawersCount.value);
+            
+            for(let i=0; i<count; i++) {
+                // שימוש באותה פונקציה שמשמשת את ה-MultiColor של הארון
+                const colorRow = createColorSelectRow(`chest_drawer_${i}`, `מגירה ${i+1}`);
+                chestIndividualColorsContainer.appendChild(colorRow);
+            }
+        };
 
-    // 3D Setup
+        // מאזינים לשינויים
+        chestModeToggle.addEventListener('change', (e) => {
+            if(e.target.checked) {
+                chestControls.classList.remove('hidden');
+                // הגדרות ברירת מחדל לשידה כדי שזה יראה טוב
+                document.getElementById('doors').value = 0; // ביטול דלתות ויזואלית
+                
+                // עדכון למידות ברירת מחדל של שידה: רוחב 50, גובה 50, עומק 40
+                document.getElementById('height').value = 50; 
+                document.getElementById('width').value = 50;
+                document.getElementById('depth').value = 40;
+                
+                // שינוי ברירת מחדל למספר מגירות ל-2
+                document.getElementById('chestDrawersCount').value = 2;
+                
+                adjustCameraForChest(); // זום אין לשידה
+                renderChestColors(); // בנייה ראשונית של הצבעים
+            } else {
+                chestControls.classList.add('hidden');
+                document.getElementById('doors').value = 4; // החזרה לארון
+                // חזרה למידות ארון ברירת מחדל
+                if(!isManualWidth) {
+                     document.getElementById('height').value = 240;
+                     document.getElementById('width').value = 160;
+                     document.getElementById('depth').value = 55;
+                }
+                resetCamera(); // החזרת מצלמה לארון
+            }
+            buildWardrobe();
+        });
+
+        // עדכון רשימת הצבעים כאשר משנים את מספר המגירות
+        chestDrawersCount.addEventListener('change', () => {
+            renderChestColors();
+            buildWardrobe();
+        });
+        
+        chestBodyColorSelect.addEventListener('change', () => buildWardrobe());
+        
+        // קריאה ראשונית לאתחול אם השידה כבר פתוחה במקרה (בטעינה מחדש)
+        if (chestModeToggle.checked) {
+             renderChestColors();
+             adjustCameraForChest();
+        }
+    }
+    
+    function adjustCameraForChest() {
+        if(controls) {
+            camera.position.set(0, 0.8, 2.5); // מנמיך ומקרב את המצלמה
+            controls.target.set(0, 0.25, 0); // ממקד במרכז השידה הנמוכה
+            camera.updateProjectionMatrix();
+            controls.update();
+        }
+    }
+    
+    function resetCamera() {
+        if(controls) {
+            camera.position.set(0, 2.2, 5.5); // מצלמה רגילה של ארון
+            controls.target.set(0, 1.4, 0);
+            camera.updateProjectionMatrix();
+            controls.update();
+        }
+    }
+
+
     let scene, camera, renderer, controls;
     let wardrobeGroup, doorsArray = [], drawersArray = [];
 
@@ -968,6 +1531,8 @@
 
     function init() {
       loadSavedColors();
+      loadSavedModelsFromLS(); // טעינת דגמים שמורים
+      initChestEvents(); // אתחול שידה
       const container = document.getElementById('viewer-container');
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xeef2f5);
@@ -998,7 +1563,6 @@
       controls.enableDamping = true;
       controls.target.set(0, 1.4, 0);
 
-      // יצירת אורות ראשונית
       setupLights();
 
       const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0xdcdcdc }));
@@ -1009,14 +1573,28 @@
 
       wardrobeGroup = new THREE.Group();
       scene.add(wardrobeGroup);
-
+      
+      updateStructureOptions(); // טעינת ראשונית של התפריט
       doorsInput.dispatchEvent(new Event('input'));
       animate();
 
-      // Events
-      document.getElementById('updateBtn').addEventListener('click', () => refreshModulesAndBuild(false));
-      document.getElementById('toggleDoorsHeaderBtn').addEventListener('click', toggleDoorsState);
-      document.getElementById('exportHeaderBtn').addEventListener('click', exportDualImage);
+      // אירועים חדשים לכפתורים המשודרגים
+      document.getElementById('dualImageBtn').addEventListener('click', exportDualImage);
+      document.getElementById('renderSketchBtn').addEventListener('click', exportRenderAndSketch);
+      
+      document.getElementById('snapshotBtn').addEventListener('click', takeSnapshot);
+      document.getElementById('copyClipboardBtn').addEventListener('click', copyToClipboard);
+
+      saveProjectBtn.addEventListener('click', saveProject);
+      loadProjectBtn.addEventListener('click', () => loadProjectInput.click());
+      loadProjectInput.addEventListener('change', handleFileLoad);
+
+      // מאזינים למערכת ניהול הדגמים
+      btnSaveModel.addEventListener('click', saveCurrentAsModel);
+      btnDeleteModel.addEventListener('click', deleteCurrentModel);
+      btnMoveModelUp.addEventListener('click', () => moveModel('up'));
+      btnMoveModelDown.addEventListener('click', () => moveModel('down'));
+      modelSelect.addEventListener('change', applySelectedModel);
       
       document.getElementById('sketchModeToggle').addEventListener('change', (e) => {
         isSketchMode = e.target.checked;
@@ -1029,11 +1607,26 @@
         buildWardrobe();
       });
       addCorniceToggle.addEventListener('change', () => {
-          if(isMultiColorMode) renderMultiColorUI(); // רענון רשימת הצבעים
+          if(isMultiColorMode) renderMultiColorUI(); 
           buildWardrobe();
       });
       
-      // עדכון בסיס שיעדכן גם את ה-UI של המולטי קולור
+      // אירוע חיתוך דלתות משודרג
+      const splitContainer = document.getElementById('splitDoorSelectionContainer');
+      splitDoorsToggle.addEventListener('change', (e) => {
+          if (e.target.checked) {
+              splitContainer.classList.remove('hidden');
+              renderSplitDoorSelectionUI(); // בונים את הממשק
+          } else {
+              splitContainer.classList.add('hidden');
+          }
+          
+          renderGrooveSelectionUI(); 
+          if(isMultiColorMode) renderMultiColorUI(); 
+          if(handleControlToggle.checked) renderHandleUI();
+          buildWardrobe(); 
+      });
+
       baseTypeSelect.addEventListener('change', () => {
           if(isMultiColorMode) renderMultiColorUI();
           buildWardrobe();
@@ -1041,6 +1634,8 @@
 
       groovesToggle.addEventListener('change', (e) => {
           if(e.target.checked) {
+              // התיקון: קריאה כפויה לבניית הממשק מחדש ברגע ההדלקה
+              renderGrooveSelectionUI(); 
               grooveSelectionContainer.classList.remove('hidden');
           } else {
               grooveSelectionContainer.classList.add('hidden');
@@ -1062,7 +1657,6 @@
           if(el) el.addEventListener('change', () => buildWardrobe());
       });
 
-      // Lighting Events
       [lightAmbInput, lightDirInput, lightXInput, lightYInput, lightZInput].forEach(inp => {
           inp.addEventListener('input', updateLightingParams);
       });
@@ -1071,6 +1665,28 @@
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
+      });
+
+      window.addEventListener('beforeunload', (e) => {
+          if (hasUnsavedChanges) {
+              e.preventDefault(); 
+              e.returnValue = ''; 
+          }
+      });
+
+      document.querySelector('.controls').addEventListener('change', () => {
+          hasUnsavedChanges = true;
+          updateSaveButtonState();
+      });
+      
+      document.querySelector('.controls').addEventListener('input', () => {
+          hasUnsavedChanges = true;
+          updateSaveButtonState();
+      });
+      
+      projectNameInput.addEventListener('input', () => {
+          hasUnsavedChanges = true;
+          updateSaveButtonState();
       });
     }
 
@@ -1090,53 +1706,48 @@
 
     function toggleDoorsState() {
         isDoorsOpen = !isDoorsOpen;
-        lastToggleTime = Date.now(); // שמירת זמן הלחיצה (בין אם פתיחה ובין אם סגירה)
+        lastToggleTime = Date.now(); 
         specificDrawerOpenId = null; 
-        updateHeaderBtnText();
     }
     
-    function updateHeaderBtnText() {
-         const btnHeader = document.getElementById('toggleDoorsHeaderBtn');
-         const txt = isDoorsOpen ? "🚪 סגור הכל" : "🚪 פתח הכל";
-         if(btnHeader) btnHeader.innerText = txt;
-    }
-
     // --- מערכת תאורה מעודכנת ---
     
     function setupLights() {
         if (isSketchMode) {
              if(ambLightObj) scene.remove(ambLightObj);
-             if(dirLightObj) scene.remove(dirLightObj);
+             if(dirLightObj) {
+                 scene.remove(dirLightObj);
+                 dirLightObj = null; 
+             }
+             
              ambLightObj = new THREE.AmbientLight(0xffffff, 0.95);
              scene.add(ambLightObj);
              return;
         }
 
-        // בדיקה האם שליטה ידנית מופעלת
         const isManual = lightingControlToggle.checked;
 
-        // הגדרת ברירות מחדל
         let defaultAmb = 0.5;
         let defaultDir = 0.6;
         let defaultPos = {x: 5, y: 8, z: 8};
 
         if (isManual) {
-            // אם ידני מופעל, קח ערכים מהסליידרים
             updateLightingParams();
             return; 
         }
 
-        // אם לא ידני - אפס לברירת מחדל
         if (!ambLightObj) {
             ambLightObj = new THREE.AmbientLight(0xffffff, defaultAmb);
             scene.add(ambLightObj);
         } else {
             ambLightObj.intensity = defaultAmb;
+            if (!ambLightObj.parent) scene.add(ambLightObj);
         }
         
         if (!dirLightObj) {
             dirLightObj = new THREE.DirectionalLight(0xffffff, defaultDir);
             dirLightObj.castShadow = true;
+            
             dirLightObj.shadow.mapSize.width = 1024;
             dirLightObj.shadow.mapSize.height = 1024;
             dirLightObj.shadow.camera.near = 0.5;
@@ -1145,18 +1756,19 @@
             dirLightObj.shadow.camera.right = 10;
             dirLightObj.shadow.camera.top = 10;
             dirLightObj.shadow.camera.bottom = -10;
+            
             dirLightObj.position.set(defaultPos.x, defaultPos.y, defaultPos.z);
             scene.add(dirLightObj);
         } else {
             dirLightObj.intensity = defaultDir;
             dirLightObj.position.set(defaultPos.x, defaultPos.y, defaultPos.z);
+            if (!dirLightObj.parent) scene.add(dirLightObj);
         }
     }
 
     function updateLightingParams() {
         if (isSketchMode) return;
         
-        // רק אם השליטה הידנית דולקת, עדכן לפי הסליידרים
         if (!lightingControlToggle.checked) return;
 
         const ambVal = parseFloat(lightAmbInput.value);
@@ -1224,6 +1836,9 @@
             upgradesContainer.innerHTML = '';
             
             modulesConfiguration = [];
+            
+            // איפוס מונה דלתות לצורך IDs ייחודיים בממשק
+            let uiGlobalDoorCounter = 1;
 
             modulesStructure.forEach((mod, idx) => {
                 const wrapper = document.createElement('div');
@@ -1231,11 +1846,66 @@
                 
                 let posText = (idx === 0) ? "שמאל" : (idx === modulesStructure.length - 1) ? "ימין" : "מרכז";
                 let doorDesc = wardrobeType === 'sliding' ? 'מודול פנימי' : (mod.doors === 1 ? 'דלת אחת' : '2 דלתות');
+                
+                let widthDesc = "";
+                if (wardrobeType === 'hinged') {
+                    widthDesc = mod.doors === 1 ? " (~40 ס\"מ)" : " (~80 ס\"מ)";
+                }
 
                 const title = document.createElement('div');
                 title.className = 'module-title';
-                title.innerText = `תא ${idx + 1} (${posText} - ${doorDesc})`;
+                title.innerText = `תא ${idx + 1} (${posText} - ${doorDesc}${widthDesc})`;
                 wrapper.appendChild(title);
+                
+                // --- תוספת: בחירת כיוון פתיחה לדלת בודדת ---
+                if (wardrobeType === 'hinged' && mod.doors === 1) {
+                    const hingeRow = document.createElement('div');
+                    hingeRow.style.marginBottom = '10px';
+                    hingeRow.style.padding = '5px';
+                    hingeRow.style.background = '#eaf2f8';
+                    hingeRow.style.borderRadius = '4px';
+                    
+                    const hingeLabel = document.createElement('span');
+                    hingeLabel.style.fontSize = '0.8rem';
+                    hingeLabel.style.fontWeight = 'bold';
+                    hingeLabel.innerText = 'כיוון פתיחה (צירים): ';
+                    
+                    const hingeSelect = document.createElement('select');
+                    hingeSelect.style.width = 'auto';
+                    hingeSelect.style.fontSize = '0.8rem';
+                    
+                    const optLeft = document.createElement('option');
+                    optLeft.value = 'left'; optLeft.innerText = 'שמאל (ידית בימין)';
+                    const optRight = document.createElement('option');
+                    optRight.value = 'right'; optRight.innerText = 'ימין (ידית בשמאל)';
+                    
+                    hingeSelect.appendChild(optLeft);
+                    hingeSelect.appendChild(optRight);
+                    
+                    // מזהה ייחודי לדלת הזו
+                    const currentDoorId = `door_hinge_${uiGlobalDoorCounter}`;
+                    
+                    // בדיקה אם קיים ערך שמור
+                    if (hingeMap[currentDoorId]) {
+                        hingeSelect.value = hingeMap[currentDoorId];
+                    } else {
+                        // ברירת מחדל: שמאל
+                        hingeSelect.value = 'left';
+                    }
+                    
+                    hingeSelect.addEventListener('change', (e) => {
+                        hingeMap[currentDoorId] = e.target.value;
+                        buildWardrobe();
+                    });
+                    
+                    hingeRow.appendChild(hingeLabel);
+                    hingeRow.appendChild(hingeSelect);
+                    wrapper.appendChild(hingeRow);
+                }
+                
+                // קידום המונה
+                uiGlobalDoorCounter += mod.doors;
+                // ---------------------------------------------
 
                 const lblLayout = document.createElement('div'); lblLayout.className='sub-label'; lblLayout.innerText='חלוקה פנימית:';
                 wrapper.appendChild(lblLayout);
@@ -1257,7 +1927,6 @@
                 
                 wrapper.appendChild(selectLayout);
 
-                // טוגל להתאמה אישית
                 const customToggleLabel = document.createElement('label');
                 customToggleLabel.className = 'toggle-container custom-toggle';
                 customToggleLabel.style.marginTop = '15px';
@@ -1298,9 +1967,12 @@
 
                 const updateConfig = () => {
                     modConfig.layout = selectLayout.value;
-                    if (selectExtDrawers) modConfig.extDrawers = parseInt(selectExtDrawers.value);
+                    const currentExtSelect = document.getElementById(`ext_drawers_mod_${idx}`);
+                    if (currentExtSelect) modConfig.extDrawers = parseInt(currentExtSelect.value);
                     else modConfig.extDrawers = 0;
-                    modConfig.intDrawersSlot = parseInt(selectIntDrawers.value);
+                    
+                    const currentIntSelect = document.getElementById(`int_drawers_mod_${idx}`);
+                    if (currentIntSelect) modConfig.intDrawersSlot = parseInt(currentIntSelect.value);
                     
                     modConfig.isCustom = customInput.checked;
                     if (modConfig.isCustom) {
@@ -1310,14 +1982,16 @@
                         selectLayout.classList.remove('hidden');
                         customPanel.classList.add('hidden');
                     }
-
+                    
+                    // Update all dependent UIs
+                    if (splitDoorsToggle.checked) renderSplitDoorSelectionUI();
                     renderGrooveSelectionUI(); 
-                    renderDrawerDividerUI(); // רענון רשימת המחיצות
+                    renderDrawerDividerUI(); 
                     if(isMultiColorMode) renderMultiColorUI();
+                    if(handleControlToggle.checked) renderHandleUI();
                     buildWardrobe();
                 };
 
-                // 1. מדפים
                 const titleShelves = document.createElement('div'); titleShelves.className='custom-section-title'; titleShelves.innerText='מדפים (גריד 6 קומות):';
                 customPanel.appendChild(titleShelves);
                 const gridShelves = document.createElement('div'); gridShelves.className='custom-grid';
@@ -1331,7 +2005,6 @@
                 }
                 customPanel.appendChild(gridShelves);
 
-                // 2. מוטות תליה
                 const titleRods = document.createElement('div'); titleRods.className='custom-section-title'; titleRods.innerText='מוטות תליה (בחר תא למיקום):';
                 customPanel.appendChild(titleRods);
                 
@@ -1364,7 +2037,6 @@
                 }
                 customPanel.appendChild(gridRods);
 
-                // 3. אחסון נוסף
                 const customRows = document.createElement('div');
                 customRows.className = 'custom-rows';
                 customRows.style.marginTop = '10px';
@@ -1379,12 +2051,12 @@
                 customPanel.appendChild(customRows);
                 wrapper.appendChild(customPanel);
 
-                // מגירות חיצוניות
                 let selectExtDrawers = null;
                 if (wardrobeType === 'hinged') {
                     const lblExt = document.createElement('div'); lblExt.className='sub-label'; lblExt.innerText='מגירות חיצוניות:';
                     wrapper.appendChild(lblExt);
                     selectExtDrawers = document.createElement('select');
+                    selectExtDrawers.id = `ext_drawers_mod_${idx}`; 
                     [0, 1, 2, 3, 4, 5].forEach(num => {
                         const opt = document.createElement('option');
                         opt.value = num;
@@ -1396,7 +2068,6 @@
 
                 dynamicLayoutsContainer.appendChild(wrapper);
 
-                // שדרוגים למטה - מגירות פנימיות
                 const upgradeWrapper = document.createElement('div');
                 upgradeWrapper.className = 'module-config upgrade-item';
                 const upTitle = document.createElement('div');
@@ -1434,10 +2105,89 @@
             });
         } 
         
+        if (splitDoorsToggle.checked) renderSplitDoorSelectionUI();
         renderGrooveSelectionUI();
         renderDrawerDividerUI();
         if(isMultiColorMode) renderMultiColorUI();
+        // also call handle UI if active
+        if(handleControlToggle.checked) renderHandleUI();
         buildWardrobe();
+    }
+
+    // --- בניית ממשק בחירה לדלתות חתוכות ---
+    // --- בניית ממשק בחירה לדלתות חתוכות (מתוקן) ---
+    function renderSplitDoorSelectionUI() {
+        const container = document.getElementById('splitDoorsCheckboxes');
+        container.innerHTML = '';
+        
+        let globalDoorIndex = 1;
+
+        modulesConfiguration.forEach((mod, modIdx) => {
+            const doorsInMod = mod.doors;
+
+            const moduleGroup = document.createElement('div');
+            moduleGroup.className = 'groove-module-group'; 
+            
+            const groupTitle = document.createElement('div');
+            groupTitle.className = 'groove-module-title';
+            groupTitle.innerText = `תא ${modIdx + 1}:`;
+            moduleGroup.appendChild(groupTitle);
+
+            const doorsRow = document.createElement('div');
+            doorsRow.className = 'groove-doors-row';
+
+            for (let d = 0; d < doorsInMod; d++) {
+                const id = `split_d${globalDoorIndex}`;
+                
+                // יצירת צ'קבוקס
+                const label = document.createElement('label');
+                label.className = 'groove-check-label';
+                
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.dataset.splitId = id;
+                
+                // ברירת מחדל היא True (חתוך)
+                if (splitDoorsMap[id] === undefined) {
+                    splitDoorsMap[id] = true;
+                }
+                input.checked = splitDoorsMap[id];
+                
+                // סימון ויזואלי
+                if(input.checked) label.style.borderColor = 'var(--upgrade)';
+
+                input.addEventListener('change', (e) => {
+                    splitDoorsMap[id] = e.target.checked;
+                    if(e.target.checked) label.style.borderColor = 'var(--upgrade)';
+                    else label.style.borderColor = '#ddd';
+                    
+                    // --- תיקון: עדכון תפריט החריטה קודם כל וללא תלות באחרים ---
+                    if(document.getElementById('groovesToggle').checked) {
+                        try { renderGrooveSelectionUI(); } catch(err) { console.error(err); }
+                    }
+
+                    // עדכונים נוספים
+                    if(document.getElementById('handleControlToggle').checked) {
+                        try { renderHandleUI(); } catch(err) { console.error(err); }
+                    }
+                    if(isMultiColorMode) {
+                        try { renderMultiColorUI(); } catch(err) { console.error(err); }
+                    }
+
+                    buildWardrobe();
+                });
+
+                label.appendChild(input);
+                const span = document.createElement('span');
+                span.innerText = `דלת ${globalDoorIndex}`;
+                label.appendChild(span);
+                
+                doorsRow.appendChild(label);
+                globalDoorIndex++;
+            }
+            moduleGroup.appendChild(doorsRow);
+            container.appendChild(moduleGroup);
+        });
     }
 
     function renderGrooveSelectionUI() {
@@ -1463,7 +2213,10 @@
             doorsRow.className = 'groove-doors-row';
 
             for (let d = 0; d < doorsInMod; d++) {
-                if (isSplit) {
+                // בדיקה אם הדלת הספציפית הזו חתוכה
+                const isThisDoorSplit = isSplit && splitDoorsMap[`split_d${globalDoorIndex}`] !== false;
+
+                if (isThisDoorSplit) {
                     const idTop = `groove_d${globalDoorIndex}_top`;
                     doorsRow.appendChild(createGrooveCheckbox(idTop, `דלת ${globalDoorIndex} עליונה`));
                     const idBot = `groove_d${globalDoorIndex}_bot`;
@@ -1490,7 +2243,6 @@
         });
     }
     
-    // --- יצירת UI לבחירת מגירות למחיצות ---
     function renderDrawerDividerUI() {
         drawerDividerCheckboxes.innerHTML = '';
         let globalDoorIndex = 1;
@@ -1502,7 +2254,6 @@
              globalDoorIndex += mod.doors; 
              const intDrawerSlot = mod.intDrawersSlot;
              
-             // אם אין מגירות בכלל בתא זה, דלג
              if (extDrawers === 0 && (intDrawerSlot === 0 || !intDrawersActive)) return;
              
              const moduleGroup = document.createElement('div');
@@ -1515,15 +2266,13 @@
              const drawersRow = document.createElement('div');
              drawersRow.className = 'groove-drawers-row';
              
-             // מגירות חיצוניות
              if (extDrawers > 0) {
                  for(let k=1; k<=extDrawers; k++) {
-                     const id = `div_ext_${modIdx}_${k}`; // div = divider
+                     const id = `div_ext_${modIdx}_${k}`; 
                      drawersRow.appendChild(createDrawerDividerCheckbox(id, `חיצונית ${k}`));
                  }
              }
              
-             // מגירות פנימיות
              if (intDrawersActive && intDrawerSlot > 0) {
                  const idInt = `div_int_${modIdx}_slot_${intDrawerSlot}`;
                  drawersRow.appendChild(createDrawerDividerCheckbox(idInt, `פנימית (קומה ${intDrawerSlot})`));
@@ -1540,7 +2289,6 @@
         }
     }
 
-    // --- עדכון פונקציית יצירת כפתור מחיצה ---
     function createDrawerDividerCheckbox(id, labelText) {
         const label = document.createElement('label');
         label.className = 'groove-check-label drawer-check-label';
@@ -1556,33 +2304,24 @@
         input.addEventListener('change', (e) => {
             drawerDividersMap[id] = e.target.checked;
             
-            // --- לוגיקה מעודכנת לפתיחת מחיצות ---
             if (e.target.checked) {
                 label.classList.add('checked');
                 
-                // בדיקה האם זו מגירה פנימית או חיצונית
                 if (id.includes('int')) {
-                    // מגירה פנימית: אם מוסיפים מחיצה, צריך לפתוח את כל הארון כדי לראות אותה
                     isDoorsOpen = true; 
-                    lastToggleTime = Date.now(); // עדכון זמן לפתיחה מושהית
+                    lastToggleTime = Date.now(); 
                     specificDrawerOpenId = null; 
                 } else {
-                    // מגירה חיצונית: פותחים רק את המגירה הספציפית
-                    isDoorsOpen = false; // סוגר את כל הארון
-                    specificDrawerOpenId = id; // מסמן את המגירה הספציפית לפתיחה
+                    isDoorsOpen = false; 
+                    specificDrawerOpenId = id; 
                 }
             } else {
                 label.classList.remove('checked');
-                // אם מבטלים, אפשר להישאר במצב הנוכחי או לסגור ספציפית
                 if (specificDrawerOpenId === id) {
                     specificDrawerOpenId = null; 
                 }
             }
             
-            // עדכון הטקסט בכפתור הראשי
-            updateHeaderBtnText();
-            // -------------------------------------
-
             buildWardrobe();
         });
         
@@ -1612,15 +2351,31 @@
     }
 
     function calculateModuleStructure(doorsCount, singlePos) {
-        let modules = []; 
-        let remainingDoors = doorsCount;
-        
+        // אם זה ארון הזזה, הלוגיקה נשארת רגילה
         if (wardrobeType === 'sliding') {
+            let modules = [];
             for (let i = 0; i < doorsCount; i++) {
                 modules.push({ doors: 1 });
             }
             return modules;
         }
+
+        // קריאת המבנה שנבחר מהתפריט החדש
+        let selectedStructure = 'default';
+        try {
+            if(structureSelect.value) {
+                selectedStructure = JSON.parse(structureSelect.value);
+            }
+        } catch(e) { console.log(e); }
+
+        // אם נבחרה חלוקה מיוחדת (מערך), נחזיר אותה
+        if (Array.isArray(selectedStructure)) {
+            // הופכים את המערך [1, 2, 1] למבנה אובייקטים [{doors:1}, {doors:2}...]
+            return selectedStructure.map(d => ({ doors: d }));
+        }
+
+        let modules = []; 
+        let remainingDoors = doorsCount;
 
         if (doorsCount % 2 === 0) {
             while(remainingDoors > 0) {
@@ -1648,34 +2403,76 @@
         return modules;
     }
 
-    // --- יצירת ויזואל דלת ---
-    function createDoorVisual(w, h, thickness, mat, style, hasGrooves = false) {
+    function createDoorVisual(w, h, thickness, mat, style, hasGrooves = false, isMirror = false) {
         const visualGroup = new THREE.Group();
         
+        // --- חומרי חריטה ---
         const grooveMat = new THREE.MeshStandardMaterial({ 
             color: 0x1a1a1a, 
             roughness: 0.9 
         });
         if(isSketchMode) grooveMat.color.setHex(0x000000);
 
-        const addGroovesGeometry = (targetW, targetH, zOffset, density = 8) => {
+        // --- פונקציית עזר לחריטה ---
+        const addGroovesGeometry = (targetW, targetH, zOffset) => {
             if (!hasGrooves) return;
-            const stripesCount = Math.floor(targetW * density); 
+            const density = 20; 
+            let stripesCount = Math.floor(targetW * density);
+            if (stripesCount < 1) stripesCount = 1;
             const gap = targetW / (stripesCount + 1);
             
             for(let i=1; i<=stripesCount; i++) {
-                const stripGeo = new THREE.BoxGeometry(0.004, targetH - 0.04, 0.002);
+                const stripGeo = new THREE.BoxGeometry(0.005, targetH - 0.04, 0.002);
                 const strip = new THREE.Mesh(stripGeo, grooveMat);
                 strip.position.set((-targetW/2) + (i*gap), 0, zOffset + 0.001);
                 visualGroup.add(strip);
             }
         };
 
+        // --- לוגיקה חדשה: הוספת סימון מראה בסקיצה ---
+        const addMirrorSketchMarking = (targetW, targetH, zPos) => {
+            if (isSketchMode && isMirror) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128; 
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgba(0,0,0,0)';
+                ctx.clearRect(0,0, 128, 128);
+                ctx.strokeStyle = '#000000'; 
+                ctx.lineWidth = 2;           
+                ctx.beginPath();
+                for(let i = -128; i < 256; i+=30) {
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i + 128, 128);
+                }
+                ctx.stroke();
+
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(targetW * 3, targetH * 3); 
+
+                const planeGeo = new THREE.PlaneGeometry(targetW - 0.02, targetH - 0.02);
+                const planeMat = new THREE.MeshBasicMaterial({ 
+                    map: texture, 
+                    transparent: true, 
+                    opacity: 0.6,
+                    side: THREE.DoubleSide
+                });
+                
+                const marking = new THREE.Mesh(planeGeo, planeMat);
+                marking.position.set(0, 0, zPos + 0.001); 
+                visualGroup.add(marking);
+            }
+        };
+
+        // --- בניית גוף הדלת ---
         if (style === 'flat') {
             const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, thickness), mat);
             addOutlines(doorMesh);
             visualGroup.add(doorMesh);
             addGroovesGeometry(w, h, thickness/2);
+            addMirrorSketchMarking(w, h, thickness/2); 
             return visualGroup;
         }
         if (style === 'profile') {
@@ -1683,17 +2480,23 @@
             const recessDepth = 0.020; 
             const innerW = w - (2 * frameW);
             const innerH = h - (2 * frameW);
+            
+            // פאנל מרכזי
             const centerPanel = new THREE.Mesh(new THREE.BoxGeometry(innerW, innerH, thickness - recessDepth), mat);
             centerPanel.position.set(0, 0, -recessDepth/2);
             addOutlines(centerPanel);
             visualGroup.add(centerPanel);
+            
+            // מסגרת
             const frameThick = thickness;
-            const frameZ = 0;
-            const top = new THREE.Mesh(new THREE.BoxGeometry(w, frameW, frameThick), mat); top.position.set(0, h/2 - frameW/2, frameZ); addOutlines(top); visualGroup.add(top);
-            const bot = new THREE.Mesh(new THREE.BoxGeometry(w, frameW, frameThick), mat); bot.position.set(0, -(h/2 - frameW/2), frameZ); addOutlines(bot); visualGroup.add(bot);
-            const left = new THREE.Mesh(new THREE.BoxGeometry(frameW, h - 2*frameW, frameThick), mat); left.position.set(-(w/2 - frameW/2), 0, frameZ); addOutlines(left); visualGroup.add(left);
-            const right = new THREE.Mesh(new THREE.BoxGeometry(frameW, h - 2*frameW, frameThick), mat); right.position.set((w/2 - frameW/2), 0, frameZ); addOutlines(right); visualGroup.add(right);
+            const top = new THREE.Mesh(new THREE.BoxGeometry(w, frameW, frameThick), mat); top.position.set(0, h/2 - frameW/2, 0); addOutlines(top); visualGroup.add(top);
+            const bot = new THREE.Mesh(new THREE.BoxGeometry(w, frameW, frameThick), mat); bot.position.set(0, -(h/2 - frameW/2), 0); addOutlines(bot); visualGroup.add(bot);
+            const left = new THREE.Mesh(new THREE.BoxGeometry(frameW, h - 2*frameW, frameThick), mat); left.position.set(-(w/2 - frameW/2), 0, 0); addOutlines(left); visualGroup.add(left);
+            const right = new THREE.Mesh(new THREE.BoxGeometry(frameW, h - 2*frameW, frameThick), mat); right.position.set((w/2 - frameW/2), 0, 0); addOutlines(right); visualGroup.add(right);
+            
             addGroovesGeometry(innerW, innerH, (thickness - recessDepth)/2 - recessDepth/2);
+            addMirrorSketchMarking(innerW, innerH, (thickness - recessDepth)/2 - recessDepth/2);
+            
             return visualGroup;
         }
         if (style === 'tom') {
@@ -1714,6 +2517,8 @@
              const stepZ = -stepDepth / 2;
              const stepGeoH = new THREE.BoxGeometry(w - 2*outerFrameW, innerFrameW, thickness - stepDepth);
              const stepGeoV = new THREE.BoxGeometry(innerFrameW, h - 2*totalFrameW, thickness - stepDepth);
+             
+             // יצירת חלקי המסגרת...
              const stepTop = new THREE.Mesh(stepGeoH, mat); stepTop.position.set(0, (h/2 - outerFrameW) - innerFrameW/2, stepZ); addOutlines(stepTop); stepGroup.add(stepTop);
              const stepBot = new THREE.Mesh(stepGeoH, mat); stepBot.position.set(0, -((h/2 - outerFrameW) - innerFrameW/2), stepZ); addOutlines(stepBot); stepGroup.add(stepBot);
              const stepLeft = new THREE.Mesh(stepGeoV, mat); stepLeft.position.set(-((w/2 - outerFrameW) - innerFrameW/2), 0, stepZ); addOutlines(stepLeft); stepGroup.add(stepLeft);
@@ -1733,54 +2538,49 @@
              const cornerTR = new THREE.Mesh(cornerGeo, mat); cornerTR.position.set((w/2 - outerFrameW/2), h/2 - outerFrameW/2, 0); visualGroup.add(cornerTR);
              const cornerBL = new THREE.Mesh(cornerGeo, mat); cornerBL.position.set(-(w/2 - outerFrameW/2), -(h/2 - outerFrameW/2), 0); visualGroup.add(cornerBL);
              const cornerBR = new THREE.Mesh(cornerGeo, mat); cornerBR.position.set((w/2 - outerFrameW/2), -(h/2 - outerFrameW/2), 0); visualGroup.add(cornerBR);
+             
              addOutlines(cornerTL); addOutlines(cornerTR); addOutlines(cornerBL); addOutlines(cornerBR);
              addGroovesGeometry(centerW, centerH, -centerDepth/2 + thickness/2, 12);
+             addMirrorSketchMarking(centerW, centerH, -centerDepth/2 + thickness/2); 
+             
              return visualGroup;
         }
         return new THREE.Group();
     }
 
-   // --- עדכון פונקציית בניית מגירה פנימית (עם חזית) ---
-   // הוספתי פרמטר addHandle כדי לשלוט האם ליצור ידית או לא (תיקון באג ידית כפולה)
    function createInternalDrawerBox(w, h, d, mat, drawerMat, outlineFunc, hasDivider = false, addHandle = true) {
         const group = new THREE.Group();
-        const thickness = 0.015; // עובי דפנות המגירה
+        const thickness = 0.015; 
         const innerH = h;
         
-        // 1. רצפת המגירה
         const floorGeo = new THREE.BoxGeometry(w, thickness, d);
         const floor = new THREE.Mesh(floorGeo, mat);
         floor.position.set(0, -h/2 + thickness/2, 0); 
         group.add(floor);
 
-        // 2. דופן אחורית (גב)
         const backGeo = new THREE.BoxGeometry(w, innerH, thickness);
         const back = new THREE.Mesh(backGeo, mat);
         back.position.set(0, 0, -d/2 + thickness/2);
         outlineFunc(back);
         group.add(back);
 
-        // 3. דופן קדמית (חזית למגירה הפנימית)
         const frontGeo = new THREE.BoxGeometry(w, innerH, thickness);
         const front = new THREE.Mesh(frontGeo, mat);
         front.position.set(0, 0, d/2 - thickness/2); 
         outlineFunc(front);
         group.add(front);
 
-        // 4. דופן שמאל
         const sideGeo = new THREE.BoxGeometry(thickness, innerH, d - 2*thickness);
         const left = new THREE.Mesh(sideGeo, mat);
         left.position.set(-w/2 + thickness/2, 0, 0);
         outlineFunc(left);
         group.add(left);
 
-        // 5. דופן ימין
         const right = new THREE.Mesh(sideGeo, mat);
         right.position.set(w/2 - thickness/2, 0, 0);
         outlineFunc(right);
         group.add(right);
 
-        // 6. מחיצה (אם נבחרה)
         if(hasDivider) {
             const divGeo = new THREE.BoxGeometry(thickness, innerH, d - 2*thickness);
             const divider = new THREE.Mesh(divGeo, mat);
@@ -1789,7 +2589,6 @@
             group.add(divider);
         }
 
-        // ידית פשוטה למגירה הפנימית - רק אם נדרש (addHandle=true)
         if (addHandle) {
             const handleGeo = new THREE.BoxGeometry(0.12, 0.02, 0.015);
             const handle = new THREE.Mesh(handleGeo, new THREE.MeshStandardMaterial({color: 0x555555})); 
@@ -1798,6 +2597,131 @@
         }
 
         return group;
+    }
+    
+    // --- פונקציה חדשה לבניית שידה בלבד ---
+    function buildChestOnly() {
+        const H = parseFloat(document.getElementById('height').value) / 100;
+        const totalW = parseFloat(document.getElementById('width').value) / 100;
+        const D = parseFloat(document.getElementById('depth').value) / 100;
+        const drawersCount = parseInt(chestDrawersCount.value);
+        
+        // helper for handle
+        const getHandleType = (id) => {
+          if (!handleControlToggle.checked) return 'standard';
+          return handlesMap[id] || 'standard';
+        };
+
+        // חומרים
+        let bodyVal = chestBodyColorSelect.value;
+        const getMat = (val) => {
+            if(val.startsWith('saved_')) {
+                const savedItem = savedColors.find(c => c.id === val);
+                if(savedItem) return getMaterial(savedItem.value, 'front', savedItem.type === 'texture');
+            }
+            return getMaterial(val, 'front', false);
+        };
+
+        const bodyMat = getMat(bodyVal);
+        const drawerBoxMat = getMaterial(null, 'body'); // לבן פנימי
+        
+        // בניית הגוף
+        const thick = 0.018;
+        const baseH = (document.getElementById('baseType').value === 'plinth') ? 0.08 : 0;
+        
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(totalW, thick, D), bodyMat);
+        floor.position.set(0, baseH + thick/2, 0); addOutlines(floor); wardrobeGroup.add(floor);
+        
+        const ceil = new THREE.Mesh(new THREE.BoxGeometry(totalW, thick, D), bodyMat);
+        ceil.position.set(0, H - thick/2, 0); addOutlines(ceil); wardrobeGroup.add(ceil);
+        
+        const sideH = H - baseH - (2*thick);
+        const left = new THREE.Mesh(new THREE.BoxGeometry(thick, sideH, D), bodyMat);
+        left.position.set(-totalW/2 + thick/2, baseH + thick + sideH/2, 0); addOutlines(left); wardrobeGroup.add(left);
+        
+        const right = new THREE.Mesh(new THREE.BoxGeometry(thick, sideH, D), bodyMat);
+        right.position.set(totalW/2 - thick/2, baseH + thick + sideH/2, 0); addOutlines(right); wardrobeGroup.add(right);
+
+        const back = new THREE.Mesh(new THREE.BoxGeometry(totalW, H, 0.005), bodyMat);
+        back.position.set(0, H/2, -D/2 + 0.005); wardrobeGroup.add(back);
+        
+        if(baseH > 0) { 
+            const plinth = new THREE.Mesh(new THREE.BoxGeometry(totalW-0.04, baseH, D-0.05), bodyMat);
+            plinth.position.set(0, baseH/2, -0.02); wardrobeGroup.add(plinth);
+        }
+
+        const innerH = sideH;
+        const startY = baseH + thick;
+        const singleDrawerTotalH = innerH / drawersCount;
+        const gap = 0.003; 
+        const drawerFrontH = singleDrawerTotalH - gap;
+        const drawerWidth = totalW - (2*thick) - 0.004; 
+        
+        for(let i=0; i<drawersCount; i++) {
+            const yCenter = startY + (i * singleDrawerTotalH) + (singleDrawerTotalH/2);
+            
+            const specificColorKey = `chest_drawer_${i}`;
+            let frontMat = bodyMat; 
+            if (individualColors[specificColorKey]) {
+                frontMat = getMat(individualColors[specificColorKey]);
+            }
+
+            const drawerGroup = new THREE.Group();
+            
+            // חזית
+            const frontGeo = new THREE.BoxGeometry(drawerWidth, drawerFrontH, 0.018);
+            const frontMesh = new THREE.Mesh(frontGeo, frontMat);
+            frontMesh.position.set(0, 0, D/2); 
+            addOutlines(frontMesh);
+            drawerGroup.add(frontMesh);
+            
+            // --- טיפול בידיות (כולל תיקון לרוכבת) ---
+            const chestHandleType = getHandleType(specificColorKey);
+            
+            if (chestHandleType !== 'none') {
+                if (chestHandleType === 'edge') {
+                    // --- תיקון: ידית רוכבת ברוחב 20 ס"מ בלבד ---
+                    const handleW = 0.20; 
+                    const edgeGeo = new THREE.BoxGeometry(handleW, 0.02, 0.02);
+                    const edgeMat = new THREE.MeshStandardMaterial({color: 0x2c3e50, roughness: 0.4, metalness: 0.6});
+                    const edgeHandle = new THREE.Mesh(edgeGeo, edgeMat);
+                    
+                    // בראש המגירה, ממורכזת
+                    edgeHandle.position.set(0, (drawerFrontH/2) - 0.01, D/2 + 0.015);
+                    drawerGroup.add(edgeHandle);
+                } else {
+                    const handleGeo = new THREE.BoxGeometry(0.12, 0.02, 0.015);
+                    const handle = new THREE.Mesh(handleGeo, new THREE.MeshStandardMaterial({color: 0x888888})); 
+                    handle.position.set(0, 0, D/2 + 0.005 + 0.009); 
+                    addOutlines(handle);
+                    drawerGroup.add(handle);
+                }
+            }
+            // --------------------
+            
+            const boxH = drawerFrontH - 0.05;
+            const boxD = D - 0.05;
+            const boxMesh = createInternalDrawerBox(drawerWidth - 0.03, boxH, boxD, drawerBoxMat, drawerBoxMat, addOutlines, false, false);
+            boxMesh.position.set(0, 0, 0);
+            drawerGroup.add(boxMesh);
+            
+            drawerGroup.position.set(0, yCenter, 0);
+            wardrobeGroup.add(drawerGroup);
+            
+            drawersArray.push({
+                group: drawerGroup,
+                closed: new THREE.Vector3(0, yCenter, 0),
+                open: new THREE.Vector3(0, yCenter, 0.35), 
+                id: `chest_drawer_${i}`
+            });
+        }
+        
+        if(showDimensions) {
+            // מידות מותאמות לשידה - טקסט קטן יותר ומרוחק יותר למניעת הפרעה
+            addDimensionLine(new THREE.Vector3(-totalW/2, H+0.1, 0), new THREE.Vector3(totalW/2, H+0.1, 0), new THREE.Vector3(0,0,0), (totalW*100).toFixed(0), 0.6);
+            addDimensionLine(new THREE.Vector3(totalW/2+0.15, 0, 0), new THREE.Vector3(totalW/2+0.15, H, 0), new THREE.Vector3(0,0,0), (H*100).toFixed(0), 0.6);
+             addDimensionLine(new THREE.Vector3(-totalW/2 - 0.15, H - 0.35, D/2), new THREE.Vector3(-totalW/2 - 0.15, H - 0.15, -D/2), new THREE.Vector3(-0.2, 0, 0), (D*100).toFixed(0), 0.6);
+        }
     }
 
     function buildWardrobe() {
@@ -1809,10 +2733,54 @@
       doorsArray = [];
       drawersArray = []; 
       
+      if (document.getElementById('chestModeToggle') && document.getElementById('chestModeToggle').checked) {
+          buildChestOnly();
+          return;
+      }
+      
+      // עזר לידיות בתוך הארון
+      const getHandleType = (id) => {
+          if (!handleControlToggle.checked) return 'standard';
+          return handlesMap[id] || 'standard';
+      };
+
+      // --- פונקציה ליצירת ידיות לדלתות (נשמר מהתיקון הקודם) ---
+      const createHandleMesh = (type, w, h, isLeftHinge) => { 
+          if (type === 'none') return null;
+
+          const handleGroup = new THREE.Group();
+          
+          if (type === 'edge') {
+              // ידית רוכבת לדלת (20 ס"מ)
+              const handleH = 0.20; 
+              const profileW = 0.005; 
+              const profileD = 0.035; 
+              
+              const geo = new THREE.BoxGeometry(profileW, handleH, profileD);
+              const mat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.4, metalness: 0.6 });
+              const mesh = new THREE.Mesh(geo, mat);
+              
+              const xPos = isLeftHinge ? (w - 0.0025) : (-w + 0.0025);
+              mesh.position.set(xPos, 0, 0.005); 
+              handleGroup.add(mesh);
+          } 
+          else {
+              // ידית רגילה (5 ס"מ מהקצה)
+              const handleGeo = new THREE.BoxGeometry(0.01, 0.16, 0.02);
+              const mesh = new THREE.Mesh(handleGeo, new THREE.MeshStandardMaterial({color: 0x888888})); 
+              const offset = 0.05; 
+              const xPos = isLeftHinge ? (w - offset) : (-w + offset);
+              mesh.position.set(xPos, 0, 0.02);
+              addOutlines(mesh);
+              handleGroup.add(mesh);
+          }
+          return handleGroup;
+      };
+
       const H = parseFloat(document.getElementById('height').value) / 100;
       const totalW = parseFloat(document.getElementById('width').value) / 100;
       const D = parseFloat(document.getElementById('depth').value) / 100;
-      const doorsCount = parseInt(document.getElementById('doors').value); // מספר דלתות לחישוב רגליים
+      const doorsCount = parseInt(document.getElementById('doors').value); 
       
       let colorHex = document.getElementById('color').value;
       let useTexture = false;
@@ -1827,7 +2795,9 @@
       const doorStyle = document.getElementById('doorStyle').value;
       const baseType = document.getElementById('baseType').value;
       const hasCornice = document.getElementById('addCornice').checked;
+      
       const splitDoors = document.getElementById('splitDoorsToggle').checked; 
+      
       const isGroovesEnabled = groovesToggle.checked;
       const isInternalDrawersEnabled = internalDrawersToggle.checked; 
       const isDividersEnabled = drawerDividerToggle.checked;
@@ -1844,6 +2814,16 @@
       const getPartMaterial = (partId) => {
           if (!isMultiColorMode || !individualColors[partId]) { return globalFrontMat; }
           const specificColorVal = individualColors[partId];
+          
+          if (specificColorVal === 'mirror') {
+               return new THREE.MeshStandardMaterial({ 
+                   color: 0xebf5fb,    
+                   metalness: 0.1,    
+                   roughness: 0.0,      
+                   emissive: 0x111111   
+               });
+          }
+
           if (specificColorVal.startsWith('saved_')) {
                const savedItem = savedColors.find(c => c.id === specificColorVal);
                if(savedItem) {
@@ -1867,12 +2847,10 @@
           wardrobeGroup.add(plinth);
 
       } else if (baseType === 'legs') {
-          // --- עדכון: לוגיקת רגליים מתוקנת ---
           baseHeight = 0.12;
           startY = baseHeight;
           const legGeo = new THREE.CylinderGeometry(0.02, 0.01, baseHeight, 16);
           
-          // 4 פינות קבועות
           const pos = [ 
               {x: -totalW/2 + 0.05, z: D/2 - 0.05}, 
               {x: totalW/2 - 0.05, z: D/2 - 0.05}, 
@@ -1880,10 +2858,9 @@
               {x: totalW/2 - 0.05, z: -D/2 + 0.05} 
           ];
 
-          // תוספת רגליים לאמצע אם יש 5 דלתות ומעלה
           if (doorsCount >= 5) {
-              pos.push({x: 0, z: D/2 - 0.05});  // רגל אמצעית קדמית
-              pos.push({x: 0, z: -D/2 + 0.05}); // רגל אמצעית אחורית
+              pos.push({x: 0, z: D/2 - 0.05});  
+              pos.push({x: 0, z: -D/2 + 0.05}); 
           }
 
           pos.forEach(p => { 
@@ -1942,19 +2919,32 @@
 
       const modules = calculateModuleStructure(doorsCount, document.getElementById('singleDoorPos').value);
       let currentX = -totalW / 2 + woodThick;
-      const baseUnitWidth = (totalW - (2 * woodThick)) / doorsCount;
-      let globalDoorCounter = 1; 
+      
+      // כעת עלינו לחשב רוחב דינמי לכל מודול לפי מספר הדלתות שלו
+      const totalDoorsUnits = modules.reduce((sum, m) => sum + m.doors, 0);
+      
+      // --- תיקון: חישוב שטח נטו ---
+      // חישוב סך כל המחיצות הפנימיות (מספר המודולים פחות 1 * עובי העץ)
+      const totalDividersWidth = Math.max(0, modules.length - 1) * woodThick;
+      // הפחתת דפנות צד ומחיצות מהרוחב הכולל
+      const netInternalWidth = totalW - (2 * woodThick) - totalDividersWidth;
+      // חישוב רוחב יחידה לפי השטח הנקי שנשאר
+      const singleUnitWidth = netInternalWidth / totalDoorsUnits;
+      // ----------------------------
+
+      let globalDoorCounter = 1;
 
       modules.forEach((mod, index) => {
           const config = modulesConfiguration[index] || { layout: 'shelves', extDrawers: 0, intDrawersSlot: 0, isCustom: false };
-          const modWidth = baseUnitWidth * mod.doors;
+          
+          const modWidth = singleUnitWidth * mod.doors;
           const moduleCenterX = currentX + (modWidth / 2);
 
           if (index < modules.length - 1) {
               createBoard(woodThick, cabinetBodyHeight - 2*woodThick, D - 0.02, currentX + modWidth, startY + cabinetBodyHeight/2, 0, bodyMat);
           }
 
-          const innerW = modWidth - (index < modules.length - 1 ? woodThick : 0);
+          const innerW = modWidth; // תיקון: הרוחב הוא נטו, ללא הפחתות נוספות
           const internalCenterX = currentX + (innerW / 2);
           const externalW = modWidth; 
           const externalCenterX = moduleCenterX;
@@ -1966,7 +2956,7 @@
           if (wardrobeType === 'hinged' && config.extDrawers > 0) {
                drawerHeightTotal = config.extDrawers * 0.22;
                internalStartY += drawerHeightTotal; 
-               createBoard(innerW, woodThick, D - 0.05, internalCenterX, internalStartY - woodThick/2, 0, bodyMat); 
+               createBoard(innerW - 0.025, woodThick, D - 0.05, internalCenterX, internalStartY - woodThick/2, 0, bodyMat); 
                
                const singleDrawerH = drawerHeightTotal / config.extDrawers;
                const drawerW = externalW - 0.004;
@@ -1979,8 +2969,11 @@
                    const colorKey = `d${startDoorOfModule}_draw_${k+1}`;
                    const specificMat = getPartMaterial(colorKey);
 
+                   const isDrawerMirror = individualColors[colorKey] === 'mirror';
+
                    const drawerGroup = new THREE.Group();
-                   const drawerVisual = createDoorVisual(drawerW, singleDrawerH - 0.008, 0.02, specificMat, doorStyle, hasGroove);
+                   const drawerVisual = createDoorVisual(drawerW, singleDrawerH - 0.008, 0.02, specificMat, doorStyle, hasGroove, isDrawerMirror);
+                   
                    drawerVisual.position.set(0, 0, 0);
                    
                    const drawerBox = createInternalDrawerBox(drawerW - 0.04, singleDrawerH - 0.04, D - 0.1, bodyMat, bodyMat, addOutlines, hasDivider, false);
@@ -1988,10 +2981,29 @@
                    drawerGroup.add(drawerBox);
                    drawerGroup.add(drawerVisual);
 
-                   const handle = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.01, 0.02), legMat);
-                   handle.position.set(0, (singleDrawerH*0.3), 0.02); 
-                   addOutlines(handle);
-                   drawerGroup.add(handle);
+                   // --- תיקון: ידיות למגירות חיצוניות ---
+                   const drawerHandleType = getHandleType(colorKey);
+                   
+                   if (drawerHandleType !== 'none' && !(isDrawerMirror && drawerHandleType === 'standard' && !handlesMap[colorKey])) {
+                       if (drawerHandleType === 'edge') {
+                           // --- תיקון: ידית רוכבת למגירה - רוחב 20 ס"מ, ממורכזת למעלה ---
+                           const handleW = 0.20; 
+                           const edgeGeo = new THREE.BoxGeometry(handleW, 0.02, 0.02); 
+                           const edgeMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.4, metalness: 0.6 }); 
+                           const edgeHandle = new THREE.Mesh(edgeGeo, edgeMat);
+                           
+                           // מיקום: מרכז (X=0), חלק עליון של המגירה
+                           edgeHandle.position.set(0, (singleDrawerH/2) - 0.01, 0.02); 
+                           drawerGroup.add(edgeHandle);
+                       } else {
+                           // ידית רגילה
+                           const handle = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.01, 0.02), legMat);
+                           handle.position.set(0, (singleDrawerH*0.3), 0.02); 
+                           addOutlines(handle);
+                           drawerGroup.add(handle);
+                       }
+                   }
+                   // ---------------------------------
                    
                    const closedPos = new THREE.Vector3(externalCenterX, dY, D/2 + 0.01);
                    const openPos = new THREE.Vector3(externalCenterX, dY, D/2 + 0.35);
@@ -1999,13 +3011,12 @@
                    wardrobeGroup.add(drawerGroup);
                    
                    drawersArray.push({ group: drawerGroup, closed: closedPos, open: openPos, id: divKey });
-               }
-          }
+               }          }
 
           const internalTopLimit = startY + cabinetBodyHeight - woodThick;
           
           const createRod = (yPos) => {
-              const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, innerW - 0.02, 12), legMat);
+              const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, innerW - 0.04, 12), legMat);
               rod.rotation.z = Math.PI / 2;
               rod.position.set(internalCenterX, yPos, 0);
               addOutlines(rod);
@@ -2018,43 +3029,55 @@
                   const baseGridY = startY + woodThick + ((slotIndex - 1) * gridStep);
                   if (baseGridY < internalStartY) return false;
 
-                  const boxH = Math.min(0.35, gridStep - 0.02);
-                  const drawerY = baseGridY + (boxH / 2);
+                  const slotHeight = gridStep;
+                  const gap = 0.02; 
+                  const singleDrawerH = (Math.min(0.35, slotHeight - 0.02) - gap) / 2;
+                  
                   const divKey = `div_int_${index}_slot_${slotIndex}`;
                   const hasDivider = isDividersEnabled && drawerDividersMap[divKey];
-                  const internalDrawerWidth = innerW - 0.08; 
-                  const intBox = createInternalDrawerBox(internalDrawerWidth, boxH, D - 0.05, bodyMat, bodyMat, addOutlines, hasDivider, true);
-                  
-                  const closedPos = new THREE.Vector3(internalCenterX, drawerY, -0.02);
-                  const openPos = new THREE.Vector3(internalCenterX, drawerY, 0.30); 
-                  intBox.position.copy(closedPos);
-                  wardrobeGroup.add(intBox);
-                  
-                  const spacerW = (innerW - internalDrawerWidth) / 2;
-                  if (spacerW > 0.005) {
-                      const spacerGeo = new THREE.BoxGeometry(spacerW, boxH, D - 0.05);
-                      const spacerLeft = new THREE.Mesh(spacerGeo, bodyMat);
-                      spacerLeft.position.set(internalCenterX - (innerW/2) + (spacerW/2), drawerY, -0.02);
-                      addOutlines(spacerLeft);
-                      wardrobeGroup.add(spacerLeft);
-                      const spacerRight = new THREE.Mesh(spacerGeo, bodyMat);
-                      spacerRight.position.set(internalCenterX + (innerW/2) - (spacerW/2), drawerY, -0.02);
-                      addOutlines(spacerRight);
-                      wardrobeGroup.add(spacerRight);
+                  const internalDrawerWidth = innerW - 0.10; 
+
+                  for(let j=0; j<2; j++) {
+                      const drawerY = baseGridY + (singleDrawerH / 2) + (j * (singleDrawerH + gap));
+                      
+                      const intBox = createInternalDrawerBox(internalDrawerWidth, singleDrawerH, D - 0.10, bodyMat, bodyMat, addOutlines, hasDivider, true);
+                      
+                      const closedPos = new THREE.Vector3(internalCenterX, drawerY, -0.05);
+                      const openPos = new THREE.Vector3(internalCenterX, drawerY, 0.30); 
+                      intBox.position.copy(closedPos);
+                      wardrobeGroup.add(intBox);
+                      
+                      const fullSpacerGap = (innerW - internalDrawerWidth) / 2;
+                      const spacerW = fullSpacerGap - 0.004; 
+
+                      if (spacerW > 0.005) {
+                          const spacerGeo = new THREE.BoxGeometry(spacerW, singleDrawerH, D - 0.10);
+                          const posRight = internalCenterX + (internalDrawerWidth/2) + (spacerW/2);
+                          const posLeft = internalCenterX - (internalDrawerWidth/2) - (spacerW/2);
+
+                          const spacerLeft = new THREE.Mesh(spacerGeo, bodyMat);
+                          spacerLeft.position.set(posLeft, drawerY, -0.05);
+                          addOutlines(spacerLeft);
+                          wardrobeGroup.add(spacerLeft);
+                          
+                          const spacerRight = new THREE.Mesh(spacerGeo, bodyMat);
+                          spacerRight.position.set(posRight, drawerY, -0.05);
+                          addOutlines(spacerRight);
+                          wardrobeGroup.add(spacerRight);
+                      }
+                      
+                      drawersArray.push({ group: intBox, closed: closedPos, open: openPos, id: divKey });
                   }
-                  
-                  drawersArray.push({ group: intBox, closed: closedPos, open: openPos, id: divKey });
                   return true; 
               }
               return false;
           };
-
           if (config.isCustom) {
               const shelves = config.customData.shelves; 
               for (let i=1; i<=6; i++) {
                   const shelfY = startY + woodThick + (i * gridStep);
                   if (shelfY <= internalTopLimit - 0.05 && shelfY > internalStartY + 0.01) {
-                      if (shelves[i-1]) { createBoard(innerW - 0.01, woodThick, D - 0.05, internalCenterX, shelfY, 0, bodyMat); }
+                      if (shelves[i-1]) { createBoard(innerW - 0.025, woodThick, D - 0.05, internalCenterX, shelfY, 0, bodyMat); }
                   }
                   checkAndCreateInternalDrawer(i);
                   if (config.customData.rods[i-1]) {
@@ -2067,14 +3090,14 @@
               if (config.customData.storage) {
                   const barrierHeight = 0.35;
                   const barrierZ = (D / 2) - 0.06;
-                  createBoard(innerW - 0.01, barrierHeight, woodThick, internalCenterX, internalStartY + (barrierHeight / 2), barrierZ, bodyMat);
+                  createBoard(innerW - 0.025, barrierHeight, woodThick, internalCenterX, internalStartY + (barrierHeight / 2), barrierZ, bodyMat);
               }
           } else {
               const layoutType = config.layout;
               const addGridShelf = (gridIndex) => {
                   const y = startY + woodThick + (gridIndex * gridStep);
                   if (y > internalStartY + 0.01 && y < internalTopLimit)
-                     createBoard(innerW - 0.01, woodThick, D - 0.05, internalCenterX, y, 0, bodyMat);
+                     createBoard(innerW - 0.025, woodThick, D - 0.05, internalCenterX, y, 0, bodyMat);
               };
               for(let s=1; s<=6; s++) checkAndCreateInternalDrawer(s);
               switch (layoutType) {
@@ -2087,13 +3110,13 @@
                       addGridShelf(5); addGridShelf(4); createRod(startY + woodThick + (3.8 * gridStep)); 
                       break;
                   case 'hanging_split': 
-                      addGridShelf(5); addGridShelf(1); createRod(startY + woodThick + (3 * gridStep));
+                      addGridShelf(5); addGridShelf(1); createRod(startY + woodThick + (4.6 * gridStep));
                       break;
                   case 'storage_shelf': 
                       addGridShelf(5); addGridShelf(4); createRod(startY + woodThick + (3.5 * gridStep));
                       const barrierH = gridStep; const barrierZ = (D / 2) - 0.06; const bY = startY + woodThick + (barrierH/2);
-                      if (bY > internalStartY - 0.01 && bY < internalStartY + barrierH) { createBoard(innerW - 0.01, barrierH, woodThick, internalCenterX, bY, barrierZ, bodyMat); } 
-                      else if (bY <= internalStartY) { createBoard(innerW - 0.01, barrierH, woodThick, internalCenterX, internalStartY + barrierH/2, barrierZ, bodyMat); }
+                      if (bY > internalStartY - 0.01 && bY < internalStartY + barrierH) { createBoard(innerW - 0.025, barrierH, woodThick, internalCenterX, bY, barrierZ, bodyMat); } 
+                      else if (bY <= internalStartY) { createBoard(innerW - 0.025, barrierH, woodThick, internalCenterX, internalStartY + barrierH/2, barrierZ, bodyMat); }
                       break;
               }
           }
@@ -2112,39 +3135,79 @@
                   wardrobeGroup.add(shadowPlane);
               }
               
+              // הגדרת פונקציה להוספת ידית חכמה
+              const addSmartHandle = (group, absY, height, id, doorWidth, isLeft) => {
+                  const hType = getHandleType(id);
+                  const isMirror = individualColors[id] === 'mirror';
+                  if (isMirror && hType === 'standard' && !handlesMap[id]) return; 
+
+                  const handleMesh = createHandleMesh(hType, doorWidth, height, isLeft);
+                  if (handleMesh) {
+                      let localY = 0;
+                      // חישוב מיקום Y יחסי לקבוצה של הדלת
+                      localY = absY - group.position.y;
+                      
+                      handleMesh.position.y = localY;
+                      group.add(handleMesh);
+                  }
+              };
+
               for(let d=0; d<mod.doors; d++) {
                   const currentDoorId = globalDoorCounter++; 
                   const doorLeftEdge = currentX + (d * singleDoorW);
                   let pivotX, meshOffsetX, isLeftHinge;
                   
-                  if (mod.doors === 1) { pivotX = doorLeftEdge; meshOffsetX = singleDoorW / 2; isLeftHinge = true; } 
+                  if (mod.doors === 1) {
+                      // --- לוגיקה חדשה לדלת בודדת ---
+                      const hingeKey = `door_hinge_${currentDoorId}`;
+                      const chosenDirection = hingeMap[hingeKey] || 'left'; // ברירת מחדל שמאל
+                      
+                      if (chosenDirection === 'left') {
+                          pivotX = doorLeftEdge;
+                          meshOffsetX = singleDoorW / 2;
+                          isLeftHinge = true;
+                      } else {
+                          // פתיחה לימין
+                          pivotX = doorLeftEdge + singleDoorW;
+                          meshOffsetX = -singleDoorW / 2;
+                          isLeftHinge = false;
+                      }
+                      // ------------------------------
+                  } 
                   else {
+                      // דלתות זוגיות נשארות כרגיל
                       if (d === 0) { pivotX = doorLeftEdge; meshOffsetX = singleDoorW / 2; isLeftHinge = true; } 
                       else { pivotX = doorLeftEdge + singleDoorW; meshOffsetX = -singleDoorW / 2; isLeftHinge = false; }
                   }
 
-                  const addDoorMesh = (h, yPos, group, hasGroove, matToUse) => {
-                      const visualDoor = createDoorVisual(singleDoorW - 0.004, h - 0.004, 0.018, matToUse, doorStyle, hasGroove);
+                  const addDoorMesh = (h, yPos, group, hasGroove, matToUse, isMirror) => {
+                      const visualDoor = createDoorVisual(singleDoorW - 0.004, h - 0.004, 0.018, matToUse, doorStyle, hasGroove, isMirror);
                       visualDoor.position.set(meshOffsetX, 0, 0); group.add(visualDoor); return group;
                   };
-                  const addHandle = (group, absY) => {
-                     const handleX = isLeftHinge ? (singleDoorW - 0.05) : (-singleDoorW + 0.05);
-                     const localY = absY - group.position.y;
-                     const handle = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.16, 0.02), legMat);
-                     handle.position.set(handleX, localY, 0.02); addOutlines(handle); group.add(handle);
-                  };
 
-                  if (splitDoors) {
+                  // --- שינוי מרכזי: בדיקה האם הדלת הספציפית הזו חצויה ---
+                  // כעת אנחנו בודקים גם את המשתנה הגלובלי splitDoors
+                  // וגם את הבחירה הספציפית של המשתמש עבור דלת זו.
+                  // ברירת המחדל היא True (חתוך) אם לא מוגדר אחרת.
+                  const shouldSplitThisDoor = splitDoors && splitDoorsMap[`split_d${currentDoorId}`] !== false;
+
+                  if (shouldSplitThisDoor) {
                       const splitGap = 0.015; 
                       const topDoorH = (cabinetTopY - splitLineY) - (splitGap / 2);
                       const topDoorY = cabinetTopY - (topDoorH / 2);
                       
                       const topGroup = new THREE.Group(); topGroup.position.set(pivotX, topDoorY, D/2 + 0.01);
                       const hasGrooveTop = isGroovesEnabled && groovesMap[`groove_d${currentDoorId}_top`];
-                      const topMat = getPartMaterial(`d${currentDoorId}_top`);
+                      
+                      const topColorKey = `d${currentDoorId}_top`;
+                      const topMat = getPartMaterial(topColorKey);
+                      const isTopMirror = individualColors[topColorKey] === 'mirror';
 
-                      addDoorMesh(topDoorH, topDoorY, topGroup, hasGrooveTop, topMat);
-                      const topHandleAbsY = cabinetTopY - topDoorH + 0.10; addHandle(topGroup, topHandleAbsY);
+                      addDoorMesh(topDoorH, topDoorY, topGroup, hasGrooveTop, topMat, isTopMirror);
+                      
+                      const topHandleAbsY = cabinetTopY - topDoorH + 0.10; 
+                      addSmartHandle(topGroup, topHandleAbsY, topDoorH, topColorKey, singleDoorW, isLeftHinge); 
+                      
                       wardrobeGroup.add(topGroup);
                       doorsArray.push({ group: topGroup, hingeSide: isLeftHinge ? 'left' : 'right', type: 'hinged' });
 
@@ -2153,22 +3216,34 @@
                           const bottomDoorY = doorBottomY + (bottomDoorAvailableSpace / 2);
                           const bottomGroup = new THREE.Group(); bottomGroup.position.set(pivotX, bottomDoorY, D/2 + 0.01);
                           const hasGrooveBot = isGroovesEnabled && groovesMap[`groove_d${currentDoorId}_bot`];
-                          const botMat = getPartMaterial(`d${currentDoorId}_bot`);
-                          addDoorMesh(bottomDoorAvailableSpace, bottomDoorY, bottomGroup, hasGrooveBot, botMat);
+                          const botColorKey = `d${currentDoorId}_bot`;
+                          const botMat = getPartMaterial(botColorKey);
+                          const isBotMirror = individualColors[botColorKey] === 'mirror';
+
+                          addDoorMesh(bottomDoorAvailableSpace, bottomDoorY, bottomGroup, hasGrooveBot, botMat, isBotMirror);
+                          
                           let handleAbsHeight = 1.05; if (doorBottomY > 0.9) handleAbsHeight = doorBottomY + 0.15; 
-                          addHandle(bottomGroup, handleAbsHeight);
+                          addSmartHandle(bottomGroup, handleAbsHeight, bottomDoorAvailableSpace, botColorKey, singleDoorW, isLeftHinge);
+                          
                           wardrobeGroup.add(bottomGroup);
                           doorsArray.push({ group: bottomGroup, hingeSide: isLeftHinge ? 'left' : 'right', type: 'hinged' });
                       }
                   } else {
+                      // דלת מלאה (לא חצויה)
                       const doorH = totalDoorSpace;
                       const doorY = doorBottomY + doorH/2;
                       const doorGroup = new THREE.Group(); doorGroup.position.set(pivotX, doorY, D/2 + 0.01);
                       const hasGrooveFull = isGroovesEnabled && groovesMap[`groove_d${currentDoorId}_full`];
-                      const fullMat = getPartMaterial(`d${currentDoorId}_full`);
-                      addDoorMesh(doorH, doorY, doorGroup, hasGrooveFull, fullMat);
-                      let handleAbsHeight = 1.05; if (doorBottomY > 0.9) handleAbsHeight = doorBottomY + 0.15;
-                      addHandle(doorGroup, handleAbsHeight);
+                      
+                      const fullColorKey = `d${currentDoorId}_full`;
+                      const fullMat = getPartMaterial(fullColorKey);
+                      const isFullMirror = individualColors[fullColorKey] === 'mirror';
+
+                      addDoorMesh(doorH, doorY, doorGroup, hasGrooveFull, fullMat, isFullMirror);
+                      
+                      let fullHandleY = 1.05; if (doorBottomY > 0.9) fullHandleY = doorBottomY + 0.15;
+                      addSmartHandle(doorGroup, fullHandleY, doorH, fullColorKey, singleDoorW, isLeftHinge);
+
                       wardrobeGroup.add(doorGroup);
                       doorsArray.push({ group: doorGroup, hingeSide: isLeftHinge ? 'left' : 'right', type: 'hinged' });
                   }
@@ -2189,27 +3264,54 @@
               const posX = (i * (slidingDoorW - overlap)) - (totalW/2) + (slidingDoorW/2);
               const group = new THREE.Group(); group.position.set(posX, startY + cabinetBodyHeight/2, D/2 + zOffset);
               
-              // --- עדכון: צבעים לדלת הזזה ---
-              const slideMat = getPartMaterial(`sliding_door_${i+1}`);
+              const slideID = `sliding_door_${i+1}`;
+              const slideMat = getPartMaterial(slideID);
               const visual = createDoorVisual(slidingDoorW, slidingH, 0.022, slideMat, doorStyle, false); 
-              // -----------------------------
               
               group.add(visual);
-              const profileGeo = new THREE.BoxGeometry(0.02, slidingH, 0.025);
-              const leftProf = new THREE.Mesh(profileGeo, legMat); leftProf.position.set(-slidingDoorW/2 + 0.01, 0, 0.005); addOutlines(leftProf); group.add(leftProf);
-              const rightProf = new THREE.Mesh(profileGeo, legMat); rightProf.position.set(slidingDoorW/2 - 0.01, 0, 0.005); addOutlines(rightProf); group.add(rightProf);
+              
+              // ידיות הזזה
+              const hType = getHandleType(slideID);
+              if (hType === 'standard') { 
+                   const profileGeo = new THREE.BoxGeometry(0.02, slidingH, 0.025);
+                   const leftProf = new THREE.Mesh(profileGeo, legMat); leftProf.position.set(-slidingDoorW/2 + 0.01, 0, 0.005); addOutlines(leftProf); group.add(leftProf);
+                   const rightProf = new THREE.Mesh(profileGeo, legMat); rightProf.position.set(slidingDoorW/2 - 0.01, 0, 0.005); addOutlines(rightProf); group.add(rightProf);
+              } 
+              else if (hType === 'edge') {
+                  const edgeGeo = new THREE.BoxGeometry(0.03, slidingH, 0.03);
+                  const edgeMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+                  const leftProf = new THREE.Mesh(edgeGeo, edgeMat); leftProf.position.set(-slidingDoorW/2 + 0.015, 0, 0.01); group.add(leftProf);
+                  const rightProf = new THREE.Mesh(edgeGeo, edgeMat); rightProf.position.set(slidingDoorW/2 - 0.015, 0, 0.01); group.add(rightProf);
+              }
+              
               wardrobeGroup.add(group);
               doorsArray.push({ type: 'sliding', group: group, width: slidingDoorW, index: i, total: numDoors, isOuter: isOuter });
           }
       }
 
       if (showDimensions) {
-          addDimensionLine(new THREE.Vector3(-totalW/2, H + (hasCornice?0.2:0.15), 0), new THREE.Vector3(totalW/2, H + (hasCornice?0.2:0.15), 0), new THREE.Vector3(0, 0.1, 0), (totalW*100).toFixed(0));
-          addDimensionLine(new THREE.Vector3(totalW/2 + 0.30, 0, 0), new THREE.Vector3(totalW/2 + 0.30, H, 0), new THREE.Vector3(0.1, 0, 0), (H*100).toFixed(0));
-      }
-    }
+          addDimensionLine(
+              new THREE.Vector3(-totalW/2, H + (hasCornice?0.2:0.15), 0), 
+              new THREE.Vector3(totalW/2, H + (hasCornice?0.2:0.15), 0), 
+              new THREE.Vector3(0, 0.1, 0), 
+              (totalW*100).toFixed(0)
+          );
+          
+          addDimensionLine(
+              new THREE.Vector3(totalW/2 + 0.30, 0, 0), 
+              new THREE.Vector3(totalW/2 + 0.30, H, 0), 
+              new THREE.Vector3(0.1, 0, 0), 
+              (H*100).toFixed(0)
+          );
 
-    function addDimensionLine(start, end, offset, textStr) {
+          addDimensionLine(
+              new THREE.Vector3(-totalW/2 - 0.2, H - 0.35, D/2), 
+              new THREE.Vector3(-totalW/2 - 0.2, H - 0.15, -D/2), 
+              new THREE.Vector3(-0.2, 0, 0), 
+              (D*100).toFixed(0)
+          );
+      }
+    }    function addDimensionLine(start, end, offset, textStr, textScale = 1) {
         const material = new THREE.LineBasicMaterial({ color: 0x555555 });
         const points = []; points.push(start.clone().add(offset)); points.push(end.clone().add(offset));
         const geo = new THREE.BufferGeometry().setFromPoints(points);
@@ -2222,7 +3324,7 @@
         const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
         const sprite = new THREE.Sprite(spriteMat);
         const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5).add(offset);
-        sprite.position.copy(midPoint); sprite.scale.set(0.6, 0.3, 1);
+        sprite.position.copy(midPoint); sprite.scale.set(0.6 * textScale, 0.3 * textScale, 1);
         wardrobeGroup.add(sprite);
     }
 
@@ -2235,7 +3337,6 @@
         }
     }
 
-    // --- יצירת טקסטורות דינמיות ---
     function generateTexture(colorHex, type) {
         const canvas = document.createElement('canvas');
         canvas.width = 512;
@@ -2289,11 +3390,10 @@
         }
         
         if (type === 'front') {
-            // בדיקה אם יש להשתמש בטקסטורה שהועלתה
             if (useCustomTexture && customUploadedTexture) {
                 return new THREE.MeshStandardMaterial({
                     map: customUploadedTexture,
-                    color: 0xffffff, // בסיס לבן כדי לראות את הצבעים המקוריים של התמונה
+                    color: 0xffffff, 
                     roughness: 0.6
                 });
             }
@@ -2322,35 +3422,26 @@
     function animate() {
       requestAnimationFrame(animate);
       
-      // --- תיקון: בדיקה דינמית האם נדרשת השהיה ---
-      // אנו בודקים האם קיימת במערך המגירות לפחות מגירה אחת שהיא פנימית (מכילה 'int' ב-id)
       const hasInternalDrawers = drawersArray.some(d => d.id && d.id.includes('int'));
       
-      // אם יש מגירות פנימיות - נחכה 700ms. אם אין - אין השהיה (0)
       const delayTime = hasInternalDrawers ? 700 : 0; 
       
       const timeElapsed = Date.now() - lastToggleTime;
 
-      // --- חישוב המצב הרצוי לדלתות ולמגירות החיצוניות ---
-      // בפתיחה: נפתחים מיד.
-      // בסגירה: מחכים (נשארים פתוחים) עד שהזמן יעבור, כדי לתת למגירות הפנימיות להיכנס.
       let shouldMainElementsBeOpen = false;
       
       if (isDoorsOpen) {
-          shouldMainElementsBeOpen = true; // פתיחה רגילה
+          shouldMainElementsBeOpen = true; 
       } else {
-          // אנחנו במצב סגירה. האם עבר הזמן?
           if (timeElapsed < delayTime) {
-              shouldMainElementsBeOpen = true; // עדיין "מזייפים" פתיחה בזמן ההמתנה
+              shouldMainElementsBeOpen = true; 
           } else {
-              shouldMainElementsBeOpen = false; // הזמן עבר (או שהוא 0), אפשר לסגור דלתות
+              shouldMainElementsBeOpen = false; 
           }
       }
 
-      // --- 1. אנימציית דלתות ---
       doorsArray.forEach(d => {
           if (d.type === 'hinged') {
-              // משתמשים במשתנה המחושב shouldMainElementsBeOpen
               const targetRot = shouldMainElementsBeOpen ? (d.hingeSide === 'left' ? -Math.PI/2.1 : Math.PI/2.1) : 0;
               d.group.rotation.y += (targetRot - d.group.rotation.y) * 0.1;
           } else if (d.type === 'sliding') {
@@ -2368,34 +3459,26 @@
           }
       });
       
-      // --- 2. אנימציית מגירות ---
       drawersArray.forEach(d => {
           let target = d.closed;
           const isInternal = d.id && d.id.includes('int');
 
           if (isDoorsOpen) {
-              // === תרחיש פתיחה ===
               if (isInternal) {
-                  // מגירה פנימית מחכה בפתיחה
                   if (timeElapsed > delayTime) target = d.open;
                   else target = d.closed;
               } else {
-                  // מגירה חיצונית נפתחת מיד
                   target = d.open;
               }
           } else {
-              // === תרחיש סגירה ===
               if (isInternal) {
-                  // מגירה פנימית נסגרת מיד (כדי לברוח מהדלת שתיכף נסגרת)
                   target = d.closed;
               } else {
-                  // מגירה חיצונית מחכה לדלתות (אם יש השהיה)
                   if (timeElapsed < delayTime) target = d.open; 
                   else target = d.closed;
               }
           }
 
-          // טיפול במגירה בודדת שנפתחה ידנית ע"י מחיצה
           if (specificDrawerOpenId && d.id === specificDrawerOpenId) {
               target = d.open;
           }
@@ -2435,6 +3518,12 @@
     }
 
    function autoZoomCamera() {
+       // אם במצב שידה, שומרים על הזום של השידה
+       if (document.getElementById('chestModeToggle').checked) {
+           adjustCameraForChest();
+           return;
+       }
+       
         const totalW = parseFloat(widthInput.value)/100;
         const H = parseFloat(height.value)/100;
         const topMargin = 0.6;    
@@ -2451,6 +3540,54 @@
         camera.updateProjectionMatrix();
         controls.update();
     }
+    
+    // פונקציית עזר ליצירת תמונה עם כותרת
+    function getCanvasWithTitle() {
+        const originalWidth = renderer.domElement.width;
+        const originalHeight = renderer.domElement.height;
+        
+        // מקום לכותרת
+        const titleHeight = 60;
+        const compositeCanvas = document.createElement('canvas');
+        compositeCanvas.width = originalWidth;
+        compositeCanvas.height = originalHeight + titleHeight;
+        const ctx = compositeCanvas.getContext('2d');
+        
+        // רקע לבן
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height);
+        
+        // כותרת פרויקט
+        const projectName = projectNameInput.value || "פרויקט ללא שם";
+        ctx.fillStyle = "#2c3e50";
+        ctx.font = "bold 40px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(projectName, compositeCanvas.width / 2, 45);
+
+        // ציור הסצנה הנוכחית
+        renderer.render(scene, camera); // וודא שהתמונה מעודכנת
+        ctx.drawImage(renderer.domElement, 0, titleHeight);
+        
+        return compositeCanvas;
+    }
+
+    // פונקציית עזר ליצוא קנבס - שונתה להעתקה בלבד (ללא הורדה)
+    function handleCanvasExport(canvas, filename) {
+        // העתקה ללוח בלבד
+        canvas.toBlob(blob => {
+            try {
+                const item = new ClipboardItem({ 'image/png': blob });
+                navigator.clipboard.write([item]).then(() => {
+                    alert('✅ התמונה הועתקה ללוח בהצלחה!');
+                }).catch(err => {
+                    console.error('Error copying:', err);
+                    alert('הייתה שגיאה בהעתקה ללוח.');
+                });
+            } catch (e) {
+                 alert('הדפדפן שלך לא תומך בהעתקה ישירה ללוח.');
+            }
+        });
+    }
 
     function exportDualImage() {
         const originalOpenState = isDoorsOpen;
@@ -2461,37 +3598,460 @@
         
         autoZoomCamera();
 
+        const gap = 20;
+        const titleHeight = 60; // מקום לכותרת
         const compositeCanvas = document.createElement('canvas');
-        compositeCanvas.width = originalWidth * 2;
-        compositeCanvas.height = originalHeight;
+        compositeCanvas.width = originalWidth;
+        // גובה כפול + מרווח + כותרת
+        compositeCanvas.height = (originalHeight * 2) + gap + titleHeight;
         const ctx = compositeCanvas.getContext('2d');
         
+        // רקע לבן
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height);
+        
+        // כותרת פרויקט
+        const projectName = projectNameInput.value || "פרויקט ללא שם";
+        ctx.fillStyle = "#2c3e50";
+        ctx.font = "bold 40px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(projectName, compositeCanvas.width / 2, 45);
+
+        // 1. ציור סגור (למעלה)
         forceUpdateDoors(false);
         renderer.render(scene, camera);
-        ctx.drawImage(renderer.domElement, 0, 0);
+        ctx.drawImage(renderer.domElement, 0, titleHeight);
         
+        // טקסט "מצב סגור"
         ctx.font = "bold 30px Arial";
         ctx.fillStyle = "#333";
-        ctx.fillText("מצב סגור", 20, 40);
+        ctx.textAlign = "left";
+        ctx.fillText("מצב סגור", 20, titleHeight + 40);
 
+        // 2. ציור פתוח (למטה)
         forceUpdateDoors(true);
         renderer.render(scene, camera);
-        ctx.drawImage(renderer.domElement, originalWidth, 0);
+        ctx.drawImage(renderer.domElement, 0, titleHeight + originalHeight + gap);
 
+        // טקסט "מצב פתוח"
         ctx.fillStyle = "#333";
-        ctx.fillText("מצב פתוח (חלוקה פנימית)", originalWidth + 20, 40);
+        ctx.fillText("מצב פתוח (חלוקה פנימית)", 20, titleHeight + originalHeight + gap + 40);
 
-       isDoorsOpen = originalOpenState; 
+        // שחזור מצב
+        isDoorsOpen = originalOpenState; 
         camera.position.copy(originalCamPos);
         controls.target.copy(originalTarget);
         camera.updateProjectionMatrix();
         controls.update();
 
+        handleCanvasExport(compositeCanvas, 'wardrobe-design-open-closed.png');
+    }
+
+    function exportRenderAndSketch() {
+        const originalOpenState = isDoorsOpen;
+        const originalSketchMode = isSketchMode;
+        const originalCamPos = camera.position.clone();
+        const originalTarget = controls.target.clone();
+        const originalWidth = renderer.domElement.width;
+        const originalHeight = renderer.domElement.height;
+
+        autoZoomCamera();
+        
+        // וודא שהדלתות סגורות
+        forceUpdateDoors(false);
+
+        const gap = 20;
+        const titleHeight = 60;
+        const compositeCanvas = document.createElement('canvas');
+        compositeCanvas.width = originalWidth;
+        compositeCanvas.height = (originalHeight * 2) + gap + titleHeight;
+        const ctx = compositeCanvas.getContext('2d');
+        
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height);
+        
+        // כותרת פרויקט
+        const projectName = projectNameInput.value || "פרויקט ללא שם";
+        ctx.fillStyle = "#2c3e50";
+        ctx.font = "bold 40px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(projectName, compositeCanvas.width / 2, 45);
+
+        // 1. תמונה רגילה (למעלה)
+        isSketchMode = false;
+        updateSceneMode();
+        setupLights(); // עדכון תאורה למצב רגיל
+        renderer.render(scene, camera);
+        ctx.drawImage(renderer.domElement, 0, titleHeight);
+        
+        ctx.font = "bold 30px Arial";
+        ctx.fillStyle = "#333";
+        ctx.textAlign = "left";
+        ctx.fillText("הדמיה", 20, titleHeight + 40);
+
+        // 2. תמונת סקיצה (למטה)
+        isSketchMode = true;
+        updateSceneMode();
+        setupLights(); // עדכון תאורה למצב סקיצה
+        // בנייה מחדש כדי לוודא שחומרים מתעדכנים
+        buildWardrobe(); 
+        forceUpdateDoors(false); // לוודא שוב סגור אחרי בנייה
+        
+        renderer.render(scene, camera);
+        ctx.drawImage(renderer.domElement, 0, titleHeight + originalHeight + gap);
+
+        ctx.fillStyle = "#333";
+        ctx.fillText("תוכנית (שחור/לבן)", 20, titleHeight + originalHeight + gap + 40);
+
+        // שחזור מצב מלא
+        isDoorsOpen = originalOpenState;
+        isSketchMode = originalSketchMode;
+        updateSceneMode();
+        setupLights();
+        buildWardrobe(); // בנייה מחדש למצב מקורי
+        forceUpdateDoors(isDoorsOpen); // החזרת דלתות למצב מקורי
+
+        camera.position.copy(originalCamPos);
+        controls.target.copy(originalTarget);
+        camera.updateProjectionMatrix();
+        controls.update();
+
+        handleCanvasExport(compositeCanvas, 'wardrobe-render-sketch.png');
+    }
+
+    function takeSnapshot() {
+        const canvas = getCanvasWithTitle();
         const link = document.createElement('a');
-        link.download = 'wardrobe-design-dual-zoom.png';
-        link.href = compositeCanvas.toDataURL('image/png');
+        
+        // קבלת שם הפרויקט והסרת רווחים מיותרים
+        const pName = projectNameInput.value.trim();
+        const filename = pName ? pName + ".png" : 'wardrobe-snapshot.png';
+        
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
         link.click();
     }
+
+    function copyToClipboard() {
+        const canvas = getCanvasWithTitle();
+        canvas.toBlob(blob => {
+            try {
+                const item = new ClipboardItem({ 'image/png': blob });
+                navigator.clipboard.write([item]).then(() => {
+                    alert('✅ התמונה הועתקה ללוח!');
+                }).catch(err => {
+                    console.error('Error copying:', err);
+                    alert('שגיאה בהעתקה.');
+                });
+            } catch (e) {
+                 alert('הדפדפן שלך לא תומך בהעתקת תמונות ישירה.');
+            }
+        });
+    }
+
+    // ==========================================================
+    // --- לוגיקת שמירה וטעינת פרויקט ---
+    // ==========================================================
+    
+    function saveProject() {
+        const pName = projectNameInput.value;
+        const projectData = {
+            version: "1.1",
+            projectName: pName,
+            timestamp: Date.now(),
+            settings: {
+                doors: document.getElementById('doors').value,
+                width: document.getElementById('width').value,
+                height: document.getElementById('height').value,
+                depth: document.getElementById('depth').value,
+                baseType: document.getElementById('baseType').value,
+                doorStyle: document.getElementById('doorStyle').value,
+                color: document.getElementById('color').value,
+                wardrobeType: wardrobeType,
+                isManualWidth: isManualWidth,
+                singleDoorPos: document.getElementById('singleDoorPos').value
+            },
+            toggles: {
+                sketchMode: document.getElementById('sketchModeToggle').checked,
+                addCornice: document.getElementById('addCornice').checked,
+                splitDoors: document.getElementById('splitDoorsToggle').checked,
+                grooves: document.getElementById('groovesToggle').checked,
+                drawerDivider: document.getElementById('drawerDividerToggle').checked,
+                internalDrawers: document.getElementById('internalDrawersToggle').checked,
+                multiColor: document.getElementById('multiColorToggle').checked,
+                handleControl: document.getElementById('handleControlToggle').checked,
+                chestMode: document.getElementById('chestModeToggle').checked
+            },
+            chestSettings: {
+                drawersCount: document.getElementById('chestDrawersCount').value,
+                bodyColor: document.getElementById('chestBodyColorSelect').value
+            },
+            modulesConfiguration: modulesConfiguration,
+            groovesMap: groovesMap,
+            splitDoorsMap: splitDoorsMap,
+            drawerDividersMap: drawerDividersMap,
+            individualColors: individualColors,
+            savedColors: savedColors,
+            handlesMap: handlesMap,
+            hingeMap: hingeMap
+        };
+        
+        const jsonStr = JSON.stringify(projectData, null, 2);
+        
+        // שימוש בשם הפרויקט לברירת מחדל
+        let defaultName = pName ? pName : "wardrobe_project_" + new Date().toISOString().slice(0,10);
+        
+        let fileName = prompt("בחר שם לקובץ השמירה:", defaultName);
+        if (!fileName) return; 
+
+        if (!fileName.endsWith(".json")) {
+            fileName += ".json";
+        }
+        
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        hasUnsavedChanges = false;
+        updateSaveButtonState();
+    }
+    
+    function handleFileLoad(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                loadProjectData(data);
+            } catch (err) {
+                console.error(err);
+                alert("שגיאה בטעינת הקובץ. וודא שזהו קובץ פרויקט תקין.");
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+    
+    function loadProjectData(data) {
+        if (!data || !data.settings) {
+            alert("קובץ לא תקין");
+            return;
+        }
+        
+        // טעינת שם הפרויקט (רק אם זה טעינת קובץ פרויקט, ולא מודל)
+        if(data.projectName !== undefined) {
+             projectNameInput.value = data.projectName;
+        }
+
+        wardrobeType = data.settings.wardrobeType;
+        isManualWidth = data.settings.isManualWidth;
+        
+        groovesMap = data.groovesMap || {};
+        splitDoorsMap = data.splitDoorsMap || {};
+        drawerDividersMap = data.drawerDividersMap || {};
+        individualColors = data.individualColors || {};
+        savedColors = data.savedColors || [];
+        isMultiColorMode = data.toggles.multiColor;
+        handlesMap = data.handlesMap || {}; 
+        hingeMap = data.hingeMap || {};
+
+        document.getElementById('doors').value = data.settings.doors;
+        document.getElementById('width').value = data.settings.width;
+        document.getElementById('height').value = data.settings.height;
+        document.getElementById('depth').value = data.settings.depth;
+        document.getElementById('baseType').value = data.settings.baseType;
+        document.getElementById('doorStyle').value = data.settings.doorStyle;
+        const sglDoorPos = document.getElementById('singleDoorPos');
+        if(sglDoorPos) sglDoorPos.value = data.settings.singleDoorPos || 'left';
+        
+        document.getElementById('sketchModeToggle').checked = data.toggles.sketchMode;
+        document.getElementById('addCornice').checked = data.toggles.addCornice;
+        document.getElementById('splitDoorsToggle').checked = data.toggles.splitDoors;
+        document.getElementById('groovesToggle').checked = data.toggles.grooves;
+        document.getElementById('drawerDividerToggle').checked = data.toggles.drawerDivider;
+        document.getElementById('internalDrawersToggle').checked = data.toggles.internalDrawers;
+        document.getElementById('multiColorToggle').checked = data.toggles.multiColor;
+        document.getElementById('chestModeToggle').checked = !!data.toggles.chestMode;
+        
+        // טעינת הגדרות שידה אם קיימות
+        if(data.chestSettings) {
+            document.getElementById('chestDrawersCount').value = data.chestSettings.drawersCount;
+            // הצבע ייטען לאחר איכלוס התיבה
+            setTimeout(() => {
+               if(document.getElementById('chestBodyColorSelect')) 
+                  document.getElementById('chestBodyColorSelect').value = data.chestSettings.bodyColor; 
+            }, 100);
+        }
+        
+        if (document.getElementById('handleControlToggle')) {
+            document.getElementById('handleControlToggle').checked = !!data.toggles.handleControl;
+        }
+
+        isSketchMode = data.toggles.sketchMode;
+        updateSceneMode();
+        
+        if (data.toggles.internalDrawers) internalDrawersWrapper.classList.remove('collapsed');
+        else internalDrawersWrapper.classList.add('collapsed');
+        
+        if (data.toggles.multiColor) multiColorControls.classList.remove('hidden');
+        else multiColorControls.classList.add('hidden');
+        
+        if (data.toggles.grooves) grooveSelectionContainer.classList.remove('hidden');
+        else grooveSelectionContainer.classList.add('hidden');
+
+        if (data.toggles.splitDoors) {
+            document.getElementById('splitDoorSelectionContainer').classList.remove('hidden');
+            renderSplitDoorSelectionUI();
+        } else {
+            document.getElementById('splitDoorSelectionContainer').classList.add('hidden');
+        }
+        
+        if (data.toggles.drawerDivider) drawerDividerSelectionContainer.classList.remove('hidden');
+        else drawerDividerSelectionContainer.classList.add('hidden');
+        
+        if (data.toggles.handleControl) handleControlsWrapper.classList.remove('hidden');
+        else handleControlsWrapper.classList.add('hidden');
+        
+        // טיפול במצב שידה
+        if (data.toggles.chestMode) {
+             chestControls.classList.remove('hidden');
+             // דריסה ידנית כדי שהמצלמה תעבוד
+             chestModeToggle.dispatchEvent(new Event('change'));
+        } else {
+             chestControls.classList.add('hidden');
+        }
+
+        const options = document.querySelectorAll('.type-option');
+        options.forEach(opt => opt.classList.remove('selected'));
+        if (wardrobeType === 'hinged') {
+            document.getElementById('type_hinged').classList.add('selected');
+            hingedUpgradesWrapper.classList.remove('hidden');
+            if (parseInt(data.settings.doors) % 2 !== 0) singleDoorControl.classList.remove('hidden');
+        } else {
+            document.getElementById('type_sliding').classList.add('selected');
+            hingedUpgradesWrapper.classList.add('hidden');
+            singleDoorControl.classList.add('hidden');
+        }
+
+        if (isManualWidth) {
+            widthInput.classList.add('manual-override');
+            widthHint.innerText = "מידה מיוחדת";
+        } else {
+            widthInput.classList.remove('manual-override');
+            widthHint.innerText = "אוטומטי";
+        }
+
+        populateColorSelect();
+        const colorExists = Array.from(colorSelect.options).some(o => o.value === data.settings.color);
+        if (colorExists) {
+            colorSelect.value = data.settings.color;
+        } else {
+            colorSelect.value = "#ffffff";
+        }
+        
+        // עדכון הרשימה לפני הבנייה כדי שהלוגיקה תדע מה לעשות
+        updateStructureOptions();
+
+        refreshModulesAndBuild(true); 
+
+        if (data.modulesConfiguration) {
+            data.modulesConfiguration.forEach((savedMod, idx) => {
+                if (modulesConfiguration[idx]) {
+                    Object.assign(modulesConfiguration[idx], savedMod);
+                }
+
+                const selectLayout = document.getElementById(`layout_mod_${idx}`);
+                const selectExt = document.getElementById(`ext_drawers_mod_${idx}`);
+                const selectInt = document.getElementById(`int_drawers_mod_${idx}`);
+                const checkCustom = document.getElementById(`custom_toggle_${idx}`);
+
+                if (selectLayout) selectLayout.value = savedMod.layout;
+                if (selectExt) selectExt.value = savedMod.extDrawers;
+                if (selectInt) selectInt.value = savedMod.intDrawersSlot;
+                
+                if (checkCustom) {
+                    checkCustom.checked = savedMod.isCustom;
+                    
+                    if (savedMod.isCustom && selectLayout) {
+                         selectLayout.classList.add('hidden');
+                         const customPanel = selectLayout.parentElement.querySelector('.custom-panel');
+                         if(customPanel) customPanel.classList.remove('hidden');
+                         
+                         if(customPanel && savedMod.customData) {
+                             const allChecks = customPanel.querySelectorAll('input[type="checkbox"]');
+                             let shelfCounter = 0;
+                             let rodCounter = 0;
+                             
+                             allChecks.forEach(chk => {
+                                 const lbl = chk.parentElement;
+                                 if (lbl.classList.contains('rod-btn')) {
+                                     if (savedMod.customData.rods[rodCounter] !== undefined) {
+                                         chk.checked = savedMod.customData.rods[rodCounter];
+                                         if(chk.checked) lbl.classList.add('checked'); else lbl.classList.remove('checked');
+                                     }
+                                     rodCounter++;
+                                 } else if (lbl.innerText.includes('אוגר')) {
+                                      chk.checked = savedMod.customData.storage;
+                                      if(chk.checked) lbl.classList.add('checked'); else lbl.classList.remove('checked');
+                                 } else {
+                                     // כנראה מדף רגיל
+                                     if (savedMod.customData.shelves[shelfCounter] !== undefined) {
+                                         chk.checked = savedMod.customData.shelves[shelfCounter];
+                                         if(chk.checked) lbl.classList.add('checked'); else lbl.classList.remove('checked');
+                                     }
+                                     shelfCounter++;
+                                 }
+                             });
+                         }
+                    } else if (selectLayout) {
+                         selectLayout.classList.remove('hidden');
+                         const customPanel = selectLayout.parentElement.querySelector('.custom-panel');
+                         if(customPanel) customPanel.classList.add('hidden');
+                    }
+                }
+            });
+        }
+        
+        // עדכון אלמנטים נלווים
+        renderGrooveSelectionUI();
+        renderDrawerDividerUI();
+        if(isMultiColorMode) renderMultiColorUI();
+        if (data.toggles.handleControl) renderHandleUI();
+        
+        buildWardrobe();
+        
+         // עדכון מצלמה סופי (למקרה של שידה)
+        if(data.toggles.chestMode) adjustCameraForChest();
+        
+        hasUnsavedChanges = false;
+        updateSaveButtonState();
+        
+        if(!data.id) { 
+           // alert רק אם זו טעינת פרויקט חיצוני ולא דגם פנימי
+           alert("הפרויקט נטען בהצלחה!");
+        }
+    }
+
+    function updateSaveButtonState() {
+        const btn = document.getElementById('saveProjectBtn');
+        if (hasUnsavedChanges) {
+            btn.innerText = "💾 שמור פרויקט (יש שינויים)*";
+            btn.style.background = "#e67e22"; // צבע כתום להתראה
+        } else {
+            btn.innerText = "💾 שמור פרויקט";
+            btn.style.background = ""; // חוזר לצבע המקורי
+        }
+    }
+
   </script>
 </body>
 </html>
