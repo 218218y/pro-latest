@@ -1,3 +1,4 @@
+import { INTERIOR_FITTINGS_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type {
   CornerCell,
   CornerCellCfg,
@@ -10,7 +11,7 @@ type StorageBarrierParams = {
   THREE: ThreeCornerCellLike;
   wingGroup: GroupLike;
   bodyMat: unknown;
-  getCornerMat: (partId: string, fallback: unknown) => unknown;
+  getCornerMat: (partId: string, defaultMaterial: unknown) => unknown;
   cell: CornerCell;
   cellW: number;
   cellCenterX: number;
@@ -34,7 +35,7 @@ type CornerWingCellLayoutParams = {
   bodyMat: unknown;
   wingGroup: GroupLike;
   THREE: ThreeCornerCellLike;
-  getCornerMat: (partId: string, fallback: unknown) => unknown;
+  getCornerMat: (partId: string, defaultMaterial: unknown) => unknown;
   addGridShelf: (gridIndex: number) => void;
   createRod: (yPos: number, limitHeight?: number | null) => void;
   checkAndCreateInternalDrawer: (slotIndex: number, slotMeta?: SlotMetaLike) => boolean;
@@ -55,14 +56,25 @@ function addCornerStorageBarrier(params: StorageBarrierParams): void {
     woodThick,
     __z,
   } = params;
-  const barrierHeight = 0.5;
+  const barrierHeight = INTERIOR_FITTINGS_DIMENSIONS.storage.barrierHeightM;
   const partId = `corner_storage_barrier_c${cell.idx}`;
   const barrierMat = getCornerMat(partId, bodyMat);
   const barrier = new THREE.Mesh(
-    new THREE.BoxGeometry(Math.max(0.05, cellW - 0.025), barrierHeight, woodThick),
+    new THREE.BoxGeometry(
+      Math.max(
+        INTERIOR_FITTINGS_DIMENSIONS.storage.barrierWidthMinM,
+        cellW - INTERIOR_FITTINGS_DIMENSIONS.storage.barrierWidthClearanceM
+      ),
+      barrierHeight,
+      woodThick
+    ),
     barrierMat
   );
-  barrier.position.set(cellCenterX, effectiveBottomY + barrierHeight / 2, __z(-0.06));
+  barrier.position.set(
+    cellCenterX,
+    effectiveBottomY + barrierHeight / 2,
+    __z(INTERIOR_FITTINGS_DIMENSIONS.storage.barrierFrontZOffsetM)
+  );
   barrier.userData = { partId, moduleIndex: cellKey };
   wingGroup.add(barrier);
 }
@@ -99,7 +111,7 @@ function applyCornerWingCustomLayout(params: CornerWingCellLayoutParams): void {
     }
 
     if (cfgCell.customData.rods[i - 1]) {
-      const rodY = effectiveBottomY + i * localGridStep - 0.08;
+      const rodY = effectiveBottomY + i * localGridStep + INTERIOR_FITTINGS_DIMENSIONS.rods.defaultYOffsetM;
       let limitHeight = null;
 
       for (let k = i - 1; k >= 1; k--) {
@@ -113,14 +125,14 @@ function applyCornerWingCustomLayout(params: CornerWingCellLayoutParams): void {
           break;
         }
         if (cfgCell.customData.rods[k - 1]) {
-          const rodBelowY = gridLineY - 0.08;
+          const rodBelowY = gridLineY + INTERIOR_FITTINGS_DIMENSIONS.rods.defaultYOffsetM;
           limitHeight = rodY - rodBelowY;
           break;
         }
       }
 
       if (limitHeight === null && cfgCell.customData.storage) {
-        const storageHeight = 0.5;
+        const storageHeight = INTERIOR_FITTINGS_DIMENSIONS.storage.barrierHeightM;
         const storageTopY = effectiveBottomY + storageHeight;
         if (rodY > storageTopY) limitHeight = rodY - storageTopY;
       }
@@ -167,26 +179,24 @@ function applyCornerWingPresetLayout(params: CornerWingCellLayoutParams): void {
     checkAndCreateInternalDrawer,
   } = params;
   const layoutType = cfgCell.layout;
+  const presetDims = INTERIOR_FITTINGS_DIMENSIONS.presets;
   const __presetShelfSet: Record<number, true> = Object.create(null);
+  const addPresetShelfRows = (rows: readonly number[]) => {
+    for (const row of rows) __presetShelfSet[row] = true;
+  };
   switch (layoutType) {
     case 'shelves':
     case 'mixed':
-      __presetShelfSet[1] = true;
-      __presetShelfSet[2] = true;
-      __presetShelfSet[3] = true;
-      __presetShelfSet[4] = true;
-      __presetShelfSet[5] = true;
+      addPresetShelfRows(presetDims.fullShelfRows);
       break;
     case 'hanging':
     case 'hanging_top2':
     case 'storage':
     case 'storage_shelf':
-      __presetShelfSet[4] = true;
-      __presetShelfSet[5] = true;
+      addPresetShelfRows(presetDims.hangingShelfRows);
       break;
     case 'hanging_split':
-      __presetShelfSet[1] = true;
-      __presetShelfSet[5] = true;
+      addPresetShelfRows(presetDims.splitShelfRows);
       break;
   }
 
@@ -208,29 +218,32 @@ function applyCornerWingPresetLayout(params: CornerWingCellLayoutParams): void {
 
   switch (layoutType) {
     case 'shelves':
-      for (let s = 1; s <= 5; s++) addGridShelf(s);
+      for (const row of presetDims.fullShelfRows) addGridShelf(row);
       break;
     case 'mixed':
-      for (let s = 1; s <= 5; s++) addGridShelf(s);
-      createRod(effectiveBottomY + 3.5 * localGridStep);
+      for (const row of presetDims.fullShelfRows) addGridShelf(row);
+      createRod(effectiveBottomY + presetDims.mixedRodYFactor * localGridStep);
       break;
     case 'hanging':
     case 'hanging_top2':
-      addGridShelf(5);
-      addGridShelf(4);
-      createRod(effectiveBottomY + 3.8 * localGridStep);
+      for (const row of presetDims.hangingShelfRows) addGridShelf(row);
+      createRod(effectiveBottomY + presetDims.hangingRodYFactor * localGridStep);
       break;
     case 'hanging_split':
-      addGridShelf(5);
-      addGridShelf(1);
-      createRod(effectiveBottomY + 4.6 * localGridStep, 2.3 * localGridStep);
-      createRod(effectiveBottomY + 2.3 * localGridStep);
+      for (const row of presetDims.splitShelfRows) addGridShelf(row);
+      createRod(
+        effectiveBottomY + presetDims.splitUpperRodYFactor * localGridStep,
+        presetDims.splitUpperRodLimitFactor * localGridStep
+      );
+      createRod(effectiveBottomY + presetDims.splitLowerRodYFactor * localGridStep);
       break;
     case 'storage':
     case 'storage_shelf':
-      addGridShelf(5);
-      addGridShelf(4);
-      createRod(effectiveBottomY + 3.5 * localGridStep, 3.5 * localGridStep - localGridStep);
+      for (const row of presetDims.hangingShelfRows) addGridShelf(row);
+      createRod(
+        effectiveBottomY + presetDims.storageRodYFactor * localGridStep,
+        presetDims.storageRodLimitFactor * localGridStep - localGridStep
+      );
       addCornerStorageBarrier({
         THREE: params.THREE,
         wingGroup: params.wingGroup,

@@ -112,9 +112,9 @@ function _asObject(x: unknown): UnknownRecord | null {
 }
 function __wp_resolveFn<TArgs extends unknown[], TResult>(
   primary: unknown,
-  fallback: unknown
+  secondary: unknown
 ): ((...args: TArgs) => TResult) | null {
-  const fn = typeof primary === 'function' ? primary : typeof fallback === 'function' ? fallback : null;
+  const fn = typeof primary === 'function' ? primary : typeof secondary === 'function' ? secondary : null;
   if (!fn) return null;
   return (...args: TArgs): TResult => Reflect.apply(fn, null, args);
 }
@@ -149,8 +149,7 @@ function __ensureBuilderContentsSlot(builder: UnknownRecord): BuilderContentsSur
   return next;
 }
 
-// NOTE: module-structure calculator is now a direct import (pure ESM).
-// In pure-ESM builds we do not provide legacy window.* globals.
+// NOTE: module-structure calculator is a direct import; pure ESM builds do not provide window.* globals.
 
 export {
   __asBufferAttribute,

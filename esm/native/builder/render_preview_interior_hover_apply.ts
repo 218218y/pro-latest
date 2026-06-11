@@ -1,3 +1,8 @@
+import {
+  INTERIOR_FITTINGS_DIMENSIONS,
+  MATERIAL_DIMENSIONS,
+  SKETCH_BOX_DIMENSIONS,
+} from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type {
   PreviewGroupLike,
   PreviewMaterialLike,
@@ -80,9 +85,13 @@ export function setInteriorLayoutHoverPreview(
   const internalZ = Number(input.internalZ);
   const internalDepth = Number(input.internalDepth);
   const innerW = Number(input.innerW);
-  const woodThick = Number(input.woodThick || 0.018);
+  const woodThick = Number(input.woodThick || MATERIAL_DIMENSIONS.wood.thicknessM);
   const backZ = internalZ - internalDepth / 2;
-  const regularDepth = internalDepth > 0 ? Math.min(internalDepth, 0.45) : 0.45;
+  const shelvesDims = INTERIOR_FITTINGS_DIMENSIONS.shelves;
+  const storageDims = INTERIOR_FITTINGS_DIMENSIONS.storage;
+  const previewDims = SKETCH_BOX_DIMENSIONS.preview;
+  const regularDepth =
+    internalDepth > 0 ? Math.min(internalDepth, shelvesDims.regularDepthM) : shelvesDims.regularDepthM;
   const shelfVariant = typeof input.shelfVariant === 'string' ? String(input.shelfVariant) : '';
   const isRemove = input.op === 'remove' || input.isRemove === true;
 
@@ -154,10 +163,14 @@ export function setInteriorLayoutHoverPreview(
 
   const shelfDepth = shelfVariant === 'brace' ? internalDepth : regularDepth;
   const shelfZ = backZ + shelfDepth / 2;
-  const shelfW = Math.max(0.05, innerW - (shelfVariant === 'brace' ? 0.002 : 0.014));
+  const shelfW = Math.max(
+    previewDims.shelfHoverMinWidthM,
+    innerW -
+      (shelfVariant === 'brace' ? previewDims.shelfBraceClearanceM : previewDims.shelfRegularClearanceM)
+  );
   const shelfH =
     shelfVariant === 'glass'
-      ? 0.018
+      ? MATERIAL_DIMENSIONS.glassShelf.thicknessM
       : shelfVariant === 'double'
         ? Math.max(woodThick, woodThick * 2)
         : woodThick;
@@ -173,7 +186,7 @@ export function setInteriorLayoutHoverPreview(
     applyStyle(mesh, shelfMat, shelfLine);
     if (mesh.position && typeof mesh.position.set === 'function') mesh.position.set(x, y0, shelfZ);
     if (mesh.scale && typeof mesh.scale.set === 'function') {
-      mesh.scale.set(shelfW, Math.max(0.0001, shelfH), shelfDepth);
+      mesh.scale.set(shelfW, Math.max(previewDims.minScaleM, shelfH), shelfDepth);
     }
   }
 
@@ -188,7 +201,11 @@ export function setInteriorLayoutHoverPreview(
     applyStyle(mesh, rodMat, rodLine);
     if (mesh.position && typeof mesh.position.set === 'function') mesh.position.set(x, y0, internalZ);
     if (mesh.scale && typeof mesh.scale.set === 'function') {
-      mesh.scale.set(Math.max(0.05, innerW - 0.06), 0.03, 0.03);
+      mesh.scale.set(
+        Math.max(previewDims.rodMinLengthM, innerW - previewDims.rodWidthClearanceM),
+        previewDims.rodPreviewHeightM,
+        previewDims.rodPreviewDepthM
+      );
     }
   }
 
@@ -201,7 +218,11 @@ export function setInteriorLayoutHoverPreview(
       applyStyle(storage, storageMat, storageLine);
       if (storage.position && typeof storage.position.set === 'function') storage.position.set(x, y0, z0);
       if (storage.scale && typeof storage.scale.set === 'function') {
-        storage.scale.set(Math.max(0.05, innerW - 0.025), Math.max(0.0001, h0), Math.max(0.0001, woodThick));
+        storage.scale.set(
+          Math.max(storageDims.barrierWidthMinM, innerW - storageDims.barrierWidthClearanceM),
+          Math.max(previewDims.minScaleM, h0),
+          Math.max(storageDims.previewThicknessMinM, woodThick)
+        );
       }
     }
   }

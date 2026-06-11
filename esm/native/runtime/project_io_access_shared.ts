@@ -6,6 +6,7 @@ import type {
 } from '../../../types';
 
 import { asRecord, createNullRecord } from './record.js';
+import { reportError } from './errors.js';
 import { ensureServiceSlot, getServiceSlotMaybe } from './services_root_access.js';
 import {
   normalizeProjectLoadActionResult,
@@ -17,6 +18,14 @@ import type { ProjectRestoreActionResult } from './project_recovery_action_resul
 type ProjectIoLoadFailureLike = ProjectLoadFailureReason | string;
 
 export type { ProjectIoLoadFailureLike };
+
+export function reportProjectIoAccessNonFatal(App: unknown, op: string, error: unknown): void {
+  reportError(App, error, {
+    where: 'native/runtime/project_io_access',
+    op,
+    fatal: false,
+  });
+}
 
 export function getProjectIoServiceMaybe(App: unknown): ProjectIoServiceLike | null {
   try {

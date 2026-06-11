@@ -1,4 +1,5 @@
 import { reportError, shouldFailFast } from '../runtime/api.js';
+import { DRAWER_DIMENSIONS, HANDLE_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { AppendHingedDoorOpsParams, HingedDoorPipelineCfg } from './hinged_doors_shared.js';
 import { readFiniteNumber, readRecord, readTextMap, readUnknownArray } from './hinged_doors_shared.js';
 import type { HingedDoorModuleOpsContext, HingedDoorPivotSpec } from './hinged_doors_module_ops_contracts.js';
@@ -68,7 +69,9 @@ export function createHingedDoorModuleOpsContext(
   const opsList = resolveHingedDoorOpsList(params && params.opsList);
   const hingedDoorPivotMap = readHingedDoorPivotMap(params && params.hingedDoorPivotMap);
   const globalHandleAbsY =
-    params && typeof params.globalHandleAbsY === 'number' ? params.globalHandleAbsY : 1.05;
+    params && typeof params.globalHandleAbsY === 'number'
+      ? params.globalHandleAbsY
+      : HANDLE_DIMENSIONS.edge.defaultGlobalAbsYM;
   const configRecord = readRecord((params && params.config) || {}) || {};
   const moduleCfgList = readUnknownArray(params && params.moduleCfgList);
   const isGroovesEnabled = !!(params && params.isGroovesEnabled);
@@ -127,12 +130,15 @@ export function createHingedDoorModuleOpsContext(
     const resolved = typeof getPartColorValue === 'function' ? getPartColorValue(partId) : null;
     return resolved == null ? null : String(resolved);
   };
-  const grooveValSafe = (doorId: number, suffix: string, fallback: boolean): boolean =>
-    typeof grooveVal === 'function' ? !!grooveVal(doorId, suffix, fallback) : fallback;
+  const grooveValSafe = (doorId: number, suffix: string, defaultValue: boolean): boolean =>
+    typeof grooveVal === 'function' ? !!grooveVal(doorId, suffix, defaultValue) : defaultValue;
   const isDoorRemovedSafe = (partId: string): boolean =>
     typeof isDoorRemoved === 'function' ? !!isDoorRemoved(partId) : false;
 
-  const resolveCurtainForPart = (partId: string, fallback: string | null | undefined): string | null => {
+  const resolveCurtainForPart = (
+    partId: string,
+    defaultCurtain: string | null | undefined
+  ): string | null => {
     try {
       const cm = readTextMap(cfg && cfg.curtainMap);
       if (cm && partId) {
@@ -151,16 +157,16 @@ export function createHingedDoorModuleOpsContext(
         if (m && m[1] && m[2]) {
           const n = parseInt(m[1], 10);
           const suf = String(m[2]);
-          const v = curtainVal(n, suf, fallback);
+          const v = curtainVal(n, suf, defaultCurtain);
           if (v != null) return String(v);
         }
-        const v2 = curtainVal(partId, fallback);
+        const v2 = curtainVal(partId, defaultCurtain);
         if (v2 != null) return String(v2);
       }
     } catch (e) {
       reportDoorSoftOnce('resolveCurtainForPart.injectedResolver', e, { partId });
     }
-    return fallback == null ? null : String(fallback);
+    return defaultCurtain == null ? null : String(defaultCurtain);
   };
 
   const resolveSpecialForPart = (
@@ -188,7 +194,7 @@ export function createHingedDoorModuleOpsContext(
 
   if (cfg.wardrobeType !== 'hinged') return null;
 
-  const gapAboveDrawer = drawerHeightTotal > 0 ? 0.002 : 0;
+  const gapAboveDrawer = drawerHeightTotal > 0 ? DRAWER_DIMENSIONS.external.doorTopGapM : 0;
   const drawerTopEdgeAbsolute = effectiveBottomY;
   const doorBottomY = drawerTopEdgeAbsolute + gapAboveDrawer;
   const effectiveTopLimit = startY + cabinetBodyHeight - woodThick / 2;

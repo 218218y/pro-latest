@@ -1,3 +1,7 @@
+import {
+  WARDROBE_DEFAULTS,
+  WARDROBE_DIMENSION_GUIDE_DIMENSIONS,
+} from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { AppContainer } from '../../../types';
 
 export type Vector3Like = { x: number; y: number; z: number };
@@ -88,8 +92,8 @@ function asArgs(v: unknown): DimensionArgs {
   return v && typeof v === 'object' ? { ...v } : {};
 }
 
-function asFiniteNumber(v: unknown, fallback = 0): number {
-  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+function asFiniteNumber(v: unknown, defaultValue = 0): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : defaultValue;
 }
 
 function asFiniteNumberArray(v: unknown): number[] | null {
@@ -145,7 +149,7 @@ export function createRenderDimensionContext(argsIn: unknown): RenderDimensionCo
   const cornerDoorCountRaw = asFiniteNumber(args.cornerDoorCount, NaN);
   const cornerDoorCount = Number.isFinite(cornerDoorCountRaw)
     ? Math.max(0, Math.round(cornerDoorCountRaw))
-    : 3;
+    : WARDROBE_DEFAULTS.corner.doorsCount;
   const cornerWingVisible = isCornerMode && cornerDoorCount > 0;
   const cornerWallLenM = asFiniteNumber(args.cornerWallLenM);
   const cornerOffsetXM = asFiniteNumber(args.cornerOffsetXM);
@@ -195,11 +199,19 @@ export function createRenderDimensionContext(argsIn: unknown): RenderDimensionCo
     cornerWingDepthM,
     displayH,
     displayD,
-    yTotal: displayH + (hasCornice ? 0.28 : 0.23),
-    yCells: displayH + (hasCornice ? 0.2 : 0.15),
+    yTotal:
+      displayH +
+      (hasCornice
+        ? WARDROBE_DIMENSION_GUIDE_DIMENSIONS.verticalPlacement.totalYOffsetWithCorniceM
+        : WARDROBE_DIMENSION_GUIDE_DIMENSIONS.verticalPlacement.totalYOffsetWithoutCorniceM),
+    yCells:
+      displayH +
+      (hasCornice
+        ? WARDROBE_DIMENSION_GUIDE_DIMENSIONS.verticalPlacement.cellYOffsetWithCorniceM
+        : WARDROBE_DIMENSION_GUIDE_DIMENSIONS.verticalPlacement.cellYOffsetWithoutCorniceM),
     dimsOnLeft,
     depthOnLeft,
-    CELL_DIM_TEXT_SCALE: 0.78,
+    CELL_DIM_TEXT_SCALE: WARDROBE_DIMENSION_GUIDE_DIMENSIONS.textScale.cell,
     vec: (x: number, y: number, z: number) => new THREE.Vector3(x, y, z),
   };
 }

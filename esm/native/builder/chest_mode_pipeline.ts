@@ -4,6 +4,7 @@
 // Best-effort side effects are preserved (render/update/finalize are wrapped)
 // to avoid breaking UX during chest-only edits.
 
+import { CHEST_MODE_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { guardVoid } from '../runtime/api.js';
 import { runBuilderChestModeFollowThrough } from '../runtime/builder_service_access.js';
 
@@ -22,10 +23,16 @@ type BuildChestModeIfNeededParams = {
     baseType?: string;
     baseLegStyle?: string;
     baseLegColor?: string;
+    basePlinthHeightCm?: number | string;
     baseLegHeightCm?: number | string;
     baseLegWidthCm?: number | string;
     colorChoice?: string;
     customColor?: string;
+    doorStyle?: string;
+    groovesEnabled?: boolean;
+    chestCommodeEnabled?: boolean;
+    chestCommodeMirrorHeightCm?: number | string;
+    chestCommodeMirrorWidthCm?: number | string;
   } | null;
   widthCm?: number | string;
   heightCm?: number | string;
@@ -39,10 +46,16 @@ type BuildChestModeIfNeededParams = {
     baseType: string;
     baseLegStyle: string;
     baseLegColor: string;
+    basePlinthHeightCm: number | string;
     baseLegHeightCm: number | string;
     baseLegWidthCm: number | string;
     colorChoice: string;
     customColor: string;
+    doorStyle: string;
+    isGroovesEnabled: boolean;
+    chestCommodeEnabled: boolean;
+    chestCommodeMirrorHeightCm: number | string;
+    chestCommodeMirrorWidthCm: number | string;
   }) => void;
 };
 
@@ -72,10 +85,17 @@ export function buildChestModeIfNeeded(params: BuildChestModeIfNeededParams | nu
     baseType: typeof ui.baseType === 'string' ? ui.baseType : '',
     baseLegStyle: typeof ui.baseLegStyle === 'string' ? ui.baseLegStyle : '',
     baseLegColor: typeof ui.baseLegColor === 'string' ? ui.baseLegColor : '',
+    basePlinthHeightCm: ui.basePlinthHeightCm ?? '',
     baseLegHeightCm: ui.baseLegHeightCm ?? '',
     baseLegWidthCm: ui.baseLegWidthCm ?? '',
     colorChoice: typeof ui.colorChoice === 'string' ? ui.colorChoice : '',
     customColor: typeof ui.customColor === 'string' ? ui.customColor : '',
+    doorStyle: typeof ui.doorStyle === 'string' ? ui.doorStyle : 'flat',
+    isGroovesEnabled: !!ui.groovesEnabled,
+    chestCommodeEnabled: !!ui.chestCommodeEnabled,
+    chestCommodeMirrorHeightCm:
+      ui.chestCommodeMirrorHeightCm ?? CHEST_MODE_DIMENSIONS.commode.defaultMirrorHeightCm,
+    chestCommodeMirrorWidthCm: ui.chestCommodeMirrorWidthCm ?? widthCm,
   });
 
   const base = { where: 'builder/chest_mode_pipeline' };

@@ -40,10 +40,10 @@ function readFiniteSlotNumber(
   getRenderSlot: RenderSlotReader,
   app: AppContainer,
   key: string,
-  fallback = 0
+  defaultValue = 0
 ): number {
   const value = getRenderSlot<number>(app, key);
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+  return typeof value === 'number' && Number.isFinite(value) ? value : defaultValue;
 }
 
 function incrementRenderSlotCounter(
@@ -72,6 +72,31 @@ function markBudgetDeferred(
   setRenderSlot(app, '__mirrorBudgetDeferredAtMs', nowMs);
   incrementRenderSlotCounter(getRenderSlot, setRenderSlot, app, '__mirrorBudgetDeferredCount');
   incrementRenderSlotCounter(getRenderSlot, setRenderSlot, app, counterKey);
+}
+
+function readMaterialRecords(obj: UnknownRecord | null): UnknownRecord[] {
+  if (!obj) return [];
+  const material = obj['material'];
+  if (!material) return [];
+  if (Array.isArray(material)) return material.filter(isRecord);
+  const single = asRecordOrNull(material);
+  return single ? [single] : [];
+}
+
+function syncTrackedMirrorMaterialEnvMap(obj: UnknownRecord | null, tex: unknown): boolean {
+  if (!obj || !tex) return false;
+  let changed = false;
+  const materials = readMaterialRecords(obj);
+  for (let i = 0; i < materials.length; i += 1) {
+    const mat = materials[i];
+    if (!mat) continue;
+    if (mat['envMap'] !== tex) {
+      mat['envMap'] = tex;
+      mat['needsUpdate'] = true;
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 function getMirrorHideScratchList(A: AppContainer): UnknownRecord[] {
@@ -216,7 +241,7 @@ export function createRenderLoopMirrorDriver(
         }
       }
 
-      const intervalDue = interval === 0 || last < 0 || mirrorNow - last >= interval;
+      const intervalDue = mirrorDirty || interval === 0 || last < 0 || mirrorNow - last >= interval;
       const mirrorDisabledForMotion = motionActive && disableDuringMotion;
       if (hasMirror && canRunInBudget && mirrorDisabledForMotion && intervalDue) {
         setRenderSlot(A, '__mirrorMotionDeferredAtMs', mirrorNow);
@@ -230,7 +255,10 @@ export function createRenderLoopMirrorDriver(
         for (let i = 0; i < mirrorsArr.length; i++) {
           const o = asRecordOrNull(mirrorsArr[i]);
           if (!o) continue;
-          if (__tryHideMirrorSurface(o, tex, mirrorsToHide)) foundMirrorForUpdate = true;
+          if (__tryHideMirrorSurface(o, tex, mirrorsToHide)) {
+            syncTrackedMirrorMaterialEnvMap(o, tex);
+            foundMirrorForUpdate = true;
+          }
         }
         if (!foundMirrorForUpdate) hasMirror = false;
       }

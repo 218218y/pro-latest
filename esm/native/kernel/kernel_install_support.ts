@@ -11,11 +11,8 @@ import type {
   DedicatedSliceWriteOptions,
 } from '../runtime/slice_write_access_shared.js';
 import { shouldFailFast } from '../runtime/api.js';
-import {
-  cloneViaPlatform,
-  getPlatformReportError,
-  reportErrorViaPlatform,
-} from '../runtime/platform_access.js';
+import { cloneViaPlatform } from '../runtime/platform_access.js';
+import { reportError } from '../runtime/errors.js';
 import { readCornerConfigurationFromConfigSnapshot } from '../features/modules_configuration/corner_cells_api.js';
 import { asRecord, asRecordOrNull, isRecord } from './kernel_shared.js';
 
@@ -96,7 +93,7 @@ export type KernelInstallSupport = {
   setStoreConfigPatch: (patch: ConfigSlicePatch, meta: ActionMetaLike) => boolean;
   setStoreUiSnapshot: (ui: UnknownRecord, meta: ActionMetaLike, config?: UnknownRecord) => boolean;
   touchStore: (meta: ActionMetaLike) => boolean;
-  cloneKernelValue: (value: unknown, fallback?: unknown) => unknown;
+  cloneKernelValue: (value: unknown, defaultValue?: unknown) => unknown;
   reportKernelError: (error: unknown, ctx: unknown) => boolean;
   reportNonFatal: (op: string, error: unknown, opts?: { throttleMs?: number; failFast?: boolean }) => void;
   readCornerCfgFromStoreConfig: (cfg: unknown) => UnknownRecord;
@@ -132,9 +129,9 @@ export function createKernelInstallSupport(App: AppContainer): KernelInstallSupp
     return true;
   };
 
-  const cloneKernelValue = (value: unknown, fallback?: unknown): unknown => {
+  const cloneKernelValue = (value: unknown, defaultValue?: unknown): unknown => {
     if (value == null || typeof value !== 'object') return value;
-    const cloned = cloneViaPlatform(App, value, fallback);
+    const cloned = cloneViaPlatform(App, value, defaultValue);
     if (cloned !== value) return cloned;
     try {
       const serialized = JSON.stringify(value);
@@ -148,12 +145,13 @@ export function createKernelInstallSupport(App: AppContainer): KernelInstallSupp
     }
     const sanitized = cloneKernelJsonValue(value);
     if (typeof sanitized !== 'undefined') return sanitized;
-    return fallback !== undefined ? fallback : Array.isArray(value) ? [] : {};
+    return defaultValue !== undefined ? defaultValue : Array.isArray(value) ? [] : {};
   };
 
   const reportKernelError = (error: unknown, ctx: unknown): boolean => {
     try {
-      return reportErrorViaPlatform(App, error, ctx);
+      reportError(App, error, ctx);
+      return true;
     } catch {
       return false;
     }
@@ -176,17 +174,7 @@ export function createKernelInstallSupport(App: AppContainer): KernelInstallSupp
     } catch {
       // ignore throttle bookkeeping
     }
-    try {
-      const reportError = getPlatformReportError(App);
-      if (reportError) reportError(error, { where: 'kernel/kernel', op, nonFatal: true });
-    } catch {
-      // ignore report surface failures
-    }
-    try {
-      console.warn('[WardrobePro][kernel][' + op + ']', error);
-    } catch {
-      // ignore console failures
-    }
+    reportError(App, error, { where: 'kernel/kernel', op, nonFatal: true });
     if (opts && opts.failFast && kernelShouldFailFast(App)) throw error;
   };
 

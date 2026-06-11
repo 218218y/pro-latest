@@ -1,3 +1,4 @@
+import { CORNER_WING_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { CornerWingCarcassFlowParams } from './corner_wing_carcass_shared.js';
 
 export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowParams): void {
@@ -10,7 +11,7 @@ export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowPar
   if (cornerCells.length > 0) {
     for (const cell of cornerCells) {
       const __h = Math.max(woodThick * 2, cell.bodyHeight);
-      const __hd = Math.max(0.2, cell.depth);
+      const __hd = Math.max(CORNER_WING_DIMENSIONS.selector.minDepthM, cell.depth);
 
       const hitMat = new THREE.MeshBasicMaterial({
         transparent: true,
@@ -20,7 +21,14 @@ export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowPar
       hitMat.colorWrite = false;
       hitMat.side = THREE.DoubleSide;
       const hitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(Math.max(0.01, cell.width - 0.001), __h, __hd),
+        new THREE.BoxGeometry(
+          Math.max(
+            CORNER_WING_DIMENSIONS.selector.minWidthM,
+            cell.width - CORNER_WING_DIMENSIONS.selector.widthClearanceM
+          ),
+          __h,
+          __hd
+        ),
         hitMat
       );
 
@@ -30,7 +38,7 @@ export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowPar
       wingGroup.add(hitBox);
     }
   } else {
-    // Fallback: no doors => keep legacy selector for the whole wing
+    // No cell list means the whole wing remains the selectable/editable target.
     const hitMat = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0.0,
@@ -39,7 +47,11 @@ export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowPar
     hitMat.colorWrite = false;
     hitMat.side = THREE.DoubleSide;
     const hitBox = new THREE.Mesh(
-      new THREE.BoxGeometry(Math.max(0.01, activeWidth), cabinetBodyHeight, wingD),
+      new THREE.BoxGeometry(
+        Math.max(CORNER_WING_DIMENSIONS.selector.fallbackMinWidthM, activeWidth),
+        cabinetBodyHeight,
+        wingD
+      ),
       hitMat
     );
     hitBox.renderOrder = -1000;
@@ -60,7 +72,7 @@ export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowPar
         gridDivisions: cell.gridDivisions,
       };
     }
-    // Keep a legacy alias so picking on the connector (moduleIndex:'corner') still has a grid.
+    // Keep the connector module id mapped so picking on moduleIndex:'corner' still has a grid.
     if (!m['corner']) {
       const c0 = cornerCells[0];
       m['corner'] = {

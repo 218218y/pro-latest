@@ -19,7 +19,7 @@ type BoardCreator = ReturnType<typeof import('./board_factory.js').makeBoardCrea
 
 export type PartMaterialResolver = MaterialResolverResult['getPartMaterial'];
 export type PartColorValueResolver = MaterialResolverResult['getPartColorValue'];
-export type Stringifier = (value: unknown, fallback?: string) => string;
+export type Stringifier = (value: unknown, defaultValue?: string) => string;
 
 export type BuildFlowPlan = {
   uiState: UiStateLike | null;
@@ -29,6 +29,7 @@ export type BuildFlowPlan = {
   showHangerEnabled: boolean;
   showContentsEnabled: boolean;
   stackSplitEnabled: boolean;
+  stackSplitDecorativeSeparatorEnabled: boolean;
   splitActiveForBuild: boolean;
   lowerHeightCm: number;
   lowerDepthCm: number;
@@ -46,6 +47,7 @@ export type BuildFlowPlan = {
   doorStyle: string;
   baseLegStyle: string;
   baseLegColor: string;
+  basePlinthHeightCm: number;
   baseLegHeightCm: number;
   baseLegWidthCm: number;
   baseTypeBottom: string;
@@ -88,6 +90,7 @@ export type BuildFlowPlanInputs = Pick<
   | 'showHangerEnabled'
   | 'showContentsEnabled'
   | 'stackSplitEnabled'
+  | 'stackSplitDecorativeSeparatorEnabled'
   | 'splitActiveForBuild'
   | 'lowerHeightCm'
   | 'lowerDepthCm'
@@ -103,6 +106,7 @@ export type BuildFlowPlanInputs = Pick<
   | 'doorStyle'
   | 'baseLegStyle'
   | 'baseLegColor'
+  | 'basePlinthHeightCm'
   | 'baseLegHeightCm'
   | 'baseLegWidthCm'
   | 'baseTypeBottom'

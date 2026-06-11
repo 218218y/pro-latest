@@ -1,3 +1,8 @@
+import {
+  cmToM,
+  DOOR_SYSTEM_DIMENSIONS,
+  WARDROBE_DEFAULTS,
+} from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { AppContainer } from '../../../types';
 
 import { getBuildUIFromPlatform, getDimsMFromPlatform } from '../runtime/platform_access.js';
@@ -6,9 +11,16 @@ import { readFiniteNumber, readFiniteNumberOrNull } from '../runtime/render_runt
 import { shouldForceSketchFreeBoxDoorsOpen } from '../runtime/doors_runtime_support.js';
 
 import type { MotionFrameState } from './render_loop_motion_shared.js';
-import { asDoorMotion, asRecordOrNull, readMotionUserData } from './render_loop_motion_shared.js';
+import {
+  ROTATION_SETTLED_EPSILON,
+  asDoorMotion,
+  asRecordOrNull,
+  hasNumberMotionRemaining,
+  readMotionUserData,
+} from './render_loop_motion_shared.js';
 
-export function updateRenderLoopDoorMotions(App: AppContainer, frame: MotionFrameState): void {
+export function updateRenderLoopDoorMotions(App: AppContainer, frame: MotionFrameState): boolean {
+  let hasActiveDoorMotion = false;
   const doors = getDoorsArray(App);
   for (let i = 0; i < doors.length; i++) {
     const d = asDoorMotion(doors[i]);
@@ -68,12 +80,15 @@ export function updateRenderLoopDoorMotions(App: AppContainer, frame: MotionFram
       if (inv) targetRot = -targetRot;
 
       g.rotation.y += (targetRot - g.rotation.y) * 0.1;
+      if (hasNumberMotionRemaining(g.rotation.y, targetRot, ROTATION_SETTLED_EPSILON)) {
+        hasActiveDoorMotion = true;
+      }
       continue;
     }
 
     if (d.type !== 'sliding') continue;
 
-    const overlap = 0.03;
+    const overlap = DOOR_SYSTEM_DIMENSIONS.sliding.overlapM;
     let doorsCount = Number.isFinite(d.total) ? d.total : NaN;
     if (!Number.isFinite(doorsCount)) {
       const ui = asRecordOrNull(getBuildUIFromPlatform(App));
@@ -84,17 +99,19 @@ export function updateRenderLoopDoorMotions(App: AppContainer, frame: MotionFram
       const parsed = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10);
       if (Number.isFinite(parsed)) doorsCount = parsed;
     }
-    doorsCount = (Number.isFinite(doorsCount) ? doorsCount : 2) || 2;
+    doorsCount =
+      (Number.isFinite(doorsCount) ? doorsCount : DOOR_SYSTEM_DIMENSIONS.sliding.defaultDoorsCount) ||
+      DOOR_SYSTEM_DIMENSIONS.sliding.defaultDoorsCount;
     const idx = readFiniteNumber(d.index, 0);
 
     const dimsRec = frame.platformDimsFrame;
     const widthFromDims = dimsRec ? dimsRec['w'] : undefined;
     const totalW =
       readFiniteNumberOrNull(widthFromDims) !== null
-        ? readFiniteNumber(widthFromDims, 1.6)
+        ? readFiniteNumber(widthFromDims, cmToM(WARDROBE_DEFAULTS.widthCm))
         : (() => {
             const dim = asRecordOrNull(getDimsMFromPlatform(App));
-            return readFiniteNumber(dim ? dim['w'] : undefined, 1.6);
+            return readFiniteNumber(dim ? dim['w'] : undefined, cmToM(WARDROBE_DEFAULTS.widthCm));
           })();
     const doorW =
       readFiniteNumberOrNull(d.width) !== null
@@ -122,16 +139,20 @@ export function updateRenderLoopDoorMotions(App: AppContainer, frame: MotionFram
 
     if (targetOpen) {
       const leftCount = Math.floor(doorsCount / 2);
-      const epsX = 0.002;
+      const epsX = DOOR_SYSTEM_DIMENSIONS.sliding.runtimeOpenEpsilonXM;
       const sideX = totalW / 2 + doorW / 2 + epsX;
       const onLeft = idx < leftCount;
       const stackPos = onLeft ? idx : doorsCount - 1 - idx;
       targetX = onLeft ? -sideX : sideX;
-      const zStep = readFiniteNumber(d.stackZStep, 0.055);
+      const zStep = readFiniteNumber(d.stackZStep, DOOR_SYSTEM_DIMENSIONS.sliding.runtimeStackZStepDefaultM);
       targetZ = outerZ - stackPos * zStep;
     }
 
     g.position.x += (targetX - g.position.x) * 0.08;
     g.position.z += (targetZ - g.position.z) * 0.08;
+    if (hasNumberMotionRemaining(g.position.x, targetX) || hasNumberMotionRemaining(g.position.z, targetZ)) {
+      hasActiveDoorMotion = true;
+    }
   }
+  return hasActiveDoorMotion;
 }

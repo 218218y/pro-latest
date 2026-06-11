@@ -6,6 +6,11 @@ import {
   type Vec3,
 } from './notes_export_render_shared.js';
 
+type RectSizeLike = {
+  width: number;
+  height: number;
+};
+
 export function createTransformRuntime(transform: ExportNotesTransform | null): NoteTransformRuntime {
   const a = typeof transform?.a === 'number' && Number.isFinite(transform.a) ? transform.a : null;
   const b = typeof transform?.b === 'number' && Number.isFinite(transform.b) ? transform.b : null;
@@ -23,7 +28,7 @@ export function createTransformRuntime(transform: ExportNotesTransform | null): 
   return {
     hasAffine: a !== null && b !== null && c !== null && d !== null && e !== null && f !== null,
     affine: { a: a ?? 1, b: b ?? 0, c: c ?? 0, d: d ?? 1, e: e ?? 0, f: f ?? 0 },
-    legacy: {
+    scaleTranslate: {
       sx: typeof transform?.sx === 'number' && Number.isFinite(transform.sx) ? transform.sx : 1,
       sy: typeof transform?.sy === 'number' && Number.isFinite(transform.sy) ? transform.sy : 1,
       dx: typeof transform?.dx === 'number' && Number.isFinite(transform.dx) ? transform.dx : 0,
@@ -79,14 +84,13 @@ function norm3(v: Vec3): Vec3 {
 
 export function createMapPoint(
   runtime: NoteTransformRuntime,
-  containerRect: DOMRect,
+  sourceRect: RectSizeLike,
   originalWidth: number,
   originalHeight: number
 ): (xCss: number, yCss: number) => Point2 {
-  const scaleX =
-    Number.isFinite(originalWidth) && originalWidth > 0 ? originalWidth / containerRect.width : 1;
+  const scaleX = Number.isFinite(originalWidth) && originalWidth > 0 ? originalWidth / sourceRect.width : 1;
   const scaleY =
-    Number.isFinite(originalHeight) && originalHeight > 0 ? originalHeight / containerRect.height : 1;
+    Number.isFinite(originalHeight) && originalHeight > 0 ? originalHeight / sourceRect.height : 1;
 
   const applyAffine = (xCss: number, yCss: number): Point2 => {
     if (runtime.hasAffine) {
@@ -96,8 +100,8 @@ export function createMapPoint(
       };
     }
     return {
-      x: xCss * runtime.legacy.sx + runtime.legacy.dx,
-      y: yCss * runtime.legacy.sy + runtime.legacy.dy,
+      x: xCss * runtime.scaleTranslate.sx + runtime.scaleTranslate.dx,
+      y: yCss * runtime.scaleTranslate.sy + runtime.scaleTranslate.dy,
     };
   };
 
@@ -113,8 +117,8 @@ export function createMapPoint(
       return null;
     }
 
-    const ndcX = (xCss / containerRect.width) * 2 - 1;
-    const ndcY = -(yCss / containerRect.height) * 2 + 1;
+    const ndcX = (xCss / sourceRect.width) * 2 - 1;
+    const ndcY = -(yCss / sourceRect.height) * 2 + 1;
     const near = mulMat4Vec4(runtime.prePVInv, ndcX, ndcY, -1, 1);
     const far = mulMat4Vec4(runtime.prePVInv, ndcX, ndcY, 1, 1);
     if (Math.abs(near.w) < 1e-9 || Math.abs(far.w) < 1e-9) return null;

@@ -50,6 +50,12 @@ export type ExportCanvasWorkflowDeps = {
   ) => void;
   _getRendererCanvasSource: (renderer: RendererLike) => CanvasImageSource;
   _reportExportError: (app: AppContainer, op: string, err: unknown, extra?: Record<string, unknown>) => void;
+  _reportExportRecovery: (
+    app: AppContainer,
+    op: string,
+    err: unknown,
+    extra?: Record<string, unknown>
+  ) => void;
   _toast: (app: AppContainer, msg: string, kind?: string) => void;
   shouldFailFast: (app: AppContainer) => boolean;
   getExportLogoImage: (app: AppContainer, includeLogo: boolean) => HTMLImageElement | null;
@@ -107,7 +113,11 @@ export type ExportCanvasWorkflowDeps = {
     opts?: Record<string, unknown>
   ) => void;
   _guard: (app: AppContainer, label: string, fn: () => void) => void;
-  readRuntimeScalarOrDefaultFromApp: (app: AppContainer, key: 'sketchMode', fallback?: boolean) => boolean;
+  readRuntimeScalarOrDefaultFromApp: (
+    app: AppContainer,
+    key: 'sketchMode',
+    defaultValue?: boolean
+  ) => boolean;
   applyViewportSketchMode: (
     app: AppContainer,
     next: boolean,

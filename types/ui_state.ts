@@ -70,12 +70,15 @@ export interface UiState extends UnknownRecord {
   baseType?: 'plinth' | 'legs' | 'none' | string;
   baseLegStyle?: 'tapered' | 'round' | 'square' | string;
   baseLegColor?: 'black' | 'nickel' | 'gold' | string;
+  basePlinthHeightCm?: number | string;
   baseLegHeightCm?: number | string;
   slidingTracksColor?: 'nickel' | 'black' | string;
   structureSelect?: string;
   singleDoorPos?: string;
   hingeDirection?: boolean;
   isChestMode?: boolean;
+  chestCommodeEnabled?: boolean;
+  chestCommodeMirrorWidthManual?: boolean;
 
   // Corner
   cornerMode?: boolean;

@@ -25,7 +25,7 @@ import type { HingeMap } from '../../../types/maps.js';
 
 import { readModulesConfigurationListFromConfigSnapshot } from '../features/modules_configuration/modules_config_api.js';
 import { createLibraryTopModuleConfig } from '../features/library_preset/module_defaults.js';
-import { reportErrorViaPlatform } from '../runtime/platform_access.js';
+import { reportError } from '../runtime/errors.js';
 
 type ModuleLike = BuildModuleStructureItemLike;
 type HingedDoorPivotMapLike = Record<number, BuildHingedDoorPivotEntryLike>;
@@ -70,12 +70,6 @@ function toDoorCount(m: ModuleLike | null | undefined): number {
   if (!m) return 0;
   const raw = m.doors;
   return typeof raw === 'number' ? raw : Number(raw) || 0;
-}
-
-function reportError(App: AppContainer | null | undefined, err: unknown, where: string): void {
-  try {
-    reportErrorViaPlatform(App, err, { where, fatal: true });
-  } catch (_) {}
 }
 
 function isCoreLayoutLike(value: unknown): value is CoreLayoutLike {
@@ -150,6 +144,20 @@ function readFiniteNumberList(value: unknown): number[] | null {
   return out;
 }
 
+function readFiniteNumberOrDefault(value: unknown, defaultValue: number): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : defaultValue;
+}
+
+function readRequiredCoreLayout(
+  value: unknown
+): CoreLayoutLike & { modules: ModuleLike[]; moduleConfigs: ModulesConfigurationLike } {
+  if (!isCoreLayoutLike(value) || !Array.isArray(value.modules) || !Array.isArray(value.moduleConfigs)) {
+    throw new Error('[WardrobePro] Invalid core module layout result');
+  }
+  return value as CoreLayoutLike & { modules: ModuleLike[]; moduleConfigs: ModulesConfigurationLike };
+}
+
 function readHingedDoorPivotMap(value: unknown): HingedDoorPivotMapLike | null {
   const rec = asRecord<UnknownRecord>(value);
   if (!rec) return null;
@@ -162,6 +170,16 @@ function readHingedDoorPivotMap(value: unknown): HingedDoorPivotMapLike | null {
     out[doorId] = { ...entry };
   }
   return out;
+}
+
+function sumModuleDoors(modules: ModuleLike[]): number {
+  return modules.reduce((sum, moduleShape) => sum + toDoorCount(moduleShape), 0);
+}
+
+function isModuleStructureCurrentForDoorCount(modules: ModuleLike[], doorsCount: number): boolean {
+  if (!Array.isArray(modules)) return false;
+  const expectedDoors = Math.max(0, Math.round(Number.isFinite(doorsCount) ? doorsCount : 0));
+  return sumModuleDoors(modules) === expectedDoors;
 }
 
 /**
@@ -181,16 +199,21 @@ export function computeModulesAndLayout(args: ComputeModulesAndLayoutArgs): Comp
 
   let modules: ModuleLike[] = [];
 
-  // Prefer store-derived, precomputed structure.
+  // Prefer store-derived, precomputed structure only when it still matches
+  // the active door count. A stale build cache must not outrank the canonical
+  // module calculator after door-count or wardrobe-type changes.
   try {
     const stBuild = state?.build;
     if (stBuild && Array.isArray(stBuild.modulesStructure)) {
-      modules = stBuild.modulesStructure;
+      const storedModules = stBuild.modulesStructure;
+      if (isModuleStructureCurrentForDoorCount(storedModules, doorsCount)) {
+        modules = storedModules;
+      }
     }
   } catch (_) {}
 
   // Compute structure using builder module helper when needed.
-  if (!Array.isArray(modules) || modules.length === 0) {
+  if (!Array.isArray(modules) || !isModuleStructureCurrentForDoorCount(modules, doorsCount)) {
     if (typeof calculateModuleStructure !== 'function') {
       throw new Error('Builder tools missing: modules.calculateModuleStructure');
     }
@@ -234,28 +257,19 @@ export function computeModulesAndLayout(args: ComputeModulesAndLayoutArgs): Comp
   let netInternalWidth = totalW - 2 * woodThick - totalDividersWidth;
   let singleUnitWidth = sumDoors > 0 ? netInternalWidth / sumDoors : 0;
 
-  // Optional pure-core normalization (preferred). If it fails, keep the local math fallback.
-  let coreLayout: CoreLayoutLike | null = null;
-  try {
-    const computedLayout = computeModuleLayout({
-      totalW,
-      woodThick,
-      modulesStructure: modules,
-      modulesConfiguration: moduleCfgList,
-    });
-    coreLayout = isCoreLayoutLike(computedLayout) ? computedLayout : null;
+  const computedLayout = computeModuleLayout({
+    totalW,
+    woodThick,
+    modulesStructure: modules,
+    modulesConfiguration: moduleCfgList,
+  });
+  const coreLayout = readRequiredCoreLayout(computedLayout);
 
-    if (coreLayout && Array.isArray(coreLayout.modules) && Array.isArray(coreLayout.moduleConfigs)) {
-      modules = coreLayout.modules;
-      moduleCfgList = coreLayout.moduleConfigs;
-      totalDividersWidth = Number(coreLayout.totalDividersWidth) || totalDividersWidth;
-      netInternalWidth = Number(coreLayout.netInternalWidth) || netInternalWidth;
-      singleUnitWidth = Number(coreLayout.singleUnitWidth) || singleUnitWidth;
-    }
-  } catch (e) {
-    reportError(App, e, 'native/builder/module_layout_pipeline.computeModuleLayout');
-    coreLayout = null;
-  }
+  modules = coreLayout.modules;
+  moduleCfgList = coreLayout.moduleConfigs;
+  totalDividersWidth = readFiniteNumberOrDefault(coreLayout.totalDividersWidth, totalDividersWidth);
+  netInternalWidth = readFiniteNumberOrDefault(coreLayout.netInternalWidth, netInternalWidth);
+  singleUnitWidth = readFiniteNumberOrDefault(coreLayout.singleUnitWidth, singleUnitWidth);
 
   moduleCfgList = ensureLibraryMissingTopModuleConfigs(cfg, modules, moduleCfgList, sourceModuleCfgList);
 
@@ -285,7 +299,11 @@ export function computeModulesAndLayout(args: ComputeModulesAndLayoutArgs): Comp
         })
       );
     } catch (e) {
-      reportError(App, e, 'native/builder/module_layout_pipeline.computeHingedDoorPivotMap');
+      reportError(App, e, {
+        where: 'native/builder/module_layout_pipeline',
+        op: 'computeHingedDoorPivotMap',
+        fatal: false,
+      });
       hingedDoorPivotMap = null;
     }
   }

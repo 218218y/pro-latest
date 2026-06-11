@@ -1,5 +1,6 @@
 import { createDoorEdgeHandleProfile } from './edge_handle_profile.js';
 import { normalizeHandleFinishColor, resolveHandleFinishPalette } from '../features/handle_finish_shared.js';
+import { HANDLE_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { getMirrorRenderTarget } from '../runtime/render_access.js';
 
 import type {
@@ -53,7 +54,7 @@ type RenderOpsPrimitiveDeps = {
   __boardArgs: (value: unknown) => BoardArgs;
   __moduleHitBoxArgs: (value: unknown) => ModuleHitBoxArgs;
   __drawerShadowPlaneArgs: (value: unknown) => DrawerShadowPlaneArgs;
-  __number: (value: unknown, fallback?: number) => number;
+  __number: (value: unknown, defaultValue?: number) => number;
   __isFn: (value: unknown) => value is BoundUnknownMethod;
   __wardrobeGroup: (App: AppContainer) => AddGroupLike | null;
   __matCache: (App: AppContainer) => CommonMatsCache;
@@ -152,7 +153,10 @@ export function createBuilderRenderPrimitiveOps(deps: RenderOpsPrimitiveDeps) {
     handleGroup.userData.__keepMaterialSubtree = true;
 
     if (type === 'edge') {
-      const handleH = opts.edgeHandleVariant === 'long' ? 0.4 : 0.2;
+      const handleH =
+        opts.edgeHandleVariant === 'long'
+          ? HANDLE_DIMENSIONS.edge.longLengthM
+          : HANDLE_DIMENSIONS.edge.shortLengthM;
       const mat = new THREE.MeshStandardMaterial({
         color: palette.hex,
         emissive: palette.emissiveHex,
@@ -160,7 +164,9 @@ export function createBuilderRenderPrimitiveOps(deps: RenderOpsPrimitiveDeps) {
         roughness: palette.roughness,
         metalness: palette.metalness,
       });
-      const xPos = isLeftHinge ? w - 0.0025 : -w + 0.0025;
+      const xPos = isLeftHinge
+        ? w - HANDLE_DIMENSIONS.edge.renderPrimitiveDoorAnchorInsetM
+        : -w + HANDLE_DIMENSIONS.edge.renderPrimitiveDoorAnchorInsetM;
       const profile = createDoorEdgeHandleProfile({
         THREE,
         material: mat,
@@ -172,7 +178,11 @@ export function createBuilderRenderPrimitiveOps(deps: RenderOpsPrimitiveDeps) {
       return handleGroup;
     }
 
-    const handleGeo = new THREE.BoxGeometry(0.01, 0.16, 0.02);
+    const handleGeo = new THREE.BoxGeometry(
+      HANDLE_DIMENSIONS.standard.doorWidthM,
+      HANDLE_DIMENSIONS.standard.doorHeightM,
+      HANDLE_DIMENSIONS.standard.doorDepthM
+    );
     const mesh = new THREE.Mesh(
       handleGeo,
       new THREE.MeshStandardMaterial({
@@ -185,9 +195,9 @@ export function createBuilderRenderPrimitiveOps(deps: RenderOpsPrimitiveDeps) {
     );
     mesh.userData = mesh.userData || {};
     mesh.userData.__keepMaterial = true;
-    const offset = 0.05;
+    const offset = HANDLE_DIMENSIONS.standard.doorOffsetM;
     const xPos = isLeftHinge ? w - offset : -w + offset;
-    mesh.position.set(xPos, 0, 0.02);
+    mesh.position.set(xPos, 0, HANDLE_DIMENSIONS.standard.frontZM);
     if (__isFn(addOutlines)) addOutlines(mesh);
     handleGroup.add(mesh);
     return handleGroup;

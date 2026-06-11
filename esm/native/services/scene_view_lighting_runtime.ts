@@ -29,7 +29,7 @@ import {
   type SceneViewUpdateModeOpts,
   updateCornerAutoLightShadowRefresh,
 } from './scene_view_lighting_shared.js';
-import { applyRendererCompatibility } from './scene_view_lighting_renderer.js';
+import { applyRendererLightingMode } from './scene_view_lighting_renderer.js';
 
 function applyLightingControlUi(App: AppContainer, ui: UiSnapshotLike): void {
   const ambient = asAmbientLight(getAmbientLight(App));
@@ -114,14 +114,14 @@ export function initLights(App: AppContainer): void {
         directional.shadow.normalBias = 0.02;
         directional.shadow.radius = 2;
       } catch (err) {
-        reportSceneViewNonFatal('sceneView.lighting.initLights.shadowConfig', err);
+        reportSceneViewNonFatal(App, 'sceneView.lighting.initLights.shadowConfig', err);
       }
     }
 
     scene.add(ambient);
     scene.add(directional);
   } catch (err) {
-    reportSceneViewNonFatal('sceneView.lighting.initLights', err);
+    reportSceneViewNonFatal(App, 'sceneView.lighting.initLights', err);
   }
 }
 
@@ -136,7 +136,7 @@ export function updateLightsInternal(App: AppContainer, opts?: SceneViewUpdateLi
 
     const ui = getUiSnapshot(App);
     const sketchMode = getSketchMode(App, ui);
-    applyRendererCompatibility(App, sketchMode);
+    applyRendererLightingMode(App, sketchMode);
 
     if (sketchMode) {
       ambient.intensity = 0.95;
@@ -158,7 +158,7 @@ export function updateLightsInternal(App: AppContainer, opts?: SceneViewUpdateLi
     if (shouldTriggerRender) triggerSceneViewRender(App);
     return true;
   } catch (err) {
-    reportSceneViewNonFatal('sceneView.lighting.updateLights', err);
+    reportSceneViewNonFatal(App, 'sceneView.lighting.updateLights', err);
     return false;
   }
 }
@@ -192,7 +192,7 @@ export function updateSceneModeInternal(App: AppContainer, opts?: SceneViewUpdat
     if (shouldTriggerRender) triggerSceneViewRender(App);
     return true;
   } catch (err) {
-    reportSceneViewNonFatal('sceneView.lighting.updateSceneMode.floorVisibility', err);
+    reportSceneViewNonFatal(App, 'sceneView.lighting.updateSceneMode.floorVisibility', err);
     return false;
   }
 }

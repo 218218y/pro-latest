@@ -119,11 +119,16 @@ test('sketch box external drawers render with custom per-drawer height', () => {
 test('sketch external drawer cut envelope matches drawer front envelope', async () => {
   const src = await readSourceFiles([
     '../esm/native/builder/post_build_sketch_door_cuts.ts',
+    '../esm/native/builder/post_build_sketch_door_cuts_box.ts',
     '../esm/native/builder/post_build_sketch_door_cuts_modules.ts',
   ]);
+  const tokens = await readSourceFiles(['../esm/shared/wardrobe_dimension_tokens_shared.ts']);
   const mod = await import('../esm/native/builder/post_build_extras_pipeline.ts');
-  assert.match(src, /const frontInset = 0\.004;/);
-  assert.match(src, /const surroundingGap = 0\.006;/);
+  assert.match(tokens, /externalDoorCutFrontInsetM:\s*0\.004,/);
+  assert.match(tokens, /externalDoorCutSurroundingGapM:\s*0\.006,/);
+  assert.match(src, /const frontInset = DRAWER_DIMENSIONS\.sketch\.externalDoorCutFrontInsetM;/);
+  assert.match(src, /const surroundingGap = DRAWER_DIMENSIONS\.sketch\.externalDoorCutSurroundingGapM;/);
+  assert.doesNotMatch(src, /const surroundingGap = 0\.006;/);
   assert.match(src, /const faceMinY = baseY \+ frontInset - surroundingGap;/);
   assert.match(src, /const faceMaxY = baseY \+ stackH - frontInset \+ surroundingGap;/);
   assert.equal(typeof mod.applyPostBuildExtras, 'function');
@@ -188,7 +193,12 @@ test('sketch external drawers source keeps module faces aligned to real door spa
   );
   assert.match(shared, /drawer\.faceW = faceW;/);
   assert.match(sketchPickMeta, /export function applySketchModulePickMeta\(/);
-  assert.match(src, /const faceW = Math\.max\(0\.05, toFiniteNumber\(op\.faceW\) \?\? visualW\);/);
+  assert.match(src, /const drawerDims = DRAWER_DIMENSIONS\.sketch;/);
+  assert.match(
+    src,
+    /const faceW = Math\.max\(drawerDims\.externalPreviewVisualMinWidthM, toFiniteNumber\(op\.faceW\) \?\? visualW\);/
+  );
+  assert.doesNotMatch(src, /const faceW = Math\.max\(0\.05, toFiniteNumber\(op\.faceW\) \?\? visualW\);/);
   assert.match(src, /visualObj\.position\?\.set\?\.\(opPlan\.faceOffsetX, opPlan\.faceOffsetY, 0\);/);
   assert.match(src, /const doorStyle = resolveSketchDoorStyle\(App, input\);/);
   const normalizedSrc = normalizeSource(src);
@@ -291,11 +301,11 @@ test('module sketch external drawer cuts use runtime drawer bounds so corner cel
   const bundle = `${src}\n${applySrc}`;
   assert.match(
     src,
-    /function collectSketchModuleExternalDrawerStackBounds\(App: AppContainer\): SketchModuleDrawerStackBounds\[]/
+    /function collectSketchModuleExternalDrawerStackBounds\(App: AppContainer\): SketchModuleDrawerStackCollection/
   );
   assert.match(
     src,
-    /const runtimeBounds = collectSketchModuleExternalDrawerStackBounds\(App\)[\s\S]*item => item\.stackKey === stackKey[\s\S]*\);/
+    /const runtimeStackCollection = collectSketchModuleExternalDrawerStackBounds\(App\);[\s\S]*const runtimeBounds = runtimeStackCollection\.bounds[\s\S]*item => item\.stackKey === stackKey[\s\S]*\);/
   );
   assert.match(
     src,
@@ -314,7 +324,7 @@ test('stack-split upper sketch external drawer face bounds are shifted with move
   assert.match(src, /userData\.__wpFaceMaxY \+= dy;/);
 });
 
-test('stack-split lower module sketch external drawer cuts run bottom pass and keep fallback stack-local', async () => {
+test('stack-split lower module sketch external drawer cuts run bottom pass and keep config-derived cuts stack-local', async () => {
   const overlaySrc = await readSourceFiles(['../esm/native/builder/post_build_visual_overlays.ts']);
   const cutsSrc = await readSourceFiles([
     '../esm/native/builder/post_build_sketch_door_cuts_modules.ts',
@@ -324,7 +334,7 @@ test('stack-split lower module sketch external drawer cuts run bottom pass and k
 
   assert.match(overlaySrc, /const moduleCutStackKeys: Array<'top' \| 'bottom'> =[\s\S]*\['top', 'bottom'\]/);
   assert.match(overlaySrc, /stackKey: moduleCutStackKeys\[i\]/);
-  assert.match(overlaySrc, /allowConfigFallback: moduleCutStackKeys\[i\] === stackKey/);
+  assert.match(overlaySrc, /allowConfigDerivedCuts: moduleCutStackKeys\[i\] === stackKey/);
   assert.match(cutsSrc, /function normalizeSketchModuleCutKey\(/);
   assert.match(
     cutsSrc,
@@ -336,9 +346,9 @@ test('stack-split lower module sketch external drawer cuts run bottom pass and k
   );
   assert.match(cutsSrc, /getHandleType \? getHandleType\(partId, stackKey\) : null/);
   assert.match(cutsSrc, /stackKey\?: 'top' \| 'bottom';/);
-  assert.match(cutsSrc, /allowConfigFallback\?: boolean;/);
-  assert.match(cutsSrc, /const allowConfigFallback = args\.allowConfigFallback !== false;/);
-  assert.match(cutsSrc, /if \(!stacksByModule\.size && allowConfigFallback\) \{/);
+  assert.match(cutsSrc, /allowConfigDerivedCuts\?: boolean;/);
+  assert.match(cutsSrc, /const allowConfigDerivedCuts = args\.allowConfigDerivedCuts !== false;/);
+  assert.match(cutsSrc, /if \(!stacksByModule\.size && allowConfigDerivedCuts\) \{/);
   assert.match(
     cutsSrc,
     /if \(!stacksByModule\.size\) return;[\s\S]*const runtime = createSketchDoorCutsRuntime\(\{/

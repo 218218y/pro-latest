@@ -10,8 +10,9 @@
 // - Strict fail-fast behavior (no silent try/catch)
 
 import { computeExternalDrawersOpsForModule } from './pure_api.js';
+import { DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { requireBuilderRenderOps } from '../runtime/builder_service_access.js';
-import { reportErrorViaPlatform } from '../runtime/platform_access.js';
+import { reportError } from '../runtime/errors.js';
 import { asRecord } from '../runtime/record.js';
 import type {
   UnknownRecord,
@@ -68,37 +69,24 @@ type ApplyExternalDrawersForModuleParams = {
   effectiveBottomY?: number;
 };
 
-function readFiniteNumber(value: unknown, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+function readFiniteNumber(value: unknown, defaultValue: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : defaultValue;
 }
 
 function readOptionalFiniteNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-function readString(value: unknown, fallback = ''): string {
-  return typeof value === 'string' ? value : fallback;
+function readString(value: unknown, defaultValue = ''): string {
+  return typeof value === 'string' ? value : defaultValue;
 }
 
 function isObjectRecord(value: unknown): value is UnknownRecord {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
-function safeReportError(
-  App: AppContainer | null | undefined,
-  error: unknown,
-  meta: Record<string, unknown>
-): void {
-  try {
-    if (App && reportErrorViaPlatform(App, error, meta)) return;
-  } catch {
-    // ignore platform reporting errors
-  }
-  try {
-    console.warn('[WardrobePro][builder] external drawers pipeline warning:', meta, error);
-  } catch {
-    // ignore console failures in hostile runtimes
-  }
+function safeReportError(App: AppContainer, error: unknown, meta: Record<string, unknown>): void {
+  reportError(App, error, meta);
 }
 
 function asMutableDrawerOpList(ops: ExternalDrawersOpsLike): MutableExternalDrawerOpLike[] {
@@ -161,9 +149,9 @@ export function applyExternalDrawersForModule(
     throw new Error('[WardrobePro] external drawers pipeline missing: createBoard');
   }
 
-  // Keep the legacy dimensions used in core.js for continuity.
+  // Keep the separator board width clearance centralized with external drawer dimensions.
   createBoard(
-    innerW - 0.025,
+    innerW - DRAWER_DIMENSIONS.external.separatorBoardWidthClearanceM,
     woodThick,
     internalDepth,
     internalCenterX,

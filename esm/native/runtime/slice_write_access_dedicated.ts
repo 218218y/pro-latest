@@ -2,8 +2,8 @@ import type { ActionMetaLike } from '../../../types';
 import {
   hasCanonicalPatchDispatch,
   hasSliceWriterSeam,
-  patchSliceWithStoreFallback,
-  touchMetaWithStoreFallback,
+  patchSliceCanonical,
+  touchMetaCanonical,
   dispatchCanonicalPatchPayload,
 } from './slice_write_access_core.js';
 import {
@@ -33,13 +33,7 @@ export function patchSliceWithDedicatedWriter<N extends SlicePatchNamespace>(
   meta?: ActionMetaLike,
   opts?: DedicatedSliceWriteOptions
 ): unknown {
-  return patchSliceWithStoreFallback(
-    App,
-    namespace,
-    patchObj,
-    meta,
-    toDedicatedSliceWriteOptions(namespace, opts)
-  );
+  return patchSliceCanonical(App, namespace, patchObj, meta, toDedicatedSliceWriteOptions(namespace, opts));
 }
 
 export function touchMetaWithDedicatedWriter(
@@ -47,7 +41,7 @@ export function touchMetaWithDedicatedWriter(
   meta?: ActionMetaLike,
   opts?: DedicatedMetaTouchOptions
 ): unknown {
-  return touchMetaWithStoreFallback(App, meta, toDedicatedMetaTouchOptions(opts));
+  return touchMetaCanonical(App, meta, toDedicatedMetaTouchOptions(opts));
 }
 
 export function hasDedicatedCanonicalPatchDispatch(

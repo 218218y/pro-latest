@@ -1,3 +1,5 @@
+import { WARDROBE_DEFAULTS, WARDROBE_LIMITS } from '../../../shared/wardrobe_dimension_tokens_shared.js';
+
 // Stack Split Feature (stacked wardrobes: lower + upper)
 //
 // This module centralizes stack-split normalization and a few small helpers used
@@ -36,14 +38,14 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
 
-function asFinitePositiveNumber(v: unknown, fallback: number): number {
+function asFinitePositiveNumber(v: unknown, defaultValue: number): number {
   const n = Number(v);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
+  return Number.isFinite(n) && n > 0 ? n : defaultValue;
 }
 
-function asFiniteInt(v: unknown, fallback: number): number {
+function asFiniteInt(v: unknown, defaultValue: number): number {
   const n = Math.round(Number(v));
-  return Number.isFinite(n) ? n : fallback;
+  return Number.isFinite(n) ? n : defaultValue;
 }
 
 export function normalizeStackSplit(args: {
@@ -63,7 +65,7 @@ export function normalizeStackSplit(args: {
 
   // Linking policy:
   // When manual flag is FALSE, the lower dimension is *linked* to the overall unit and
-  // ignores the rawLower* value (raw is kept only as a cached/legacy value).
+  // ignores the rawLower* value (raw is retained only as the user-entered cached value).
   // When manual flag is TRUE, rawLower* is respected.
   rawLowerDepthManual?: unknown;
   rawLowerWidthManual?: unknown;
@@ -84,14 +86,19 @@ export function normalizeStackSplit(args: {
 
   // Hard constraint: keep at least 40cm for the upper unit.
   // (We may still *recommend* more in the UI, but we don't block it.)
-  const minTopCm = typeof args.minTopCm === 'number' && Number.isFinite(args.minTopCm) ? args.minTopCm : 40;
+  const minTopCm =
+    typeof args.minTopCm === 'number' && Number.isFinite(args.minTopCm)
+      ? args.minTopCm
+      : WARDROBE_DEFAULTS.stackSplit.minTopHeightCm;
   const minLowerCm =
-    typeof args.minLowerCm === 'number' && Number.isFinite(args.minLowerCm) ? args.minLowerCm : 20;
+    typeof args.minLowerCm === 'number' && Number.isFinite(args.minLowerCm)
+      ? args.minLowerCm
+      : WARDROBE_DEFAULTS.stackSplit.minLowerHeightCm;
 
   const defaultLowerHeightCm =
     typeof args.defaultLowerHeightCm === 'number' && Number.isFinite(args.defaultLowerHeightCm)
       ? args.defaultLowerHeightCm
-      : 60;
+      : WARDROBE_DEFAULTS.stackSplit.lowerHeightCm;
 
   // Lower height is always its own value.
   let lowerHeightCm = asFinitePositiveNumber(args.rawLowerHeightCm, defaultLowerHeightCm);
@@ -106,24 +113,30 @@ export function normalizeStackSplit(args: {
     : asFinitePositiveNumber(overallDepthCm, overallDepthCm);
 
   // Lower width/doors may be independent (manual) or linked (default).
-  const overallWidthFallback =
+  const defaultOverallWidth =
     typeof args.overallWidthCm === 'number' && Number.isFinite(args.overallWidthCm) && args.overallWidthCm > 0
       ? args.overallWidthCm
       : 0;
-  const overallDoorsFallback =
+  const defaultOverallDoors =
     typeof args.overallDoorsCount === 'number' &&
     Number.isFinite(args.overallDoorsCount) &&
     args.overallDoorsCount >= 0
       ? Math.max(0, Math.round(args.overallDoorsCount))
-      : 4;
+      : WARDROBE_DEFAULTS.byType.hinged.doorsCount;
 
   let lowerWidthCm = lowerWidthManual
-    ? asFinitePositiveNumber(args.rawLowerWidthCm, overallWidthFallback || 50)
-    : asFinitePositiveNumber(overallWidthFallback || 50, overallWidthFallback || 50);
+    ? asFinitePositiveNumber(
+        args.rawLowerWidthCm,
+        defaultOverallWidth || WARDROBE_DEFAULTS.stackSplit.lowerWidthFallbackCm
+      )
+    : asFinitePositiveNumber(
+        defaultOverallWidth || WARDROBE_DEFAULTS.stackSplit.lowerWidthFallbackCm,
+        defaultOverallWidth || WARDROBE_DEFAULTS.stackSplit.lowerWidthFallbackCm
+      );
 
   let lowerDoorsCount = lowerDoorsManual
-    ? asFiniteInt(args.rawLowerDoorsCount, overallDoorsFallback)
-    : asFiniteInt(overallDoorsFallback, overallDoorsFallback);
+    ? asFiniteInt(args.rawLowerDoorsCount, defaultOverallDoors)
+    : asFiniteInt(defaultOverallDoors, defaultOverallDoors);
 
   let active = enabled;
 
@@ -139,13 +152,13 @@ export function normalizeStackSplit(args: {
         typeof args.lowerDepthClamp.min === 'number' &&
         Number.isFinite(args.lowerDepthClamp.min)
           ? args.lowerDepthClamp.min
-          : 20;
+          : WARDROBE_LIMITS.stackSplit.lowerDepthMinCm;
       const maxLowerDepth =
         args.lowerDepthClamp &&
         typeof args.lowerDepthClamp.max === 'number' &&
         Number.isFinite(args.lowerDepthClamp.max)
           ? args.lowerDepthClamp.max
-          : 150;
+          : WARDROBE_LIMITS.stackSplit.lowerDepthMaxCm;
 
       lowerDepthCm = clamp(lowerDepthCm, minLowerDepth, maxLowerDepth);
 
@@ -154,13 +167,13 @@ export function normalizeStackSplit(args: {
         typeof args.lowerWidthClamp.min === 'number' &&
         Number.isFinite(args.lowerWidthClamp.min)
           ? args.lowerWidthClamp.min
-          : 30;
+          : WARDROBE_LIMITS.stackSplit.lowerWidthMinCm;
       const maxLowerWidth =
         args.lowerWidthClamp &&
         typeof args.lowerWidthClamp.max === 'number' &&
         Number.isFinite(args.lowerWidthClamp.max)
           ? args.lowerWidthClamp.max
-          : 800;
+          : WARDROBE_LIMITS.stackSplit.lowerWidthMaxCm;
 
       lowerWidthCm = clamp(lowerWidthCm, minLowerWidth, maxLowerWidth);
 
@@ -169,13 +182,13 @@ export function normalizeStackSplit(args: {
         typeof args.lowerDoorsClamp.min === 'number' &&
         Number.isFinite(args.lowerDoorsClamp.min)
           ? args.lowerDoorsClamp.min
-          : 0;
+          : WARDROBE_LIMITS.stackSplit.lowerDoorsMin;
       const maxLowerDoors =
         args.lowerDoorsClamp &&
         typeof args.lowerDoorsClamp.max === 'number' &&
         Number.isFinite(args.lowerDoorsClamp.max)
           ? args.lowerDoorsClamp.max
-          : 20;
+          : WARDROBE_LIMITS.stackSplit.lowerDoorsMax;
 
       lowerDoorsCount = clamp(lowerDoorsCount, minLowerDoors, maxLowerDoors);
     }
@@ -226,7 +239,7 @@ export function getStackSplitFromFlags(flags: unknown): {
     lowerHeightCm: Number.isFinite(bh) ? bh : 0,
     lowerDepthCm: Number.isFinite(bd) ? bd : 0,
     lowerWidthCm: Number.isFinite(bw) ? bw : 0,
-    lowerDoorsCount: Number.isFinite(bdoors) ? Math.max(1, bdoors) : 0,
+    lowerDoorsCount: Number.isFinite(bdoors) ? Math.max(0, bdoors) : 0,
   };
 }
 

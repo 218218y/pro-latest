@@ -6,7 +6,7 @@ import type {
   ConfigSnapshotLike,
   UnknownRecord,
 } from '../../../types';
-import { patchSliceWithStoreFallback } from './slice_write_access.js';
+import { patchSliceCanonical } from './slice_write_access.js';
 import {
   asRecord,
   getHistoryNamespace,
@@ -32,17 +32,17 @@ type CfgRead = {
   <K extends ConfigScalarKey>(
     App: unknown,
     key: K,
-    fallback?: ConfigScalarValueMap[K]
+    defaultValue?: ConfigScalarValueMap[K]
   ): ConfigScalarValueMap[K];
-  <T>(App: unknown, key: string, fallback?: T): T;
+  <T>(App: unknown, key: string, defaultValue?: T): T;
 };
 
-export const cfgRead: CfgRead = (App: unknown, key: unknown, fallback?: unknown): unknown => {
+export const cfgRead: CfgRead = (App: unknown, key: unknown, defaultValue?: unknown): unknown => {
   const k = String(key || '');
-  if (!k) return fallback;
+  if (!k) return defaultValue;
   const snap = cfgGet(App);
   const value = snap[k];
-  return value === undefined ? fallback : value;
+  return value === undefined ? defaultValue : value;
 };
 
 export function applyConfigPatch(App: unknown, patchObj: unknown, meta?: ActionMetaLike): unknown {
@@ -50,9 +50,9 @@ export function applyConfigPatch(App: unknown, patchObj: unknown, meta?: ActionM
   if (!Object.keys(patch).length) return patch;
   const resolvedMeta = normMeta(App, meta, { source: 'config' });
 
-  const out = patchSliceWithStoreFallback(App, 'config', patch, resolvedMeta, {
+  const out = patchSliceCanonical(App, 'config', patch, resolvedMeta, {
     storeWriter: 'setConfig',
-    allowRootStorePatchFallback: false,
+    allowRootStorePatch: false,
   });
   if (out !== undefined) return out;
 

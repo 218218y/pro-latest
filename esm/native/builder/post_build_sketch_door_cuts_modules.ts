@@ -1,10 +1,11 @@
 // Post-build sketch module external-drawer door cuts (Pure ESM)
 //
-// Owns runtime/fallback stack-bound collection and segmented module-door rebuild routing.
+// Owns runtime stack-bound collection, config-derived cut replay, and segmented module-door rebuild routing.
 
 import { getDrawersArray } from '../runtime/render_access.js';
 import { getInternalGridMap } from '../runtime/cache_access.js';
 import { getMirrorMaterial } from './render_ops.js';
+import { DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { AppContainer, BuildContextLike, ThreeLike } from '../../../types/index.js';
 import {
   DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M,
@@ -34,6 +35,11 @@ import {
 
 type SketchModuleDrawerStackBounds = SketchDrawerStackBounds & { key: string; stackKey: 'top' | 'bottom' };
 
+type SketchModuleDrawerStackCollection = {
+  bounds: SketchModuleDrawerStackBounds[];
+  hasRuntimeModuleDrawers: { top: boolean; bottom: boolean };
+};
+
 function normalizeSketchModuleCutKey(value: unknown, stackKey: 'top' | 'bottom'): string | null {
   const key = readStringOrNull(value);
   if (!key) return null;
@@ -62,7 +68,12 @@ function readSketchExternalDrawerCutsForModule(cfg: unknown, gridEntry: unknown)
     const it = asRecord(list[i]);
     if (!it) continue;
     const countRaw = parseNum(readKey(it, 'count'));
-    const drawerCount = Number.isFinite(countRaw) ? Math.max(1, Math.min(5, Math.floor(countRaw))) : 1;
+    const drawerCount = Number.isFinite(countRaw)
+      ? Math.max(
+          DRAWER_DIMENSIONS.sketch.externalCountMin,
+          Math.min(DRAWER_DIMENSIONS.sketch.externalCountMax, Math.floor(countRaw))
+        )
+      : DRAWER_DIMENSIONS.sketch.externalCountMin;
     const metrics = resolveSketchExternalDrawerMetrics({
       drawerCount,
       drawerHeightM: readSketchDrawerHeightMFromItem(it, DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M),
@@ -78,8 +89,8 @@ function readSketchExternalDrawerCutsForModule(cfg: unknown, gridEntry: unknown)
       centerY = clampCenter(bottomY + Math.max(0, Math.min(1, yNormBase)) * spanH + stackH / 2, stackH);
     if (!Number.isFinite(centerY)) continue;
     const baseY = centerY - stackH / 2;
-    const frontInset = 0.004;
-    const surroundingGap = 0.006;
+    const frontInset = DRAWER_DIMENSIONS.sketch.externalDoorCutFrontInsetM;
+    const surroundingGap = DRAWER_DIMENSIONS.sketch.externalDoorCutSurroundingGapM;
     const faceMinY = baseY + frontInset - surroundingGap;
     const faceMaxY = baseY + stackH - frontInset + surroundingGap;
     cuts.push({ yMin: faceMinY, yMax: faceMaxY });
@@ -87,9 +98,10 @@ function readSketchExternalDrawerCutsForModule(cfg: unknown, gridEntry: unknown)
   return normalizeSketchDrawerCutIntervals(cuts);
 }
 
-function collectSketchModuleExternalDrawerStackBounds(App: AppContainer): SketchModuleDrawerStackBounds[] {
+function collectSketchModuleExternalDrawerStackBounds(App: AppContainer): SketchModuleDrawerStackCollection {
   const drawersArr = getDrawersArray(App);
-  if (!drawersArr.length) return [];
+  const hasRuntimeModuleDrawers = { top: false, bottom: false };
+  if (!drawersArr.length) return { bounds: [], hasRuntimeModuleDrawers };
   const stacks = new Map<string, SketchModuleDrawerStackBounds>();
   for (let i = 0; i < drawersArr.length; i++) {
     const entry = drawersArr[i];
@@ -98,6 +110,7 @@ function collectSketchModuleExternalDrawerStackBounds(App: AppContainer): Sketch
     if (!g || !ud || ud.__wpSketchExtDrawer !== true) continue;
     if (readStringOrNull(ud.__wpSketchBoxId)) continue;
     const stackKey = ud.__wpStack === 'bottom' ? 'bottom' : 'top';
+    hasRuntimeModuleDrawers[stackKey] = true;
     const moduleKeyRaw = readStringOrNull(ud.__wpSketchModuleKey) || readStringOrNull(ud.moduleIndex);
     const moduleKey = normalizeSketchModuleCutKey(moduleKeyRaw, stackKey);
     if (!moduleKey) continue;
@@ -141,7 +154,7 @@ function collectSketchModuleExternalDrawerStackBounds(App: AppContainer): Sketch
       stacks.set(stackMapKey, { key: moduleKey, stackKey, xMin, xMax, yMin, yMax });
     }
   }
-  return Array.from(stacks.values());
+  return { bounds: Array.from(stacks.values()), hasRuntimeModuleDrawers };
 }
 
 export function applySketchExternalDrawerDoorCuts(args: {
@@ -152,22 +165,25 @@ export function applySketchExternalDrawerDoorCuts(args: {
   bodyMat: unknown;
   globalFrontMat: unknown;
   stackKey: 'top' | 'bottom';
-  allowConfigFallback?: boolean;
+  allowConfigDerivedCuts?: boolean;
 }): void {
   const { App, THREE, ctx, cfg, bodyMat, globalFrontMat, stackKey } = args;
-  const allowConfigFallback = args.allowConfigFallback !== false;
-  const surroundingGap = 0.006;
-  const runtimeBounds = collectSketchModuleExternalDrawerStackBounds(App)
+  const allowConfigDerivedCuts = args.allowConfigDerivedCuts !== false;
+  const surroundingGap = DRAWER_DIMENSIONS.sketch.externalDoorCutSurroundingGapM;
+  const runtimeStackCollection = collectSketchModuleExternalDrawerStackBounds(App);
+  const runtimeBounds = runtimeStackCollection.bounds
     .filter(item => item.stackKey === stackKey)
     .map(item => ({ key: item.key, ...expandSketchDrawerCutBounds(item, surroundingGap) }));
   let stacksByModule = groupSketchDrawerStackBounds(runtimeBounds);
 
-  if (!stacksByModule.size && allowConfigFallback) {
+  if (!stacksByModule.size && runtimeStackCollection.hasRuntimeModuleDrawers[stackKey]) return;
+
+  if (!stacksByModule.size && allowConfigDerivedCuts) {
     const layoutRec = readCtxLayoutSurface(ctx);
     const moduleCfgList = asArray(readKey(layoutRec, 'moduleCfgList'));
     if (!moduleCfgList.length) return;
     const gridMap = getInternalGridMap(App, stackKey === 'bottom');
-    const fallbackBounds: Array<SketchDrawerStackBounds & { key: string }> = [];
+    const configDerivedBounds: Array<SketchDrawerStackBounds & { key: string }> = [];
     for (let i = 0; i < moduleCfgList.length; i++) {
       const cuts = readSketchExternalDrawerCutsForModule(
         moduleCfgList[i],
@@ -177,7 +193,7 @@ export function applySketchExternalDrawerDoorCuts(args: {
         const cut = cuts[j];
         const moduleKey = normalizeSketchModuleCutKey(String(i), stackKey);
         if (!moduleKey) continue;
-        fallbackBounds.push({
+        configDerivedBounds.push({
           key: moduleKey,
           xMin: -Infinity,
           xMax: Infinity,
@@ -186,7 +202,7 @@ export function applySketchExternalDrawerDoorCuts(args: {
         });
       }
     }
-    stacksByModule = groupSketchDrawerStackBounds(fallbackBounds);
+    stacksByModule = groupSketchDrawerStackBounds(configDerivedBounds);
     if (!stacksByModule.size) return;
   }
 
@@ -216,7 +232,7 @@ export function applySketchExternalDrawerDoorCuts(args: {
       if (!stacks || !stacks.length) return null;
       return {
         stacks,
-        fallbackPartId: typeof ud.partId === 'string' ? String(ud.partId) : `${moduleKey}_full`,
+        basePartId: typeof ud.partId === 'string' ? String(ud.partId) : `${moduleKey}_full`,
       };
     },
   });

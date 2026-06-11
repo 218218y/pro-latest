@@ -36,12 +36,20 @@ export type StructureCornerSectionProps = {
 export type StructureChestSectionProps = {
   isChestMode: boolean;
   chestDrawersCount: number;
+  chestCommodeEnabled: boolean;
+  chestCommodeMirrorHeightCm: number;
+  chestCommodeMirrorWidthCm: number;
+  chestCommodeMirrorWidthManual: boolean;
   width: number;
   height: number;
   depth: number;
   onToggleChestMode: (value: boolean) => void;
+  onToggleChestCommode: (value: boolean) => void;
   onSetRaw: StructureSetRaw;
   onSetChestDrawersCount: (value: number) => void;
+  onSetChestCommodeMirrorHeight: (value: number) => void;
+  onSetChestCommodeMirrorWidth: (value: number) => void;
+  onSetChestCommodeMirrorWidthManual: (value: boolean) => void;
 };
 
 export type StructureLibrarySectionProps = {
@@ -56,6 +64,8 @@ export const STRUCTURE_CORNER_MODE_TOGGLE_TEST_ID = 'structure-corner-mode-toggl
 export const STRUCTURE_CORNER_SIDE_BUTTON_TEST_ID = 'structure-corner-side-button';
 export const STRUCTURE_CHEST_SECTION_TEST_ID = 'structure-chest-section';
 export const STRUCTURE_CHEST_MODE_TOGGLE_TEST_ID = 'structure-chest-mode-toggle';
+export const STRUCTURE_CHEST_COMMODE_BUTTON_TEST_ID = 'structure-chest-commode-button';
+export const STRUCTURE_CHEST_COMMODE_WIDTH_MODE_BUTTON_TEST_ID = 'structure-chest-commode-width-mode-button';
 export const STRUCTURE_LIBRARY_SECTION_TEST_ID = 'structure-library-section';
 export const STRUCTURE_LIBRARY_MODE_BUTTON_TEST_ID = 'structure-library-mode-button';
 

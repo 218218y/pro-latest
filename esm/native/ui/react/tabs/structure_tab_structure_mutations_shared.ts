@@ -1,5 +1,7 @@
 import type { UnknownRecord } from '../../../../../types';
 
+import { WARDROBE_DOORS_MAX, WARDROBE_SLIDING_DOORS_MIN } from '../../../services/api.js';
+
 import type { SingleDoorPos } from './structure_tab_library_helpers.js';
 
 export type StructureTabNumericKey =
@@ -10,6 +12,8 @@ export type StructureTabNumericKey =
   | 'cellDimsWidth'
   | 'cellDimsHeight'
   | 'cellDimsDepth'
+  | 'chestCommodeMirrorHeightCm'
+  | 'chestCommodeMirrorWidthCm'
   | 'stackSplitLowerHeight'
   | 'stackSplitLowerDepth'
   | 'stackSplitLowerWidth'
@@ -19,6 +23,7 @@ export type StructureTabStackSplitField = 'depth' | 'width' | 'doors';
 
 export type DisplayedValueReader = (key: StructureTabNumericKey) => number;
 export type StructureRawBooleanKey =
+  | 'chestCommodeMirrorWidthManual'
   | 'stackSplitLowerDepthManual'
   | 'stackSplitLowerWidthManual'
   | 'stackSplitLowerDoorsManual';
@@ -30,6 +35,7 @@ export type StructureUiPatch = {
   structureSelect?: string;
   singleDoorPos?: SingleDoorPos | 'left';
   stackSplitEnabled?: boolean;
+  stackSplitDecorativeSeparatorEnabled?: boolean;
 };
 
 export function isRecord(value: unknown): value is UnknownRecord {
@@ -45,21 +51,22 @@ export function createRecord(): UnknownRecord {
 }
 
 export function minDoorsAllowed(wardrobeType: string): number {
-  return wardrobeType === 'sliding' ? 2 : 0;
+  return wardrobeType === 'sliding' ? WARDROBE_SLIDING_DOORS_MIN : 0;
 }
 
 export function normalizeDoorsValue(wardrobeType: string, value: number): number {
-  return Math.max(minDoorsAllowed(wardrobeType), Math.round(Number(value) || 0));
+  const rounded = Math.round(Number(value) || 0);
+  return Math.max(minDoorsAllowed(wardrobeType), Math.min(WARDROBE_DOORS_MAX, rounded));
 }
 
-export function readSingleDoorPosOr(value: unknown, fallback: SingleDoorPos): SingleDoorPos {
+export function readSingleDoorPosOr(value: unknown, defaultValue: SingleDoorPos): SingleDoorPos {
   return value === 'left' ||
     value === 'right' ||
     value === 'center' ||
     value === 'center-left' ||
     value === 'center-right'
     ? value
-    : fallback;
+    : defaultValue;
 }
 
 export function buildRawUiPatch(raw: StructureRawPatch): StructureUiPatch {

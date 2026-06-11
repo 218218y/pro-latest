@@ -9,11 +9,18 @@
 import type { RootStateLike } from '../../../types';
 
 import {
+  DEFAULT_CHEST_DRAWERS_COUNT,
+  DEFAULT_CORNER_DOORS,
+  DEFAULT_CORNER_WIDTH,
   DEFAULT_HEIGHT,
   DEFAULT_HINGED_DOORS,
+  DEFAULT_STACK_SPLIT_LOWER_HEIGHT,
   DEFAULT_WIDTH,
   HINGED_DEFAULT_DEPTH,
-} from './wardrobe_dimension_defaults.js';
+  BASE_LEG_DIMENSIONS,
+  CARCASS_BASE_DIMENSIONS,
+  CHEST_MODE_DIMENSIONS,
+} from '../../shared/wardrobe_dimension_tokens_shared.js';
 
 export function createDefaultState(opts?: { noneMode?: string }): RootStateLike {
   opts = opts && typeof opts === 'object' ? opts : {};
@@ -28,8 +35,11 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
         height: DEFAULT_HEIGHT,
         depth: HINGED_DEFAULT_DEPTH,
         doors: DEFAULT_HINGED_DOORS,
-        chestDrawersCount: 4,
-        stackSplitLowerHeight: 60,
+        chestDrawersCount: DEFAULT_CHEST_DRAWERS_COUNT,
+        chestCommodeMirrorHeightCm: CHEST_MODE_DIMENSIONS.commode.defaultMirrorHeightCm,
+        chestCommodeMirrorWidthCm: CHEST_MODE_DIMENSIONS.activeDefaults.widthCm,
+        chestCommodeMirrorWidthManual: false,
+        stackSplitLowerHeight: DEFAULT_STACK_SPLIT_LOWER_HEIGHT,
         stackSplitLowerDepth: HINGED_DEFAULT_DEPTH,
         stackSplitLowerWidth: DEFAULT_WIDTH,
         stackSplitLowerDoors: DEFAULT_HINGED_DOORS,
@@ -40,23 +50,24 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
         stackSplitLowerDoorsManual: false,
       },
 
-      // Sidebar tab state (React + legacy DOM share this, store-first).
+      // Sidebar tab state (React shell and boot flows share this, store-first).
       activeTab: 'structure',
 
-      // Builder UI defaults (must exist for first render; no DOM fallbacks).
+      // Builder UI defaults (must exist for first render; no DOM reads).
       doorStyle: 'flat',
       singleDoorPos: 'left',
       structureSelect: '',
-      cornerWidth: 120,
+      cornerWidth: DEFAULT_CORNER_WIDTH,
       // Corner wardrobe (independent controls)
-      cornerDoors: 3,
+      cornerDoors: DEFAULT_CORNER_DOORS,
       cornerHeight: DEFAULT_HEIGHT,
       cornerDepth: HINGED_DEFAULT_DEPTH,
       baseType: 'plinth',
       baseLegStyle: 'tapered',
       baseLegColor: 'black',
-      baseLegHeightCm: 12,
-      baseLegWidthCm: 4,
+      basePlinthHeightCm: CARCASS_BASE_DIMENSIONS.plinth.heightM * 100,
+      baseLegHeightCm: BASE_LEG_DIMENSIONS.defaults.heightCm,
+      baseLegWidthCm: BASE_LEG_DIMENSIONS.defaults.taperedWidthCm,
       // Sliding wardrobes: top/bottom rails finish (default requested: nickel).
       slidingTracksColor: 'nickel',
       colorChoice: '#ffffff',
@@ -67,6 +78,7 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
       hasCornice: false,
       // Split wardrobe into 2 stacked units (lower has base + custom depth, upper has no base).
       stackSplitEnabled: false,
+      stackSplitDecorativeSeparatorEnabled: false,
       showContents: false,
 
       // View/UI toggles (defaults must match index_pro.html "checked" states)
@@ -83,9 +95,10 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
       removeDoorsEnabled: false,
       cornerMode: false,
       isChestMode: false,
+      chestCommodeEnabled: false,
       lightingControl: false,
 
-      // UI-only state (ephemeral, not persisted). Kept here to avoid legacy uiState globals.
+      // UI-only state (ephemeral, not persisted). Kept here to avoid detached uiState globals.
       currentLayoutType: 'shelves',
       currentGridDivisions: 6,
       currentGridShelfVariant: 'regular',
@@ -199,7 +212,7 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
       restoring: false,
       systemReady: false,
 
-      // QA/debug flags (store.runtime-only; no legacy flags root-slot)
+      // QA/debug flags (store.runtime-only; no root flags slot)
       failFast: false,
       verboseConsoleErrors: true,
       verboseConsoleErrorsDedupeMs: 4000,

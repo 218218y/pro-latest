@@ -1,3 +1,4 @@
+import { SKETCH_BOX_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { SketchPlacementPreviewContext } from './render_preview_sketch_pipeline_shared.js';
 
 function applyRodPreview(ctx: SketchPlacementPreviewContext): boolean {
@@ -10,16 +11,37 @@ function applyRodPreview(ctx: SketchPlacementPreviewContext): boolean {
     lineMaterial = ctx.ud.__lineRemove || lineMaterial;
   }
 
-  const h0 = ctx.h > 0 ? ctx.h : 0.03;
-  const d0 = ctx.d > 0 ? ctx.d : 0.03;
+  const h0 = ctx.h > 0 ? ctx.h : SKETCH_BOX_DIMENSIONS.preview.rodDefaultHeightM;
+  const d0 = ctx.d > 0 ? ctx.d : SKETCH_BOX_DIMENSIONS.preview.rodDefaultDepthM;
   const showPrimaryBody = ctx.input.showPrimaryBody !== false;
   const showCenterXGuide = ctx.input.showCenterXGuide === true && !ctx.isRemove;
   const showCenterYGuide = ctx.input.showCenterYGuide === true && !ctx.isRemove;
   const guideWidth = Number(ctx.input.guideWidth);
   const guideHeight = Number(ctx.input.guideHeight);
-  const guideDepth = Math.max(0.006, d0 + 0.004);
-  const guideThicknessX = Math.max(0.006, Math.min(0.014, Math.max(0.0001, guideWidth || ctx.w) * 0.025));
-  const guideThicknessY = Math.max(0.006, Math.min(0.014, Math.max(0.0001, guideHeight || h0) * 0.025));
+  const guideVerticalX = Number(ctx.input.guideVerticalX);
+  const guideVerticalY = Number(ctx.input.guideVerticalY);
+  const guideHorizontalX = Number(ctx.input.guideHorizontalX);
+  const guideHorizontalY = Number(ctx.input.guideHorizontalY);
+  const guideDepth = Math.max(
+    SKETCH_BOX_DIMENSIONS.preview.rodGuideDepthMinM,
+    d0 + SKETCH_BOX_DIMENSIONS.preview.rodGuideDepthExtraM
+  );
+  const guideThicknessX = Math.max(
+    SKETCH_BOX_DIMENSIONS.preview.rodGuideThicknessMinM,
+    Math.min(
+      SKETCH_BOX_DIMENSIONS.preview.rodGuideThicknessMaxM,
+      Math.max(SKETCH_BOX_DIMENSIONS.preview.minScaleM, guideWidth || ctx.w) *
+        SKETCH_BOX_DIMENSIONS.preview.rodGuideThicknessRatio
+    )
+  );
+  const guideThicknessY = Math.max(
+    SKETCH_BOX_DIMENSIONS.preview.rodGuideThicknessMinM,
+    Math.min(
+      SKETCH_BOX_DIMENSIONS.preview.rodGuideThicknessMaxM,
+      Math.max(SKETCH_BOX_DIMENSIONS.preview.minScaleM, guideHeight || h0) *
+        SKETCH_BOX_DIMENSIONS.preview.rodGuideThicknessRatio
+    )
+  );
   const guideMat = ctx.ud.__matBrace || ctx.ud.__matRod || ctx.ud.__matShelf;
   const guideLine = ctx.ud.__lineBrace || ctx.ud.__lineRod || ctx.ud.__lineShelf;
 
@@ -48,9 +70,9 @@ function applyRodPreview(ctx: SketchPlacementPreviewContext): boolean {
         sx: guideThicknessX,
         sy: Number.isFinite(guideHeight) && guideHeight > 0 ? guideHeight : h0,
         sz: guideDepth,
-        px: 0,
-        py: ctx.y,
-        pz: ctx.z + 0.001,
+        px: Number.isFinite(guideVerticalX) ? guideVerticalX : 0,
+        py: Number.isFinite(guideVerticalY) ? guideVerticalY : ctx.y,
+        pz: ctx.z + SKETCH_BOX_DIMENSIONS.preview.rodGuideZOffsetM,
         material: guideMat,
         lineMaterial: guideLine,
         renderOrder: 10010,
@@ -68,9 +90,9 @@ function applyRodPreview(ctx: SketchPlacementPreviewContext): boolean {
         sx: Number.isFinite(guideWidth) && guideWidth > 0 ? guideWidth : ctx.w,
         sy: guideThicknessY,
         sz: guideDepth,
-        px: ctx.x,
-        py: 0,
-        pz: ctx.z + 0.001,
+        px: Number.isFinite(guideHorizontalX) ? guideHorizontalX : ctx.x,
+        py: Number.isFinite(guideHorizontalY) ? guideHorizontalY : 0,
+        pz: ctx.z + SKETCH_BOX_DIMENSIONS.preview.rodGuideZOffsetM,
         material: guideMat,
         lineMaterial: guideLine,
         renderOrder: 10010,
@@ -97,7 +119,7 @@ function applyDefaultShelfPreview(ctx: SketchPlacementPreviewContext): void {
     lineMaterial = ctx.ud.__lineRemove || lineMaterial;
   }
   const h0 = ctx.h > 0 ? ctx.h : ctx.woodThick;
-  const hReal = Math.max(0.0001, h0);
+  const hReal = Math.max(SKETCH_BOX_DIMENSIONS.preview.minScaleM, h0);
 
   ctx.placePreviewBoxMesh({
     mesh: ctx.shelfA,

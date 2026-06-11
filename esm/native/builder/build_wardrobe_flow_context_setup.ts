@@ -62,10 +62,16 @@ export function prepareBuildWardrobeContextSetup(
             baseType: string;
             baseLegStyle: string;
             baseLegColor: string;
+            basePlinthHeightCm: number | string;
             baseLegHeightCm: number | string;
             baseLegWidthCm?: number | string;
             colorChoice: string;
             customColor: string;
+            doorStyle: string;
+            isGroovesEnabled: boolean;
+            chestCommodeEnabled: boolean;
+            chestCommodeMirrorHeightCm: number | string;
+            chestCommodeMirrorWidthCm: number | string;
           }) => void
         >(buildChestOnly) || undefined,
     })

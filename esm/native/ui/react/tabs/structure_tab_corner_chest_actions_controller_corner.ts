@@ -7,13 +7,25 @@ import {
   setUiCornerSide,
   setUiCornerWidth,
 } from '../actions/store_actions.js';
-import { adjustCameraForCorner, resetCameraPreset } from '../../../services/api.js';
+import {
+  DEFAULT_CORNER_DOORS,
+  DEFAULT_CORNER_WIDTH,
+  DEFAULT_HEIGHT,
+  HINGED_DEFAULT_DEPTH,
+  adjustCameraForCorner,
+  resetCameraPreset,
+} from '../../../services/api.js';
 import { asFiniteInt, asFiniteNumber, structureTabReportNonFatal } from './structure_tab_shared.js';
 import {
   commitStructureStatePatchWithRecompute,
   type CornerPatch,
 } from './structure_tab_actions_controller_shared.js';
 import type { StructureTabCornerChestActionsArgs } from './structure_tab_corner_chest_actions_controller_contracts.js';
+import {
+  normalizeStructureDimensionValue,
+  readStructureCornerDimensionBounds,
+  readStructureCornerDoorsBounds,
+} from './structure_tab_dimension_constraints.js';
 
 export function createStructureTabCornerActionsController(args: StructureTabCornerChestActionsArgs) {
   const toggleCornerMode = (nextOn: boolean) => {
@@ -21,10 +33,10 @@ export function createStructureTabCornerActionsController(args: StructureTabCorn
     const patch: CornerPatch = { cornerMode: !!nextOn };
     if (nextOn) {
       patch.cornerSide = args.cornerSide;
-      patch.cornerWidth = asFiniteNumber(args.cornerWidth, 120);
-      patch.cornerDoors = Math.max(0, asFiniteInt(args.cornerDoors, 3));
-      patch.cornerHeight = asFiniteNumber(args.cornerHeight, 240);
-      patch.cornerDepth = asFiniteNumber(args.cornerDepth, args.depth);
+      patch.cornerWidth = asFiniteNumber(args.cornerWidth, DEFAULT_CORNER_WIDTH);
+      patch.cornerDoors = Math.max(0, asFiniteInt(args.cornerDoors, DEFAULT_CORNER_DOORS));
+      patch.cornerHeight = asFiniteNumber(args.cornerHeight, DEFAULT_HEIGHT);
+      patch.cornerDepth = asFiniteNumber(args.cornerDepth, asFiniteNumber(args.depth, HINGED_DEFAULT_DEPTH));
     }
 
     commitStructureStatePatchWithRecompute({
@@ -88,12 +100,12 @@ export function createStructureTabCornerActionsController(args: StructureTabCorn
   };
 
   const commitCornerDoors = (nn: number) => {
-    const nextDoorsRaw = Number(nn);
-    const nextDoors = Number.isFinite(nextDoorsRaw) ? Math.max(0, Math.round(nextDoorsRaw)) : 3;
+    const nextDoors =
+      normalizeStructureDimensionValue(nn, readStructureCornerDoorsBounds()) ?? DEFAULT_CORNER_DOORS;
     if (nextDoors === Math.max(0, Math.round(Number(args.cornerDoors) || 0))) return;
 
     const patch: CornerPatch = { cornerDoors: nextDoors };
-    const perDoor = 40;
+    const perDoor = DEFAULT_CORNER_WIDTH / DEFAULT_CORNER_DOORS;
     const curDoors = Number(args.cornerDoors);
     const curWidth = Number(args.cornerWidth);
 
@@ -126,7 +138,12 @@ export function createStructureTabCornerActionsController(args: StructureTabCorn
   };
 
   const commitCornerWidth = (nn: number) => {
-    if (Math.abs((Number(args.cornerWidth) || 0) - (Number(nn) || 0)) < 0.0001) return;
+    const next = normalizeStructureDimensionValue(
+      nn,
+      readStructureCornerDimensionBounds('cornerWidth', { cornerDoors: args.cornerDoors })
+    );
+    if (next == null) return;
+    if (Math.abs((Number(args.cornerWidth) || 0) - next) < 0.0001) return;
     const actionMeta: ActionMetaLike = {
       source: 'react:structure:cornerWidth',
       immediate: true,
@@ -136,17 +153,19 @@ export function createStructureTabCornerActionsController(args: StructureTabCorn
       app: args.app,
       source: 'react:structure:cornerWidth',
       meta: actionMeta,
-      uiPatch: { cornerWidth: nn },
-      statePatch: { ui: { cornerWidth: nn } },
+      uiPatch: { cornerWidth: next },
+      statePatch: { ui: { cornerWidth: next } },
       mutate: () => {
-        setUiCornerWidth(args.app, nn, actionMeta);
+        setUiCornerWidth(args.app, next, actionMeta);
       },
       errorLine: 'L3502',
     });
   };
 
   const commitCornerHeight = (nn: number) => {
-    if (Math.abs((Number(args.cornerHeight) || 0) - (Number(nn) || 0)) < 0.0001) return;
+    const next = normalizeStructureDimensionValue(nn, readStructureCornerDimensionBounds('cornerHeight'));
+    if (next == null) return;
+    if (Math.abs((Number(args.cornerHeight) || 0) - next) < 0.0001) return;
     const actionMeta: ActionMetaLike = {
       source: 'react:structure:cornerHeight',
       immediate: true,
@@ -156,17 +175,19 @@ export function createStructureTabCornerActionsController(args: StructureTabCorn
       app: args.app,
       source: 'react:structure:cornerHeight',
       meta: actionMeta,
-      uiPatch: { cornerHeight: nn },
-      statePatch: { ui: { cornerHeight: nn } },
+      uiPatch: { cornerHeight: next },
+      statePatch: { ui: { cornerHeight: next } },
       mutate: () => {
-        setUiCornerHeight(args.app, nn, actionMeta);
+        setUiCornerHeight(args.app, next, actionMeta);
       },
       errorLine: 'L3523',
     });
   };
 
   const commitCornerDepth = (nn: number) => {
-    if (Math.abs((Number(args.cornerDepth) || 0) - (Number(nn) || 0)) < 0.0001) return;
+    const next = normalizeStructureDimensionValue(nn, readStructureCornerDimensionBounds('cornerDepth'));
+    if (next == null) return;
+    if (Math.abs((Number(args.cornerDepth) || 0) - next) < 0.0001) return;
     const actionMeta: ActionMetaLike = {
       source: 'react:structure:cornerDepth',
       immediate: true,
@@ -176,10 +197,10 @@ export function createStructureTabCornerActionsController(args: StructureTabCorn
       app: args.app,
       source: 'react:structure:cornerDepth',
       meta: actionMeta,
-      uiPatch: { cornerDepth: nn },
-      statePatch: { ui: { cornerDepth: nn } },
+      uiPatch: { cornerDepth: next },
+      statePatch: { ui: { cornerDepth: next } },
       mutate: () => {
-        setUiCornerDepth(args.app, nn, actionMeta);
+        setUiCornerDepth(args.app, next, actionMeta);
       },
       errorLine: 'L3544',
     });

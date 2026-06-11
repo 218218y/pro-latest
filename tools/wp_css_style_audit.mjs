@@ -20,11 +20,39 @@ const mdOut = readOption('md-out');
 const budgetPath = readOption('budget') || 'tools/wp_css_style_budget.json';
 const check = args.has('--check') || (!jsonOut && !mdOut);
 
+function countZIndexWithoutToken(source) {
+  const declarations = source.matchAll(/z-index\s*:\s*([^;]+);/gi);
+  let count = 0;
+  for (const declaration of declarations) {
+    const value = String(declaration[1] || '').trim();
+    if (!/^var\(--wp-z-[^)]+\)$/i.test(value)) count += 1;
+  }
+  return count;
+}
+
+function isShadowTokenValue(value) {
+  const normalized = String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (normalized === 'none') return true;
+  return /^var\(--(?:wp-r-shadow|shadow)-[^)]+\)$/i.test(normalized);
+}
+
+function countBoxShadowWithoutToken(source) {
+  const declarations = source.matchAll(/box-shadow\s*:\s*([^;]+);/gi);
+  let count = 0;
+  for (const declaration of declarations) {
+    if (!isShadowTokenValue(declaration[1])) count += 1;
+  }
+  return count;
+}
+
 const metricReaders = Object.freeze({
   important: source => (source.match(/!important/g) || []).length,
   transitionAll: source => (source.match(/transition\s*:\s*all\b/gi) || []).length,
   zIndex: source => (source.match(/z-index\s*:/gi) || []).length,
-  boxShadow: source => (source.match(/box-shadow\s*:/gi) || []).length,
+  zIndexTokenless: countZIndexWithoutToken,
+  boxShadow: countBoxShadowWithoutToken,
 });
 
 function readBudget() {
@@ -39,6 +67,32 @@ function readBudget() {
     throw new Error(`${budgetPath}: missing metrics`);
   }
   return budget;
+}
+
+function formatMarkdownText(value) {
+  return String(value).replace(/\|/g, '\\|').replace(/\*/g, '\\*');
+}
+
+function formatMarkdownTable(rows) {
+  const headers = ['Metric', 'Current', 'Max', 'Status', 'Note'];
+  const aligns = ['left', 'right', 'right', 'left', 'left'];
+  const widths = headers.map((header, index) =>
+    Math.max(3, header.length, ...rows.map(row => String(row[index]).length))
+  );
+
+  const formatCell = (value, index) => {
+    const text = String(value);
+    return aligns[index] === 'right' ? text.padStart(widths[index]) : text.padEnd(widths[index]);
+  };
+  const separator = widths.map((width, index) =>
+    aligns[index] === 'right' ? `${'-'.repeat(width - 1)}:` : '-'.repeat(width)
+  );
+
+  return [
+    `| ${headers.map(formatCell).join(' | ')} |`,
+    `| ${separator.join(' | ')} |`,
+    ...rows.map(row => `| ${row.map(formatCell).join(' | ')} |`),
+  ].join('\n');
 }
 
 const budget = readBudget();
@@ -81,13 +135,15 @@ if (jsonOut) {
   writeFileSync(target, `${JSON.stringify(report, null, 2)}\n`);
 }
 if (mdOut) {
-  const rows = Object.keys(max)
-    .map(
-      key =>
-        `| ${key} | ${metrics[key]} | ${max[key]} | ${metrics[key] <= max[key] ? 'ok' : 'FAIL'} | ${notes[key]} |`
-    )
-    .join('\n');
-  const md = `# CSS Style Audit\n\nBudget: \`${budgetPath}\`  \nFile: \`${rel}\`\n\n${budget.policy || ''}\n\n| Metric | Current | Max | Status | Note |\n|---|---:|---:|---|---|\n${rows}\n`;
+  const rows = Object.keys(max).map(key => [
+    key,
+    metrics[key],
+    max[key],
+    metrics[key] <= max[key] ? 'ok' : 'FAIL',
+    formatMarkdownText(notes[key]),
+  ]);
+  const table = formatMarkdownTable(rows);
+  const md = `# CSS Style Audit\n\nBudget: \`${budgetPath}\`  \nFile: \`${rel}\`\n\n${formatMarkdownText(budget.policy || '')}\n\n${table}\n`;
   const target = join(root, mdOut);
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, md);
@@ -98,6 +154,7 @@ if (check && !report.ok) {
   for (const v of report.violations) console.error(`- ${v.metric}: ${v.value} > ${v.max}`);
   process.exit(1);
 }
-console.log(
-  `[css-style-audit] ok important=${metrics.important} transitionAll=${metrics.transitionAll} zIndex=${metrics.zIndex} boxShadow=${metrics.boxShadow}`
-);
+const metricSummary = Object.keys(metrics)
+  .map(key => `${key}=${metrics[key]}`)
+  .join(' ');
+console.log(`[css-style-audit] ok ${metricSummary}`);

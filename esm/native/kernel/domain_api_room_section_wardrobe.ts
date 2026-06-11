@@ -25,7 +25,7 @@ import {
   getDefaultDepthForWardrobeType,
   getDefaultDoorsForWardrobeType,
   getDefaultPerDoorWidthForWardrobeType,
-} from '../runtime/wardrobe_dimension_defaults.js';
+} from '../../shared/wardrobe_dimension_tokens_shared.js';
 import {
   canonicalizeWardrobeTypeProfileConfigSnapshot,
   cloneUiStateSnapshot,
@@ -269,7 +269,7 @@ function triggerRoomTypeRecompute(App: AppContainer, reason: string): void {
     null,
     { source: 'actions:room:setWardrobeType:recompute', force: true },
     { structureChanged: true },
-    { source: 'actions:room:setWardrobeType:recomputeFallback', reason }
+    { source: 'actions:room:setWardrobeType:recomputeRecovery', reason }
   );
 }
 

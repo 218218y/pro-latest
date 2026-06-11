@@ -10,8 +10,8 @@ import {
   getWriteStore,
   hasCanonicalPatchDispatch,
   hasDedicatedCanonicalPatchDispatch,
-  patchSliceWithStoreFallback,
-  touchMetaWithStoreFallback,
+  patchSliceCanonical,
+  touchMetaCanonical,
 } from '../esm/native/runtime/slice_write_access.ts';
 import { ensureMetaActionsNamespace } from '../esm/native/runtime/meta_actions_namespace.ts';
 
@@ -39,7 +39,7 @@ test('[slice-write-access] getSingleSlicePatchRoute canonicalizes noisy one-slic
   assert.equal(getSingleSlicePatchRoute({ ui: {} }), null);
 });
 
-test('[slice-write-access] patchSliceWithStoreFallback prefers namespaced patch over store/root fallbacks', () => {
+test('[slice-write-access] patchSliceCanonical prefers namespaced patch over store/root patch routes', () => {
   const calls: AnyRecord[] = [];
   const App = {
     actions: {
@@ -66,15 +66,15 @@ test('[slice-write-access] patchSliceWithStoreFallback prefers namespaced patch 
     },
   } satisfies AnyRecord;
 
-  const out = patchSliceWithStoreFallback(
+  const out = patchSliceCanonical(
     App,
     'runtime',
     { sketchMode: true },
     { source: 'rt' },
     {
       storeWriter: 'setRuntime',
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
 
@@ -82,7 +82,7 @@ test('[slice-write-access] patchSliceWithStoreFallback prefers namespaced patch 
   assert.deepEqual(calls, [{ op: 'runtime.patch', patch: { sketchMode: true }, meta: { source: 'rt' } }]);
 });
 
-test('[slice-write-access] patchSliceWithStoreFallback avoids namespace lookup when preferred store writer handles the patch', () => {
+test('[slice-write-access] patchSliceCanonical avoids namespace lookup when preferred store writer handles the patch', () => {
   let runtimeReads = 0;
   const calls: AnyRecord[] = [];
   const actions = {} as AnyRecord;
@@ -103,6 +103,10 @@ test('[slice-write-access] patchSliceWithStoreFallback avoids namespace lookup w
   const App = {
     actions,
     store: {
+      setRuntime(patch: AnyRecord, meta?: AnyRecord) {
+        calls.push({ op: 'store.setRuntime', patch, meta });
+        return { via: 'store.setRuntime' };
+      },
       patch(patch: AnyRecord, meta?: AnyRecord) {
         calls.push({ op: 'store.patch', patch, meta });
         return { via: 'store.patch' };
@@ -110,7 +114,7 @@ test('[slice-write-access] patchSliceWithStoreFallback avoids namespace lookup w
     },
   } satisfies AnyRecord;
 
-  const out = patchSliceWithStoreFallback(
+  const out = patchSliceCanonical(
     App,
     'runtime',
     { sketchMode: true },
@@ -118,22 +122,22 @@ test('[slice-write-access] patchSliceWithStoreFallback avoids namespace lookup w
     {
       storeWriter: 'setRuntime',
       preferStoreWriter: true,
-      allowRootStorePatchFallback: true,
+      allowRootStorePatch: true,
     }
   );
 
-  assert.deepEqual(out, { via: 'store.patch' });
+  assert.deepEqual(out, { via: 'store.setRuntime' });
   assert.equal(runtimeReads, 0);
   assert.deepEqual(calls, [
     {
-      op: 'store.patch',
-      patch: { runtime: { sketchMode: true } },
+      op: 'store.setRuntime',
+      patch: { sketchMode: true },
       meta: { source: 'rt:prefer-store' },
     },
   ]);
 });
 
-test('[slice-write-access] patchSliceWithStoreFallback keeps canonical fallback order when preferred store writer returns undefined', () => {
+test('[slice-write-access] patchSliceCanonical treats dedicated store writers as terminal even when they return undefined', () => {
   const calls: AnyRecord[] = [];
   const App = {
     actions: {
@@ -160,7 +164,7 @@ test('[slice-write-access] patchSliceWithStoreFallback keeps canonical fallback 
     },
   } satisfies AnyRecord;
 
-  const out = patchSliceWithStoreFallback(
+  const out = patchSliceCanonical(
     App,
     'config',
     { width: 120 },
@@ -168,19 +172,16 @@ test('[slice-write-access] patchSliceWithStoreFallback keeps canonical fallback 
     {
       storeWriter: 'setConfig',
       preferStoreWriter: true,
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
 
-  assert.deepEqual(out, { via: 'config.patch' });
-  assert.deepEqual(calls, [
-    { op: 'store.setConfig', patch: { width: 120 }, meta: { source: 'cfg' } },
-    { op: 'config.patch', patch: { width: 120 }, meta: { source: 'cfg' } },
-  ]);
+  assert.equal(out, undefined);
+  assert.deepEqual(calls, [{ op: 'store.setConfig', patch: { width: 120 }, meta: { source: 'cfg' } }]);
 });
 
-test('[slice-write-access] patchSliceWithStoreFallback resolves write roots once per dispatch attempt', () => {
+test('[slice-write-access] patchSliceCanonical resolves write roots once per dispatch attempt', () => {
   let actionsReads = 0;
   let storeReads = 0;
   const calls: AnyRecord[] = [];
@@ -217,7 +218,7 @@ test('[slice-write-access] patchSliceWithStoreFallback resolves write roots once
     },
   } satisfies AnyRecord;
 
-  const out = patchSliceWithStoreFallback(
+  const out = patchSliceCanonical(
     App,
     'config',
     { width: 144 },
@@ -225,21 +226,18 @@ test('[slice-write-access] patchSliceWithStoreFallback resolves write roots once
     {
       storeWriter: 'setConfig',
       preferStoreWriter: true,
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
 
-  assert.deepEqual(out, { via: 'config.patch' });
+  assert.equal(out, undefined);
   assert.equal(actionsReads, 1);
   assert.equal(storeReads, 1);
-  assert.deepEqual(calls, [
-    { op: 'store.setConfig', patch: { width: 144 }, meta: { source: 'cfg:cached' } },
-    { op: 'config.patch', patch: { width: 144 }, meta: { source: 'cfg:cached' } },
-  ]);
+  assert.deepEqual(calls, [{ op: 'store.setConfig', patch: { width: 144 }, meta: { source: 'cfg:cached' } }]);
 });
 
-test('[slice-write-access] patchSliceWithStoreFallback skips write root resolution for empty slice payloads', () => {
+test('[slice-write-access] patchSliceCanonical skips write root resolution for empty slice payloads', () => {
   let actionsReads = 0;
   let storeReads = 0;
   const App = {
@@ -263,7 +261,7 @@ test('[slice-write-access] patchSliceWithStoreFallback skips write root resoluti
     },
   } satisfies AnyRecord;
 
-  const out = patchSliceWithStoreFallback(
+  const out = patchSliceCanonical(
     App,
     'runtime',
     {},
@@ -271,8 +269,8 @@ test('[slice-write-access] patchSliceWithStoreFallback skips write root resoluti
     {
       storeWriter: 'setRuntime',
       preferStoreWriter: true,
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
 
@@ -295,14 +293,14 @@ test('[slice-write-access] repeated dispatch refreshes cached namespace bindings
     store: {},
   } satisfies AnyRecord;
 
-  const first = patchSliceWithStoreFallback(
+  const first = patchSliceCanonical(
     App,
     'runtime',
     { sketchMode: true },
     { source: 'first' },
     {
       storeWriter: 'setRuntime',
-      allowRootStorePatchFallback: false,
+      allowRootStorePatch: false,
     }
   );
 
@@ -313,14 +311,14 @@ test('[slice-write-access] repeated dispatch refreshes cached namespace bindings
     },
   };
 
-  const second = patchSliceWithStoreFallback(
+  const second = patchSliceCanonical(
     App,
     'runtime',
     { sketchMode: false },
     { source: 'second' },
     {
       storeWriter: 'setRuntime',
-      allowRootStorePatchFallback: false,
+      allowRootStorePatch: false,
     }
   );
 
@@ -352,28 +350,16 @@ test('[slice-write-access] repeated meta touch refreshes cached meta namespace a
     },
   } satisfies AnyRecord;
 
-  const first = touchMetaWithStoreFallback(
-    App,
-    { source: 'first-touch' },
-    { allowRootStorePatchFallback: true }
-  );
+  const first = touchMetaCanonical(App, { source: 'first-touch' }, { allowRootStorePatch: true });
 
   metaNamespace.touch = ensureMetaActionsNamespace({ meta: {} }).touch;
-  const second = touchMetaWithStoreFallback(
-    App,
-    { source: 'second-touch' },
-    { allowRootStorePatchFallback: true }
-  );
+  const second = touchMetaCanonical(App, { source: 'second-touch' }, { allowRootStorePatch: true });
 
   metaNamespace.touch = (meta?: AnyRecord) => {
     calls.push({ op: 'meta.touch:third', meta });
     return { via: 'meta.touch:third' };
   };
-  const third = touchMetaWithStoreFallback(
-    App,
-    { source: 'third-touch' },
-    { allowRootStorePatchFallback: true }
-  );
+  const third = touchMetaCanonical(App, { source: 'third-touch' }, { allowRootStorePatch: true });
 
   assert.deepEqual(first, { via: 'meta.touch:first' });
   assert.deepEqual(second, { via: 'store.patch' });
@@ -426,8 +412,8 @@ test('[slice-write-access] dispatchCanonicalPatchPayload reuses one resolved con
     {},
     { source: 'meta:cached' },
     {
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
 
@@ -469,8 +455,8 @@ test('[slice-write-access] dispatchCanonicalPatchPayload uses explicit meta touc
     {},
     { source: 'touch' },
     {
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
 
@@ -500,8 +486,8 @@ test('[slice-write-access] dispatchCanonicalPatchPayload falls through from root
     { ui: { activeTab: 'doors' }, config: { width: 120 } },
     { source: 'root-fallback' },
     {
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
 
@@ -520,6 +506,57 @@ test('[slice-write-access] dispatchCanonicalPatchPayload falls through from root
   ]);
 });
 
+test('[slice-write-access] root patch routes are opt-in instead of default write paths', () => {
+  const calls: AnyRecord[] = [];
+  const App = {
+    actions: {
+      meta: ensureMetaActionsNamespace({}),
+    },
+    store: {
+      patch(patch: AnyRecord, meta?: AnyRecord) {
+        calls.push({ op: 'store.patch', patch, meta });
+        return { via: 'store.patch' };
+      },
+    },
+  } satisfies AnyRecord;
+
+  assert.equal(
+    patchSliceCanonical(
+      App,
+      'config',
+      { width: 120 },
+      { source: 'config:missing-writer' },
+      { storeWriter: 'setConfig' }
+    ),
+    undefined
+  );
+  assert.equal(
+    dispatchCanonicalPatchPayload(
+      App,
+      { ui: { activeTab: 'design' }, config: { width: 120 } },
+      { source: 'root:missing-opt-in' }
+    ),
+    undefined
+  );
+  assert.equal(touchMetaCanonical(App, { source: 'meta:missing-writer' }), undefined);
+  assert.deepEqual(calls, []);
+
+  const explicitRoot = dispatchCanonicalPatchPayload(
+    App,
+    { ui: { activeTab: 'design' }, config: { width: 120 } },
+    { source: 'root:explicit' },
+    { allowRootStorePatch: true }
+  );
+  assert.deepEqual(explicitRoot, { via: 'store.patch' });
+  assert.deepEqual(calls, [
+    {
+      op: 'store.patch',
+      patch: { ui: { activeTab: 'design' }, config: { width: 120 } },
+      meta: { source: 'root:explicit' },
+    },
+  ]);
+});
+
 test('[slice-write-access] hasCanonicalPatchDispatch distinguishes leaf seams from missing writers', () => {
   const App = {
     store: {
@@ -528,7 +565,7 @@ test('[slice-write-access] hasCanonicalPatchDispatch distinguishes leaf seams fr
   } satisfies AnyRecord;
 
   assert.equal(
-    hasCanonicalPatchDispatch(App, { config: { width: 120 } }, { allowRootStorePatchFallback: false }),
+    hasCanonicalPatchDispatch(App, { config: { width: 120 } }, { allowRootStorePatch: false }),
     true
   );
   assert.equal(
@@ -536,7 +573,7 @@ test('[slice-write-access] hasCanonicalPatchDispatch distinguishes leaf seams fr
       App,
       { ui: { activeTab: 'doors' }, config: { width: 120 } },
       {
-        allowRootStorePatchFallback: false,
+        allowRootStorePatch: false,
       }
     ),
     false
@@ -562,6 +599,9 @@ test('[slice-write-access] hasCanonicalPatchDispatch avoids namespace lookup whe
   const App = {
     actions,
     store: {
+      setRuntime() {
+        return undefined;
+      },
       patch() {
         return undefined;
       },
@@ -622,7 +662,7 @@ test('[slice-write-access] hasCanonicalPatchDispatch resolves write roots once p
       {
         storeWriter: 'setRuntime',
         preferStoreWriter: true,
-        allowRootStorePatchFallback: true,
+        allowRootStorePatch: true,
       }
     ),
     true
@@ -631,7 +671,7 @@ test('[slice-write-access] hasCanonicalPatchDispatch resolves write roots once p
   assert.equal(storeReads, 1);
 });
 
-test('[slice-write-access] touchMetaWithStoreFallback uses store.setMeta before store.patch when meta.touch is absent', () => {
+test('[slice-write-access] touchMetaCanonical uses store.setMeta before store.patch when meta.touch is absent', () => {
   const calls: AnyRecord[] = [];
   const App = {
     store: {
@@ -646,12 +686,12 @@ test('[slice-write-access] touchMetaWithStoreFallback uses store.setMeta before 
     },
   } satisfies AnyRecord;
 
-  const out = touchMetaWithStoreFallback(App, { source: 'touch' }, { allowRootStorePatchFallback: true });
+  const out = touchMetaCanonical(App, { source: 'touch' }, { allowRootStorePatch: true });
   assert.deepEqual(out, { via: 'store.setMeta' });
   assert.deepEqual(calls, [{ op: 'store.setMeta', patch: {}, meta: { source: 'touch' } }]);
 });
 
-test('[slice-write-access] touchMetaWithStoreFallback ignores stub meta.touch and falls through to store.setMeta', () => {
+test('[slice-write-access] touchMetaCanonical ignores stub meta.touch and falls through to store.setMeta', () => {
   const calls: AnyRecord[] = [];
   const App = {
     actions: {
@@ -665,7 +705,7 @@ test('[slice-write-access] touchMetaWithStoreFallback ignores stub meta.touch an
     },
   } satisfies AnyRecord;
 
-  const out = touchMetaWithStoreFallback(App, { source: 'touch-stub' });
+  const out = touchMetaCanonical(App, { source: 'touch-stub' });
   assert.deepEqual(out, { via: 'store.setMeta' });
   assert.deepEqual(calls, [{ op: 'store.setMeta', patch: {}, meta: { source: 'touch-stub' } }]);
 });
@@ -677,7 +717,7 @@ test('[slice-write-access] hasCanonicalPatchDispatch fails closed when the only 
     },
   } satisfies AnyRecord;
 
-  assert.equal(hasCanonicalPatchDispatch(App, {}, { allowRootStorePatchFallback: false }), false);
+  assert.equal(hasCanonicalPatchDispatch(App, {}, { allowRootStorePatch: false }), false);
 });
 
 test('[slice-write-access] dispatchCanonicalPatchPayload skips stub meta.touch and falls through to root store patch', () => {
@@ -694,12 +734,7 @@ test('[slice-write-access] dispatchCanonicalPatchPayload skips stub meta.touch a
     },
   } satisfies AnyRecord;
 
-  const out = dispatchCanonicalPatchPayload(
-    App,
-    {},
-    { source: 'touch-stub' },
-    { allowRootStorePatchFallback: true }
-  );
+  const out = dispatchCanonicalPatchPayload(App, {}, { source: 'touch-stub' }, { allowRootStorePatch: true });
   assert.deepEqual(out, { via: 'store.patch' });
   assert.deepEqual(calls, [{ op: 'store.patch', patch: {}, meta: { source: 'touch-stub' } }]);
 });
@@ -722,7 +757,7 @@ test('[slice-write-access] canonical dispatch treats unknown-only root payloads 
   } satisfies AnyRecord;
 
   assert.equal(
-    hasCanonicalPatchDispatch(App, { unknown: { alive: true } }, { allowRootStorePatchFallback: true }),
+    hasCanonicalPatchDispatch(App, { unknown: { alive: true } }, { allowRootStorePatch: true }),
     false
   );
   assert.equal(
@@ -730,7 +765,7 @@ test('[slice-write-access] canonical dispatch treats unknown-only root payloads 
       App,
       { unknown: { alive: true } },
       { source: 'unknown-only' },
-      { allowRootActionPatchFallback: true, allowRootStorePatchFallback: true }
+      { allowRootActionPatch: true, allowRootStorePatch: true }
     ),
     undefined
   );
@@ -760,7 +795,7 @@ test('[slice-write-access] canonical noop routes skip write root resolution enti
   } satisfies AnyRecord;
 
   assert.equal(
-    hasCanonicalPatchDispatch(App, { unknown: { alive: true } }, { allowRootStorePatchFallback: true }),
+    hasCanonicalPatchDispatch(App, { unknown: { alive: true } }, { allowRootStorePatch: true }),
     false
   );
   assert.equal(
@@ -768,7 +803,7 @@ test('[slice-write-access] canonical noop routes skip write root resolution enti
       App,
       { unknown: { alive: true } },
       { source: 'unknown-only:skip-roots' },
-      { allowRootActionPatchFallback: true, allowRootStorePatchFallback: true }
+      { allowRootActionPatch: true, allowRootStorePatch: true }
     ),
     undefined
   );
@@ -796,7 +831,7 @@ test('[slice-write-access] canonical root patch strips empty known slices before
       config: {},
     },
     { source: 'root:trim-empty' },
-    { allowRootStorePatchFallback: true }
+    { allowRootStorePatch: true }
   );
 
   assert.deepEqual(out, { via: 'store.patch' });
@@ -809,7 +844,7 @@ test('[slice-write-access] canonical root patch strips empty known slices before
   ]);
 });
 
-test('[slice-write-access] canonical dispatch converges noisy one-slice root payloads onto the slice route instead of synthetic root patch fallback', () => {
+test('[slice-write-access] canonical dispatch converges noisy one-slice root payloads onto the slice route instead of synthetic root patch route', () => {
   const calls: AnyRecord[] = [];
   const App = {
     actions: {
@@ -836,7 +871,7 @@ test('[slice-write-access] canonical dispatch converges noisy one-slice root pay
     hasCanonicalPatchDispatch(
       App,
       { runtime: { sketchMode: true }, ui: {}, unknown: { ignored: true } },
-      { allowRootActionPatchFallback: true, allowRootStorePatchFallback: true }
+      { allowRootActionPatch: true, allowRootStorePatch: true }
     ),
     true
   );
@@ -845,7 +880,7 @@ test('[slice-write-access] canonical dispatch converges noisy one-slice root pay
     App,
     { runtime: { sketchMode: true }, ui: {}, unknown: { ignored: true } },
     { source: 'root:noisy-single' },
-    { allowRootActionPatchFallback: true, allowRootStorePatchFallback: true }
+    { allowRootActionPatch: true, allowRootStorePatch: true }
   );
 
   assert.deepEqual(out, { via: 'runtime.patch' });
@@ -882,11 +917,7 @@ test('[slice-write-access] canonical dispatch fails closed on empty single-slice
   } satisfies AnyRecord;
 
   assert.equal(
-    hasCanonicalPatchDispatch(
-      App,
-      { ui: {} },
-      { allowRootActionPatchFallback: true, allowRootStorePatchFallback: true }
-    ),
+    hasCanonicalPatchDispatch(App, { ui: {} }, { allowRootActionPatch: true, allowRootStorePatch: true }),
     false
   );
   assert.equal(
@@ -894,7 +925,7 @@ test('[slice-write-access] canonical dispatch fails closed on empty single-slice
       App,
       { ui: {} },
       { source: 'root:empty-single' },
-      { allowRootActionPatchFallback: true, allowRootStorePatchFallback: true }
+      { allowRootActionPatch: true, allowRootStorePatch: true }
     ),
     undefined
   );
@@ -1012,7 +1043,7 @@ test('[slice-write-access] getWriteAppLike/getWriteActions/getWriteStore stay al
   assert.equal(getWriteAppLike(App)?.store, nextStore);
 });
 
-test('[slice-write-access] touchMetaWithStoreFallback reuses the canonical root fallback dispatch order when namespace and store-meta seams are skipped', () => {
+test('[slice-write-access] touchMetaCanonical reuses the canonical root patch dispatch order when namespace and store-meta seams are skipped', () => {
   const calls: AnyRecord[] = [];
   const App = {
     actions: {
@@ -1035,13 +1066,13 @@ test('[slice-write-access] touchMetaWithStoreFallback reuses the canonical root 
     },
   } satisfies AnyRecord;
 
-  const out = touchMetaWithStoreFallback(
+  const out = touchMetaCanonical(
     App,
     { source: 'touch:root-fallback' },
     {
       skipNamespaceTouch: true,
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
 
@@ -1052,7 +1083,7 @@ test('[slice-write-access] touchMetaWithStoreFallback reuses the canonical root 
   ]);
 });
 
-test('[slice-write-access] meta-touch and slice dispatch keep the same prefer-primary ordering policy', () => {
+test('[slice-write-access] meta-touch and slice dispatch treat dedicated store writers as terminal primary routes', () => {
   const calls: AnyRecord[] = [];
   const App = {
     actions: {
@@ -1089,16 +1120,16 @@ test('[slice-write-access] meta-touch and slice dispatch keep the same prefer-pr
     },
   } satisfies AnyRecord;
 
-  const metaOut = touchMetaWithStoreFallback(
+  const metaOut = touchMetaCanonical(
     App,
     { source: 'meta:prefer' },
     {
       preferStoreWriter: true,
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
-  const patchOut = patchSliceWithStoreFallback(
+  const patchOut = patchSliceCanonical(
     App,
     'config',
     { width: 180 },
@@ -1106,19 +1137,15 @@ test('[slice-write-access] meta-touch and slice dispatch keep the same prefer-pr
     {
       storeWriter: 'setConfig',
       preferStoreWriter: true,
-      allowRootActionPatchFallback: true,
-      allowRootStorePatchFallback: true,
+      allowRootActionPatch: true,
+      allowRootStorePatch: true,
     }
   );
 
-  assert.deepEqual(metaOut, { via: 'actions.patch' });
-  assert.deepEqual(patchOut, { via: 'actions.patch' });
+  assert.equal(metaOut, undefined);
+  assert.equal(patchOut, undefined);
   assert.deepEqual(calls, [
     { op: 'store.setMeta', meta: { source: 'meta:prefer' } },
-    { op: 'meta.touch', meta: { source: 'meta:prefer' } },
-    { op: 'actions.patch', patch: {}, meta: { source: 'meta:prefer' } },
     { op: 'store.setConfig', patch: { width: 180 }, meta: { source: 'cfg:prefer' } },
-    { op: 'config.patch', patch: { width: 180 }, meta: { source: 'cfg:prefer' } },
-    { op: 'actions.patch', patch: { config: { width: 180 } }, meta: { source: 'cfg:prefer' } },
   ]);
 });

@@ -39,15 +39,15 @@ export function notesOverlayReportNonFatal(op: string, err: unknown, dedupeMs = 
 export const MIN_CREATE = 30;
 export const MIN_SIZE = 50;
 
-export function uiFontSizeToLegacy(ui: string): string {
+export function toolbarFontSizeToEditorFontSize(ui: string): string {
   const n = parseInt(String(ui || '').trim(), 10);
   if (!Number.isFinite(n)) return '4';
   const clamped = Math.max(1, Math.min(5, n));
   return String(clamped + 1);
 }
 
-export function legacyFontSizeToUi(legacy: string): string {
-  const n = parseInt(String(legacy || '').trim(), 10);
+export function editorFontSizeToToolbarFontSize(editorSize: string): string {
+  const n = parseInt(String(editorSize || '').trim(), 10);
   if (!Number.isFinite(n)) return '3';
   const clamped = Math.max(2, Math.min(6, n));
   return String(clamped - 1);
@@ -57,10 +57,10 @@ export function px(n: number): string {
   return `${Math.round(n)}px`;
 }
 
-export function parsePx(v: unknown, fallback: number): number {
-  if (typeof v !== 'string') return fallback;
+export function parsePx(v: unknown, defaultValue: number): number {
+  if (typeof v !== 'string') return defaultValue;
   const n = parseFloat(v);
-  return Number.isFinite(n) ? n : fallback;
+  return Number.isFinite(n) ? n : defaultValue;
 }
 
 export function isEmptyHtml(html: string): boolean {

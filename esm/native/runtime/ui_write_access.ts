@@ -3,7 +3,7 @@
 // Goal:
 // - Centralize the UI write seams in one place.
 // - Prefer App.actions.ui.* surfaces when installed.
-// - Keep a small store-backed fallback for lightweight harnesses/tools.
+// - Keep a small store-backed compatibility route for lightweight harnesses/tools.
 // - Delete-pass: avoid bouncing through generic root actions.patch when a UI seam exists.
 //
 // Notes:
@@ -14,7 +14,7 @@ import type { UiRawScalarKey, UiRawScalarValueMap } from '../../../types/ui_raw'
 import { buildUiRawScalarPatch } from '../../../types/ui_raw.js';
 import { metaUiOnly } from './meta_profiles_access.js';
 import { readUiStateFromApp } from './root_state_access.js';
-import { asRecord, getSliceNamespace, patchSliceWithStoreFallback } from './slice_write_access.js';
+import { asRecord, getSliceNamespace, patchSliceCanonical } from './slice_write_access.js';
 
 function asUiPatch(v: unknown): UiSlicePatch {
   const rec = asRecord(v);
@@ -116,7 +116,10 @@ function getUiNamespace(App: unknown): UiActionsNamespaceLike | null {
 export function patchUi(App: unknown, patch: unknown, meta?: ActionMetaLike): unknown {
   const uiPatch = filterUiPatchAgainstCurrentState(App, asUiPatch(patch));
   if (!hasOwnKeys(uiPatch)) return undefined;
-  return patchSliceWithStoreFallback(App, 'ui', uiPatch, meta, { storeWriter: 'setUi' });
+  return patchSliceCanonical(App, 'ui', uiPatch, meta, {
+    storeWriter: 'setUi',
+    allowRootStorePatch: true,
+  });
 }
 
 /** Patch UI slice with UI-only semantics by default (when the surface supports it). */
@@ -219,7 +222,7 @@ export const setUiRawScalar: SetUiRawScalar = (
     return uiNs.setRawScalar(k, value, m);
   }
 
-  // Fallback: patch raw object (UI-only by convention).
+  // Raw scalar compatibility route: patch the raw object with UI-only meta.
   return patchUiSoft(App, { raw: buildUiRawScalarPatch(k, value) }, m);
 };
 

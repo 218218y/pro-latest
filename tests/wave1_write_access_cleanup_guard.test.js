@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { patchUi, setUiScalarSoft } from '../esm/native/runtime/ui_write_access.ts';
 import { setRuntimeSketchMode } from '../esm/native/runtime/runtime_write_access.ts';
 import { setModePrimary } from '../esm/native/runtime/mode_write_access.ts';
-import { patchSliceWithStoreFallback } from '../esm/native/runtime/slice_write_access.ts';
+import { patchSliceCanonical } from '../esm/native/runtime/slice_write_access.ts';
 
 function createCallLog() {
   /** @type {Array<Record<string, unknown>>} */
@@ -88,10 +88,10 @@ test('[wave1] runtime + mode write seams use canonical store-backed routes witho
     },
   };
 
-  assert.deepEqual(setRuntimeSketchMode(App, 1, { source: 'runtime:sketch' }), { via: 'store.patch' });
+  assert.deepEqual(setRuntimeSketchMode(App, 1, { source: 'runtime:sketch' }), { via: 'store.setRuntime' });
   assert.deepEqual(calls[0], {
-    op: 'store.patch',
-    patch: { runtime: { sketchMode: true } },
+    op: 'store.setRuntime',
+    patch: { sketchMode: true },
     meta: {
       source: 'runtime:sketch',
       noBuild: true,
@@ -126,7 +126,7 @@ test('[wave1] runtime + mode write seams use canonical store-backed routes witho
   ]);
 });
 
-test('[wave1] slice write router no-ops on empty patches and uses the canonical root patch seam for UI/runtime store fallbacks', () => {
+test('[wave1] slice write router no-ops on empty patches and uses dedicated UI/runtime store writers before root patch routes', () => {
   const calls = createCallLog();
   const App = {
     actions: {
@@ -154,7 +154,7 @@ test('[wave1] slice write router no-ops on empty patches and uses the canonical 
   };
 
   assert.equal(
-    patchSliceWithStoreFallback(
+    patchSliceCanonical(
       App,
       'ui',
       {},
@@ -162,8 +162,8 @@ test('[wave1] slice write router no-ops on empty patches and uses the canonical 
       {
         storeWriter: 'setUi',
         preferStoreWriter: true,
-        allowRootActionPatchFallback: true,
-        allowRootStorePatchFallback: true,
+        allowRootActionPatch: true,
+        allowRootStorePatch: true,
       }
     ),
     undefined
@@ -171,7 +171,7 @@ test('[wave1] slice write router no-ops on empty patches and uses the canonical 
   assert.deepEqual(calls, []);
 
   assert.deepEqual(
-    patchSliceWithStoreFallback(
+    patchSliceCanonical(
       App,
       'ui',
       { activeTab: 'notes' },
@@ -179,13 +179,13 @@ test('[wave1] slice write router no-ops on empty patches and uses the canonical 
       {
         storeWriter: 'setUi',
         preferStoreWriter: true,
-        allowRootActionPatchFallback: true,
-        allowRootStorePatchFallback: true,
+        allowRootActionPatch: true,
+        allowRootStorePatch: true,
       }
     ),
-    { via: 'store.patch' }
+    { via: 'store.setUi' }
   );
   assert.deepEqual(calls, [
-    { op: 'store.patch', patch: { ui: { activeTab: 'notes' } }, meta: { source: 'writer:first' } },
+    { op: 'store.setUi', patch: { activeTab: 'notes' }, meta: { source: 'writer:first' } },
   ]);
 });

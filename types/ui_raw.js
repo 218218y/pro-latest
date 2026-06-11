@@ -4,6 +4,7 @@
 // - Provide a stable, typed map for the most common `ui.raw.*` keys.
 // - Keep the surface permissive (index signature) for legacy/experimental keys.
 export const UI_RAW_BOOLEAN_KEYS = [
+  'chestCommodeMirrorWidthManual',
   'stackSplitLowerDepthManual',
   'stackSplitLowerWidthManual',
   'stackSplitLowerDoorsManual',
@@ -14,6 +15,8 @@ export const UI_RAW_NUMERIC_KEYS = [
   'depth',
   'doors',
   'chestDrawersCount',
+  'chestCommodeMirrorHeightCm',
+  'chestCommodeMirrorWidthCm',
   'stackSplitLowerHeight',
   'stackSplitLowerDepth',
   'stackSplitLowerWidth',

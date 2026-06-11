@@ -7,9 +7,9 @@ import type {
   SliceWriteOptions,
 } from './slice_write_access_shared.js';
 
-export type RootFallbackOptions = Pick<
+export type RootPatchDispatchOptions = Pick<
   CanonicalPatchDispatchOptions,
-  'allowRootActionPatchFallback' | 'allowRootStorePatchFallback'
+  'allowRootActionPatch' | 'allowRootStorePatch'
 >;
 
 function freezeRootPatchDispatchTargets(
@@ -18,36 +18,34 @@ function freezeRootPatchDispatchTargets(
   return Object.freeze(targets.slice());
 }
 
-const DEFAULT_ROOT_FALLBACK_DISPATCH_TARGETS = freezeRootPatchDispatchTargets('rootStorePatch');
-const ROOT_FALLBACK_DISPATCH_TARGETS_WITH_ACTION = freezeRootPatchDispatchTargets(
+const DEFAULT_ROOT_PATCH_DISPATCH_TARGETS = freezeRootPatchDispatchTargets('rootStorePatch');
+const ROOT_PATCH_DISPATCH_TARGETS_WITH_ACTION = freezeRootPatchDispatchTargets(
   'rootActionPatch',
   'rootStorePatch'
 );
-const ROOT_FALLBACK_ACTION_ONLY_DISPATCH_TARGETS = freezeRootPatchDispatchTargets('rootActionPatch');
-const EMPTY_ROOT_FALLBACK_DISPATCH_TARGETS = freezeRootPatchDispatchTargets();
+const ROOT_PATCH_ACTION_ONLY_DISPATCH_TARGETS = freezeRootPatchDispatchTargets('rootActionPatch');
+const EMPTY_ROOT_PATCH_DISPATCH_TARGETS = freezeRootPatchDispatchTargets();
 
 const sliceDispatchTargetsCache = new Map<number, readonly SliceDispatchTarget[]>();
 const metaTouchDispatchTargetsCache = new Map<number, readonly MetaTouchDispatchTarget[]>();
 
-function createRootFallbackDispatchTargetSet(opts?: RootFallbackOptions): readonly RootPatchDispatchTarget[] {
-  const allowRootActionPatchFallback = !!opts?.allowRootActionPatchFallback;
-  const allowRootStorePatchFallback = opts?.allowRootStorePatchFallback !== false;
-  if (!allowRootStorePatchFallback) {
-    return allowRootActionPatchFallback
-      ? ROOT_FALLBACK_ACTION_ONLY_DISPATCH_TARGETS
-      : EMPTY_ROOT_FALLBACK_DISPATCH_TARGETS;
+function createRootPatchDispatchTargetSet(
+  opts?: RootPatchDispatchOptions
+): readonly RootPatchDispatchTarget[] {
+  const allowRootActionPatch = !!opts?.allowRootActionPatch;
+  const allowRootStorePatch = opts?.allowRootStorePatch === true;
+  if (!allowRootStorePatch) {
+    return allowRootActionPatch ? ROOT_PATCH_ACTION_ONLY_DISPATCH_TARGETS : EMPTY_ROOT_PATCH_DISPATCH_TARGETS;
   }
-  return allowRootActionPatchFallback
-    ? ROOT_FALLBACK_DISPATCH_TARGETS_WITH_ACTION
-    : DEFAULT_ROOT_FALLBACK_DISPATCH_TARGETS;
+  return allowRootActionPatch ? ROOT_PATCH_DISPATCH_TARGETS_WITH_ACTION : DEFAULT_ROOT_PATCH_DISPATCH_TARGETS;
 }
 
 function createSliceDispatchTargetCacheKey(opts: SliceWriteOptions): number {
   return (
     (opts.preferStoreWriter ? 1 : 0) |
     (opts.skipNamespacePatch ? 2 : 0) |
-    (opts.allowRootActionPatchFallback ? 4 : 0) |
-    (opts.allowRootStorePatchFallback === false ? 0 : 8)
+    (opts.allowRootActionPatch ? 4 : 0) |
+    (opts.allowRootStorePatch ? 8 : 0)
   );
 }
 
@@ -55,8 +53,8 @@ function createMetaTouchDispatchTargetCacheKey(opts?: MetaTouchOptions): number 
   return (
     (opts?.preferStoreWriter ? 1 : 0) |
     (opts?.skipNamespaceTouch ? 2 : 0) |
-    (opts?.allowRootActionPatchFallback ? 4 : 0) |
-    (opts?.allowRootStorePatchFallback === false ? 0 : 8)
+    (opts?.allowRootActionPatch ? 4 : 0) |
+    (opts?.allowRootStorePatch ? 8 : 0)
   );
 }
 
@@ -65,29 +63,27 @@ function buildCanonicalDispatchTargetOrder<T>(args: {
   skipSecondary?: boolean;
   primary: T;
   secondary: T;
-  fallbacks: readonly T[];
+  tailTargets: readonly T[];
 }): readonly T[] {
   const out: T[] = [];
   if (args.preferPrimary) out.push(args.primary);
   if (!args.skipSecondary) out.push(args.secondary);
   if (!args.preferPrimary) out.push(args.primary);
-  out.push(...args.fallbacks);
+  out.push(...args.tailTargets);
   return Object.freeze(out.slice());
 }
 
-export function resolveRootFallbackDispatchTargets(
-  opts?: RootFallbackOptions
+export function resolveRootPatchDispatchTargets(
+  opts?: RootPatchDispatchOptions
 ): readonly RootPatchDispatchTarget[] {
-  return createRootFallbackDispatchTargetSet(opts);
+  return createRootPatchDispatchTargetSet(opts);
 }
 
 export function resolveCanonicalMetaTouchOptions(opts?: CanonicalPatchDispatchOptions): MetaTouchOptions {
   const metaTouchOptions = opts?.metaTouchOptions;
   return {
-    allowRootActionPatchFallback:
-      metaTouchOptions?.allowRootActionPatchFallback ?? opts?.allowRootActionPatchFallback,
-    allowRootStorePatchFallback:
-      metaTouchOptions?.allowRootStorePatchFallback ?? opts?.allowRootStorePatchFallback,
+    allowRootActionPatch: metaTouchOptions?.allowRootActionPatch ?? opts?.allowRootActionPatch,
+    allowRootStorePatch: metaTouchOptions?.allowRootStorePatch ?? opts?.allowRootStorePatch,
     preferStoreWriter: metaTouchOptions?.preferStoreWriter,
     skipNamespaceTouch: metaTouchOptions?.skipNamespaceTouch,
   };
@@ -103,7 +99,7 @@ export function resolveSliceDispatchTargets(opts: SliceWriteOptions): readonly S
     skipSecondary: opts.skipNamespacePatch,
     primary: 'storeWriter',
     secondary: 'namespacePatch',
-    fallbacks: resolveRootFallbackDispatchTargets(opts),
+    tailTargets: resolveRootPatchDispatchTargets(opts),
   });
   sliceDispatchTargetsCache.set(key, out);
   return out;
@@ -119,7 +115,7 @@ export function resolveMetaTouchDispatchTargets(opts?: MetaTouchOptions): readon
     skipSecondary: opts?.skipNamespaceTouch,
     primary: 'metaStoreWriter',
     secondary: 'metaTouch',
-    fallbacks: resolveRootFallbackDispatchTargets(opts),
+    tailTargets: resolveRootPatchDispatchTargets(opts),
   });
   metaTouchDispatchTargetsCache.set(key, out);
   return out;

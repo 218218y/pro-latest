@@ -1,15 +1,20 @@
+import {
+  LIBRARY_PRESET_DIMENSIONS,
+  resolveAutoWidthForDoors,
+} from '../../../shared/wardrobe_dimension_tokens_shared.js';
+
 import type {
   ModuleConfigLike,
   ModulesConfigurationLike,
   NormalizedTopModuleConfigLike,
 } from '../../../../types';
 
-export const LIBRARY_PRESET_DEFAULT_DOORS = 6;
-export const LIBRARY_PRESET_DOOR_WIDTH_CM = 40;
+export const LIBRARY_PRESET_DEFAULT_DOORS = LIBRARY_PRESET_DIMENSIONS.defaultDoorsCount;
+export const LIBRARY_PRESET_DOOR_WIDTH_CM = resolveAutoWidthForDoors('hinged', 1);
 
 export function calcLibraryPresetAutoWidth(doors: unknown): number {
   const n = Math.max(0, Math.round(Number(doors) || 0));
-  return n * LIBRARY_PRESET_DOOR_WIDTH_CM;
+  return resolveAutoWidthForDoors('hinged', n);
 }
 
 function normalizeDoors(raw: unknown): number {
@@ -42,7 +47,7 @@ function createLibraryModuleConfig(
 
 export function createLibraryTopModuleConfig(doors: number): NormalizedTopModuleConfigLike {
   const base = createLibraryModuleConfig(doors, {
-    gridDivisions: 5,
+    gridDivisions: LIBRARY_PRESET_DIMENSIONS.topGridDivisions,
     shelves: [true, true, true, true, false],
   });
   return {
@@ -55,7 +60,7 @@ export function createLibraryTopModuleConfig(doors: number): NormalizedTopModule
     isCustom: !!base.isCustom,
     customData: base.customData || {
       shelves: [true, true, true, true, false],
-      rods: [false, false, false, false, false],
+      rods: new Array(LIBRARY_PRESET_DIMENSIONS.topGridDivisions).fill(false),
       storage: false,
     },
     doors: normalizeDoors(base.doors),
@@ -64,7 +69,7 @@ export function createLibraryTopModuleConfig(doors: number): NormalizedTopModule
 
 export function createLibraryLowerModuleConfig(doors: number): ModuleConfigLike {
   return createLibraryModuleConfig(doors, {
-    gridDivisions: 2,
+    gridDivisions: LIBRARY_PRESET_DIMENSIONS.lowerGridDivisions,
     shelves: [true, false],
   });
 }
@@ -83,12 +88,13 @@ export function buildLibraryModuleCfgs(
   const bottomCfgList: ModulesConfigurationLike = [];
 
   for (let i = 0; i < mcTop; i++) {
-    const doors = topDoorsSig[i] != null ? topDoorsSig[i] : 2;
+    const doors = topDoorsSig[i] != null ? topDoorsSig[i] : LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount;
     topCfgList.push(createLibraryTopModuleConfig(doors));
   }
 
   for (let i = 0; i < mcBottom; i++) {
-    const doors = bottomDoorsSig[i] != null ? bottomDoorsSig[i] : 2;
+    const doors =
+      bottomDoorsSig[i] != null ? bottomDoorsSig[i] : LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount;
     bottomCfgList.push(createLibraryLowerModuleConfig(doors));
   }
 

@@ -25,9 +25,8 @@ test('final root-surface cleanup routes residual runtime/build/service hotspots 
     read('esm/native/kernel/kernel.ts'),
     read('esm/native/kernel/kernel_install_support.ts'),
   ].join('\n');
-  assert.match(kernel, /getPlatformReportError,/);
-  assert.match(kernel, /reportErrorViaPlatform,/);
-  assert.match(kernel, /const reportError = getPlatformReportError\(App\);/);
+  assert.match(kernel, /from '\.\.\/runtime\/errors\.js';/);
+  assert.match(kernel, /reportError\(App, error, \{ where: 'kernel\/kernel', op, nonFatal: true \}\);/);
   assert.doesNotMatch(kernel, /App\?\.platform/);
 
   const storeReactivity = read('esm/native/runtime/store_reactivity_access.ts');
@@ -46,8 +45,9 @@ test('final root-surface cleanup routes residual runtime/build/service hotspots 
   assert.doesNotMatch(storeSurface, /app\?\.store/);
 
   const cloudSyncFeedback = read('esm/native/services/cloud_sync_support_feedback.ts');
-  assert.match(cloudSyncFeedback, /from '\.\.\/runtime\/platform_access\.js';/);
-  assert.match(cloudSyncFeedback, /getPlatformReportError\(App\)/);
+  assert.match(cloudSyncFeedback, /from '\.\.\/runtime\/errors\.js';/);
+  assert.match(cloudSyncFeedback, /reportError\(/);
+  assert.doesNotMatch(cloudSyncFeedback, /getPlatformReportError\(/);
   assert.doesNotMatch(cloudSyncFeedback, /App\?\.platform\?\.reportError/);
 
   const historyAccess = read('esm/native/kernel/history_access.ts');

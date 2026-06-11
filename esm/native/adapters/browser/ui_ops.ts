@@ -8,7 +8,7 @@
 // Notes:
 // - This adapter intentionally exposes *operations* (scroll, selection, cursor, etc),
 //   not raw window/document objects.
-// - For rare legacy interop, we provide App.browser.getWindow() as an escape hatch.
+// - For rare browser interop, we provide App.browser.getWindow() as an escape hatch.
 
 import type {
   AppContainer,
@@ -35,12 +35,12 @@ function ensureBrowserUiOpsSurface(App: AppContainer): BrowserUiOpsSurface {
   return ensureBrowserSurface(App);
 }
 
-function safeNumber(v: unknown, fallback: number): number {
+function safeNumber(v: unknown, defaultValue: number): number {
   try {
     const n = Number(v);
-    return Number.isFinite(n) ? n : fallback;
+    return Number.isFinite(n) ? n : defaultValue;
   } catch {
-    return fallback;
+    return defaultValue;
   }
 }
 

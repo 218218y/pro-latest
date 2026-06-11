@@ -10,7 +10,7 @@ import type {
   BuildStateLike,
 } from '../../../types/index.js';
 
-import { assertApp, guardVoid, reportError } from '../runtime/api.js';
+import { assertApp, reportError } from '../runtime/api.js';
 import {
   ensureSchedulerState,
   normalizeSchedulerDeps,
@@ -95,6 +95,30 @@ function stagePendingBuildState(
     typeof scheduleVersion === 'number' && scheduleVersion > 0
       ? scheduleVersion
       : ensurePendingScheduleVersion(state);
+}
+
+function hasRecoverablePendingPlan(state: BuilderSchedulerStateInternalLike): boolean {
+  return !!readPlanState(state.pendingPlan);
+}
+
+function runRecoverablePendingBuildAfterRequestFailure(
+  App: AppContainer,
+  state: BuilderSchedulerStateInternalLike,
+  reason: string,
+  forceBuild: boolean
+): unknown {
+  if (!hasRecoverablePendingPlan(state)) return undefined;
+
+  try {
+    return runPendingBuildRuntime(App, reason, forceBuild);
+  } catch (e) {
+    reportError(App, e, {
+      where: 'builder/scheduler.requestBuild.recovery',
+      reason,
+      forceBuild,
+    });
+    return undefined;
+  }
 }
 
 export function ensureSchedulerDebouncedRunner(
@@ -269,11 +293,12 @@ export function requestBuildRuntime(
       forceBuild,
     });
 
-    guardVoid(A, { where: 'builder/scheduler', op: 'console.error(requestBuild)', failFast: true }, () => {
-      console.error(e);
-    });
-
-    return runPendingBuildRuntime(A, opts?.reason || 'fallback', forceBuild);
+    return runRecoverablePendingBuildAfterRequestFailure(
+      A,
+      s,
+      opts?.reason || 'requestBuild:recovery',
+      forceBuild
+    );
   }
 }
 

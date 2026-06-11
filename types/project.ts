@@ -71,6 +71,7 @@ export interface ProjectSettingsLike extends UnknownRecord {
   boardMaterial?: BoardMaterial;
 
   stackSplitEnabled?: boolean;
+  stackSplitDecorativeSeparatorEnabled?: boolean;
   stackSplitLowerHeight?: number;
   stackSplitLowerWidth?: number;
   stackSplitLowerDepth?: number;
@@ -89,6 +90,7 @@ export interface ProjectSettingsLike extends UnknownRecord {
   baseType?: string;
   baseLegStyle?: string;
   baseLegColor?: string;
+  basePlinthHeightCm?: number | string;
   baseLegHeightCm?: number | string;
   slidingTracksColor?: 'black' | 'nickel' | string;
   structureSelection?: string;
@@ -106,6 +108,9 @@ export interface ProjectSettingsLike extends UnknownRecord {
   lightZ?: number | string;
 
   chestDrawersCount?: number | string;
+  chestCommodeMirrorHeightCm?: number | string;
+  chestCommodeMirrorWidthCm?: number | string;
+  chestCommodeMirrorWidthManual?: boolean;
 
   globalHandleType?: HandleType | string | null;
   isLibraryMode?: boolean;
@@ -123,6 +128,7 @@ export interface ProjectTogglesLike extends UnknownRecord {
   multiColor?: ToggleValue;
   grooves?: ToggleValue;
   chestMode?: ToggleValue;
+  chestCommode?: ToggleValue;
   splitDoors?: ToggleValue;
   handleControl?: ToggleValue;
   cornerMode?: ToggleValue;

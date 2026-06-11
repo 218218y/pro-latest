@@ -3,12 +3,14 @@ import {
   setUiBaseLegHeightCm,
   setUiBaseLegWidthCm,
   setUiBaseLegStyle,
+  setUiBasePlinthHeightCm,
   setUiBaseType,
   setUiSlidingTracksColor,
 } from '../actions/store_actions.js';
 import {
   commitStructureRawValue,
   setStackSplitLowerLinkModeValue,
+  toggleStackSplitDecorativeSeparatorState,
   toggleStackSplitState,
 } from './structure_tab_shared.js';
 import type {
@@ -25,9 +27,11 @@ export function createStructureTabStructuralWriteController(
   | 'setRaw'
   | 'setStackSplitLowerLinkMode'
   | 'toggleStackSplit'
+  | 'toggleStackSplitDecorativeSeparator'
   | 'setBaseType'
   | 'setBaseLegStyle'
   | 'setBaseLegColor'
+  | 'setBasePlinthHeightCm'
   | 'setBaseLegHeightCm'
   | 'setBaseLegWidthCm'
   | 'setSlidingTracksColor'
@@ -68,11 +72,16 @@ export function createStructureTabStructuralWriteController(
         nextValue,
         getDisplayedRawValue,
         wardrobeType: args.wardrobeType,
+        isChestMode: args.isChestMode,
         isManualWidth: args.isManualWidth,
         width: args.width,
+        height: args.height,
+        depth: args.depth,
         doors: args.doors,
         structureSelectRaw: args.structureSelectRaw,
         singleDoorPosRaw: args.singleDoorPosRaw,
+        chestCommodeEnabled: args.chestCommodeEnabled,
+        chestCommodeMirrorWidthManual: args.chestCommodeMirrorWidthManual,
       });
     },
 
@@ -112,6 +121,15 @@ export function createStructureTabStructuralWriteController(
       });
     },
 
+    toggleStackSplitDecorativeSeparator() {
+      toggleStackSplitDecorativeSeparatorState({
+        app: args.app,
+        meta: args.meta,
+        enabled: args.stackSplitDecorativeSeparatorEnabled,
+        stackSplitEnabled: args.stackSplitEnabled,
+      });
+    },
+
     setBaseType(next: 'plinth' | 'legs' | 'none') {
       setUiBaseType(args.app, next, { source: 'react:structure:baseType', immediate: true });
     },
@@ -122,6 +140,13 @@ export function createStructureTabStructuralWriteController(
 
     setBaseLegColor(next) {
       setUiBaseLegColor(args.app, next, { source: 'react:structure:baseLegColor', immediate: true });
+    },
+
+    setBasePlinthHeightCm(next) {
+      setUiBasePlinthHeightCm(args.app, next, {
+        source: 'react:structure:basePlinthHeightCm',
+        immediate: true,
+      });
     },
 
     setBaseLegHeightCm(next) {

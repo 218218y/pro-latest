@@ -18,6 +18,7 @@ import type {
   UnknownRecord,
 } from '../../../../types/index.js';
 
+import { readDoorStyleMap as readCanonicalDoorStyleMap } from '../door_style_overrides.js';
 import { readDoorTrimMap } from '../door_trim.js';
 import { readMirrorLayoutMap } from '../mirror_layout.js';
 
@@ -168,14 +169,7 @@ export function readDoorSpecialMap(value: unknown): DoorSpecialMap {
 }
 
 export function readDoorStyleMap(value: unknown): DoorStyleMap {
-  const src = asObjectRecord(value);
-  const out: DoorStyleMap = {};
-  if (!src) return out;
-  for (const [key, entry] of Object.entries(src)) {
-    const raw = typeof entry === 'string' ? String(entry).trim().toLowerCase() : '';
-    if (raw === 'flat' || raw === 'profile' || raw === 'tom') out[key] = raw;
-  }
-  return out;
+  return readCanonicalDoorStyleMap(value);
 }
 
 export function isHingeMapEntry(value: unknown): value is HingeMap[string] {
@@ -215,6 +209,13 @@ function readBoolish(value: unknown): boolean | null {
     if (norm === 'false' || norm === '0') return false;
   }
   return null;
+}
+
+function readNullableBoolish(value: unknown): boolean | null | undefined {
+  if (value === null) return null;
+  if (typeof value === 'string' && !value.trim()) return null;
+  const next = readBoolish(value);
+  return next == null ? undefined : next;
 }
 
 function parseSplitPositionList(raw: unknown): number[] {
@@ -277,7 +278,11 @@ export function readSplitDoorsMapValue(value: unknown): SplitDoorsMap {
       return;
     }
     if (Array.isArray(entry)) {
-      const list = entry.filter((part): part is number => typeof part === 'number' && Number.isFinite(part));
+      const list: number[] = [];
+      for (const part of entry) {
+        const num = typeof part === 'number' ? part : typeof part === 'string' ? Number(part) : NaN;
+        if (Number.isFinite(num)) list.push(num);
+      }
       if (list.length) out[key] = list;
     }
   };
@@ -322,7 +327,49 @@ export function readSplitDoorsMapValue(value: unknown): SplitDoorsMap {
 }
 
 export function readSplitDoorsBottomMapValue(value: unknown): SplitDoorsBottomMap {
-  return readToggleMap(value);
+  const src = asMapRecord(value);
+  const out: SplitDoorsBottomMap = {};
+  const hasOwn = Object.prototype.hasOwnProperty;
+
+  const assignNormalizedToggle = (key: string, entry: unknown): void => {
+    const next = readNullableBoolish(entry);
+    if (typeof next !== 'undefined') out[key] = next;
+  };
+
+  for (const rawKey in src) {
+    if (!hasOwn.call(src, rawKey)) continue;
+    const entry = src[rawKey];
+    const key = String(rawKey || '');
+
+    if (key.startsWith('splitb_') || /^splitBottom_/i.test(key)) {
+      const prefixed = key.replace(/^splitBottom_/i, 'splitb_');
+      if (prefixed.startsWith('splitb_')) {
+        assignNormalizedToggle('splitb_' + stripDoorSegmentSuffix(prefixed.slice(7)), entry);
+      } else {
+        assignNormalizedToggle(rawKey, entry);
+      }
+      continue;
+    }
+
+    if (!key.startsWith('split') && isDoorIdLike(key)) {
+      const next = readNullableBoolish(entry);
+      if (typeof next !== 'undefined') {
+        out['splitb_' + stripDoorSegmentSuffix(key)] = next;
+        continue;
+      }
+    }
+
+    if (
+      typeof entry === 'boolean' ||
+      typeof entry === 'number' ||
+      typeof entry === 'string' ||
+      entry === null
+    ) {
+      assignNormalizedToggle(rawKey, entry);
+    }
+  }
+
+  return out;
 }
 
 export function readMirrorLayoutConfigMap(value: unknown): MirrorLayoutMap {

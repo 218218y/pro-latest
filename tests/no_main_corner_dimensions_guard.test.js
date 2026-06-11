@@ -16,8 +16,11 @@ test('[no-main corner] standalone corner dimensions stay enabled and wing dimens
   assert.match(dimensionsOwner, /cornerWingLenM: corner\.cornerWingLenM,/);
   assert.match(dimensionsOwner, /noMainWardrobe,/);
   assert.match(dimensionsOwner, /cornerSide: corner\.cornerSide,/);
-  assert.match(dimensionsCorner, /let cornerDoorCount = 3;/);
-  assert.match(dimensionsCorner, /let cornerWingLenM = 1\.2;/);
+  assert.match(dimensionsCorner, /let cornerDoorCount: number = WARDROBE_DEFAULTS\.corner\.doorsCount;/);
+  assert.match(
+    dimensionsCorner,
+    /let cornerWingLenM = CORNER_WING_DIMENSIONS\.wing\.defaultWidthCm \/ CM_PER_METER;/
+  );
   assert.match(
     dimensionsCorner,
     /const cornerDoorsRaw = pick\('ui', 'cornerDoors', \['cornerDoorCount', 'cornerDoorsCount'\]\);/
@@ -25,21 +28,27 @@ test('[no-main corner] standalone corner dimensions stay enabled and wing dimens
 
   const renderDims = read('esm/native/builder/render_dimension_ops.ts');
   const renderDimsShared = read('esm/native/builder/render_dimension_ops_shared.ts');
+  const renderDimsMain = read('esm/native/builder/render_dimension_ops_main.ts');
   const renderDimsCorner = read('esm/native/builder/render_dimension_ops_corner.ts');
   assert.match(renderDims, /render_dimension_ops_shared\.js/);
   assert.match(renderDims, /render_dimension_ops_corner\.js/);
   assert.match(renderDimsShared, /const\s+noMainWardrobe\s*=\s*!!args\.noMainWardrobe;/);
   assert.match(
     renderDimsShared,
-    /const\s+cornerDoorCount\s*=\s*Number\.isFinite\(cornerDoorCountRaw\)\s*\?\s*Math\.max\(0, Math\.round\(cornerDoorCountRaw\)\)\s*:\s*3;/
+    /const\s+cornerDoorCount\s*=\s*Number\.isFinite\(cornerDoorCountRaw\)\s*\?\s*Math\.max\(0, Math\.round\(cornerDoorCountRaw\)\)\s*:\s*WARDROBE_DEFAULTS\.corner\.doorsCount;/
   );
   assert.match(renderDimsShared, /const\s+cornerWingVisible\s*=\s*isCornerMode && cornerDoorCount > 0;/);
+  assert.match(renderDimsMain, /const\s+cornerConnectorActive\s*=/);
+  assert.match(renderDimsMain, /const\s+showMainHeight\s*=\s*!noMainWardrobe;/);
+  assert.match(renderDimsMain, /const\s+showMainDepth\s*=\s*!noMainWardrobe \|\| cornerConnectorActive;/);
+  assert.match(renderDimsMain, /if \(showMainHeight\) \{/);
+  assert.match(renderDimsMain, /if \(showMainDepth\) \{/);
+  assert.match(renderDimsCorner, /WARDROBE_DIMENSION_GUIDE_DIMENSIONS/);
+  assert.match(renderDimsCorner, /function\s+resolveCornerWingDimensionGeometry\(/);
   assert.match(
     renderDimsCorner,
-    /if \(noMainWardrobe && isCornerMode && cornerConnectorEnabled && cornerWallLenM > 0\.05\) \{/
+    /const\s+showCornerWingCabinetWidth\s*=\s*cornerWingVisible && !!wingGeometry && wingGeometry\.wingW > guide\.wingMinLengthM;/
   );
-  assert.match(
-    renderDimsCorner,
-    /if \(cornerWingVisible && Number\.isFinite\(cornerWingLenM\) && cornerWingLenM > 0\.01\) \{/
-  );
+  assert.match(renderDimsCorner, /if \(showCornerWingCabinetWidth\) \{/);
+  assert.match(renderDimsCorner, /if \(wingGeometry\) \{/);
 });

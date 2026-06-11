@@ -2,7 +2,7 @@
 //
 // Owns the small, side-effect-free helpers used by tolerant snapshot readers,
 // canonical-only readers, and store adapters. Keeping these helpers here makes
-// the legacy fallback boundary explicit instead of spreading parsing policy
+// the tolerant snapshot boundary explicit instead of spreading parsing policy
 // across runtime access surfaces.
 
 import type {
@@ -47,6 +47,9 @@ const uiScalarReaders: UiScalarReaderMap = {
   depth: readNullableNumber,
   doors: readNullableNumber,
   chestDrawersCount: readNullableNumber,
+  chestCommodeMirrorHeightCm: readNullableNumber,
+  chestCommodeMirrorWidthCm: readNullableNumber,
+  chestCommodeMirrorWidthManual: readBoolean,
   stackSplitLowerHeight: readNullableNumber,
   stackSplitLowerDepth: readNullableNumber,
   stackSplitLowerWidth: readNullableNumber,

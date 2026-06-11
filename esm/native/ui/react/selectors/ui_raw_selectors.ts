@@ -74,6 +74,9 @@ const uiRawScalarReaders: UiRawScalarReaderMap = {
   depth: source => readNullableNumberProp(source, 'depth'),
   doors: source => readNullableNumberProp(source, 'doors'),
   chestDrawersCount: source => readNullableNumberProp(source, 'chestDrawersCount'),
+  chestCommodeMirrorHeightCm: source => readNullableNumberProp(source, 'chestCommodeMirrorHeightCm'),
+  chestCommodeMirrorWidthCm: source => readNullableNumberProp(source, 'chestCommodeMirrorWidthCm'),
+  chestCommodeMirrorWidthManual: source => readBooleanProp(source, 'chestCommodeMirrorWidthManual'),
   stackSplitLowerHeight: source => readNullableNumberProp(source, 'stackSplitLowerHeight'),
   stackSplitLowerDepth: source => readNullableNumberProp(source, 'stackSplitLowerDepth'),
   stackSplitLowerWidth: source => readNullableNumberProp(source, 'stackSplitLowerWidth'),
@@ -124,14 +127,14 @@ export function readUiRawScalarFromSnapshot<K extends UiRawScalarKey>(
   }
 }
 
-export function readUiRawNumberFromSnapshot(ui: unknown, key: UiRawScalarKey, fallback: number): number {
+export function readUiRawNumberFromSnapshot(ui: unknown, key: UiRawScalarKey, defaultValue: number): number {
   const v = readUiRawScalarFromSnapshot(ui, key);
   const n = coerceFiniteNumber(v);
-  return typeof n === 'number' ? n : fallback;
+  return typeof n === 'number' ? n : defaultValue;
 }
 
-export function readUiRawIntFromSnapshot(ui: unknown, key: UiRawScalarKey, fallback: number): number {
+export function readUiRawIntFromSnapshot(ui: unknown, key: UiRawScalarKey, defaultValue: number): number {
   const v = readUiRawScalarFromSnapshot(ui, key);
   const n = coerceFiniteInt(v);
-  return typeof n === 'number' ? n : fallback;
+  return typeof n === 'number' ? n : defaultValue;
 }

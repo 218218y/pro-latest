@@ -10,7 +10,7 @@ import {
   patchSliceWithResolvedContext,
   resolveCanonicalMetaTouchOptions,
   resolveMetaTouchDispatchTargets,
-  resolveRootFallbackDispatchTargets,
+  resolveRootPatchDispatchTargets,
   resolveSliceDispatchTargets,
   touchMetaWithResolvedContext,
 } from './slice_write_access_dispatch.js';
@@ -78,8 +78,8 @@ export function resolveCanonicalDispatchRoute(
     const sliceOptions =
       opts?.sliceOptions?.[route.namespace] ??
       createDefaultSliceWriteOptions(route.namespace, {
-        allowRootActionPatchFallback: opts?.allowRootActionPatchFallback,
-        allowRootStorePatchFallback: opts?.allowRootStorePatchFallback,
+        allowRootActionPatch: opts?.allowRootActionPatch,
+        allowRootStorePatch: opts?.allowRootStorePatch,
       });
     return {
       kind: 'slicePatch',
@@ -99,7 +99,7 @@ export function resolveCanonicalDispatchRoute(
   return {
     kind: 'rootPatch',
     payload,
-    targets: resolveRootFallbackDispatchTargets(opts),
+    targets: resolveRootPatchDispatchTargets(opts),
   };
 }
 

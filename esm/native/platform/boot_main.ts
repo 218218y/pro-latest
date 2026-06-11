@@ -1,10 +1,8 @@
 // Native ESM implementation of platform boot orchestration.
 //
-// Legacy implementation: js/platform/pro_boot_main.js
-//
 // Goals:
 // - Provide a real ESM module that can be imported.
-// - Pure ESM: attach boot API only to the provided App instance (no window/global fallbacks).
+// - Pure ESM: attach boot API only to the provided App instance, with no window/global alternate path.
 // - Fail fast if required deps are missing; run UI boot; mark boot-ready; trigger render.
 
 import type { AppContainer, UnknownCallable } from '../../../types';
@@ -18,11 +16,8 @@ import {
 } from '../runtime/platform_boot_runtime_access.js';
 import { assertThreeViaDeps } from '../runtime/three_access.js';
 import { getBootStartEntry } from '../runtime/boot_entry_access.js';
-import {
-  afterPaintViaPlatform,
-  reportErrorViaPlatform,
-  runPlatformRenderFollowThrough,
-} from '../runtime/platform_access.js';
+import { afterPaintViaPlatform, runPlatformRenderFollowThrough } from '../runtime/platform_access.js';
+import { reportError } from '../runtime/errors.js';
 import { getBuilderScheduler } from '../runtime/builder_service_access.js';
 import { assertApp } from '../runtime/assert.js';
 import { installStableSurfaceMethod } from '../runtime/stable_surface_methods.js';
@@ -96,7 +91,7 @@ export function installBootMain(App: unknown) {
           entry();
         } catch (e) {
           try {
-            reportErrorViaPlatform(root, e, 'boot.start');
+            reportError(root, e, 'boot.start');
           } catch (_) {}
           throw e;
         } finally {

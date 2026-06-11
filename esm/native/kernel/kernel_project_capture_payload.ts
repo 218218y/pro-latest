@@ -52,6 +52,9 @@ function buildProjectCaptureSettings(
   overallHeight: unknown,
   overallDepth: unknown,
   chestDrawersCount: unknown,
+  chestCommodeMirrorHeightCm: unknown,
+  chestCommodeMirrorWidthCm: unknown,
+  chestCommodeMirrorWidthManual: boolean,
   stackSplitLowerHeight: unknown,
   stackSplitLowerDepth: unknown,
   stackSplitLowerWidth: unknown,
@@ -68,6 +71,7 @@ function buildProjectCaptureSettings(
     baseType: asString(uiRec.baseType, ''),
     baseLegStyle: asString(uiRec.baseLegStyle, 'tapered'),
     baseLegColor: asString(uiRec.baseLegColor, 'black'),
+    basePlinthHeightCm: uiRec.basePlinthHeightCm !== undefined ? uiRec.basePlinthHeightCm : 8,
     baseLegHeightCm: uiRec.baseLegHeightCm !== undefined ? uiRec.baseLegHeightCm : 12,
     baseLegWidthCm: uiRec.baseLegWidthCm !== undefined ? uiRec.baseLegWidthCm : 4,
     slidingTracksColor: asString(uiRec.slidingTracksColor, 'nickel'),
@@ -101,7 +105,12 @@ function buildProjectCaptureSettings(
           ? overallDepth
           : uiRec.depth,
     chestDrawersCount,
+    chestCommodeMirrorHeightCm,
+    chestCommodeMirrorWidthCm,
+    chestCommodeMirrorWidthManual,
     stackSplitEnabled: typeof uiRec.stackSplitEnabled !== 'undefined' ? !!uiRec.stackSplitEnabled : false,
+    stackSplitDecorativeSeparatorEnabled:
+      !!uiRec.stackSplitEnabled && !!uiRec.stackSplitDecorativeSeparatorEnabled,
     stackSplitLowerHeight,
     stackSplitLowerDepthManual: lowerDepthManual,
     stackSplitLowerWidthManual: lowerWidthManual,
@@ -118,6 +127,7 @@ function buildProjectCaptureToggles(uiRec: UnknownRecord, cfgRec: UnknownRecord)
     multiColor:
       typeof cfgRec.isMultiColorMode !== 'undefined' ? !!cfgRec.isMultiColorMode : !!uiRec.multiColorEnabled,
     chestMode: !!uiRec.isChestMode,
+    chestCommode: !!uiRec.chestCommodeEnabled,
     cornerMode: !!uiRec.cornerMode,
     removeDoors: !!uiRec.removeDoorsEnabled,
     splitDoors: !!uiRec.splitDoors,
@@ -167,6 +177,9 @@ export function buildKernelProjectCaptureData(args: BuildKernelProjectCaptureDat
   const overallHeight = readUiRawScalarFromSnapshot(uiRec, 'height');
   const overallDepth = readUiRawScalarFromSnapshot(uiRec, 'depth');
   const chestDrawersCount = readUiRawScalarFromSnapshot(uiRec, 'chestDrawersCount');
+  const chestCommodeMirrorHeightCm = readUiRawScalarFromSnapshot(uiRec, 'chestCommodeMirrorHeightCm');
+  const chestCommodeMirrorWidthCm = readUiRawScalarFromSnapshot(uiRec, 'chestCommodeMirrorWidthCm');
+  const chestCommodeMirrorWidthManual = !!readUiRawScalarFromSnapshot(uiRec, 'chestCommodeMirrorWidthManual');
 
   const lowerDepthManual = !!readUiRawScalarFromSnapshot(uiRec, 'stackSplitLowerDepthManual');
   const lowerWidthManual = !!readUiRawScalarFromSnapshot(uiRec, 'stackSplitLowerWidthManual');
@@ -195,6 +208,9 @@ export function buildKernelProjectCaptureData(args: BuildKernelProjectCaptureDat
       overallHeight,
       overallDepth,
       chestDrawersCount,
+      chestCommodeMirrorHeightCm,
+      chestCommodeMirrorWidthCm,
+      chestCommodeMirrorWidthManual,
       stackSplitLowerHeight,
       stackSplitLowerDepth,
       stackSplitLowerWidth,
@@ -206,6 +222,10 @@ export function buildKernelProjectCaptureData(args: BuildKernelProjectCaptureDat
     toggles: buildProjectCaptureToggles(uiRec, cfgRec),
     chestSettings: {
       drawersCount: typeof chestDrawersCount !== 'undefined' ? chestDrawersCount : 4,
+      commodeEnabled: !!uiRec.chestCommodeEnabled,
+      mirrorHeightCm: chestCommodeMirrorHeightCm,
+      mirrorWidthCm: chestCommodeMirrorWidthCm,
+      mirrorWidthManual: chestCommodeMirrorWidthManual,
     },
     modulesConfiguration: canonicalConfigLists.modulesConfiguration,
     stackSplitLowerModulesConfiguration: canonicalConfigLists.stackSplitLowerModulesConfiguration,

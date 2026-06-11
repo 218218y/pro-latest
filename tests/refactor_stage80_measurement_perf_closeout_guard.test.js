@@ -18,6 +18,8 @@ function readJson(file) {
 }
 
 const GUARD_FILE = 'tests/refactor_stage80_measurement_perf_closeout_guard.test.js';
+const CSS_IMPORTANT_RATCHET_CEILING = 1;
+const CSS_Z_INDEX_RATCHET_CEILING = 41;
 
 test('stage 80 measurement and performance closeout is anchored', () => {
   const pkg = readJson('package.json');
@@ -79,16 +81,25 @@ test('stage 80 measurement and performance closeout is anchored', () => {
   assert.match(scripts['perf:browser:update-baseline'], /--update-baseline/);
   assert.equal(
     scripts['check:css-style'],
-    'node tools/wp_css_style_audit.mjs --check --budget=tools/wp_css_style_budget.json'
+    'node --test tests/css_shadow_tokens_contract.test.js && node tools/wp_css_style_audit.mjs --check --budget=tools/wp_css_style_budget.json'
   );
   assert.match(scripts['report:css-style'], /--budget=tools\/wp_css_style_budget\.json/);
   assert.equal(cssBudget.file, 'css/react_styles.css');
-  assert.equal(cssBudget.metrics.important.max, 141);
+  assert.ok(
+    cssBudget.metrics.important.max <= CSS_IMPORTANT_RATCHET_CEILING,
+    'CSS !important budget must not drift above the latest cleanup ratchet'
+  );
   assert.equal(cssBudget.metrics.transitionAll.max, 0);
-  assert.equal(cssBudget.metrics.zIndex.max, 52);
-  assert.equal(cssBudget.metrics.boxShadow.max, 116);
+  assert.ok(
+    cssBudget.metrics.zIndex.max <= CSS_Z_INDEX_RATCHET_CEILING,
+    'CSS z-index budget must not drift above the latest cleanup ratchet'
+  );
+  assert.equal(cssBudget.metrics.zIndexTokenless.max, 0);
+  assert.equal(cssBudget.metrics.boxShadow.max, 0);
   assert.match(cssAudit, /budgetPath/);
   assert.match(cssAudit, /unknown metric/);
+  assert.match(cssAudit, /countZIndexWithoutToken/);
+  assert.match(cssAudit, /countBoxShadowWithoutToken/);
 
   assert.match(perfSmoke, /runPerfSmokeFlow/);
   assert.match(perfSmokeShared, /PERF_AND_STABILITY_BASELINE/);

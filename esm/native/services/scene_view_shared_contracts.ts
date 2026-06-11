@@ -7,6 +7,7 @@ import type {
 } from '../../../types';
 
 import { getNormalizedErrorHead } from '../runtime/error_normalization.js';
+import { reportError } from '../runtime/errors.js';
 
 const __sceneViewReportNonFatalSeen = new Map<string, number>();
 
@@ -78,7 +79,7 @@ export type SceneViewCompatDefaults = {
 
 export type RootStateWithStoreUi = RootStateLike & { storeUi?: unknown };
 
-export function reportSceneViewNonFatal(op: string, err: unknown, throttleMs = 4000): void {
+export function reportSceneViewNonFatal(App: unknown, op: string, err: unknown, throttleMs = 4000): void {
   const now = Date.now();
   const msg = getNormalizedErrorHead(err, 'Unexpected error');
   const key = `${op}::${msg}`;
@@ -91,7 +92,7 @@ export function reportSceneViewNonFatal(op: string, err: unknown, throttleMs = 4
       if (now - ts > pruneOlderThan) __sceneViewReportNonFatalSeen.delete(k);
     }
   }
-  console.error(`[WardrobePro][scene_view] ${op}`, err);
+  reportError(App, err, { where: 'native/services/scene_view', op, fatal: false });
 }
 
 export function isRecord(v: unknown): v is UnknownRecord {

@@ -3,7 +3,7 @@
 // Goal:
 // - Provide a single, stable way to build ActionMetaLike objects across layers.
 // - Prefer App.actions.meta.* surfaces when installed.
-// - Keep a small local fallback so low-level tests/tools remain usable.
+// - Keep a small local defaults path so low-level tests/tools remain usable.
 //
 // Notes:
 // - Always returns a NEW object (never mutates input).
@@ -21,12 +21,13 @@ import {
   mergeMetaProfileDefaults,
 } from './meta_profiles_contract.js';
 import { getMetaActions } from './actions_access_domains.js';
+import { reportError } from './errors.js';
 
 type MetaProfileDefaults = ActionMetaLike;
 type MetaProfileCall = (meta?: ActionMetaLike, source?: string) => ActionMetaLike;
 
-function mergeLocal(meta: unknown, defaults: MetaProfileDefaults, sourceFallback?: string): ActionMetaLike {
-  return mergeMetaProfileDefaults(meta, defaults, sourceFallback);
+function mergeLocal(meta: unknown, defaults: MetaProfileDefaults, defaultSource?: string): ActionMetaLike {
+  return mergeMetaProfileDefaults(meta, defaults, defaultSource);
 }
 
 function toMetaArg(meta: ActionMetaLike | UnknownRecord | undefined): ActionMetaLike | undefined {
@@ -51,22 +52,35 @@ function metaNsFromApp(App: unknown): MetaActionsNamespaceLike | null {
   return isMetaNamespaceLike(metaNs) ? metaNs : null;
 }
 
+function reportMetaProfileOwnerRejection(App: unknown, op: string, error: unknown): void {
+  try {
+    reportError(App, error, {
+      where: 'native/runtime/meta_profiles_access',
+      op,
+      fatal: false,
+    });
+  } catch {
+    // Reporting is best-effort; meta defaults must remain available during early boot/tests.
+  }
+}
+
 function callMetaProfile(
+  App: unknown,
   metaNs: MetaActionsNamespaceLike | null,
   fn: MetaProfileCall | undefined,
   meta: ActionMetaLike | UnknownRecord | undefined,
   source: string,
-  fallbackDefaults: MetaProfileDefaults
+  localDefaults: MetaProfileDefaults
 ): ActionMetaLike {
   if (metaNs && typeof fn === 'function') {
     try {
       return fn(toMetaArg(meta), source);
-    } catch {
-      // Fall through to local merge.
+    } catch (error) {
+      reportMetaProfileOwnerRejection(App, `meta.${source || 'profile'}.ownerRejected`, error);
     }
   }
 
-  return mergeLocal(meta, fallbackDefaults, source);
+  return mergeLocal(meta, localDefaults, source);
 }
 
 export function metaMerge(
@@ -77,17 +91,17 @@ export function metaMerge(
 ): ActionMetaLike {
   const metaNs = metaNsFromApp(App);
   const src = source || 'meta:merge';
-  const fallbackDefaults: MetaProfileDefaults = defaults ? { ...cloneRecord(defaults) } : {};
+  const localDefaults: MetaProfileDefaults = defaults ? { ...cloneRecord(defaults) } : {};
 
   if (metaNs && typeof metaNs.merge === 'function') {
     try {
       return metaNs.merge(toMetaArg(meta), defaults, src);
-    } catch {
-      // Fall through.
+    } catch (error) {
+      reportMetaProfileOwnerRejection(App, `meta.${src || 'merge'}.ownerRejected`, error);
     }
   }
 
-  return mergeLocal(meta, fallbackDefaults, src);
+  return mergeLocal(meta, localDefaults, src);
 }
 
 export function metaUiOnly(
@@ -96,7 +110,7 @@ export function metaUiOnly(
   source?: string
 ): ActionMetaLike {
   const metaNs = metaNsFromApp(App);
-  return callMetaProfile(metaNs, metaNs?.uiOnly, meta, source || 'meta:uiOnly', DEFAULTS_UI_ONLY);
+  return callMetaProfile(App, metaNs, metaNs?.uiOnly, meta, source || 'meta:uiOnly', DEFAULTS_UI_ONLY);
 }
 
 export function metaRestore(
@@ -105,7 +119,7 @@ export function metaRestore(
   source?: string
 ): ActionMetaLike {
   const metaNs = metaNsFromApp(App);
-  return callMetaProfile(metaNs, metaNs?.restore, meta, source || 'meta:restore', DEFAULTS_RESTORE);
+  return callMetaProfile(App, metaNs, metaNs?.restore, meta, source || 'meta:restore', DEFAULTS_RESTORE);
 }
 
 export function metaTransient(
@@ -114,7 +128,14 @@ export function metaTransient(
   source?: string
 ): ActionMetaLike {
   const metaNs = metaNsFromApp(App);
-  return callMetaProfile(metaNs, metaNs?.transient, meta, source || 'meta:transient', DEFAULTS_TRANSIENT);
+  return callMetaProfile(
+    App,
+    metaNs,
+    metaNs?.transient,
+    meta,
+    source || 'meta:transient',
+    DEFAULTS_TRANSIENT
+  );
 }
 
 export function metaNoHistory(

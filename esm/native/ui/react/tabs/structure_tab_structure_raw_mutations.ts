@@ -1,7 +1,7 @@
 import type { AppContainer, MetaActionsNamespaceLike } from '../../../../../types';
 
 import { setManualWidth } from '../actions/room_actions.js';
-import { runPerfAction } from '../../../services/api.js';
+import { isAutoWidthForDoors, resolveAutoWidthForDoors, runPerfAction } from '../../../services/api.js';
 import {
   applyUiRawScalarPatch,
   setUiCellDimsDepth,
@@ -18,6 +18,7 @@ import {
   sumDoorsFromStructure,
 } from './structure_tab_library_helpers.js';
 import { applyStructureTemplateRecomputeBatch, structureTabReportNonFatal } from './structure_tab_core.js';
+import { normalizeStructureRawValue } from './structure_tab_dimension_constraints.js';
 import {
   buildRawUiPatch,
   normalizeDoorsValue,
@@ -49,11 +50,16 @@ export function commitStructureRawValue(args: {
   nextValue: number;
   getDisplayedRawValue: DisplayedValueReader;
   wardrobeType: string;
+  isChestMode: boolean;
   isManualWidth: boolean;
   width: number;
+  height: number;
+  depth: number;
   doors: number;
   structureSelectRaw: string;
   singleDoorPosRaw: string;
+  chestCommodeEnabled?: boolean;
+  chestCommodeMirrorWidthManual?: boolean;
 }): void {
   const {
     app,
@@ -62,11 +68,16 @@ export function commitStructureRawValue(args: {
     nextValue,
     getDisplayedRawValue,
     wardrobeType,
+    isChestMode,
     isManualWidth,
     width,
+    height,
+    depth,
     doors,
     structureSelectRaw,
     singleDoorPosRaw,
+    chestCommodeEnabled = false,
+    chestCommodeMirrorWidthManual = false,
   } = args;
   const perfMetricName = readStructurePerfMetricName(key);
   const runWithPerf = (task: () => void): void => {
@@ -85,7 +96,20 @@ export function commitStructureRawValue(args: {
     );
   };
 
-  const value = key === 'doors' || key === 'stackSplitLowerDoors' ? Math.round(nextValue) : nextValue;
+  const normalizedValue = normalizeStructureRawValue({
+    key,
+    value: nextValue,
+    wardrobeType,
+    isChestMode,
+    width,
+    height,
+    depth,
+    doors,
+  });
+  if (normalizedValue == null) return;
+
+  const value =
+    key === 'doors' || key === 'stackSplitLowerDoors' ? Math.round(normalizedValue) : normalizedValue;
 
   const prevDisplayedValue = getDisplayedRawValue(key);
   const isIntegerField = key === 'doors' || key === 'stackSplitLowerDoors';
@@ -104,13 +128,13 @@ export function commitStructureRawValue(args: {
         setUiCellDimsDepth(app, value, meta.uiOnlyImmediate('react:structure:cellDimsDepth'));
       }
     } catch (err) {
-      structureTabReportNonFatal('commitStructureRawValue.cellDims', err);
+      structureTabReportNonFatal(app, 'commitStructureRawValue.cellDims', err);
     }
     return;
   }
 
   if (key === 'stackSplitLowerDoors') {
-    const doorsN = normalizeDoorsValue(wardrobeType, value);
+    const doorsN = Math.max(0, Math.round(Number(value) || 0));
     const uiPatch = buildRawUiPatch({ stackSplitLowerDoors: doorsN, stackSplitLowerDoorsManual: true });
     const source = 'react:structure:stackSplitLowerDoors';
     const m = meta.noBuildImmediate(source);
@@ -128,32 +152,41 @@ export function commitStructureRawValue(args: {
         },
       });
     } catch (err) {
-      structureTabReportNonFatal('commitStructureRawValue.stackSplitLowerDoors', err);
+      structureTabReportNonFatal(app, 'commitStructureRawValue.stackSplitLowerDoors', err);
     }
     return;
   }
 
   if (key === 'doors') {
     const doorsN = normalizeDoorsValue(wardrobeType, value);
-    const perDoor = wardrobeType === 'sliding' ? 80 : 40;
     const isNoMainWardrobe = wardrobeType !== 'sliding' && doorsN === 0;
 
     let treatManualWidth = !!isManualWidth;
     if (treatManualWidth) {
       try {
         const curDoors = normalizeDoorsValue(wardrobeType, doors);
-        const curWidth = Number(width) || 0;
-        const expectedAutoNow = curDoors * perDoor;
-        if (curWidth > 0 && Math.abs(curWidth - expectedAutoNow) < 0.51) {
+        if (isAutoWidthForDoors(wardrobeType, width, curDoors)) {
           treatManualWidth = false;
         }
       } catch (err) {
-        structureTabReportNonFatal('commitStructureRawValue.autoFixManualWidth', err);
+        structureTabReportNonFatal(app, 'commitStructureRawValue.autoFixManualWidth', err);
       }
     }
 
     const rawPatch: StructureRawPatch = { doors: doorsN };
-    if (!treatManualWidth) rawPatch.width = isNoMainWardrobe ? 0 : doorsN * perDoor;
+    if (!treatManualWidth) {
+      const autoWidth = normalizeStructureRawValue({
+        key: 'width',
+        value: resolveAutoWidthForDoors(wardrobeType, doorsN),
+        wardrobeType,
+        isChestMode,
+        width,
+        height,
+        depth,
+        doors: doorsN,
+      });
+      rawPatch.width = isNoMainWardrobe ? 0 : (autoWidth ?? resolveAutoWidthForDoors(wardrobeType, doorsN));
+    }
 
     const uiPatch: StructureUiPatch = { raw: rawPatch };
 
@@ -219,7 +252,7 @@ export function commitStructureRawValue(args: {
         },
       });
     } catch (err) {
-      structureTabReportNonFatal('commitStructureRawValue.doors', err);
+      structureTabReportNonFatal(app, 'commitStructureRawValue.doors', err);
     }
     return;
   }
@@ -231,7 +264,12 @@ export function commitStructureRawValue(args: {
         ? { stackSplitLowerWidthManual: true }
         : {};
 
-  const uiPatch = buildRawUiPatch({ [key]: value, ...extraLowerManual });
+  const extraChestCommodeAuto: StructureRawPatch =
+    key === 'width' && isChestMode && chestCommodeEnabled && !chestCommodeMirrorWidthManual
+      ? { chestCommodeMirrorWidthCm: value }
+      : {};
+
+  const uiPatch = buildRawUiPatch({ [key]: value, ...extraLowerManual, ...extraChestCommodeAuto });
   const source = `react:structure:${key}`;
   const m = meta.noBuildImmediate(source);
   const statePatch: Record<string, unknown> = { ui: uiPatch };
@@ -263,6 +301,6 @@ export function commitStructureRawValue(args: {
       });
     });
   } catch (err) {
-    structureTabReportNonFatal('commitStructureRawValue.scalar', err);
+    structureTabReportNonFatal(app, 'commitStructureRawValue.scalar', err);
   }
 }

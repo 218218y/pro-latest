@@ -15,6 +15,7 @@ export function StructureDimensionsContent(props: StructureDimensionsContentProp
   return (
     <>
       <StructureDimensionsMainFields
+        isSliding={props.isSliding}
         doors={props.doors}
         width={props.width}
         height={props.height}
@@ -25,6 +26,7 @@ export function StructureDimensionsContent(props: StructureDimensionsContentProp
         onSetRaw={props.onSetRaw}
         onResetAutoWidth={props.onResetAutoWidth}
         onToggleLibraryUpperDoors={props.onToggleLibraryUpperDoors}
+        onPickLibraryGlass={props.onPickLibraryGlass}
       />
 
       {!props.isSliding ? (

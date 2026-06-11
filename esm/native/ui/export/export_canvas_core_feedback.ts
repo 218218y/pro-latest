@@ -46,6 +46,26 @@ export function _reportExportError(
   });
 }
 
+export function _reportExportRecovery(
+  App: AppContainer,
+  op: string,
+  error: unknown,
+  extra?: Record<string, unknown> | null
+): void {
+  reportError(
+    App,
+    error,
+    {
+      where: 'native/ui/export_canvas',
+      op,
+      recovery: true,
+      expected: true,
+      ...(extra && typeof extra === 'object' ? extra : {}),
+    },
+    { consoleFallback: false }
+  );
+}
+
 export function _exportReportThrottled(
   App: AppContainer,
   op: string,
@@ -80,7 +100,7 @@ export function _exportReportNonFatalNoApp(op: string, error: unknown, throttleM
       console.warn(`[WardrobePro][export][soft-noapp] ${op}`, error);
     }
   } catch {
-    // ignore console/clock failures in low-level helper fallback reporting
+    // ignore console/clock failures in low-level soft reporting
   }
 }
 

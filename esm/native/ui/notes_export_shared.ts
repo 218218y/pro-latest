@@ -31,6 +31,14 @@ export type ExportNotesTransform = NotesExportTransformLike & {
   preCamPos?: { x: number; y: number; z: number };
   planePoint?: { x: number; y: number; z: number };
   planeNormal?: { x: number; y: number; z: number };
+  sourceRect?: ExportNotesSourceRect;
+};
+
+export type ExportNotesSourceRect = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 };
 
 export type Vec3Like = { x: number; y: number; z: number };
@@ -51,6 +59,23 @@ function isExportNotesTransform(value: unknown): value is ExportNotesTransform {
 export function readExportTransform(app: AppContainer): ExportNotesTransform | null {
   const value = getNotesExportTransform(app);
   return isExportNotesTransform(value) ? value : null;
+}
+
+function readFiniteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+export function readExportSourceRect(value: unknown): ExportNotesSourceRect | null {
+  if (!isRecord(value) || !isRecord(value.sourceRect)) return null;
+
+  const left = readFiniteNumber(value.sourceRect.left);
+  const top = readFiniteNumber(value.sourceRect.top);
+  const width = readFiniteNumber(value.sourceRect.width);
+  const height = readFiniteNumber(value.sourceRect.height);
+
+  return left !== null && top !== null && width !== null && height !== null && width > 0 && height > 0
+    ? { left, top, width, height }
+    : null;
 }
 
 export function queryAll(app: AppContainer, selector: string): unknown[] {
@@ -77,10 +102,29 @@ export function readMatrix16(value: unknown): number[] | null {
     : null;
 }
 
+type ComputedStyleCarrier = {
+  computedStyle?: unknown;
+};
+
+function isCssStyleDeclarationLike(value: unknown): value is CSSStyleDeclaration {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof (value as { getPropertyValue?: unknown }).getPropertyValue === 'function'
+  );
+}
+
 export function getComputedStyleMaybe(el: Element): CSSStyleDeclaration | null {
   try {
     const win = el && el.ownerDocument && el.ownerDocument.defaultView;
-    return win && typeof win.getComputedStyle === 'function' ? win.getComputedStyle(el) : null;
+    if (win && typeof win.getComputedStyle === 'function') return win.getComputedStyle(el);
+  } catch {
+    // Continue to detached element style carriers below.
+  }
+
+  try {
+    const direct = (el as unknown as ComputedStyleCarrier).computedStyle;
+    return isCssStyleDeclarationLike(direct) ? direct : null;
   } catch {
     return null;
   }

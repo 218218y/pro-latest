@@ -1,7 +1,7 @@
 // Native Builder: internal drawers pipeline (ESM)
 //
-// Extracted from `builder/core.js` to keep the core loop focused and to prevent
-// re-introducing any legacy UI/DOM fallbacks.
+// Extracted from `builder/core.js` to keep the core loop focused and avoid
+// adding UI/DOM readback paths.
 //
 // Responsibilities:
 // - Decide whether a slot has internal drawers
@@ -13,7 +13,7 @@
 
 import { computeInternalDrawersOpsForSlot } from './pure_api.js';
 import { getBuilderRenderOps } from '../runtime/builder_service_access.js';
-import { reportErrorViaPlatform } from '../runtime/platform_access.js';
+import { reportError } from '../runtime/errors.js';
 import type {
   AppContainer,
   ApplyInternalDrawersArgsLike,
@@ -155,7 +155,7 @@ export function makeInternalDrawerCreator(params: InternalDrawerCreatorParams): 
     } catch (e) {
       try {
         if (App) {
-          reportErrorViaPlatform(App, e, {
+          reportError(App, e, {
             where: 'native/builder/internal_drawers_pipeline.computeInternalDrawersOpsForSlot',
             divKey,
             slotIndex,
@@ -191,7 +191,7 @@ export function makeInternalDrawerCreator(params: InternalDrawerCreatorParams): 
     } catch (e) {
       try {
         if (App) {
-          reportErrorViaPlatform(App, e, {
+          reportError(App, e, {
             where: 'native/builder/internal_drawers_pipeline.applyInternalDrawersOps',
             divKey,
           });

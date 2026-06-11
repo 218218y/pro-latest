@@ -1,3 +1,8 @@
+import {
+  INTERIOR_FITTINGS_DIMENSIONS,
+  MATERIAL_DIMENSIONS,
+  SKETCH_BOX_DIMENSIONS,
+} from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { buildSketchBoxStackAwareMeasurementEntries } from './canvas_picking_sketch_neighbor_measurements.js';
 import { createManualLayoutSketchBoxContentHoverRecord } from './canvas_picking_manual_layout_sketch_hover_state.js';
 import type {
@@ -27,7 +32,7 @@ export function resolveSketchBoxShelfPreview(
     woodThick,
     shelfVariant,
     shelfDepthOverrideM,
-    removeEpsShelf = 0.02,
+    removeEpsShelf = SKETCH_BOX_DIMENSIONS.preview.removeEpsShelfM,
     pickSketchBoxSegment,
   } = args;
   const {
@@ -43,7 +48,12 @@ export function resolveSketchBoxShelfPreview(
   const variant = shelfVariant || 'regular';
   const isBrace = variant === 'brace';
   const isDouble = variant === 'double' || !variant;
-  const shelfH = variant === 'glass' ? 0.018 : isDouble ? Math.max(woodThick, woodThick * 2) : woodThick;
+  const shelfH =
+    variant === 'glass'
+      ? MATERIAL_DIMENSIONS.glassShelf.thicknessM
+      : isDouble
+        ? Math.max(woodThick, woodThick * 2)
+        : woodThick;
   let previewY = clampBoxCenterY(pointerY, shelfH / 2);
   const localShelves = readRecordArray(targetBox, 'shelves');
   let previewSegment: SketchBoxSegmentLike | null = activeSegment;
@@ -92,11 +102,15 @@ export function resolveSketchBoxShelfPreview(
       ? Math.min(targetGeo.innerD, Math.max(woodThick, shelfDepthOverrideM))
       : isBrace
         ? targetGeo.innerD
-        : Math.min(targetGeo.innerD, 0.45);
+        : Math.min(targetGeo.innerD, INTERIOR_FITTINGS_DIMENSIONS.shelves.regularDepthM);
   const shelfSegment = previewSegment || activeSegment;
   const shelfCenterX = readFiniteSegmentNumber(shelfSegment, 'centerX') ?? targetGeo.centerX;
   const shelfInnerW = readFiniteSegmentNumber(shelfSegment, 'width') ?? targetGeo.innerW;
-  const previewW = Math.max(0.02, shelfInnerW - (isBrace ? 0.002 : 0.014));
+  const previewDims = SKETCH_BOX_DIMENSIONS.preview;
+  const previewW = Math.max(
+    previewDims.shelfMinWidthM,
+    shelfInnerW - (isBrace ? previewDims.shelfBraceClearanceM : previewDims.shelfRegularClearanceM)
+  );
   const previewZ = targetGeo.innerBackZ + shelfDepth / 2;
   const clearanceMeasurements = buildSketchBoxStackAwareMeasurementEntries({
     bottomY: targetCenterY - targetHeight / 2 + woodThick,
@@ -117,9 +131,12 @@ export function resolveSketchBoxShelfPreview(
     targetCenterY: previewY,
     targetWidth: previewW,
     targetHeight: shelfH,
-    z: previewZ + shelfDepth / 2 + Math.max(0.004, shelfDepth * 0.08),
+    z:
+      previewZ +
+      shelfDepth / 2 +
+      Math.max(previewDims.measurementZOffsetMinM, shelfDepth * previewDims.measurementZOffsetDepthRatio),
     styleKey: 'cell',
-    textScale: 0.82,
+    textScale: previewDims.measurementTextScale,
   });
 
   return {

@@ -6,6 +6,7 @@ import {
   normalizeBaseLegWidthCm,
   normalizeBaseLegStyle,
 } from '../../../features/base_leg_support.js';
+import { normalizeBasePlinthHeightCm } from '../../../features/base_plinth_support.js';
 import { asStringValue, getUiNamespace } from './store_actions_state.js';
 import { setUiFlag, setUiRawScalar, setUiScalar, setUiScalarSoft } from './store_actions_ui_writes.js';
 
@@ -16,6 +17,10 @@ function setUiBaseType(app: AppContainer, value: unknown, meta?: ActionMetaLike)
     return;
   }
   setUiScalar(app, 'baseType', value == null ? '' : String(value), meta);
+}
+
+function setUiBasePlinthHeightCm(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
+  setUiScalar(app, 'basePlinthHeightCm', normalizeBasePlinthHeightCm(value), meta);
 }
 
 function setUiBaseLegStyle(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
@@ -65,6 +70,10 @@ function setUiChestMode(app: AppContainer, on: unknown, meta?: ActionMetaLike): 
   setUiScalarSoft(app, 'isChestMode', !!on, meta);
 }
 
+function setUiChestCommodeEnabled(app: AppContainer, on: unknown, meta?: ActionMetaLike): void {
+  setUiScalarSoft(app, 'chestCommodeEnabled', !!on, meta);
+}
+
 function setUiCornerSide(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
   setUiScalarSoft(app, 'cornerSide', value == null ? '' : String(value), meta);
 }
@@ -99,6 +108,18 @@ function setUiDepth(app: AppContainer, value: unknown, meta?: ActionMetaLike): v
 
 function setUiChestDrawersCount(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
   setUiRawScalar(app, 'chestDrawersCount', value, meta);
+}
+
+function setUiChestCommodeMirrorHeightCm(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
+  setUiRawScalar(app, 'chestCommodeMirrorHeightCm', value, meta);
+}
+
+function setUiChestCommodeMirrorWidthCm(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
+  setUiRawScalar(app, 'chestCommodeMirrorWidthCm', value, meta);
+}
+
+function setUiChestCommodeMirrorWidthManual(app: AppContainer, on: unknown, meta?: ActionMetaLike): void {
+  setUiRawScalar(app, 'chestCommodeMirrorWidthManual', !!on, meta);
 }
 
 function setUiCellDimsWidth(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
@@ -193,10 +214,15 @@ export {
   setUiBaseLegHeightCm,
   setUiBaseLegWidthCm,
   setUiBaseLegStyle,
+  setUiBasePlinthHeightCm,
   setUiBaseType,
   setUiCellDimsDepth,
   setUiCellDimsHeight,
   setUiCellDimsWidth,
+  setUiChestCommodeEnabled,
+  setUiChestCommodeMirrorHeightCm,
+  setUiChestCommodeMirrorWidthCm,
+  setUiChestCommodeMirrorWidthManual,
   setUiChestDrawersCount,
   setUiChestMode,
   setUiColorChoice,

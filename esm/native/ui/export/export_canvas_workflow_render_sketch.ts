@@ -22,7 +22,6 @@ export function createExportRenderAndSketchWorkflow(
     _renderAllNotesToCanvas,
     _renderSceneForExport,
     _getRendererCanvasSource,
-    _reportExportError,
     _createDomCanvas,
     _handleCanvasExport,
     restoreViewportCameraPose,
@@ -69,7 +68,7 @@ export function createExportRenderAndSketchWorkflow(
       _renderSceneForExport(App, renderer, scene, camera);
     };
 
-    const runExport = async () => {
+    const captureNotesTransformForCurrentFrame = () => {
       const { preRef, postRef, notesTransform } = captureFrontNotesTransform(App, deps, {
         camera,
         controls,
@@ -80,18 +79,28 @@ export function createExportRenderAndSketchWorkflow(
       });
 
       if (notesEnabled && !notesTransform) {
-        try {
-          console.warn('[WardrobePro][export] notes transform missing (render/sketch export)', {
-            preRef,
-            postRef,
-          });
-        } catch (err) {
-          deps._exportReportThrottled(App, 'copyToClipboard.notesTransform.warn', err, {
-            throttleMs: 1000,
-          });
-        }
+        deps._reportExportRecovery(
+          App,
+          'exportRenderAndSketch.notesTransformMissing',
+          new Error('notes export transform unavailable'),
+          { preRefMissing: !preRef, postRefMissing: !postRef }
+        );
       }
 
+      return notesTransform;
+    };
+
+    const setSketchModeForExport = (next: boolean, reason: string) => {
+      if (readSketchModeForWorkflow(deps, App) === next) return;
+      applyViewportSketchMode(App, next, {
+        source: 'export',
+        rebuild: true,
+        updateShadows: false,
+        reason,
+      });
+    };
+
+    const runExport = async () => {
       const createComposite = async (includeLogo: boolean): Promise<HTMLCanvasElement> => {
         const compositeCanvas = _createDomCanvas(App, width, height * 2 + gap + titleHeight);
         const ctx = compositeCanvas.getContext('2d');
@@ -103,34 +112,27 @@ export function createExportRenderAndSketchWorkflow(
           source: 'export.renderAndSketch',
         });
 
-        if (readSketchModeForWorkflow(deps, App)) {
-          applyViewportSketchMode(App, false, {
-            source: 'export',
-            rebuild: true,
-            updateShadows: false,
-            reason: 'export:renderMode',
+        const restoreOriginalCameraForPanel = () => {
+          restoreViewportCameraPose(App, {
+            position: { x: originalCamPos.x, y: originalCamPos.y, z: originalCamPos.z },
+            target: { x: originalTarget.x, y: originalTarget.y, z: originalTarget.z },
           });
-        }
-        _renderSceneForExport(App, renderer, scene, camera);
-        ctx.drawImage(_getRendererCanvasSource(renderer), 0, titleHeight);
+        };
 
-        if (notesEnabled) {
-          await _renderAllNotesToCanvas(App, ctx, width, height, titleHeight, notesTransform);
-        }
+        const renderPanel = async (sketchMode: boolean, imageY: number, reason: string) => {
+          setSketchModeForExport(sketchMode, reason);
+          restoreOriginalCameraForPanel();
+          const notesTransform = captureNotesTransformForCurrentFrame();
+          _renderSceneForExport(App, renderer, scene, camera);
+          ctx.drawImage(_getRendererCanvasSource(renderer), 0, imageY);
 
-        applyViewportSketchMode(App, true, {
-          source: 'export',
-          rebuild: true,
-          updateShadows: false,
-          reason: 'export:sketchMode',
-        });
-        _renderSceneForExport(App, renderer, scene, camera);
-        const secondImageY = titleHeight + height + gap;
-        ctx.drawImage(_getRendererCanvasSource(renderer), 0, secondImageY);
+          if (notesEnabled) {
+            await _renderAllNotesToCanvas(App, ctx, width, height, imageY, notesTransform);
+          }
+        };
 
-        if (notesEnabled) {
-          await _renderAllNotesToCanvas(App, ctx, width, height, secondImageY, notesTransform);
-        }
+        await renderPanel(false, titleHeight, 'export:renderMode');
+        await renderPanel(true, titleHeight + height + gap, 'export:sketchMode');
 
         return compositeCanvas;
       };
@@ -140,17 +142,16 @@ export function createExportRenderAndSketchWorkflow(
         finalCanvas.toDataURL();
         _handleCanvasExport(App, finalCanvas, 'wardrobe-render-sketch.png', {
           mode: 'clipboard',
-          fallback: 'none',
+          clipboardFailureMode: 'none',
           toastClipboardSuccess: 'ייצוא סקיצה/הדמיה הועתק ללוח בהצלחה!',
         });
       } catch (err) {
-        _reportExportError(App, 'exportRenderAndSketch.logoPass', err);
-        console.warn('Export tainted by logo, retrying without logo...', err);
+        deps._reportExportRecovery(App, 'exportRenderAndSketch.retryWithoutLogo', err, { pass: 'logo' });
         if (deps.shouldFailFast(App)) throw err;
         const finalCanvasWithoutLogo = await createComposite(false);
         _handleCanvasExport(App, finalCanvasWithoutLogo, 'wardrobe-render-sketch.png', {
           mode: 'clipboard',
-          fallback: 'none',
+          clipboardFailureMode: 'none',
           toastClipboardSuccess: 'ייצוא סקיצה/הדמיה הועתק ללוח בהצלחה!',
         });
       }

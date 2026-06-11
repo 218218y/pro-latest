@@ -2,6 +2,7 @@ import type { UnknownRecord } from '../../../types/index.js';
 
 import { getDocumentMaybe, getNavigatorMaybe } from './browser_env.js';
 import { buildErrorResult as buildNormalizedErrorResult } from './error_normalization.js';
+import { reportError } from './errors.js';
 
 export type BrowserClipboardResult =
   | { ok: true }
@@ -31,8 +32,17 @@ function buildUnavailableResult(message?: string): BrowserClipboardResult {
     : { ok: false, reason: 'unavailable' };
 }
 
-function buildErrorResult(error: unknown, fallback: string): BrowserClipboardResult {
-  return buildNormalizedErrorResult('error', error, fallback);
+function buildErrorResult(error: unknown, defaultMessage: string): BrowserClipboardResult {
+  return buildNormalizedErrorResult('error', error, defaultMessage);
+}
+
+function reportBrowserClipboardError(appOrCtx: unknown, op: string, error: unknown): void {
+  reportError(
+    appOrCtx,
+    error,
+    { where: 'native/runtime/browser_clipboard', op, fatal: false },
+    { consoleFallback: false }
+  );
 }
 
 function isClipboardDocumentLike(value: unknown): value is ClipboardDocumentLike {
@@ -60,7 +70,11 @@ function resolveClipboard(appOrCtx: unknown): ClipboardSurfaceLike | null {
   return isClipboardSurfaceLike(clipboard) ? clipboard : null;
 }
 
-function execCommandCopyText(doc: ClipboardDocumentLike, text: string): BrowserClipboardResult {
+function execCommandCopyText(
+  appOrCtx: unknown,
+  doc: ClipboardDocumentLike,
+  text: string
+): BrowserClipboardResult {
   if (!doc.body || typeof doc.createElement !== 'function' || typeof doc.execCommand !== 'function') {
     return buildUnavailableResult('browser clipboard text unavailable');
   }
@@ -75,12 +89,13 @@ function execCommandCopyText(doc: ClipboardDocumentLike, text: string): BrowserC
     const copied = doc.execCommand('copy');
     return copied ? { ok: true } : buildUnavailableResult('browser clipboard text unavailable');
   } catch (error) {
+    reportBrowserClipboardError(appOrCtx, 'execCommandCopyText', error);
     return buildErrorResult(error, 'browser clipboard text copy failed');
   } finally {
     try {
       ta.remove?.();
     } catch {
-      // ignore cleanup failure in clipboard fallback
+      // ignore textarea cleanup failure
     }
   }
 }
@@ -96,6 +111,7 @@ export async function writeClipboardTextResultViaBrowser(
       await Promise.resolve(clipboard.writeText(String(text || '')));
       return { ok: true };
     } catch (error) {
+      reportBrowserClipboardError(appOrCtx, 'writeClipboardText', error);
       return buildErrorResult(error, 'browser clipboard text write failed');
     }
   }
@@ -105,7 +121,7 @@ export async function writeClipboardTextResultViaBrowser(
 
   const doc = resolveDocument(appOrCtx);
   if (!doc) return buildUnavailableResult('browser clipboard text unavailable');
-  return execCommandCopyText(doc, String(text || ''));
+  return execCommandCopyText(appOrCtx, doc, String(text || ''));
 }
 
 export async function writeClipboardItemsResultViaBrowser(
@@ -121,6 +137,7 @@ export async function writeClipboardItemsResultViaBrowser(
     await Promise.resolve(clipboard.write(items));
     return { ok: true };
   } catch (error) {
+    reportBrowserClipboardError(appOrCtx, 'writeClipboardItems', error);
     return buildErrorResult(error, 'browser clipboard items write failed');
   }
 }

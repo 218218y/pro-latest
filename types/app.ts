@@ -47,7 +47,6 @@ export interface PlatformActivityLike extends UnknownRecord {
 export interface RenderFollowThroughDebugStatsLike extends UnknownRecord {
   renderRequestCount: number;
   triggerRenderCount: number;
-  fallbackTriggerCount: number;
   ensureRenderLoopCount: number;
   noOpRenderRequestCount: number;
   wakeupRequestCount: number;
@@ -61,7 +60,6 @@ export interface RenderFollowThroughDebugStatsLike extends UnknownRecord {
 export interface RenderFollowThroughBudgetSummaryLike extends UnknownRecord {
   renderRequestCount: number;
   triggerRenderCount: number;
-  fallbackTriggerCount: number;
   ensureRenderLoopCount: number;
   noOpRenderRequestCount: number;
   wakeupRequestCount: number;
@@ -73,7 +71,6 @@ export interface RenderFollowThroughBudgetSummaryLike extends UnknownRecord {
   renderNoOpRate: number;
   wakeupNoOpRate: number;
   renderEnsureFallbackRate: number;
-  renderFallbackTriggerRate: number;
 }
 
 export interface PlatformUtilNamespaceLike extends UnknownRecord {
@@ -224,7 +221,7 @@ export interface StorageNamespaceLike extends UnknownRecord {
   getString?: (key: string) => string | null | undefined;
   setString?: (key: string, value: string) => unknown;
   remove?: (key: string) => unknown;
-  getJSON?: <T>(key: string, fallback: T) => T;
+  getJSON?: <T>(key: string, defaultValue: T) => T;
   setJSON?: (key: string, value: unknown) => unknown;
   [k: string]: unknown;
 }

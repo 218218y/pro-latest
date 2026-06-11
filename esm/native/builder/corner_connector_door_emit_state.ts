@@ -1,3 +1,4 @@
+import { CORNER_WING_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type {
   CornerConnectorDoorContext,
   CornerConnectorDoorState,
@@ -36,15 +37,35 @@ export function readCornerConnectorCustomSplitCutsYInternal(
 ): number[] {
   try {
     const partKey = ctx.stackKey === 'bottom' ? state.scopedDoorBaseId : state.doorBaseId;
-    const vals = ctx.readSplitPosListFromMap(ctx.splitMap0, partKey);
-    if (!Array.isArray(vals) || !vals.length) return [];
-    const topEdge = ctx.effectiveTopLimit - 0.002;
+    const norms = ctx.readSplitPosListFromMap(ctx.splitMap0, partKey);
+    if (!Array.isArray(norms) || !norms.length) return [];
+
+    const topEdge = ctx.effectiveTopLimit - CORNER_WING_DIMENSIONS.connector.doorTopClearanceM;
+    const height = topEdge - ctx.doorBottomY;
+    if (!(height > CORNER_WING_DIMENSIONS.connector.visualMinHeightM)) return [];
+
+    const padAbs = CORNER_WING_DIMENSIONS.connector.splitCutMinGapM;
+    const abs: number[] = [];
+    for (let i = 0; i < norms.length; i++) {
+      const rawNorm = Number(norms[i]);
+      if (!Number.isFinite(rawNorm)) continue;
+      const normalized = Math.max(0, Math.min(1, rawNorm));
+      let y = ctx.doorBottomY + normalized * height;
+      y = Math.max(ctx.doorBottomY + padAbs, Math.min(topEdge - padAbs, y));
+      abs.push(y);
+    }
+    abs.sort((a, b) => a - b);
+
     const out: number[] = [];
-    const tol = Math.max(0.004, Math.min(0.02, (topEdge - ctx.doorBottomY) * 0.01));
-    for (let i = 0; i < vals.length; i++) {
-      const raw = Number(vals[i]);
-      if (!Number.isFinite(raw)) continue;
-      const y = Math.max(ctx.doorBottomY + 0.08, Math.min(topEdge - 0.08, raw));
+    const tol = Math.max(
+      CORNER_WING_DIMENSIONS.connector.splitCutToleranceMinM,
+      Math.min(
+        CORNER_WING_DIMENSIONS.connector.splitCutToleranceMaxM,
+        height * CORNER_WING_DIMENSIONS.connector.splitCutToleranceRatio
+      )
+    );
+    for (let i = 0; i < abs.length; i++) {
+      const y = abs[i];
       const prev = out.length ? out[out.length - 1] : NaN;
       if (Number.isFinite(prev) && Math.abs(prev - y) <= tol) continue;
       out.push(y);
@@ -59,9 +80,9 @@ export function mergeCornerConnectorSplitCutsInternal(
   ctx: CornerConnectorDoorContext,
   cutsMerged0: number[]
 ): number[] {
-  const topEdge = ctx.effectiveTopLimit - 0.002;
+  const topEdge = ctx.effectiveTopLimit - CORNER_WING_DIMENSIONS.connector.doorTopClearanceM;
   const H = topEdge - ctx.doorBottomY;
-  const minSegH = 0.12;
+  const minSegH = CORNER_WING_DIMENSIONS.connector.minSegmentHeightM;
   const xs = cutsMerged0.slice().filter(v => Number.isFinite(v));
   xs.sort((a, b) => a - b);
   const kept: number[] = [];
@@ -74,7 +95,13 @@ export function mergeCornerConnectorSplitCutsInternal(
     prevB = y;
   }
   const out: number[] = [];
-  const tol = Math.max(0.004, Math.min(0.02, H * 0.01));
+  const tol = Math.max(
+    CORNER_WING_DIMENSIONS.connector.splitCutToleranceMinM,
+    Math.min(
+      CORNER_WING_DIMENSIONS.connector.splitCutToleranceMaxM,
+      H * CORNER_WING_DIMENSIONS.connector.splitCutToleranceRatio
+    )
+  );
   for (let i = 0; i < kept.length; i++) {
     const y = kept[i];
     const prev = out.length ? out[out.length - 1] : NaN;

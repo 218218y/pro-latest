@@ -34,7 +34,7 @@ export function normalizePrefixedMapKey(value: unknown, prefix: string): string 
   return key.indexOf(prefix) === 0 ? key : prefix + key;
 }
 
-export function readLegacyPrefixedAliasKey(value: unknown, prefix: string): string {
+export function readUnprefixedAliasKey(value: unknown, prefix: string): string {
   const key = readMapKey(value);
   if (!key) return '';
   return key.indexOf(prefix) === 0 ? key.slice(prefix.length) : key;
@@ -53,10 +53,7 @@ export function uniqueNonEmptyKeys(keys: Array<string | null | undefined>): stri
 }
 
 export function readPrefixedMapLookupKeys(value: unknown, prefix: string): string[] {
-  return uniqueNonEmptyKeys([
-    normalizePrefixedMapKey(value, prefix),
-    readLegacyPrefixedAliasKey(value, prefix),
-  ]);
+  return uniqueNonEmptyKeys([normalizePrefixedMapKey(value, prefix), readUnprefixedAliasKey(value, prefix)]);
 }
 
 export function listPrefixedMapCleanupKeys(value: unknown, prefix: string): string[] {

@@ -14,13 +14,14 @@ function normalizePrefixedMapKey(value: unknown, prefix: string): string {
   return key.indexOf(prefix) === 0 ? key : prefix + key;
 }
 
-function readLegacyPrefixedAliasKey(value: unknown, prefix: string): string {
+function readUnprefixedAliasKey(value: unknown, prefix: string): string {
   const key = readMapKey(value);
   if (!key) return '';
   return key.indexOf(prefix) === 0 ? key.slice(prefix.length) : key;
 }
 
-function clearLegacyPrefixedAlias(
+function clearUnprefixedAlias(
+  App: unknown,
   maps: MapsBagLike,
   mapName: KnownMapName,
   canonicalKey: string,
@@ -29,7 +30,7 @@ function clearLegacyPrefixedAlias(
   reason: string
 ): void {
   if (!aliasKey || aliasKey === canonicalKey) return;
-  if (trySetKey(maps, mapName, aliasKey, null, meta, reason)) return;
+  if (trySetKey(App, maps, mapName, aliasKey, null, meta, reason)) return;
   const m = ensureMapRecord(maps, mapName);
   writeOwn(m, aliasKey, null);
 }
@@ -64,9 +65,9 @@ export function writeHandle(
       return true;
     }
   } catch (err) {
-    mapsAccessReportNonFatal('maps_access.writeHandle', err);
+    mapsAccessReportNonFatal('maps_access.writeHandle.ownerRejected', err, App);
   }
-  if (trySetKey(maps, 'handlesMap', id, handleType, meta, 'maps_access.writeHandle.setKey')) return true;
+  if (trySetKey(App, maps, 'handlesMap', id, handleType, meta, 'maps_access.writeHandle.setKey')) return true;
   const m = ensureMapRecord(maps, 'handlesMap');
   writeOwn(m, id, handleType);
   return true;
@@ -90,10 +91,10 @@ export function writeHinge(
       return true;
     }
   } catch (err) {
-    mapsAccessReportNonFatal('maps_access.writeHinge', err);
+    mapsAccessReportNonFatal('maps_access.writeHinge.ownerRejected', err, App);
   }
 
-  if (trySetKey(maps, 'hingeMap', id, hinge, meta, 'maps_access.writeHinge.setKey')) return true;
+  if (trySetKey(App, maps, 'hingeMap', id, hinge, meta, 'maps_access.writeHinge.setKey')) return true;
 
   const m = ensureMapRecord(maps, 'hingeMap');
   writeOwn(m, id, hinge);
@@ -113,7 +114,7 @@ export function writeMapKey<K extends string>(
   const maps = readMapsBagOrNull(App);
   if (!maps) return false;
 
-  if (trySetKey(maps, name, k, val, meta)) return true;
+  if (trySetKey(App, maps, name, k, val, meta)) return true;
 
   const m = ensureMapRecord(maps, name);
   writeOwn(m, k, val);
@@ -127,35 +128,37 @@ export function writeSplit(App: unknown, doorId: unknown, isSplit: boolean, meta
   if (!maps) return false;
 
   const canonicalKey = normalizePrefixedMapKey(id0, 'split_');
-  const aliasKey = readLegacyPrefixedAliasKey(id0, 'split_');
+  const aliasKey = readUnprefixedAliasKey(id0, 'split_');
 
   try {
     const fn = maps.setSplit;
     if (typeof fn === 'function') {
       fn.call(maps, canonicalKey, !!isSplit, meta);
-      clearLegacyPrefixedAlias(
+      clearUnprefixedAlias(
+        App,
         maps,
         'splitDoorsMap',
         canonicalKey,
         aliasKey,
         meta,
-        'maps_access.writeSplit.clearLegacyAlias'
+        'maps_access.writeSplit.clearUnprefixedAlias'
       );
       return true;
     }
   } catch (err) {
-    mapsAccessReportNonFatal('maps_access.writeSplit', err);
+    mapsAccessReportNonFatal('maps_access.writeSplit.ownerRejected', err, App);
   }
 
   const ok = writeMapKey(App, 'splitDoorsMap', canonicalKey, !!isSplit ? true : false, meta);
   if (ok) {
-    clearLegacyPrefixedAlias(
+    clearUnprefixedAlias(
+      App,
       maps,
       'splitDoorsMap',
       canonicalKey,
       aliasKey,
       meta,
-      'maps_access.writeSplit.clearLegacyAlias'
+      'maps_access.writeSplit.clearUnprefixedAlias'
     );
   }
   return ok;
@@ -173,35 +176,37 @@ export function writeSplitBottom(
   if (!maps) return false;
 
   const canonicalKey = normalizePrefixedMapKey(id0, 'splitb_');
-  const aliasKey = readLegacyPrefixedAliasKey(id0, 'splitb_');
+  const aliasKey = readUnprefixedAliasKey(id0, 'splitb_');
 
   try {
     const fn = maps.setSplitBottom;
     if (typeof fn === 'function') {
       fn.call(maps, canonicalKey, !!isOn, meta);
-      clearLegacyPrefixedAlias(
+      clearUnprefixedAlias(
+        App,
         maps,
         'splitDoorsBottomMap',
         canonicalKey,
         aliasKey,
         meta,
-        'maps_access.writeSplitBottom.clearLegacyAlias'
+        'maps_access.writeSplitBottom.clearUnprefixedAlias'
       );
       return true;
     }
   } catch (err) {
-    mapsAccessReportNonFatal('maps_access.writeSplitBottom', err);
+    mapsAccessReportNonFatal('maps_access.writeSplitBottom.ownerRejected', err, App);
   }
 
   const ok = writeMapKey(App, 'splitDoorsBottomMap', canonicalKey, !!isOn ? true : null, meta);
   if (ok) {
-    clearLegacyPrefixedAlias(
+    clearUnprefixedAlias(
+      App,
       maps,
       'splitDoorsBottomMap',
       canonicalKey,
       aliasKey,
       meta,
-      'maps_access.writeSplitBottom.clearLegacyAlias'
+      'maps_access.writeSplitBottom.clearUnprefixedAlias'
     );
   }
   return ok;
@@ -224,14 +229,14 @@ function toggleKeyInMap(
       return true;
     }
   } catch (err) {
-    mapsAccessReportNonFatal('maps_access.toggleKeyInMap', err);
+    mapsAccessReportNonFatal('maps_access.toggleKeyInMap.ownerRejected', err, App);
   }
 
   const m = ensureMapRecord(maps, mapName);
   const cur = readOwn(m, key);
   const next = cur ? null : true;
 
-  if (trySetKey(maps, mapName, key, next, meta, 'maps_access.toggleKeyInMap.setKey')) return true;
+  if (trySetKey(App, maps, mapName, key, next, meta, 'maps_access.toggleKeyInMap.setKey')) return true;
 
   writeOwn(m, key, next);
   return true;
@@ -249,32 +254,42 @@ function toggleCanonicalPrefixedKeyInMap(
   const maps = readMapsBagOrNull(App);
   if (!maps) return false;
 
-  const aliasKey = readLegacyPrefixedAliasKey(key, prefix);
+  const aliasKey = readUnprefixedAliasKey(key, prefix);
   const m = ensureMapRecord(maps, mapName);
   const next = readPrefixedToggleState(m, canonicalKey, aliasKey) ? null : true;
 
   if (
-    trySetKey(maps, mapName, canonicalKey, next, meta, 'maps_access.toggleCanonicalPrefixedKeyInMap.setKey')
+    trySetKey(
+      App,
+      maps,
+      mapName,
+      canonicalKey,
+      next,
+      meta,
+      'maps_access.toggleCanonicalPrefixedKeyInMap.setKey'
+    )
   ) {
-    clearLegacyPrefixedAlias(
+    clearUnprefixedAlias(
+      App,
       maps,
       mapName,
       canonicalKey,
       aliasKey,
       meta,
-      'maps_access.toggleCanonicalPrefixedKeyInMap.clearLegacyAlias'
+      'maps_access.toggleCanonicalPrefixedKeyInMap.clearUnprefixedAlias'
     );
     return true;
   }
 
   writeOwn(m, canonicalKey, next);
-  clearLegacyPrefixedAlias(
+  clearUnprefixedAlias(
+    App,
     maps,
     mapName,
     canonicalKey,
     aliasKey,
     meta,
-    'maps_access.toggleCanonicalPrefixedKeyInMap.clearLegacyAlias'
+    'maps_access.toggleCanonicalPrefixedKeyInMap.clearUnprefixedAlias'
   );
   return true;
 }

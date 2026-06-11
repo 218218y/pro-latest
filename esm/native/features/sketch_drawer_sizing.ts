@@ -1,19 +1,29 @@
+import { cmToM, DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+
 export const SKETCH_INTERNAL_DRAWERS_TOOL_ID = 'sketch_int_drawers';
 export const SKETCH_EXTERNAL_DRAWERS_TOOL_PREFIX = 'sketch_ext_drawers:';
 export const SKETCH_DRAWER_HEIGHT_TOOL_SEPARATOR = '@';
 
-export const SKETCH_DRAWER_HEIGHT_MIN_CM = 5;
-export const SKETCH_DRAWER_HEIGHT_MAX_CM = 120;
-export const DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM = 22;
-export const DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_CM = 16.5;
+export const SKETCH_DRAWER_HEIGHT_MIN_CM: number = DRAWER_DIMENSIONS.sketch.heightMinCm;
+export const SKETCH_DRAWER_HEIGHT_MAX_CM: number = DRAWER_DIMENSIONS.sketch.heightMaxCm;
+export const SKETCH_EXTERNAL_DRAWER_COUNT_MIN: number = DRAWER_DIMENSIONS.sketch.externalCountMin;
+export const SKETCH_EXTERNAL_DRAWER_COUNT_MAX: number = DRAWER_DIMENSIONS.sketch.externalCountMax;
+export const DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM: number =
+  DRAWER_DIMENSIONS.sketch.externalDefaultHeightCm;
+export const DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_CM: number =
+  DRAWER_DIMENSIONS.sketch.internalDefaultHeightCm;
 
-export const DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M = DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM / 100;
-export const DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_M = DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_CM / 100;
-export const DEFAULT_SKETCH_INTERNAL_DRAWER_GAP_M = 0.03;
-export const SKETCH_INTERNAL_DRAWER_STACK_COUNT = 2;
+export const DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M: number = cmToM(
+  DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM
+);
+export const DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_M: number = cmToM(
+  DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_CM
+);
+export const DEFAULT_SKETCH_INTERNAL_DRAWER_GAP_M: number = DRAWER_DIMENSIONS.sketch.internalGapM;
+export const SKETCH_INTERNAL_DRAWER_STACK_COUNT: number = DRAWER_DIMENSIONS.sketch.internalStackCount;
 
-const MIN_RENDER_DRAWER_HEIGHT_M = 0.01;
-const HEIGHT_TOKEN_EPSILON = 0.0001;
+const MIN_RENDER_DRAWER_HEIGHT_M = DRAWER_DIMENSIONS.sketch.minRenderHeightM;
+const HEIGHT_TOKEN_EPSILON = DRAWER_DIMENSIONS.sketch.heightTokenEpsilonCm;
 
 export type SketchExternalDrawersToolSpec = {
   count: number;
@@ -66,21 +76,21 @@ function isSameHeightCm(a: number, b: number): boolean {
   return Math.abs(a - b) <= HEIGHT_TOKEN_EPSILON;
 }
 
-export function normalizeSketchDrawerHeightCm(value: unknown, fallbackCm: number): number {
-  const fallback = readFiniteNumber(fallbackCm) ?? DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM;
+export function normalizeSketchDrawerHeightCm(value: unknown, defaultCm: number): number {
+  const defaultHeight = readFiniteNumber(defaultCm) ?? DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM;
   const raw = readFiniteNumber(value);
-  const source = raw != null ? raw : fallback;
+  const source = raw != null ? raw : defaultHeight;
   const clamped = Math.max(SKETCH_DRAWER_HEIGHT_MIN_CM, Math.min(SKETCH_DRAWER_HEIGHT_MAX_CM, source));
   return roundHeightCm(clamped);
 }
 
-export function normalizeSketchDrawerHeightM(value: unknown, fallbackM: number): number {
-  const fallback = readFiniteNumber(fallbackM) ?? DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M;
+export function normalizeSketchDrawerHeightM(value: unknown, defaultM: number): number {
+  const defaultHeight = readFiniteNumber(defaultM) ?? DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M;
   const raw = readFiniteNumber(value);
-  const source = raw != null ? raw : fallback;
+  const source = raw != null ? raw : defaultHeight;
   const clamped = Math.max(
-    SKETCH_DRAWER_HEIGHT_MIN_CM / 100,
-    Math.min(SKETCH_DRAWER_HEIGHT_MAX_CM / 100, source)
+    cmToM(SKETCH_DRAWER_HEIGHT_MIN_CM),
+    Math.min(cmToM(SKETCH_DRAWER_HEIGHT_MAX_CM), source)
   );
   return clamped;
 }
@@ -110,7 +120,7 @@ export function parseSketchInternalDrawersTool(tool: unknown): SketchInternalDra
       : DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_CM;
   return {
     drawerHeightCm: heightCm,
-    drawerHeightM: heightCm / 100,
+    drawerHeightM: cmToM(heightCm),
   };
 }
 
@@ -120,14 +130,17 @@ export function parseSketchExternalDrawersTool(tool: unknown): SketchExternalDra
   const [countRaw = '', heightRaw = ''] = raw.split(SKETCH_DRAWER_HEIGHT_TOOL_SEPARATOR);
   const countNum = readFiniteNumber(countRaw);
   if (countNum == null) return null;
-  const count = Math.max(1, Math.min(5, Math.floor(countNum)));
+  const count = Math.max(
+    SKETCH_EXTERNAL_DRAWER_COUNT_MIN,
+    Math.min(SKETCH_EXTERNAL_DRAWER_COUNT_MAX, Math.floor(countNum))
+  );
   const heightCm = heightRaw
     ? normalizeSketchDrawerHeightCm(heightRaw, DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM)
     : DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM;
   return {
     count,
     drawerHeightCm: heightCm,
-    drawerHeightM: heightCm / 100,
+    drawerHeightM: cmToM(heightCm),
   };
 }
 
@@ -141,16 +154,22 @@ export function createSketchInternalDrawersTool(heightCm: unknown): string {
 
 export function createSketchExternalDrawersTool(count: unknown, heightCm: unknown): string {
   const countNum = readFiniteNumber(count);
-  const safeCount = countNum != null ? Math.max(1, Math.min(5, Math.floor(countNum))) : 1;
+  const safeCount =
+    countNum != null
+      ? Math.max(
+          SKETCH_EXTERNAL_DRAWER_COUNT_MIN,
+          Math.min(SKETCH_EXTERNAL_DRAWER_COUNT_MAX, Math.floor(countNum))
+        )
+      : 1;
   const normalized = normalizeSketchDrawerHeightCm(heightCm, DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM);
   const base = `${SKETCH_EXTERNAL_DRAWERS_TOOL_PREFIX}${safeCount}`;
   if (isSameHeightCm(normalized, DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM)) return base;
   return `${base}${SKETCH_DRAWER_HEIGHT_TOOL_SEPARATOR}${formatHeightToken(normalized)}`;
 }
 
-export function readSketchDrawerHeightMFromItem(value: unknown, fallbackM: number): number {
+export function readSketchDrawerHeightMFromItem(value: unknown, defaultM: number): number {
   const rec = readRecord(value);
-  return normalizeSketchDrawerHeightM(rec?.drawerHeightM, fallbackM);
+  return normalizeSketchDrawerHeightM(rec?.drawerHeightM, defaultM);
 }
 
 export function resolveSketchInternalDrawerMetrics(args?: {
@@ -193,7 +212,13 @@ export function resolveSketchExternalDrawerMetrics(args?: {
   availableHeightM?: unknown;
 }): SketchExternalDrawerMetrics {
   const countRaw = readFiniteNumber(args?.drawerCount);
-  const drawerCount = countRaw != null ? Math.max(1, Math.min(5, Math.floor(countRaw))) : 1;
+  const drawerCount =
+    countRaw != null
+      ? Math.max(
+          SKETCH_EXTERNAL_DRAWER_COUNT_MIN,
+          Math.min(SKETCH_EXTERNAL_DRAWER_COUNT_MAX, Math.floor(countRaw))
+        )
+      : 1;
   const requestedH = normalizeSketchDrawerHeightM(
     args?.drawerHeightM,
     DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M

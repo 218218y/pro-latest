@@ -1,3 +1,4 @@
+import { CARCASS_SHELL_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { applyCarcassAndGetCabinetMetrics } from './carcass_pipeline.js';
 
 import type { AppContainer, BuilderOutlineFn, ThreeLike, UnknownRecord } from '../../../types';
@@ -17,8 +18,8 @@ export function computeBuildWardrobeSplitLineY(args: {
 }): number {
   const { startY, cabinetBodyHeight, woodThick } = args;
   const internalTotalHeight = startY + cabinetBodyHeight - woodThick - (startY + woodThick);
-  const gridStep = internalTotalHeight / 6;
-  return startY + woodThick + 4 * gridStep;
+  const gridStep = internalTotalHeight / CARCASS_SHELL_DIMENSIONS.drawerGridDivisions;
+  return startY + woodThick + CARCASS_SHELL_DIMENSIONS.drawerSplitGridLineIndex * gridStep;
 }
 
 export function resolveBuildWardrobeCarcassMetrics(args: {
@@ -50,6 +51,7 @@ export function resolveBuildWardrobeCarcassMetrics(args: {
     woodThick: plan.woodThick,
     baseType: plan.baseTypeTop,
     baseLegStyle: plan.baseLegStyle,
+    basePlinthHeightCm: plan.basePlinthHeightCm,
     baseLegHeightCm: plan.baseLegHeightCm,
     baseLegWidthCm: plan.baseLegWidthCm,
     doorsCount: plan.doorsCount,

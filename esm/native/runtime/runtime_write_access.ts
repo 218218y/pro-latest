@@ -3,13 +3,13 @@
 // Goal:
 // - Centralize runtime write seams.
 // - Prefer App.actions.runtime.* surfaces when installed.
-// - Keep store-backed fallbacks for minimal harnesses.
+// - Keep store-backed compatibility routes for minimal harnesses.
 // - Delete-pass: avoid generic root actions.patch routing for runtime updates.
 
 import type { ActionMetaLike, RuntimeActionsNamespaceLike, RuntimeSlicePatch } from '../../../types';
 import type { RuntimeScalarKey, RuntimeScalarValue } from '../../../types/runtime_scalar';
 import { metaTransient } from './meta_profiles_access.js';
-import { asRecord, getSliceNamespace, patchSliceWithStoreFallback } from './slice_write_access.js';
+import { asRecord, getSliceNamespace, patchSliceCanonical } from './slice_write_access.js';
 
 function isRuntimeSlicePatch(value: unknown): value is RuntimeSlicePatch {
   return !!asRecord(value);
@@ -31,7 +31,10 @@ function getRuntimeNamespace(App: unknown): RuntimeActionsNamespaceLike | null {
 export function patchRuntime(App: unknown, patch: unknown, meta?: ActionMetaLike): unknown {
   const rtPatch = asRuntimePatch(patch);
   const m = metaTransient(App, meta, 'runtime:patch');
-  return patchSliceWithStoreFallback(App, 'runtime', rtPatch, m, { storeWriter: 'setRuntime' });
+  return patchSliceCanonical(App, 'runtime', rtPatch, m, {
+    storeWriter: 'setRuntime',
+    allowRootStorePatch: true,
+  });
 }
 
 type SetRuntimeScalar = {

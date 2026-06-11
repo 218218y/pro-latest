@@ -1,6 +1,7 @@
 import type {
   DoorSpecialMap,
   ModuleConfigLike,
+  ModuleCustomDataLike,
   ModulesConfigurationLike,
   UnknownRecord,
 } from '../../../../types';
@@ -11,7 +12,11 @@ import type {
 } from './library_preset_types.js';
 
 import { cloneLightModulesConfigurationSnapshot } from '../modules_configuration/modules_config_api.js';
-import { calculateModuleStructure } from '../modules_configuration/calc_module_structure.js';
+import {
+  calculateModuleStructure,
+  normalizeModuleStructureDoorCount,
+  normalizeModuleStructureSelectForDoors,
+} from '../modules_configuration/calc_module_structure.js';
 import { buildLibraryModuleCfgs } from './module_defaults.js';
 
 type LibraryPresetRawKey =
@@ -117,36 +122,7 @@ export function doorPartKeys(doorId: number): string[] {
 }
 
 export function normDoorCount(raw: unknown, wardrobeType: 'hinged' | 'sliding'): number {
-  const minDoorsAllowed = wardrobeType === 'sliding' ? 2 : 0;
-  const n = Math.round(Number(raw) || 0);
-  return Math.max(minDoorsAllowed, Number.isFinite(n) ? n : minDoorsAllowed);
-}
-
-function readStructureSelectDoorSignature(value: unknown): number[] | null {
-  const s = String(value ?? '').trim();
-  if (!s) return null;
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(s);
-  } catch {
-    return null;
-  }
-
-  if (!Array.isArray(parsed)) return null;
-  const out: number[] = [];
-  for (const item of parsed) {
-    const n = parseInt(String(item ?? ''), 10);
-    if (!Number.isFinite(n) || n <= 0) return null;
-    out.push(Math.round(n));
-  }
-  return out.length ? out : null;
-}
-
-function sumDoorSignature(signature: number[]): number {
-  let sum = 0;
-  for (let i = 0; i < signature.length; i++) sum += Math.max(0, Math.round(signature[i] || 0));
-  return sum;
+  return normalizeModuleStructureDoorCount(raw, wardrobeType);
 }
 
 export function normalizeLibraryStructureSelectForDoors(
@@ -154,9 +130,7 @@ export function normalizeLibraryStructureSelectForDoors(
   wardrobeType: 'hinged' | 'sliding',
   structureSelect: unknown
 ): unknown {
-  const signature = readStructureSelectDoorSignature(structureSelect);
-  if (!signature) return structureSelect;
-  return sumDoorSignature(signature) === normDoorCount(doorsCount, wardrobeType) ? structureSelect : '';
+  return normalizeModuleStructureSelectForDoors(doorsCount, wardrobeType, structureSelect);
 }
 
 function readDoorCountFromStructureItem(value: unknown): number {
@@ -227,21 +201,56 @@ export function cloneExpectedLibraryModuleCfg(cfg: ModuleConfigLike): ModuleConf
   };
 }
 
-function readFiniteInt(raw: unknown, fallback: number, min = 0): number {
+function readFiniteInt(raw: unknown, defaultValue: number, min = 0): number {
   const n = Math.round(Number(raw));
-  if (!Number.isFinite(n)) return fallback;
-  return n >= min ? n : fallback;
+  if (!Number.isFinite(n)) return defaultValue;
+  return n >= min ? n : defaultValue;
 }
 
-function normalizeBoolArrayAgainstLength(value: unknown, fallback: unknown, targetLength: number): boolean[] {
-  const fallbackList = Array.isArray(fallback) ? fallback : [];
+function normalizeBoolArrayAgainstLength(
+  value: unknown,
+  defaultValue: unknown,
+  targetLength: number
+): boolean[] {
+  const defaultList = Array.isArray(defaultValue) ? defaultValue : [];
   const srcList = Array.isArray(value) ? value : [];
   const out = new Array(targetLength);
   for (let i = 0; i < targetLength; i += 1) {
-    const raw = i < srcList.length ? srcList[i] : fallbackList[i];
+    const raw = i < srcList.length ? srcList[i] : defaultList[i];
     out[i] = !!raw;
   }
   return out;
+}
+
+function normalizeStringArrayAgainstLength(
+  value: unknown,
+  defaultValue: unknown,
+  targetLength: number
+): string[] {
+  const defaultList = Array.isArray(defaultValue) ? defaultValue : [];
+  const srcList = Array.isArray(value) ? value : [];
+  const out = new Array(targetLength);
+  for (let i = 0; i < targetLength; i += 1) {
+    const raw = i < srcList.length ? srcList[i] : defaultList[i];
+    out[i] = typeof raw === 'string' ? raw : raw == null ? '' : String(raw);
+  }
+  return out;
+}
+
+function cloneArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value.slice() : [];
+}
+
+function hasFiniteSavedGridFrame(cfg: ModuleConfigLike): boolean {
+  const saved = isRec(cfg.savedDims) ? cfg.savedDims : null;
+  if (!saved) return false;
+  const top = Number(saved.top);
+  const bottom = Number(saved.bottom);
+  return Number.isFinite(top) && Number.isFinite(bottom) && top > bottom;
+}
+
+function hasManualLayoutGridProvenance(cfg: ModuleConfigLike): boolean {
+  return cfg.manualLayoutGridEdited === true;
 }
 
 function areLibraryModuleValuesEqual(prev: unknown, next: unknown): boolean {
@@ -282,10 +291,54 @@ export function normalizePreservedLibraryModuleCfg(
   const hasExplicitSrcGridDivisions =
     Object.prototype.hasOwnProperty.call(src, 'gridDivisions') && src.gridDivisions != null;
   const srcGridDivisions = readFiniteInt(src.gridDivisions, templateGridDivisions, 1);
-  const gridDivisions = templateGridDivisions;
-  const preserveCustomGridData = hasExplicitSrcGridDivisions && srcGridDivisions === templateGridDivisions;
+  const hasManualCustomGrid =
+    !!src.isCustom &&
+    hasExplicitSrcGridDivisions &&
+    (hasFiniteSavedGridFrame(src) || hasManualLayoutGridProvenance(src));
+  const gridDivisions = hasManualCustomGrid ? srcGridDivisions : templateGridDivisions;
+  const preserveCustomGridData =
+    hasManualCustomGrid || (hasExplicitSrcGridDivisions && srcGridDivisions === templateGridDivisions);
+  const customData: ModuleCustomDataLike = {
+    ...templateCustom,
+    ...srcCustom,
+    shelves: normalizeBoolArrayAgainstLength(
+      preserveCustomGridData ? srcCustom.shelves : undefined,
+      templateCustom.shelves,
+      gridDivisions
+    ),
+    rods: normalizeBoolArrayAgainstLength(
+      preserveCustomGridData ? srcCustom.rods : undefined,
+      templateCustom.rods,
+      gridDivisions
+    ),
+    storage: preserveCustomGridData
+      ? srcCustom.storage == null
+        ? !!templateCustom.storage
+        : !!srcCustom.storage
+      : !!templateCustom.storage,
+  };
 
-  return {
+  const hasSourceShelfVariants = preserveCustomGridData && Array.isArray(srcCustom.shelfVariants);
+  const hasTemplateShelfVariants = Array.isArray(templateCustom.shelfVariants);
+  if (hasSourceShelfVariants || hasTemplateShelfVariants) {
+    customData.shelfVariants = normalizeStringArrayAgainstLength(
+      hasSourceShelfVariants ? srcCustom.shelfVariants : undefined,
+      templateCustom.shelfVariants,
+      gridDivisions
+    );
+  } else {
+    delete customData.shelfVariants;
+  }
+
+  const hasSourceRodOps = preserveCustomGridData && Array.isArray(srcCustom.rodOps);
+  const hasTemplateRodOps = Array.isArray(templateCustom.rodOps);
+  if (hasSourceRodOps || hasTemplateRodOps) {
+    customData.rodOps = hasSourceRodOps ? cloneArray(srcCustom.rodOps) : cloneArray(templateCustom.rodOps);
+  } else {
+    delete customData.rodOps;
+  }
+
+  const next: ModuleConfigLike = {
     ...src,
     ...template,
     layout:
@@ -300,27 +353,19 @@ export function normalizePreservedLibraryModuleCfg(
         : [],
     isCustom: src.isCustom == null ? !!template.isCustom : !!src.isCustom,
     gridDivisions,
-    customData: {
-      ...templateCustom,
-      ...srcCustom,
-      shelves: normalizeBoolArrayAgainstLength(
-        preserveCustomGridData ? srcCustom.shelves : undefined,
-        templateCustom.shelves,
-        gridDivisions
-      ),
-      rods: normalizeBoolArrayAgainstLength(
-        preserveCustomGridData ? srcCustom.rods : undefined,
-        templateCustom.rods,
-        gridDivisions
-      ),
-      storage: preserveCustomGridData
-        ? srcCustom.storage == null
-          ? !!templateCustom.storage
-          : !!srcCustom.storage
-        : !!templateCustom.storage,
-    },
+    customData,
     doors: readFiniteInt(template.doors, 0, 0),
   };
+
+  if (preserveCustomGridData && Array.isArray(src.braceShelves)) {
+    next.braceShelves = src.braceShelves.slice();
+  } else if (Array.isArray(template.braceShelves)) {
+    next.braceShelves = template.braceShelves.slice();
+  } else {
+    delete next.braceShelves;
+  }
+
+  return next;
 }
 
 export function canPreserveLibraryModuleCfg(

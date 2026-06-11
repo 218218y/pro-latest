@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { installModesController } from '../esm/native/ui/modes.ts';
+import { enterPrimaryMode, exitPrimaryMode, installModesController } from '../esm/native/ui/modes.ts';
+import { modesReportNonFatal } from '../esm/native/ui/modes_shared.ts';
 import { installUiPrimaryMode } from '../esm/native/ui/primary_mode.ts';
+import { consumeDrawerRebuildIntent, setDrawerRebuildIntent } from '../esm/native/runtime/doors_access.ts';
 import {
   getModesControllerMaybe,
   getPrimaryModeEffectsMaybe,
@@ -174,4 +176,110 @@ test('modes controller suppresses duplicate apply side effects when opts only re
   listener?.();
   assert.equal(handleCalls.length, 2);
   assert.deepEqual(handleCalls[1], ['matte', { source: 'modes:handleType' }]);
+});
+
+test('modes soft diagnostics are app-scoped and throttled without console-only warnings', () => {
+  const reported: Array<{ err: unknown; ctx: any }> = [];
+  const App = {
+    services: {
+      platform: {
+        reportError(err: unknown, ctx: unknown) {
+          reported.push({ err, ctx });
+        },
+      },
+    },
+  } as any;
+
+  modesReportNonFatal(App, 'tests:uiModes:ownerRejected', new Error('mode owner rejected'), 1000);
+  modesReportNonFatal(App, 'tests:uiModes:ownerRejected', new Error('mode owner rejected again'), 1000);
+
+  assert.equal(reported.length, 1);
+  assert.match(String((reported[0].err as Error).message), /mode owner rejected/);
+  assert.equal(reported[0].ctx?.where, 'native/ui/modes');
+  assert.equal(reported[0].ctx?.op, 'tests:uiModes:ownerRejected');
+  assert.equal(reported[0].ctx?.fatal, false);
+});
+
+test('exiting divider mode clears the forced drawer id and closes the visual drawer state', () => {
+  const drawer = { id: 'drawer-7', isOpen: true };
+  const state = {
+    mode: { primary: 'divider', opts: {} },
+    runtime: { globalClickMode: true },
+    ui: {},
+    config: {},
+    meta: {},
+  };
+  const setOpenIdCalls: unknown[] = [];
+
+  const App = {
+    services: {
+      tools: {
+        getDrawersOpenId: () => 'drawer-7',
+        setDrawersOpenId: (id: unknown) => {
+          setOpenIdCalls.push(id);
+        },
+      },
+    },
+    store: {
+      getState() {
+        return state;
+      },
+      setModePatch(patch: Record<string, unknown>) {
+        Object.assign(state.mode, patch);
+      },
+    },
+    render: {
+      drawersArray: [drawer],
+    },
+  } as any;
+
+  setDrawerRebuildIntent(App, 'drawer-7');
+  exitPrimaryMode(App, 'divider', { closeDoors: false });
+
+  assert.equal(state.mode.primary, 'none');
+  assert.equal(drawer.isOpen, false);
+  assert.deepEqual(setOpenIdCalls, [null]);
+  assert.equal(consumeDrawerRebuildIntent(App), null);
+});
+
+test('entering a different primary mode clears any active divider drawer session', () => {
+  const drawer = { id: 'drawer-7', isOpen: true };
+  const state = {
+    mode: { primary: 'divider', opts: {} },
+    runtime: { globalClickMode: true },
+    ui: {},
+    config: {},
+    meta: {},
+  };
+  const setOpenIdCalls: unknown[] = [];
+
+  const App = {
+    services: {
+      tools: {
+        getDrawersOpenId: () => 'drawer-7',
+        setDrawersOpenId: (id: unknown) => {
+          setOpenIdCalls.push(id);
+        },
+      },
+    },
+    store: {
+      getState() {
+        return state;
+      },
+      setModePatch(patch: Record<string, unknown>) {
+        Object.assign(state.mode, patch);
+      },
+    },
+    render: {
+      drawersArray: [drawer],
+    },
+  } as any;
+
+  setDrawerRebuildIntent(App, 'drawer-7');
+  enterPrimaryMode(App, 'paint', { preserveDoors: true });
+
+  assert.equal(state.mode.primary, 'paint');
+  assert.equal(drawer.isOpen, false);
+  assert.deepEqual(setOpenIdCalls, [null]);
+  assert.equal(consumeDrawerRebuildIntent(App), null);
 });

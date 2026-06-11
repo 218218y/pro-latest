@@ -1,4 +1,6 @@
 import type { AppContainer } from '../../../../types';
+import { syncCameraControlsForExportFrame } from './export_canvas_workflow_camera_sync.js';
+import { attachNotesSourceRect, readCanvasImageSourceRect } from './export_canvas_workflow_notes_rect.js';
 import type { ExportCanvasWorkflowDeps } from './export_canvas_workflow_shared.js';
 import { drawExportHeader, fillExportCanvasBackground } from './export_canvas_workflow_shared.js';
 
@@ -8,7 +10,7 @@ export function createCopyToClipboardWorkflow(
   const {
     _requireApp,
     hasDom,
-    getCameraOrNull,
+    getCameraControlsOrNull,
     _getRenderCore,
     _applyExportWallColorOverride,
     _getRendererSize,
@@ -16,7 +18,6 @@ export function createCopyToClipboardWorkflow(
     _renderAllNotesToCanvas,
     _renderSceneForExport,
     _getRendererCanvasSource,
-    _reportExportError,
     _handleCanvasExport,
     _createDomCanvas,
   } = deps;
@@ -29,8 +30,9 @@ export function createCopyToClipboardWorkflow(
     if (!renderCore) return;
     const { renderer, scene } = renderCore;
 
-    const camera = getCameraOrNull(App);
-    if (!camera) return;
+    const cameraControls = getCameraControlsOrNull(App);
+    if (!cameraControls) return;
+    const { camera, controls } = cameraControls;
 
     const restoreExportWall = _applyExportWallColorOverride(App);
     const { width, height } = _getRendererSize(renderer);
@@ -48,16 +50,29 @@ export function createCopyToClipboardWorkflow(
         source: 'export.single',
       });
 
+      syncCameraControlsForExportFrame({ camera, controls });
       _renderSceneForExport(App, renderer, scene, camera);
-      ctx.drawImage(_getRendererCanvasSource(renderer), 0, titleHeight);
+      const rendererSource = _getRendererCanvasSource(renderer);
+      const notesSourceRect = readCanvasImageSourceRect(rendererSource);
+      ctx.drawImage(rendererSource, 0, titleHeight);
 
       if (notesEnabled) {
-        await _renderAllNotesToCanvas(App, ctx, width, height, titleHeight, {
-          sx: 1,
-          sy: 1,
-          dx: 0,
-          dy: 0,
-        });
+        await _renderAllNotesToCanvas(
+          App,
+          ctx,
+          width,
+          height,
+          titleHeight,
+          attachNotesSourceRect(
+            {
+              sx: 1,
+              sy: 1,
+              dx: 0,
+              dy: 0,
+            },
+            notesSourceRect
+          )
+        );
       }
 
       return canvas;
@@ -70,8 +85,7 @@ export function createCopyToClipboardWorkflow(
         mode: 'clipboard',
       });
     } catch (err) {
-      _reportExportError(App, 'copyToClipboard.logoPass', err);
-      console.warn('Security Error with Logo. Retrying without logo...', err);
+      deps._reportExportRecovery(App, 'copyToClipboard.retryWithoutLogo', err, { pass: 'logo' });
       if (deps.shouldFailFast(App)) throw err;
       const canvasWithoutLogo = await createSingleCanvas(false);
       _handleCanvasExport(App, canvasWithoutLogo, 'wardrobe-design.png', { mode: 'clipboard' });

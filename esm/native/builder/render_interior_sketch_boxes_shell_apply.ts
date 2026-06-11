@@ -1,3 +1,4 @@
+import { INTERIOR_FITTINGS_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type {
   RenderInteriorSketchBoxesArgs,
   RenderSketchBoxShellResult,
@@ -21,7 +22,7 @@ export function renderSketchBoxShell(args: {
   const isFreePlacement = box.freePlacement === true;
   const height = resolveSketchBoxHeight({
     rawHeight: box.heightM,
-    fallbackHeight: box.hM,
+    defaultHeight: box.hM,
     woodThick: renderArgs.woodThick,
     spanH: renderArgs.spanH,
     isFreePlacement,
@@ -51,7 +52,7 @@ export function renderSketchBoxShell(args: {
     getPartMaterial: renderArgs.getPartMaterial,
     isFn: renderArgs.isFn,
     boxPid,
-    fallback: renderArgs.bodyMat,
+    defaultMaterial: renderArgs.bodyMat,
   });
 
   const halfH = height / 2;
@@ -70,7 +71,7 @@ export function renderSketchBoxShell(args: {
     innerTopY: geometryResolved.centerY + halfH - renderArgs.woodThick,
     regularDepth:
       geometryResolved.geometry.innerD > 0
-        ? Math.min(geometryResolved.geometry.innerD, 0.45)
+        ? Math.min(geometryResolved.geometry.innerD, INTERIOR_FITTINGS_DIMENSIONS.shelves.regularDepthM)
         : geometryResolved.geometry.innerD,
     frontZ: geometryResolved.geometry.innerBackZ + geometryResolved.geometry.innerD,
   };

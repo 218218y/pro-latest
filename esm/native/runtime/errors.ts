@@ -10,6 +10,14 @@ import { asRecord } from './record.js';
 
 export type ReportErrorFn = (err: unknown, ctx?: unknown) => void;
 
+export type ReportErrorOptions = {
+  /**
+   * Keep true for unexpected internal failures. Set false for expected browser/user-operation
+   * failures where diagnostics should be captured when a reporter exists, without noisy console output.
+   */
+  consoleFallback?: boolean;
+};
+
 const DEFAULT_VERBOSE_CONSOLE_ERRORS = true;
 const DEFAULT_VERBOSE_CONSOLE_ERRORS_DEDUPE_MS = 4000;
 
@@ -59,14 +67,25 @@ function isReportErrorFn(value: unknown): value is ReportErrorFn {
   return typeof value === 'function';
 }
 
+function bindReportErrorFn(owner: Record<string, unknown> | null, key: string): ReportErrorFn | null {
+  const fn = owner ? owner[key] : null;
+  if (!isReportErrorFn(fn)) return null;
+  return (err: unknown, ctx?: unknown): void => {
+    Reflect.apply(fn, owner, [err, ctx]);
+  };
+}
+
 export function getReportError(App: unknown): ReportErrorFn | null {
   const A = asObject(App);
-  const platformService = A ? asObject(asObject(A['services'])?.['platform']) : null;
+  const services = A ? asObject(A['services']) : null;
+  const platformService = services ? asObject(services['platform']) : null;
   const platformRoot = A ? asObject(A['platform']) : null;
-  const fn =
-    (platformService ? platformService['reportError'] : null) ??
-    (platformRoot ? platformRoot['reportError'] : null);
-  return isReportErrorFn(fn) ? fn : null;
+  const errorsService = services ? asObject(services['errors']) : null;
+  return (
+    bindReportErrorFn(platformService, 'reportError') ??
+    bindReportErrorFn(platformRoot, 'reportError') ??
+    bindReportErrorFn(errorsService, 'report')
+  );
 }
 
 export function toErrorMessage(err: unknown): string {
@@ -87,7 +106,12 @@ export function toErrorMessage(err: unknown): string {
   }
 }
 
-export function reportError(App: unknown, err: unknown, ctx?: unknown): void {
+export function reportError(
+  App: unknown,
+  err: unknown,
+  ctx?: unknown,
+  opts?: ReportErrorOptions | null
+): void {
   try {
     const rep = getReportError(App);
     if (rep) {
@@ -98,6 +122,8 @@ export function reportError(App: unknown, err: unknown, ctx?: unknown): void {
         // Fall through to console logging.
       }
     }
+
+    if (opts?.consoleFallback === false) return;
 
     const verbose = !!readRuntimeScalarOrDefaultFromApp(
       App,
@@ -126,7 +152,7 @@ export function reportError(App: unknown, err: unknown, ctx?: unknown): void {
 /**
  * Return whether the app requests "fail fast" behavior.
  *
- * Canonical: store.runtime.failFast (Zustand store). No legacy flags root-slot.
+ * Canonical: store.runtime.failFast (Zustand store). No root-slot flags.
  */
 export function shouldFailFast(App: unknown): boolean {
   try {

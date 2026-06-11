@@ -1,9 +1,14 @@
 import { getModeId } from '../runtime/api.js';
+import { HANDLE_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { getThreeMaybe } from '../runtime/three_access.js';
 import { getDoorsArray } from '../runtime/render_access.js';
 import { readMapOrEmpty, isSplitBottomEnabledInMap } from '../runtime/maps_access.js';
 import { getBuildStateMaybe, getCfg, getMode, getState, getUi } from './store_access.js';
 import { isEdgeHandleDefaultNone } from './edge_handle_default_none_runtime.js';
+import {
+  readManualHandlePositionForPart,
+  type ManualHandlePosition,
+} from '../features/manual_handle_position.js';
 import { asRecord } from '../runtime/record.js';
 import {
   appFromCtx,
@@ -33,6 +38,7 @@ export type HandlesApplyRuntime = {
   getEdgeHandleVariant: (id: unknown) => EdgeHandleVariant;
   getHandleType: (id: unknown, stackKey?: 'top' | 'bottom') => string;
   getHandleColor: (id: unknown) => string;
+  getManualHandlePosition: (id: unknown) => ManualHandlePosition | null;
   clampAbsYToGroup: (absY: number, centerY: number, height: number) => number;
   removeExistingHandleChildren: (group: NodeLike) => void;
 };
@@ -133,6 +139,15 @@ function createHandleColorResolver(App: AppContainer): (id: unknown) => string {
   };
 }
 
+function createManualHandlePositionResolver(App: AppContainer): (id: unknown) => ManualHandlePosition | null {
+  return (id: unknown): ManualHandlePosition | null => {
+    const sid = id == null ? '' : String(id);
+    if (!sid) return null;
+    const base = stripSuffix(sid);
+    return readManualHandlePositionForPart(readMapOrEmpty(App, 'handlesMap'), sid, base);
+  };
+}
+
 function createHandleTypeResolver(
   App: AppContainer,
   getEdgeHandleVariant: (id: unknown) => EdgeHandleVariant
@@ -171,8 +186,20 @@ function clampAbsYToGroup(absY: number, centerY: number, height: number): number
   let y = absY;
   const H = Number(height);
   const CY = Number(centerY);
-  if (!Number.isFinite(y) || !Number.isFinite(H) || !Number.isFinite(CY) || !(H > 0.05)) return absY;
-  const pad = Math.min(0.1, Math.max(0.02, H * 0.2));
+  if (
+    !Number.isFinite(y) ||
+    !Number.isFinite(H) ||
+    !Number.isFinite(CY) ||
+    !(H > HANDLE_DIMENSIONS.placement.absYClampMinHeightM)
+  )
+    return absY;
+  const pad = Math.min(
+    HANDLE_DIMENSIONS.placement.absYClampPaddingMaxM,
+    Math.max(
+      HANDLE_DIMENSIONS.placement.absYClampPaddingMinM,
+      H * HANDLE_DIMENSIONS.placement.absYClampPaddingHeightRatio
+    )
+  );
   const minY = CY - H / 2 + pad;
   const maxY = CY + H / 2 - pad;
   if (y < minY) y = minY;
@@ -242,6 +269,7 @@ export function createHandlesApplyRuntime(ctx: unknown): HandlesApplyRuntime {
   const getEdgeHandleVariant = createEdgeHandleVariantResolver(App);
   const getHandleType = createHandleTypeResolver(App, getEdgeHandleVariant);
   const getHandleColor = createHandleColorResolver(App);
+  const getManualHandlePosition = createManualHandlePositionResolver(App);
   const syncDoorVisibility = (): void =>
     syncDoorVisibilityForRemovedDoors(App, removeDoorsEnabled, isDoorRemovedV7);
 
@@ -254,6 +282,7 @@ export function createHandlesApplyRuntime(ctx: unknown): HandlesApplyRuntime {
     getEdgeHandleVariant,
     getHandleType,
     getHandleColor,
+    getManualHandlePosition,
     clampAbsYToGroup,
     removeExistingHandleChildren,
   };

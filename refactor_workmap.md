@@ -1,7 +1,7 @@
 # Refactor Workmap
 
 This is the root workmap pointer for future work. Older long-form workmaps were consolidated on
-2026-05-04 so there is one clear plan instead of several historical drafts.
+2026-05-04, and the remaining stage-update root notes were removed during the 2026-05-11 closeout so there is one clear plan instead of several historical drafts.
 
 ## Canonical Planning Files
 
@@ -9,7 +9,6 @@ This is the root workmap pointer for future work. Older long-form workmaps were 
 - `docs/REFACTOR_WORKMAP_PROGRESS.md` is the compact progress marker guarded by integration tests.
 - `docs/QUALITY_GUARDRAILS.md` is the living engineering policy.
 - `docs/FACADE_AND_PUBLIC_API_POLICY.md` owns facade/public API decisions.
-- `README_UPDATED_PLAN_FILES.md` explains which plan files are still active.
 
 ## Current Baseline
 
@@ -17,6 +16,7 @@ This is the root workmap pointer for future work. Older long-form workmaps were 
 - Stage 80 - Measurement and performance guard closeout retained: the refactor track is closed unless a real bug, measured performance regression, missing behavior coverage, or newly proven ownership seam justifies new work.
 - Import cycles are a guardrail, not an active decomposition target: `check:import-cycles` currently covers `esm` and `types`.
 - Private facade/owner splits are guarded by `check:private-owner-imports`.
+- Legacy/fallback inventory is camelCase/PascalCase-aware, category-locked, and now excludes the cleaned prefixed-map alias helper names and cornice envelope helper names, and renderer-lighting local helper names.
 - Project import behavior is guarded by `check:project-import-fixtures` with real JSON fixtures.
 - CSS cascade debt is ratcheted by `check:css-style` using `tools/wp_css_style_budget.json`.
 - CSS `transition: all` debt has been cleared; the active CSS budget now locks `transitionAll` at 0.
@@ -35,12 +35,16 @@ These are the useful remaining upgrade lanes, ordered by value:
 
 ## Historical Cleanup
 
-The removed root workmaps were historical inputs, not active source of truth:
+The removed root workmaps and stage-update notes were historical inputs, not active source of truth:
 
 - `wardrobepro_refactor_workmap_2026-04-26.md`
 - `wardrobepro_refactor_workmap_2026-04-28.md`
 - `refactor_workmap_next_phase_2026-05-03.md`
 - the root `new refactor_workmap` draft
+- `README_UPDATED_PLAN_FILES.md`
+- `UPGRADE_COMPLETION_WORKPLAN_STAGE7_UPDATED.md`
+- `UPGRADE_COMPLETION_WORKPLAN_STAGE8_UPDATED.md`
+- `UPGRADE_COMPLETION_WORKPLAN_STAGE9_UPDATED.md`
 
 Their live decisions are now represented in the canonical planning files listed above.
 

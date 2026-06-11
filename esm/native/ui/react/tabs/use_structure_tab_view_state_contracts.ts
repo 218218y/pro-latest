@@ -8,9 +8,14 @@ export type StructureTabViewState = {
   depth: number;
   doors: number;
   chestDrawersCount: number;
+  chestCommodeEnabled: boolean;
+  chestCommodeMirrorHeightCm: number;
+  chestCommodeMirrorWidthCm: number;
+  chestCommodeMirrorWidthManual: boolean;
   baseType: 'plinth' | 'legs' | 'none';
   baseLegStyle: BaseLegStyle;
   baseLegColor: BaseLegColor;
+  basePlinthHeightCm: number;
   baseLegHeightCm: number;
   baseLegWidthCm: number;
   slidingTracksColor: 'nickel' | 'black';
@@ -36,6 +41,7 @@ export type StructureTabViewState = {
   cellDimsModeId: string;
   cellDimsEditActive: boolean;
   stackSplitEnabled: boolean;
+  stackSplitDecorativeSeparatorEnabled: boolean;
   stackSplitLowerHeight: number;
   stackSplitLowerDepthManual: boolean;
   stackSplitLowerWidthManual: boolean;

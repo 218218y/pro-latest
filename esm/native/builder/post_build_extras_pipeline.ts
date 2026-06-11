@@ -11,6 +11,7 @@ import {
   snapDrawersToTargetsViaService,
   syncDoorsVisualsNow,
 } from '../runtime/doors_access.js';
+import { reportError } from '../runtime/api.js';
 import { readRuntimeScalarOrDefault } from '../runtime/runtime_selectors.js';
 import { getStackKeyFromFlags, getStackSplitFromFlags } from '../features/stack_split/index.js';
 
@@ -28,6 +29,38 @@ function isUnknownRecord(value: unknown): value is Record<string, unknown> {
 
 function readAppRecord(value: unknown): Record<string, unknown> | null {
   return isUnknownRecord(value) ? value : null;
+}
+
+function syncGlobalClickVisualStateAfterBuild(
+  App: unknown,
+  runtime: unknown,
+  skipDoorVisualSync: boolean
+): void {
+  if (skipDoorVisualSync) return;
+
+  const doorsOpen = !!readRuntimeScalarOrDefault(runtime, 'doorsOpen', false);
+  const syncedDoorVisuals = syncDoorsVisualsNow(App, { open: doorsOpen });
+  if (syncedDoorVisuals) return;
+
+  // When the global door-visual owner is not installed, drawer snapping is still a
+  // valid, narrower post-build operation. Keep it explicit so missing door sync is
+  // visible instead of pretending a partial drawer update handled the whole route.
+  snapDrawersToTargetsViaService(App);
+}
+
+function syncLocalClickVisualStateAfterBuild(
+  App: unknown,
+  skipLocalDoorSync: boolean,
+  skipDoorVisualSync: boolean
+): void {
+  applyLocalOpenStateAfterBuild(App);
+  if (!skipLocalDoorSync && !skipDoorVisualSync) syncDoorsVisualsNow(App);
+}
+
+function reportPostBuildRequiredDependencyMissing(App: unknown, op: string, message: string): Error {
+  const error = new Error(message);
+  reportError(App, error, { where: 'builder/post_build_extras', op, fatal: true });
+  return error;
 }
 
 export function applyPostBuildExtras(input: BuildContextLike) {
@@ -126,7 +159,11 @@ export function applyPostBuildExtras(input: BuildContextLike) {
   // Corner wing
   if (isCornerMode) {
     if (typeof buildCornerWing !== 'function') {
-      throw new Error('[builder/post_build_extras] isCornerMode=true but modules.buildCornerWing is missing');
+      throw reportPostBuildRequiredDependencyMissing(
+        App,
+        'cornerWing.missingBuilder',
+        '[builder/post_build_extras] isCornerMode=true but modules.buildCornerWing is missing'
+      );
     }
     const __cornerWingMeta = stackSplitActive
       ? __stackKey === 'top'
@@ -137,6 +174,7 @@ export function applyPostBuildExtras(input: BuildContextLike) {
             stackOffsetZ: 0,
             baseLegStyle: ctx.strings?.baseLegStyle,
             baseLegColor: ctx.strings?.baseLegColor,
+            basePlinthHeightCm: ctx.strings?.basePlinthHeightCm,
             baseLegHeightCm: ctx.strings?.baseLegHeightCm,
             baseLegWidthCm: ctx.strings?.baseLegWidthCm,
           }
@@ -177,21 +215,14 @@ export function applyPostBuildExtras(input: BuildContextLike) {
   if (skipNextDoorVisualSync && appRec) delete appRec.__wpSkipNextDoorVisualSync;
 
   if (globalClickMode) {
-    if (!skipNextDoorVisualSync) {
-      const __doorsOpen = !!readRuntimeScalarOrDefault(runtime, 'doorsOpen', false);
-      if (!syncDoorsVisualsNow(App, { open: __doorsOpen })) {
-        // Minimal fallback: keep drawers consistent if visuals sync is unavailable.
-        snapDrawersToTargetsViaService(App);
-      }
-    }
+    syncGlobalClickVisualStateAfterBuild(App, runtime, skipNextDoorVisualSync);
   }
 
   if (!globalClickMode) {
-    applyLocalOpenStateAfterBuild(App);
+    syncLocalClickVisualStateAfterBuild(App, skipNextLocalDoorSync, skipNextDoorVisualSync);
     if (hadEditHold) {
       applyEditHoldAfterBuild(App);
     }
-    if (!skipNextLocalDoorSync && !skipNextDoorVisualSync) syncDoorsVisualsNow(App);
   }
 
   applyPendingSketchBoxDoorStateAfterBuild(App);
@@ -217,7 +248,9 @@ export function applyPostBuildExtras(input: BuildContextLike) {
   // Notes restore
   if (Array.isArray(notesToPreserve) && notesToPreserve.length > 0) {
     if (typeof restoreNotesFromSave !== 'function') {
-      throw new Error(
+      throw reportPostBuildRequiredDependencyMissing(
+        App,
+        'notesRestore.missingRestoreFn',
         '[builder/post_build_extras] notesToPreserve exists but notes.restoreNotesFromSave is missing'
       );
     }

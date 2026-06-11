@@ -1,4 +1,5 @@
 import type { InteriorValueRecord } from './render_interior_ops_contracts.js';
+import { INTERIOR_FITTINGS_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import {
   __isFn,
   asRecord,
@@ -113,7 +114,10 @@ export function applyCustomStorageBarrier(args: {
   if (!storageBarrier || !storageBarrier.barrierH) return;
 
   const barrierH = Number(storageBarrier.barrierH || 0);
-  const zOff = storageBarrier.zFrontOffset != null ? Number(storageBarrier.zFrontOffset) : -0.06;
+  const zOff =
+    storageBarrier.zFrontOffset != null
+      ? Number(storageBarrier.zFrontOffset)
+      : INTERIOR_FITTINGS_DIMENSIONS.storage.barrierFrontZOffsetM;
   const partId = moduleKey ? `storage_barrier_${moduleKey}` : 'storage_barrier';
   let material = bodyMat;
   try {
@@ -127,11 +131,11 @@ export function applyCustomStorageBarrier(args: {
       }
     }
   } catch {
-    // ignore legacy color lookup errors and keep default body material
+    // Keep the default body material if per-part color lookup fails.
   }
 
   createBoard(
-    innerW - 0.025,
+    innerW - INTERIOR_FITTINGS_DIMENSIONS.storage.barrierWidthClearanceM,
     barrierH,
     woodThick,
     internalCenterX,

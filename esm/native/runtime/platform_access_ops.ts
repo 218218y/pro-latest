@@ -6,6 +6,7 @@ import type {
   RenderFollowThroughDebugStatsLike,
 } from '../../../types';
 
+import { getReportError, reportError } from './errors.js';
 import { bindMethod, getPlatformRoot, getPlatformService, readUtil } from './platform_access_shared.js';
 import {
   cloneRenderFollowThroughDebugStats,
@@ -22,13 +23,11 @@ import type { CloneFn, Hash32Fn, StringifierFn } from './platform_access_shared.
 
 export type PlatformRenderFollowThroughOpts = {
   updateShadows?: boolean;
-  fallbackTrigger?: ((updateShadows?: boolean) => unknown) | null;
   ensureRenderLoop?: boolean;
 };
 
 export type PlatformRenderFollowThroughResult = {
   triggeredRender: boolean;
-  usedFallbackTrigger: boolean;
   ensuredRenderLoop: boolean;
 };
 
@@ -49,26 +48,21 @@ export type PlatformActivityRenderTouchOpts = PlatformRenderFollowThroughOpts & 
   ensureRenderLoopAfterTrigger?: boolean;
 };
 
+function reportPlatformOpRejected(App: unknown, error: unknown, op: string, consoleFallback = true): void {
+  reportError(
+    App,
+    error,
+    { where: 'native/runtime/platform_access', op, fatal: false },
+    consoleFallback ? undefined : { consoleFallback: false }
+  );
+}
+
 export type PlatformActivityRenderTouchResult = PlatformRenderFollowThroughResult & {
   touchedActivity: boolean;
 };
 
 export function getPlatformReportError(App: unknown): ((error: unknown, ctx?: unknown) => unknown) | null {
-  return (
-    bindMethod<[unknown, unknown?], unknown>(getPlatformService(App), 'reportError') ??
-    bindMethod<[unknown, unknown?], unknown>(getPlatformRoot(App), 'reportError')
-  );
-}
-
-export function reportErrorViaPlatform(App: unknown, error: unknown, ctx?: unknown): boolean {
-  try {
-    const fn = getPlatformReportError(App);
-    if (!fn) return false;
-    fn(error, ctx);
-    return true;
-  } catch {
-    return false;
-  }
+  return getReportError(App);
 }
 
 export function getPlatformTriggerRender(App: unknown): ((updateShadows?: boolean) => unknown) | null {
@@ -84,7 +78,8 @@ export function triggerRenderViaPlatform(App: unknown, updateShadows?: boolean):
     if (!fn) return false;
     fn(!!updateShadows);
     return true;
-  } catch {
+  } catch (error) {
+    reportPlatformOpRejected(App, error, 'triggerRender.ownerRejected');
     return false;
   }
 }
@@ -107,22 +102,10 @@ export function runPlatformRenderFollowThrough(
   opts?: PlatformRenderFollowThroughOpts | null
 ): PlatformRenderFollowThroughResult {
   const updateShadows = !!opts?.updateShadows;
-  let triggeredRender = triggerRenderViaPlatform(App, updateShadows);
-  let usedFallbackTrigger = false;
-
-  if (!triggeredRender && typeof opts?.fallbackTrigger === 'function') {
-    try {
-      opts.fallbackTrigger(updateShadows);
-      triggeredRender = true;
-      usedFallbackTrigger = true;
-    } catch {
-      usedFallbackTrigger = false;
-    }
-  }
-
+  const triggeredRender = triggerRenderViaPlatform(App, updateShadows);
   const shouldEnsureRenderLoop = opts?.ensureRenderLoop !== false;
   const ensuredRenderLoop = !triggeredRender && shouldEnsureRenderLoop && ensureRenderLoopViaPlatform(App);
-  const result = { triggeredRender, usedFallbackTrigger, ensuredRenderLoop };
+  const result = { triggeredRender, ensuredRenderLoop };
   recordPlatformRenderFollowThroughStats(getPlatformService(App), result);
   return result;
 }
@@ -138,7 +121,8 @@ export function runPlatformWakeupFollowThrough(
     try {
       opts.afterTouch();
       ranAfterTouch = true;
-    } catch {
+    } catch (error) {
+      reportPlatformOpRejected(App, error, 'runPlatformWakeupFollowThrough.afterTouchRejected', false);
       ranAfterTouch = false;
     }
   }
@@ -166,7 +150,6 @@ export function runPlatformActivityRenderTouch(
   return {
     touchedActivity,
     triggeredRender: renderResult.triggeredRender,
-    usedFallbackTrigger: renderResult.usedFallbackTrigger,
     ensuredRenderLoop,
   };
 }
@@ -212,7 +195,8 @@ export function logViaPlatform(App: unknown, ...args: PlatformLogArgs): boolean 
     if (!fn) return false;
     fn(...args);
     return true;
-  } catch {
+  } catch (error) {
+    reportPlatformOpRejected(App, error, 'log.ownerRejected');
     return false;
   }
 }
@@ -221,13 +205,14 @@ export function getPlatformStringifier(App: unknown): StringifierFn | null {
   return bindMethod<[unknown, string?], string>(readUtil(App), 'str');
 }
 
-export function stringifyViaPlatform(App: unknown, value: unknown, fallback = ''): string {
+export function stringifyViaPlatform(App: unknown, value: unknown, defaultText = ''): string {
   try {
     const fn = getPlatformStringifier(App);
-    if (!fn) return value == null ? String(fallback || '') : String(value);
-    return fn(value, fallback);
-  } catch {
-    return value == null ? String(fallback || '') : String(value);
+    if (!fn) return value == null ? String(defaultText || '') : String(value);
+    return fn(value, defaultText);
+  } catch (error) {
+    reportPlatformOpRejected(App, error, 'stringify.ownerRejected');
+    return value == null ? String(defaultText || '') : String(value);
   }
 }
 
@@ -257,7 +242,8 @@ export function cloneViaPlatform<T>(App: unknown, value: T, seed?: unknown): T {
   try {
     const fn = getPlatformClone(App);
     return fn ? fn(value, seed) : value;
-  } catch {
+  } catch (error) {
+    reportPlatformOpRejected(App, error, 'clone.ownerRejected');
     return value;
   }
 }
@@ -272,7 +258,8 @@ export function cleanGroupViaPlatform(App: unknown, group: unknown): boolean {
     if (!fn) return false;
     fn(group);
     return true;
-  } catch {
+  } catch (error) {
+    reportPlatformOpRejected(App, error, 'cleanGroup.ownerRejected');
     return false;
   }
 }
@@ -287,7 +274,8 @@ export function pruneCachesSafeViaPlatform(App: unknown, rootNode?: unknown): bo
     if (!fn) return false;
     fn(rootNode);
     return true;
-  } catch {
+  } catch (error) {
+    reportPlatformOpRejected(App, error, 'pruneCachesSafe.ownerRejected');
     return false;
   }
 }
@@ -302,7 +290,8 @@ export function afterPaintViaPlatform(App: unknown, cb: () => void): boolean {
     if (!fn) return false;
     fn(cb);
     return true;
-  } catch {
+  } catch (error) {
+    reportPlatformOpRejected(App, error, 'afterPaint.ownerRejected');
     return false;
   }
 }
@@ -315,7 +304,8 @@ export function hash32ViaPlatform(App: unknown, value: unknown): string | null {
   try {
     const fn = getPlatformHash32(App);
     return fn ? fn(value) : null;
-  } catch {
+  } catch (error) {
+    reportPlatformOpRejected(App, error, 'hash32.ownerRejected');
     return null;
   }
 }

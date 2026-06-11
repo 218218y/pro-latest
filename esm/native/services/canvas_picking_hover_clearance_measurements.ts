@@ -1,3 +1,5 @@
+import { SKETCH_BOX_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+
 export type HoverClearanceMeasurementEntry = {
   startX: number;
   startY: number;
@@ -7,7 +9,7 @@ export type HoverClearanceMeasurementEntry = {
   label: string;
   labelX?: number;
   labelY?: number;
-  styleKey?: 'default' | 'cell' | 'neighbor';
+  styleKey?: 'default' | 'cell' | 'neighbor' | 'center';
   textScale?: number;
   faceSign?: number;
   viewFaceSign?: number;
@@ -15,9 +17,14 @@ export type HoverClearanceMeasurementEntry = {
   role?: 'cell' | 'neighbor';
 };
 
-function clampFinite(value: unknown, fallback: number): number {
+export type ClearanceMeasurementLabelOutsets = {
+  horizontalLabelOutset: number;
+  verticalLabelOutset: number;
+};
+
+function clampFinite(value: unknown, defaultValue: number): number {
   const n = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(n) ? n : fallback;
+  return Number.isFinite(n) ? n : defaultValue;
 }
 
 function normalizeFaceSign(value: unknown): number | undefined {
@@ -55,6 +62,19 @@ function shouldShowClearance(valueM: number, minCm: number): boolean {
   return roundedCm >= Math.max(1, Math.ceil(Math.max(0, minCm)));
 }
 
+export function resolveCellMeasurementLabelOutsets(
+  textScaleValue: unknown
+): ClearanceMeasurementLabelOutsets {
+  const textScale =
+    typeof textScaleValue === 'number' && Number.isFinite(textScaleValue)
+      ? textScaleValue
+      : SKETCH_BOX_DIMENSIONS.preview.measurementTextScaleDefault;
+  return {
+    horizontalLabelOutset: SKETCH_BOX_DIMENSIONS.preview.measurementScaleCellX * textScale * 0.5 + 0.03,
+    verticalLabelOutset: SKETCH_BOX_DIMENSIONS.preview.measurementScaleCellY * textScale * 0.5 + 0.025,
+  };
+}
+
 export function buildVerticalClearanceMeasurementEntries(args: {
   containerMinY: number;
   containerMaxY: number;
@@ -63,7 +83,7 @@ export function buildVerticalClearanceMeasurementEntries(args: {
   targetWidth: number;
   targetHeight: number;
   z?: number;
-  styleKey?: 'default' | 'cell' | 'neighbor';
+  styleKey?: 'default' | 'cell' | 'neighbor' | 'center';
   textScale?: number;
   faceSign?: unknown;
   viewFaceSign?: unknown;
@@ -113,7 +133,8 @@ export function buildRectClearanceMeasurementEntries(args: {
   minHorizontalCm?: number;
   horizontalLabelPlacement?: 'center' | 'outside';
   horizontalLabelOutset?: number;
-  styleKey?: 'default' | 'cell' | 'neighbor';
+  verticalLabelOutset?: number;
+  styleKey?: 'default' | 'cell' | 'neighbor' | 'center';
   textScale?: number;
   faceSign?: unknown;
   viewFaceSign?: unknown;
@@ -137,13 +158,21 @@ export function buildRectClearanceMeasurementEntries(args: {
   const targetMinY = Math.max(containerMinY, targetCenterY - halfH);
   const targetMaxY = Math.min(containerMaxY, targetCenterY + halfH);
   const z = typeof args.z === 'number' && Number.isFinite(args.z) ? args.z : undefined;
-  const styleKey = args.styleKey === 'cell' ? 'cell' : 'default';
+  const styleKey =
+    args.styleKey === 'cell'
+      ? 'cell'
+      : args.styleKey === 'neighbor'
+        ? 'neighbor'
+        : args.styleKey === 'center'
+          ? 'center'
+          : 'default';
   const textScale =
     typeof args.textScale === 'number' && Number.isFinite(args.textScale) ? args.textScale : 0.9;
   const minVerticalCm = Math.max(0, clampFinite(args.minVerticalCm, 0));
   const minHorizontalCm = Math.max(0, clampFinite(args.minHorizontalCm, 0));
   const horizontalLabelPlacement = args.horizontalLabelPlacement === 'outside' ? 'outside' : 'center';
   const horizontalLabelOutset = Math.max(0, clampFinite(args.horizontalLabelOutset, 0.06));
+  const verticalLabelOutset = Math.max(0, clampFinite(args.verticalLabelOutset, 0));
   const faceMetadata = resolveFaceMetadata(args);
   const verticalLineX = clampFinite(args.verticalLineX, targetCenterX);
 
@@ -159,7 +188,7 @@ export function buildRectClearanceMeasurementEntries(args: {
       z,
       label: roundClearanceCmLabel(topClearance),
       labelX: verticalLineX,
-      labelY: containerMaxY,
+      labelY: containerMaxY + verticalLabelOutset,
       styleKey,
       textScale,
       ...faceMetadata,
@@ -176,7 +205,7 @@ export function buildRectClearanceMeasurementEntries(args: {
       z,
       label: roundClearanceCmLabel(bottomClearance),
       labelX: verticalLineX,
-      labelY: containerMinY,
+      labelY: containerMinY - verticalLabelOutset,
       styleKey,
       textScale,
       ...faceMetadata,
@@ -220,6 +249,30 @@ export function buildRectClearanceMeasurementEntries(args: {
   return entries;
 }
 
+function isHorizontalMeasurement(entry: HoverClearanceMeasurementEntry): boolean {
+  return Math.abs(Number(entry.startY) - Number(entry.endY)) <= 1e-9;
+}
+
+function isVerticalMeasurement(entry: HoverClearanceMeasurementEntry): boolean {
+  return Math.abs(Number(entry.startX) - Number(entry.endX)) <= 1e-9;
+}
+
+export function markCenteredRectClearanceMeasurements(
+  entries: HoverClearanceMeasurementEntry[],
+  args: {
+    centerX?: boolean;
+    centerY?: boolean;
+  }
+): HoverClearanceMeasurementEntry[] {
+  if (!args.centerX && !args.centerY) return entries;
+  return entries.map(entry => {
+    if ((args.centerX && isHorizontalMeasurement(entry)) || (args.centerY && isVerticalMeasurement(entry))) {
+      return { ...entry, styleKey: 'center' as const };
+    }
+    return entry;
+  });
+}
+
 export type VerticalClearanceNeighborKind = 'shelf' | 'drawer';
 
 export type VerticalClearanceNeighborRange = {
@@ -258,7 +311,7 @@ export function buildStackAwareVerticalClearanceMeasurementEntries(args: {
   targetHeight: number;
   neighbors?: VerticalClearanceNeighborRange[];
   z?: number;
-  styleKey?: 'default' | 'cell' | 'neighbor';
+  styleKey?: 'default' | 'cell' | 'neighbor' | 'center';
   textScale?: number;
   minVerticalCm?: number;
   faceSign?: unknown;

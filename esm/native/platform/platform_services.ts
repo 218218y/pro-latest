@@ -15,16 +15,16 @@ import {
   ensurePlatformService,
   getPlatformRenderDebugBudget,
   getPlatformRenderDebugStats,
-  reportErrorViaPlatform,
   resetPlatformRenderDebugStats,
 } from '../runtime/platform_access.js';
+import { reportError } from '../runtime/errors.js';
 import { installStableSurfaceMethod } from '../runtime/stable_surface_methods.js';
 import { isLifecycleTabHidden } from '../runtime/app_roots_access.js';
 import {
   DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
   getDefaultDepthForWardrobeType,
-} from '../runtime/wardrobe_dimension_defaults.js';
+} from '../../shared/wardrobe_dimension_tokens_shared.js';
 
 import { ensurePlatformPerf, isRecord, readBuildUiSurface } from './platform_shared.js';
 
@@ -50,7 +50,7 @@ function scheduleRenderKickTask(App: AppContainer, animate: () => unknown): void
       animate();
     } catch (e) {
       setLoopRaf(App, 0);
-      reportErrorViaPlatform(App, e, 'animate');
+      reportError(App, e, 'animate');
     }
   };
 

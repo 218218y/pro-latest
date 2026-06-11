@@ -8,6 +8,56 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
 
+const serviceApiDimensionConstants = Object.freeze({
+  DEFAULT_CORNER_WIDTH: 120,
+  DEFAULT_CORNER_DOORS: 3,
+  CHEST_MODE_DIMENSIONS: Object.freeze({
+    activeDefaults: Object.freeze({
+      doorsCount: 0,
+      widthCm: 50,
+      heightCm: 50,
+      depthCm: 40,
+      drawersCount: 2,
+      baseType: 'legs',
+    }),
+    commode: Object.freeze({
+      defaultMirrorHeightCm: 70,
+      minMirrorHeightCm: 30,
+      maxMirrorHeightCm: 180,
+      minMirrorWidthCm: 20,
+      maxMirrorWidthCm: 560,
+    }),
+  }),
+  WARDROBE_WIDTH_MIN: 40,
+  WARDROBE_CHEST_WIDTH_MIN: 20,
+  WARDROBE_WIDTH_MAX: 560,
+  WARDROBE_HEIGHT_MIN: 100,
+  WARDROBE_CHEST_HEIGHT_MIN: 20,
+  WARDROBE_HEIGHT_MAX: 300,
+  WARDROBE_DEPTH_MIN: 20,
+  WARDROBE_DEPTH_MAX: 150,
+  WARDROBE_DOORS_MIN: 0,
+  WARDROBE_SLIDING_DOORS_MIN: 2,
+  WARDROBE_DOORS_MAX: 14,
+  WARDROBE_CHEST_DRAWERS_MIN: 2,
+  WARDROBE_CHEST_DRAWERS_MAX: 8,
+  WARDROBE_CELL_DIM_MIN: 20,
+  WARDROBE_CELL_WIDTH_MIN: 40,
+  WARDROBE_CELL_WIDTH_MAX: 560,
+  WARDROBE_CELL_HEIGHT_MIN: 100,
+  WARDROBE_CELL_HEIGHT_MAX: 300,
+  WARDROBE_CELL_DEPTH_MIN: 20,
+  WARDROBE_CELL_DEPTH_MAX: 150,
+  STACK_SPLIT_LOWER_HEIGHT_MIN: 20,
+  STACK_SPLIT_MIN_TOP_HEIGHT: 40,
+  STACK_SPLIT_LOWER_DEPTH_MIN: 20,
+  STACK_SPLIT_LOWER_DEPTH_MAX: 150,
+  STACK_SPLIT_LOWER_WIDTH_MIN: 30,
+  STACK_SPLIT_LOWER_WIDTH_MAX: 800,
+  STACK_SPLIT_LOWER_DOORS_MIN: 0,
+  STACK_SPLIT_LOWER_DOORS_MAX: 20,
+});
+
 function loadStructureActionsControllerModule(calls, overrides = {}) {
   const file = path.join(
     process.cwd(),
@@ -40,6 +90,12 @@ function loadStructureActionsControllerModule(calls, overrides = {}) {
         setCfgPreChestState: (...args) => calls.push(['setCfgPreChestState', ...args]),
         setUiBaseType: (...args) => calls.push(['setUiBaseType', ...args]),
         setUiChestDrawersCount: (...args) => calls.push(['setUiChestDrawersCount', ...args]),
+        setUiChestCommodeEnabled: (...args) => calls.push(['setUiChestCommodeEnabled', ...args]),
+        setUiChestCommodeMirrorHeightCm: (...args) =>
+          calls.push(['setUiChestCommodeMirrorHeightCm', ...args]),
+        setUiChestCommodeMirrorWidthCm: (...args) => calls.push(['setUiChestCommodeMirrorWidthCm', ...args]),
+        setUiChestCommodeMirrorWidthManual: (...args) =>
+          calls.push(['setUiChestCommodeMirrorWidthManual', ...args]),
         setUiChestMode: (...args) => calls.push(['setUiChestMode', ...args]),
         setUiCornerDepth: (...args) => calls.push(['setUiCornerDepth', ...args]),
         setUiCornerDoors: (...args) => calls.push(['setUiCornerDoors', ...args]),
@@ -56,6 +112,7 @@ function loadStructureActionsControllerModule(calls, overrides = {}) {
     }
     if (specifier === '../../../services/api.js') {
       return {
+        ...serviceApiDimensionConstants,
         adjustCameraForChest: (...args) => calls.push(['adjustCameraForChest', ...args]),
         adjustCameraForCorner: (...args) => calls.push(['adjustCameraForCorner', ...args]),
         createStructuralModulesRecomputeOpts: () => ({ structureChanged: true, preserveTemplate: true }),
@@ -66,7 +123,7 @@ function loadStructureActionsControllerModule(calls, overrides = {}) {
             return false;
           }),
         resetCameraPreset: (...args) => calls.push(['resetCameraPreset', ...args]),
-        runAppStructuralModulesRecompute: (app, uiOverride, meta, defaults, opts, fallbackBuild) => {
+        runAppStructuralModulesRecompute: (app, uiOverride, meta, defaults, opts, recoveryBuild) => {
           calls.push([
             'runAppStructuralModulesRecompute',
             app,
@@ -74,9 +131,9 @@ function loadStructureActionsControllerModule(calls, overrides = {}) {
             meta,
             defaults,
             opts,
-            fallbackBuild,
+            recoveryBuild,
           ]);
-          return calls.push(['recomputeFromUi:viaApp', app, uiOverride, meta, opts, fallbackBuild || null]);
+          return calls.push(['recomputeFromUi:viaApp', app, uiOverride, meta, opts, recoveryBuild || null]);
         },
       };
     }
@@ -308,7 +365,11 @@ test('[structure-actions-controller] corner/chest canonical patches collapse ui/
         JSON.stringify(entry[2]) ===
         JSON.stringify({
           config: { preChestState: null, isManualWidth: false },
-          ui: { isChestMode: false, baseType: 'legs', raw: { doors: 5, width: 180, height: 230, depth: 60 } },
+          ui: {
+            isChestMode: false,
+            baseType: 'legs',
+            raw: { doors: 5, width: 180, height: 230, depth: 60 },
+          },
         })
     ),
     'chest disable should collapse restore config+ui to one canonical patch'

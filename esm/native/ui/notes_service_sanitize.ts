@@ -6,34 +6,50 @@ import type { NotesServiceApp } from './notes_service_shared.js';
 export type SavedNoteStyle = NotesSavedNoteStyle;
 export type SavedNote = NotesSavedNote;
 
+declare const sanitizedNotesHtmlBrand: unique symbol;
+export type SanitizedNotesHtmlString = string & {
+  readonly [sanitizedNotesHtmlBrand]: 'notes-rich';
+};
+
+function asSanitizedNotesHtml(html: string): SanitizedNotesHtmlString {
+  return String(html || '') as SanitizedNotesHtmlString;
+}
+
 function stripAllHtml(s: string): string {
   return String(s || '').replace(/<[^>]*>/g, '');
 }
 
-export function sanitizeRichTextHTML(App: NotesServiceApp, html: string): string {
-  const raw = typeof html === 'string' ? html : '';
-  const doc = getNotesDocument(App);
-  if (!doc) return stripAllHtml(raw);
-  return sanitizeHtmlByPolicy(doc, raw, 'notes-rich');
+export function sanitizeRichTextHTMLWithDocument(
+  doc: Document | null | undefined,
+  html: unknown
+): SanitizedNotesHtmlString {
+  const raw = typeof html === 'string' ? html : html == null ? '' : String(html);
+  if (!raw) return asSanitizedNotesHtml('');
+  if (!doc) return asSanitizedNotesHtml(stripAllHtml(raw));
+  return asSanitizedNotesHtml(sanitizeHtmlByPolicy(doc, raw, 'notes-rich'));
 }
 
-function normPx(v: unknown, fallbackPx: string): string {
+export function sanitizeRichTextHTML(App: NotesServiceApp, html: string): SanitizedNotesHtmlString {
+  return sanitizeRichTextHTMLWithDocument(getNotesDocument(App), html);
+}
+
+function normPx(v: unknown, defaultPx: string): string {
   const s = typeof v === 'string' ? v.trim() : '';
-  if (!s) return fallbackPx;
-  if (!/^[0-9.]+(px|%|vh|vw)?$/i.test(s)) return fallbackPx;
+  if (!s) return defaultPx;
+  if (!/^[0-9.]+(px|%|vh|vw)?$/i.test(s)) return defaultPx;
   return s;
 }
 
-function normFontSize(v: unknown, fallback: string): string {
+function normFontSize(v: unknown, defaultValue: string): string {
   const s = typeof v === 'string' ? v.trim() : typeof v === 'number' ? String(v) : '';
   return s === '1' || s === '2' || s === '3' || s === '4' || s === '5' || s === '6' || s === '7'
     ? s
-    : fallback;
+    : defaultValue;
 }
 
-function normColor(v: unknown, fallback: string): string {
+function normColor(v: unknown, defaultValue: string): string {
   const s = typeof v === 'string' ? v.trim() : '';
-  return s ? s : fallback;
+  return s ? s : defaultValue;
 }
 
 export function normalizeSavedNoteStyle(v: unknown): SavedNoteStyle {

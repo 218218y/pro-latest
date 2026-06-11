@@ -1,12 +1,12 @@
 // Native ESM implementation of doors + drawers runtime.
 //
 // Goals:
-// - No legacy `js/**` imports on the ESM path.
+// - No `js/**` imports on the ESM path.
 // - No IIFE / implicit globals.
 // - Install the canonical doors API directly onto `App.services.doors` without local install flags.
 //
 // Notes:
-// - Keeps behavior identical to legacy `js/services/pro_services_doors_runtime.js`.
+// - Keeps the previous doors/drawers runtime semantics.
 // - Avoids monkey-patching/wrapping external functions. Where other systems need
 //   door-status sync (notes export CSS), this module updates `body[data-door-status]`
 //   directly on state changes.
@@ -205,7 +205,7 @@ export function installDoorsRuntimeService(App: AppContainer): UnknownRecord {
   try {
     setDoorStatusCss(context.App, getDoorsOpen(context.App));
   } catch (_) {
-    reportDoorsRuntimeNonFatal('L889', _);
+    reportDoorsRuntimeNonFatal(context.App, 'L889', _);
   }
 
   return doorsSvc;
