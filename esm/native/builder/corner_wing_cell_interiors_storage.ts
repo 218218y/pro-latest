@@ -3,8 +3,9 @@ import {
   INTERIOR_FITTINGS_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { resolveEffectiveDoorStyle } from '../features/door_style_overrides.js';
+import { makeDrawerBoxPartId } from '../features/drawer_box_identity.js';
+import { CORNER_SHELF_GROUP_PART_ID, markShelfBoardUserData } from '../features/shelf_part_identity.js';
 import { readCurtainType } from './render_door_ops_shared.js';
-import type { SlotMetaLike } from './corner_wing_cell_shared.js';
 import type {
   CornerWingInteriorCellRuntime,
   CornerWingInteriorLayoutOps,
@@ -64,122 +65,17 @@ export function createCornerWingInteriorLayoutOps(
     }
   };
 
-  const checkAndCreateInternalDrawer = (slotIndex: number, slotMeta?: SlotMetaLike) => {
-    if (!runtime.internalDrawersEnabled) return false;
-    const activeSlots = cellRuntime.cfgCell.intDrawersList || [];
-    if (!activeSlots.includes(slotIndex)) return false;
-
-    const baseGridY = cellRuntime.effectiveBottomY + (slotIndex - 1) * cellRuntime.localGridStep;
-    const fullInternalHeight = cellRuntime.effectiveTopY - cellRuntime.internalStartY;
-    const drawerSizingGridStep =
-      Number.isFinite(fullInternalHeight) && fullInternalHeight > 0
-        ? fullInternalHeight / CORNER_WING_DIMENSIONS.cells.defaultGridDivisions
-        : cellRuntime.localGridStep;
-    const slotAvailableHeight =
-      typeof slotMeta?.slotAvailableHeight === 'number' &&
-      Number.isFinite(slotMeta.slotAvailableHeight) &&
-      slotMeta.slotAvailableHeight > 0
-        ? slotMeta.slotAvailableHeight
-        : cellRuntime.localGridStep;
-    const targetSingleDrawerH =
-      (Math.min(
-        CORNER_WING_DIMENSIONS.drawers.internalMaxSingleDrawerHeightM,
-        drawerSizingGridStep - CORNER_WING_DIMENSIONS.drawers.internalVerticalInsetM
-      ) -
-        CORNER_WING_DIMENSIONS.drawers.internalVerticalInsetM) /
-      CORNER_WING_DIMENSIONS.drawers.internalStackCount;
-    const maxSlotSingleDrawerH =
-      (Math.min(
-        CORNER_WING_DIMENSIONS.drawers.internalMaxSingleDrawerHeightM,
-        slotAvailableHeight - CORNER_WING_DIMENSIONS.drawers.internalVerticalInsetM
-      ) -
-        CORNER_WING_DIMENSIONS.drawers.internalVerticalInsetM) /
-      CORNER_WING_DIMENSIONS.drawers.internalStackCount;
-    const singleDrawerH = Math.max(
-      CORNER_WING_DIMENSIONS.drawers.internalMinHeightM,
-      Math.min(targetSingleDrawerH, maxSlotSingleDrawerH)
-    );
-    const divKey = `div_int_corner_c${cellRuntime.cell.idx}_slot_${slotIndex}`;
-    const legacyKey = `div_int_corner_slot_${slotIndex}`;
-    const dividerMap = (() => {
-      const mapFromApp = runtime.readMap(runtime.App, 'drawerDividersMap');
-      if (runtime.isRecord(mapFromApp)) return mapFromApp;
-      const mapFromCfg = runtime.isRecord(runtime.__cfg.drawerDividersMap)
-        ? runtime.__cfg.drawerDividersMap
-        : null;
-      return mapFromCfg || {};
-    })();
-    const hasDivider = !!(dividerMap && (dividerMap[divKey] || dividerMap[legacyKey]));
-    const intDrawW = Math.max(
-      CORNER_WING_DIMENSIONS.drawers.internalMinWidthM,
-      cellRuntime.cellW - CORNER_WING_DIMENSIONS.drawers.internalWidthClearanceM
-    );
-    const intDrawDepth = Math.max(
-      CORNER_WING_DIMENSIONS.drawers.internalMinDepthM,
-      cellRuntime.cellD - CORNER_WING_DIMENSIONS.drawers.internalDepthClearanceM
-    );
-
-    for (let j = 0; j < 2; j++) {
-      const finalY =
-        j === 0
-          ? baseGridY + singleDrawerH / 2 + CORNER_WING_DIMENSIONS.drawers.internalFirstBottomGapM
-          : baseGridY +
-            singleDrawerH +
-            CORNER_WING_DIMENSIONS.drawers.internalBetweenGapM +
-            singleDrawerH / 2;
-      const intBox = runtime.createInternalDrawerBox(
-        intDrawW,
-        singleDrawerH,
-        intDrawDepth,
-        runtime.materials.front,
-        runtime.bodyMat,
-        runtime.addOutlines,
-        hasDivider,
-        false
-      );
-      intBox.userData = { partId: divKey, moduleIndex: cellRuntime.cellKey };
-      const closedPos = new runtime.THREE.Vector3(
-        cellRuntime.cellCenterX,
-        finalY,
-        cellRuntime.__z(-cellRuntime.cellD / 2 - CORNER_WING_DIMENSIONS.drawers.internalClosedBackOffsetM)
-      );
-      const openPos = new runtime.THREE.Vector3(
-        cellRuntime.cellCenterX,
-        finalY,
-        cellRuntime.__z(-cellRuntime.cellD / 2 + CORNER_WING_DIMENSIONS.drawers.internalOpenBackOffsetM)
-      );
-      intBox.position.set(
-        cellRuntime.cellCenterX,
-        finalY,
-        cellRuntime.__z(-cellRuntime.cellD / 2 - CORNER_WING_DIMENSIONS.drawers.internalClosedBackOffsetM)
-      );
-      runtime.wingGroup.add(intBox);
-      if (runtime.render) {
-        runtime.ensureRenderArray(runtime.render, 'drawersArray').push({
-          group: intBox,
-          closed: closedPos,
-          open: openPos,
-          id: divKey,
-          dividerKey: divKey,
-        });
-      }
-    }
-    return true;
-  };
-
   const addGridShelf = (gridIndex: number) => addCornerWingGridShelf(cellRuntime, shelfRuntime, gridIndex);
 
   return {
     createRod,
-    checkAndCreateInternalDrawer,
     addGridShelf,
   };
 }
 
 export function emitCornerWingExternalDrawers(
   runtime: CornerWingInteriorRuntime,
-  cellRuntime: CornerWingInteriorCellRuntime,
-  shelfRuntime: CornerWingInteriorShelfRuntime
+  cellRuntime: CornerWingInteriorCellRuntime
 ): void {
   const { cfgCell, cell, cellKey, cellW, cellCenterX, cellD } = cellRuntime;
   const drawerHeightTotal = cell.drawerHeightTotal;
@@ -200,7 +96,7 @@ export function emitCornerWingExternalDrawers(
         cellD - CORNER_WING_DIMENSIONS.drawers.shelfOverDrawerDepthClearanceM
       )
     ),
-    shelfRuntime.shelfMat
+    runtime.getCornerShelfMat(shelfOverDrawersPartId, false)
   );
   shelfOverDrawers.position.set(
     cellCenterX,
@@ -208,6 +104,12 @@ export function emitCornerWingExternalDrawers(
     cellRuntime.__z(-cellD / 2)
   );
   shelfOverDrawers.userData = { partId: shelfOverDrawersPartId, moduleIndex: cellKey };
+  markShelfBoardUserData(shelfOverDrawers.userData, {
+    groupPartId: CORNER_SHELF_GROUP_PART_ID,
+    shelfIndex: `over_drawers_${cell.idx}`,
+    variant: 'regular',
+    isBrace: false,
+  });
   runtime.addOutlines(shelfOverDrawers);
   runtime.wingGroup.add(shelfOverDrawers);
 
@@ -225,6 +127,8 @@ export function emitCornerWingExternalDrawers(
     const divMap = runtime.readMapOrEmpty(runtime.App, 'drawerDividersMap');
     const hasDivider = !!(divMap && (divMap[divId] || divMap[id]));
     const woodMat = runtime.getCornerMat(id, runtime.frontMat);
+    const drawerBoxPartId = makeDrawerBoxPartId(id);
+    const drawerBoxMat = runtime.getCornerMat(drawerBoxPartId, runtime.whiteMat);
     const curtain =
       runtime.__cfg.isMultiColorMode && runtime.ctx.getCurtain
         ? runtime.readScopedReaderAny(runtime.ctx.getCurtain, id)
@@ -280,14 +184,25 @@ export function emitCornerWingExternalDrawers(
       boxW,
       height - CORNER_WING_DIMENSIONS.drawers.externalBoxHeightClearanceM,
       drawerBoxDepth,
-      runtime.bodyMat,
-      runtime.bodyMat,
+      drawerBoxMat,
+      drawerBoxMat,
       runtime.addOutlines,
       hasDivider,
       false,
       isGlass ? { omitFrontPanel: true } : null
     );
     dBox.position.set(0, 0, -cellD / 2 + CORNER_WING_DIMENSIONS.drawers.externalBoxOffsetZM);
+    dBox.userData = {
+      ...(dBox.userData || {}),
+      partId: drawerBoxPartId,
+      drawerId: id,
+      moduleIndex: cellKey,
+      __wpStack: runtime.__stackKey,
+      __wpDrawerBox: true,
+      __wpDrawerOwnerPartId: id,
+      __doorWidth: boxW,
+      __doorHeight: height - CORNER_WING_DIMENSIONS.drawers.externalBoxHeightClearanceM,
+    };
 
     dGroup.add(dBox);
     dGroup.add(dVis);

@@ -98,6 +98,9 @@ function StructureTabInner(props: { active: boolean }) {
     cellDimsWidth: state.cellDimsWidth,
     cellDimsHeight: state.cellDimsHeight,
     cellDimsDepth: state.cellDimsDepth,
+    cellDimsHexMode: state.cellDimsHexMode,
+    cellDimsHexProtrusion: state.cellDimsHexProtrusion,
+    cellDimsHexDoorWidth: state.cellDimsHexDoorWidth,
     stackSplitEnabled: state.stackSplitEnabled,
     stackSplitDecorativeSeparatorEnabled: state.stackSplitDecorativeSeparatorEnabled,
     stackSplitLowerHeight: state.stackSplitLowerHeight,
@@ -111,9 +114,13 @@ function StructureTabInner(props: { active: boolean }) {
     onResetAllCellDimsOverrides: workflows.resetAllCellDimsOverrides,
     onEnterCellDimsMode: () => workflows.enterCellDimsMode('react:structure:cellDims:on'),
     onExitCellDimsMode: () => workflows.exitCellDimsMode('react:structure:cellDims:off'),
+    onEnterHexCellDimsMode: () => workflows.enterHexCellDimsMode('react:structure:cellDimsHex:on'),
+    onExitHexCellDimsMode: () => workflows.exitHexCellDimsMode('react:structure:cellDimsHex:off'),
     onClearCellDimsWidth: workflows.clearCellDimsWidth,
     onClearCellDimsHeight: workflows.clearCellDimsHeight,
     onClearCellDimsDepth: workflows.clearCellDimsDepth,
+    onClearCellDimsHexProtrusion: workflows.clearCellDimsHexProtrusion,
+    onClearCellDimsHexDoorWidth: workflows.clearCellDimsHexDoorWidth,
     onToggleStackSplit: workflows.toggleStackSplit,
     onToggleStackSplitDecorativeSeparator: workflows.toggleStackSplitDecorativeSeparator,
     onToggleLibraryUpperDoors: workflows.toggleLibraryUpperDoors,
@@ -126,7 +133,7 @@ function StructureTabInner(props: { active: boolean }) {
 
   return (
     <TabPanel tabId="structure" active={props.active}>
-      <ProjectPanel variant="structure" />
+      <ProjectPanel />
 
       <div className="control-section wp-r-section-transparent">
         <TypeSelector />

@@ -27,7 +27,9 @@ export type SidebarViewState = {
   canRenderTab: (id: TabId) => boolean;
   enabledSet: Set<TabId>;
   enabledTabs: TabId[];
-  exportMounted: boolean;
+  settingsMounted: boolean;
+  sketchMounted: boolean;
+  darkMode: boolean;
   gateOpen: boolean;
   isSite2: boolean;
   onSidebarBackgroundClick: (e: MouseEvent<HTMLDivElement>) => void;
@@ -39,7 +41,7 @@ export type SidebarViewState = {
 
 function prefetchSidebarTabIntent(tabId: TabId | null | undefined): void {
   prefetchDeferredSidebarTabs(tabId);
-  if (tabId === 'export') {
+  if (tabId === 'settings') {
     void warmExportCanvasModule().catch(() => undefined);
   }
 }
@@ -49,9 +51,14 @@ export function useSidebarViewState(): SidebarViewState {
   const meta = useMeta();
 
   const isSite2 = useMemo(() => isSite2Variant(app), [app]);
-  const { open: site2GateOpen, storeActive } = useUiSelectorShallow(ui => ({
+  const {
+    open: site2GateOpen,
+    storeActive,
+    darkMode,
+  } = useUiSelectorShallow(ui => ({
     open: selectSite2GateState(ui).open,
     storeActive: selectActiveTabId(ui),
+    darkMode: typeof ui.darkMode === 'boolean' ? ui.darkMode : false,
   }));
   const gateOpen = isSite2 ? site2GateOpen : true;
   const enabledTabs = useMemo(() => (isSite2 ? getSite2EnabledTabs(app) : []), [isSite2, app]);
@@ -64,7 +71,6 @@ export function useSidebarViewState(): SidebarViewState {
       const cur = active;
       const has = visibleTabs.some(t => t.id === cur);
       if (has) return cur;
-      if (cur === 'sketch') return 'interior';
       return visibleTabs[0]?.id || 'interior';
     } catch {
       return 'interior';
@@ -98,13 +104,16 @@ export function useSidebarViewState(): SidebarViewState {
     }
   }, [active, activeSafe, isSite2, enabledSet, app, meta]);
 
-  const [exportEverMounted, setExportEverMounted] = useState(false);
+  const [settingsEverMounted, setSettingsEverMounted] = useState(false);
+  const [sketchEverMounted, setSketchEverMounted] = useState(false);
   const [deferredTabsEverMounted, setDeferredTabsEverMounted] = useState(false);
-  const exportMounted = exportEverMounted || activeSafe === 'export';
+  const settingsMounted = settingsEverMounted || activeSafe === 'settings';
+  const sketchMounted = sketchEverMounted || activeSafe === 'sketch';
   const shouldMountDeferredTabs = deferredTabsEverMounted || activeSafe !== 'structure';
 
   useEffect(() => {
-    if (activeSafe === 'export') setExportEverMounted(true);
+    if (activeSafe === 'settings') setSettingsEverMounted(true);
+    if (activeSafe === 'sketch') setSketchEverMounted(true);
     if (activeSafe !== 'structure') setDeferredTabsEverMounted(true);
   }, [activeSafe]);
 
@@ -187,7 +196,9 @@ export function useSidebarViewState(): SidebarViewState {
     canRenderTab,
     enabledSet,
     enabledTabs,
-    exportMounted,
+    settingsMounted,
+    sketchMounted,
+    darkMode,
     gateOpen,
     isSite2,
     onSidebarBackgroundClick,

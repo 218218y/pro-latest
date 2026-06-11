@@ -143,6 +143,9 @@ const UI_RAW_SCALAR_READERS = {
   cellDimsWidth: (raw: UiRawInputsLike) => readNumericRawScalar(raw, 'cellDimsWidth'),
   cellDimsHeight: (raw: UiRawInputsLike) => readNumericRawScalar(raw, 'cellDimsHeight'),
   cellDimsDepth: (raw: UiRawInputsLike) => readNumericRawScalar(raw, 'cellDimsDepth'),
+  cellDimsHexMode: (raw: UiRawInputsLike) => readBooleanRawScalar(raw, 'cellDimsHexMode'),
+  cellDimsHexProtrusion: (raw: UiRawInputsLike) => readNumericRawScalar(raw, 'cellDimsHexProtrusion'),
+  cellDimsHexDoorWidth: (raw: UiRawInputsLike) => readNumericRawScalar(raw, 'cellDimsHexDoorWidth'),
 } satisfies UiRawScalarReaderMap;
 
 export function readUiRawScalarFromStore<K extends UiRawScalarKey>(

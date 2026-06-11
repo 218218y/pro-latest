@@ -78,6 +78,7 @@ export function tryApplyManualLayoutSketchModeClick(args: ManualLayoutSketchClic
     (cfg: RecordMap) => {
       if (
         tryCommitSketchModuleSurfaceTool({
+          App,
           cfg,
           tool: __mt,
           hoverOk: __hoverOk,
@@ -110,6 +111,7 @@ export function tryApplyManualLayoutSketchModeClick(args: ManualLayoutSketchClic
           topY,
           totalHeight,
           pad,
+          woodThick,
           hitYClamped,
           hoverHost,
           writeSketchHover: __wp_writeSketchHover,

@@ -187,3 +187,81 @@ test('paint preview bounds resolve grouped object extents and fallback object bo
   assert.ok(Math.abs((fallback?.width || 0) - 0.2) <= 1e-9);
   assert.ok(Math.abs((fallback?.woodThick || 0) - 0.05) <= 1e-9);
 });
+
+test('paint preview uses oriented object boxes for corner wing and pentagon plinth paint targets', () => {
+  const wingPlinth = makeBoxObject('corner_plinth_c1', {
+    width: 0.7,
+    height: 0.1,
+    depth: 0.48,
+    x: 0.35,
+    y: 0.05,
+    z: -0.24,
+  });
+  const blindPlinth = makeBoxObject('corner_plinth_blind', {
+    width: 0.18,
+    height: 0.1,
+    depth: 0.48,
+    x: 0.09,
+    y: 0.05,
+    z: -0.24,
+  });
+  const pentagonPlinth = makeBoxObject('corner_pent_plinth', {
+    width: 0.8,
+    height: 0.1,
+    depth: 0.45,
+    x: -0.4,
+    y: 0.05,
+    z: 0.42,
+  });
+  const wardrobeGroup = {
+    userData: { partId: 'root' },
+    children: [wingPlinth, blindPlinth, pentagonPlinth],
+  };
+  const App = createAppWithRegistry({});
+
+  const wingPreview = resolvePaintPreviewGroupBox({
+    App: App as never,
+    wardrobeGroup: wardrobeGroup as never,
+    partKeys: ['corner_plinth'],
+    fallbackObject: wingPlinth as never,
+    fallbackParent: wardrobeGroup as never,
+  });
+  const pentagonPreview = resolvePaintPreviewGroupBox({
+    App: App as never,
+    wardrobeGroup: wardrobeGroup as never,
+    partKeys: ['corner_pent_plinth'],
+    fallbackObject: pentagonPlinth as never,
+    fallbackParent: wardrobeGroup as never,
+  });
+
+  assert.equal(wingPreview?.kind, 'object_boxes');
+  assert.deepEqual(wingPreview?.previewObjects, [wingPlinth, blindPlinth]);
+  assert.equal(pentagonPreview?.kind, 'object_boxes');
+  assert.deepEqual(pentagonPreview?.previewObjects, [pentagonPlinth]);
+});
+
+test('paint preview object collection maps corner shell material keys back to visible wing roof and floor objects', () => {
+  const roof = makeBoxObject('corner_wing_ceil', { width: 1.2, height: 0.04, depth: 0.55, y: 2 });
+  const cellRoof = makeBoxObject('corner_cell_top_c1', {
+    width: 0.6,
+    height: 0.04,
+    depth: 0.5,
+    x: 0.3,
+    y: 1.9,
+  });
+  const floor = makeBoxObject('corner_floor_c1', { width: 0.6, height: 0.04, depth: 0.5, x: 0.3 });
+  const side = makeBoxObject('corner_wing_side_right', { width: 0.04, height: 2, depth: 0.55, x: 0.6 });
+  const unrelated = makeBoxObject('corner_wing_back_c1', { width: 0.6, height: 2, depth: 0.005, z: -0.6 });
+  const wardrobeGroup = {
+    userData: { partId: 'root' },
+    children: [roof, cellRoof, floor, side, unrelated],
+  };
+
+  const objects = collectPaintPreviewPartObjects({
+    App: createAppWithRegistry({}) as never,
+    wardrobeGroup: wardrobeGroup as never,
+    partKeys: ['corner_ceil', 'corner_floor', 'corner_wing_side_right'],
+  });
+
+  assert.deepEqual(objects, [roof, cellRoof, floor, side]);
+});

@@ -1,4 +1,5 @@
 import type {
+  CloudSyncContentsToggleState,
   CloudSyncSketchState,
   CloudSyncSyncPinState,
   CloudSyncTabsGatePayload,
@@ -9,6 +10,7 @@ import { asBool, asNumber } from './cloud_sync_config.js';
 import {
   readCloudSyncNumberOrStringField,
   readCloudSyncScalarField,
+  readCloudSyncContentsTogglePayloadLike,
   readCloudSyncSketchPayloadLike,
   readCloudSyncStringField,
   readCloudSyncSyncPinPayloadLike,
@@ -50,6 +52,16 @@ export function parseFloatingSyncPayload(payload: unknown): CloudSyncSyncPinStat
     enabled: resolveCloudSyncBooleanState(rec.syncPinEnabled),
     rev: resolveCloudSyncNumberState(rec.syncPinRev),
     by: resolveCloudSyncTrimmedStringState(rec.syncPinBy),
+  };
+}
+
+export function parseContentsTogglePayload(payload: unknown): CloudSyncContentsToggleState {
+  const rec = readCloudSyncContentsTogglePayloadLike(payload);
+  if (!rec) return { enabled: false, rev: 0, by: '' };
+  return {
+    enabled: resolveCloudSyncBooleanState(rec.showContentsEnabled),
+    rev: resolveCloudSyncNumberState(rec.showContentsRev),
+    by: resolveCloudSyncTrimmedStringState(rec.showContentsBy),
   };
 }
 

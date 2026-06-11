@@ -197,7 +197,6 @@ export function cloneExpectedLibraryModuleCfg(cfg: ModuleConfigLike): ModuleConf
           rods: Array.isArray(cfg.customData.rods) ? cfg.customData.rods.slice() : [],
         }
       : cfg.customData,
-    intDrawersList: Array.isArray(cfg.intDrawersList) ? cfg.intDrawersList.slice() : [],
   };
 }
 
@@ -345,12 +344,6 @@ export function normalizePreservedLibraryModuleCfg(
       typeof src.layout === 'string' && src.layout.trim() ? src.layout : String(template.layout || 'shelves'),
     extDrawersCount: readFiniteInt(src.extDrawersCount, readFiniteInt(template.extDrawersCount, 0, 0), 0),
     hasShoeDrawer: src.hasShoeDrawer == null ? !!template.hasShoeDrawer : !!src.hasShoeDrawer,
-    intDrawersSlot: readFiniteInt(src.intDrawersSlot, readFiniteInt(template.intDrawersSlot, 0, 0), 0),
-    intDrawersList: Array.isArray(src.intDrawersList)
-      ? src.intDrawersList.slice()
-      : Array.isArray(template.intDrawersList)
-        ? template.intDrawersList.slice()
-        : [],
     isCustom: src.isCustom == null ? !!template.isCustom : !!src.isCustom,
     gridDivisions,
     customData,

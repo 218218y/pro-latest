@@ -75,11 +75,14 @@ test('perf runtime surface records marks, spans, summaries, and errors', async (
               d2_full: [{ axis: 'horizontal', sizeCm: 9 }],
             },
             modulesConfiguration: [
-              { intDrawersList: [2, 4], intDrawersSlot: 0, extDrawersCount: 3 },
-              { intDrawersList: [], intDrawersSlot: 3, extDrawersCount: 0 },
+              {
+                extDrawersCount: 3,
+                sketchExtras: { drawers: [{ id: 'sid-1' }, { id: 'sid-2' }, { id: 'sid-3' }] },
+              },
+              { extDrawersCount: 0 },
             ],
             stackSplitLowerModulesConfiguration: [
-              { intDrawersList: [1], intDrawersSlot: 0, extDrawersCount: 1 },
+              { extDrawersCount: 1, sketchExtras: { drawers: [{ id: 'sid-lower-1' }] } },
             ],
           },
           runtime: {},

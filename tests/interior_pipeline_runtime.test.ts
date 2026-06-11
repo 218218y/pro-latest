@@ -28,7 +28,6 @@ test('interior pipeline routes custom layouts through the canonical custom owner
       config: {
         isCustom: true,
         customData: { shelves: [true, false], rods: [false, true], storage: false },
-        intDrawersSlot: 3,
         braceShelves: [2],
         sketchExtras: [{ kind: 'shelf' }],
       },
@@ -57,7 +56,6 @@ test('interior pipeline routes custom layouts through the canonical custom owner
   assert.deepEqual(customCalls[0].customOps.shelves, [1]);
   assert.equal(customCalls[0].gridDivisions, 3);
   assert.deepEqual(customCalls[0].braceShelves, [2]);
-  assert.deepEqual(customCalls[0].intDrawersList, [3]);
 
   assert.equal(sketchExtraCalls.length, 1);
   assert.equal(sketchExtraCalls[0].moduleKey, 'm-4');
@@ -66,9 +64,8 @@ test('interior pipeline routes custom layouts through the canonical custom owner
   assert.deepEqual(sketchExtraCalls[0].sketchExtras, [{ kind: 'shelf' }]);
 });
 
-test('interior pipeline routes preset layouts through the canonical preset owner and computes drawer slots before render apply', () => {
+test('interior pipeline routes preset layouts through the canonical preset owner through sketch drawer extras only', () => {
   const presetCalls: any[] = [];
-  const drawerSlots: Array<{ slot: number; metrics: unknown }> = [];
   const App = {
     services: {
       builder: {
@@ -88,7 +85,6 @@ test('interior pipeline routes preset layouts through the canonical preset owner
       config: {
         isCustom: false,
         layout: 'hanging_split',
-        intDrawersSlot: 2,
         braceShelves: [5],
       },
       gridDivisions: 6,
@@ -104,33 +100,11 @@ test('interior pipeline routes preset layouts through the canonical preset owner
       moduleIndex: 1,
       modulesLength: 3,
       moduleKey: 'preset-1',
-      checkAndCreateInternalDrawer(slot: number, metrics: unknown) {
-        drawerSlots.push({ slot, metrics });
-      },
     }),
     true
   );
 
   assert.equal(presetCalls.length, 1);
   assert.deepEqual(presetCalls[0].presetOps.shelves, [5, 1]);
-  assert.equal(presetCalls[0].intDrawersSlot, 2);
   assert.deepEqual(presetCalls[0].braceShelves, [5]);
-
-  assert.equal(drawerSlots.length, 6);
-  assert.deepEqual(drawerSlots[0], {
-    slot: 1,
-    metrics: {
-      slotBottomY: 0,
-      slotTopY: 20,
-      slotAvailableHeight: 20,
-    },
-  });
-  assert.deepEqual(drawerSlots[1], {
-    slot: 2,
-    metrics: {
-      slotBottomY: 20,
-      slotTopY: 100,
-      slotAvailableHeight: 80,
-    },
-  });
 });

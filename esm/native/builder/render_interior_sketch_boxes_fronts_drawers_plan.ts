@@ -1,3 +1,4 @@
+import { makeDrawerBoxPartId } from '../features/drawer_box_identity.js';
 import { computeExternalDrawersOpsForModule } from './pure_api.js';
 import {
   DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M,
@@ -5,11 +6,13 @@ import {
   SKETCH_EXTERNAL_DRAWER_COUNT_MIN,
   readSketchDrawerHeightMFromItem,
   resolveSketchExternalDrawerMetrics,
+  sketchStackFitsAvailableHeight,
 } from '../features/sketch_drawer_sizing.js';
 import {
   DRAWER_DIMENSIONS,
   resolveExternalDrawerGeometry,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { resolveSketchStackCenterYFromNormalizedItem } from '../features/sketch_stack_positioning.js';
 
 import type {
   SketchBoxExternalDrawerOpPlan,
@@ -20,6 +23,7 @@ import type { InteriorValueRecord } from './render_interior_ops_contracts.js';
 
 import {
   applySketchExternalDrawerFaceOverrides,
+  resolveSketchExternalDrawerDoorMountMode,
   asRecordArray,
   asValueRecord,
   resolveSketchExternalDrawerFaceVerticalAlignment,
@@ -46,10 +50,12 @@ export function createSketchBoxExternalDrawerStackPlan(
   const metrics = resolveSketchExternalDrawerMetrics({
     drawerCount,
     drawerHeightM: readSketchDrawerHeightMFromItem(item, DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M),
-    availableHeightM: Math.max(0, innerTopY - context.woodThick - innerBottomY),
   });
   const drawerH = metrics.drawerH;
   const stackH = metrics.stackH;
+  if (!sketchStackFitsAvailableHeight(stackH, Math.max(0, innerTopY - context.woodThick - innerBottomY))) {
+    return null;
+  }
   const centerY = resolveSketchBoxExternalDrawerStackCenterY(context, item, cy, halfH, hM, stackH);
   if (centerY == null) return null;
 
@@ -71,6 +77,7 @@ export function createSketchBoxExternalDrawerStackPlan(
       frontZ: context.frontZ,
       startY: baseY - context.woodThick,
       woodThick: context.woodThick,
+      doorMountMode: resolveSketchExternalDrawerDoorMountMode(context.input),
       keyPrefix,
       regCount: drawerCount,
       regDrawerHeight: drawerH,
@@ -91,6 +98,8 @@ export function createSketchBoxExternalDrawerStackPlan(
     drawerId,
     keyPrefix,
     outerW,
+    shelfInnerW: span.innerW,
+    shelfCenterX: span.innerCenterX,
     drawerFaceW,
     drawerFaceOffsetX,
     drawerOps,
@@ -117,12 +126,15 @@ export function createSketchBoxExternalDrawerOpPlan(
     woodThicknessM: context.woodThick,
     frontZM: context.frontZ,
     drawerHeightM: stack.drawerH,
+    doorMountMode: resolveSketchExternalDrawerDoorMountMode(context.input),
   });
   const px = toFiniteNumber(closed?.x) ?? boxGeo.centerX;
   const py = toFiniteNumber(closed?.y) ?? stack.centerY;
   const pz = toFiniteNumber(closed?.z) ?? fallbackGeom.zClosed;
   const partId = `${stack.keyPrefix}${opIndex + 1}`;
+  const boxPartId = makeDrawerBoxPartId(partId);
   const frontMat = context.resolvePartMaterial(partId, boxMat);
+  const boxDrawerMat = context.resolveDrawerBoxMaterial(boxPartId);
   const visualW = Math.max(
     drawerDims.externalPreviewVisualMinWidthM,
     toFiniteNumber(op.visualW) ?? fallbackGeom.visualW
@@ -153,7 +165,9 @@ export function createSketchBoxExternalDrawerOpPlan(
     py,
     pz,
     partId,
+    boxPartId,
     frontMat,
+    boxMat: boxDrawerMat,
     visualW,
     faceW,
     faceOffsetX,
@@ -184,19 +198,14 @@ function resolveSketchBoxExternalDrawerStackCenterY(
   boxHeight: number,
   stackH: number
 ): number | null {
-  const yNormC = toFiniteNumber(item.yNormC);
-  const yNormBase = toFiniteNumber(item.yNorm);
-  if (yNormC != null) {
-    return context.clampDrawerCenterY(
-      boxCenterY - boxHalfH + Math.max(0, Math.min(1, yNormC)) * boxHeight,
-      stackH
-    );
-  }
-  if (yNormBase != null) {
-    return context.clampDrawerCenterY(
-      boxCenterY - boxHalfH + Math.max(0, Math.min(1, yNormBase)) * boxHeight + stackH / 2,
-      stackH
-    );
-  }
-  return null;
+  const normBottomY = boxCenterY - boxHalfH;
+  return resolveSketchStackCenterYFromNormalizedItem({
+    item,
+    bottomY: context.shell.innerBottomY,
+    topY: context.shell.innerTopY - context.woodThick,
+    totalHeight: Math.max(0, context.shell.innerTopY - context.woodThick - context.shell.innerBottomY),
+    normBottomY,
+    normHeight: boxHeight,
+    stackH,
+  });
 }

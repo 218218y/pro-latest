@@ -20,6 +20,7 @@ import {
 } from './canvas_picking_hover_flow_shared.js';
 import { tryHandleCanvasNonSplitHover } from './canvas_picking_hover_flow_nonsplit.js';
 import { tryHandleCanvasSplitHover } from './canvas_picking_hover_flow_split.js';
+import { syncCanvasPickingViewportMatrices } from './canvas_picking_viewport_matrices.js';
 
 function ensureSplitHoverMarker(App: AppContainer) {
   try {
@@ -86,6 +87,7 @@ function readPaintSelection(App: AppContainer, primaryMode: string): string | nu
 export function handleCanvasHoverNDCImpl(App: AppContainer, ndcX: number, ndcY: number): boolean {
   const { raycaster: __wpRaycaster, mouse: __wpMouse } = __wp_ensurePickingRefs(App);
   if (!__wpRaycaster || !__wpMouse) return false;
+  syncCanvasPickingViewportMatrices(App);
   try {
     const __pm = __wp_primaryMode(App);
     const __isSplitEditMode = __pm === (getModeId(App, 'SPLIT') || 'split');

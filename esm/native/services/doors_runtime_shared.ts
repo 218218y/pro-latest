@@ -24,7 +24,6 @@ export {
   hasAnyOpenDoor,
   hasInternalDrawers,
   hasOpenInternalDrawers,
-  isIntDrawerEditActive,
   isInvalidNumber,
   isManualLayoutEditActive,
   isRecord,
@@ -41,6 +40,7 @@ export {
 
 export type {
   CaptureLocalOpenOptions,
+  CloseDrawerOptions,
   DoorsRuntimeState,
   DoorsSnapshot,
   DrawerId,

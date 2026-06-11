@@ -3,6 +3,7 @@ import {
   CORNER_WING_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { CornerWingCarcassFlowParams } from './corner_wing_carcass_shared.js';
+import { addCornerHexHorizontalBoard } from './corner_wing_hex_cell_geometry.js';
 import {
   type CornerWingCarcassShellMetrics,
   resolveCornerWingHorizPlacement,
@@ -75,7 +76,19 @@ export function applyCornerWingCarcassFloorAndBase(
         const idx = Math.floor(readNumFrom(cell, 'idx', 0));
         const pid = `corner_floor_c${idx}`;
         const key = readStrFrom(cell, 'key', 'corner');
-        __addFloorSeg(w, cx, d, pid, key);
+        if (
+          !cell.__hexCellGeometry ||
+          !addCornerHexHorizontalBoard({
+            params,
+            metrics,
+            cell,
+            partId: pid,
+            y: __floorY,
+            material: __floorMat,
+          })
+        ) {
+          __addFloorSeg(w, cx, d, pid, key);
+        }
       }
     }
   } else {

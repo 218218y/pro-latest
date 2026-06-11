@@ -9,6 +9,7 @@ import type {
   SketchBoxLegColor,
   SketchBoxLegStyle,
 } from './interior_tab_helpers.js';
+import { INTERIOR_FITTINGS_DIMENSIONS, mToCm } from '../../../../shared/wardrobe_dimension_tokens_shared.js';
 import {
   DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM,
   DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_CM,
@@ -35,6 +36,9 @@ export const INTERIOR_MANUAL_TOOLS: ManualToolOption[] = [
 
 export const INTERIOR_GRID_DIVS: readonly [8, 7, 6, 5, 4, 3, 2] = [8, 7, 6, 5, 4, 3, 2];
 export const INTERIOR_EXT_COUNTS: readonly [1, 2, 3, 4, 5] = [1, 2, 3, 4, 5];
+export const DEFAULT_SKETCH_STORAGE_HEIGHT_CM = 50;
+export const DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE = '';
+export const DEFAULT_SKETCH_SHELF_DEPTH_EDIT_CM = mToCm(INTERIOR_FITTINGS_DIMENSIONS.shelves.regularDepthM);
 
 export const INTERIOR_HANDLE_TYPES: HandleTypeOption[] = [
   { id: 'standard', label: 'סטנדרטית' },
@@ -94,12 +98,17 @@ export function createInteriorTabLocalStateDefaults(): InteriorTabLocalStateDefa
     sketchBoxHeightCm: 40,
     sketchBoxWidthCm: '',
     sketchBoxDepthCm: '',
-    sketchStorageHeightCm: 50,
-    sketchShelfDepthByVariant: { regular: '', double: '', glass: '', brace: '' },
+    sketchStorageHeightCm: DEFAULT_SKETCH_STORAGE_HEIGHT_CM,
+    sketchShelfDepthByVariant: {
+      regular: DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE,
+      double: DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE,
+      glass: DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE,
+      brace: DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE,
+    },
     sketchBoxHeightDraft: '40',
     sketchBoxWidthDraft: '',
     sketchBoxDepthDraft: '',
-    sketchStorageHeightDraft: '50',
+    sketchStorageHeightDraft: String(DEFAULT_SKETCH_STORAGE_HEIGHT_CM),
     sketchBoxPanelOpen: false,
     sketchBoxCornicePanelOpen: false,
     sketchBoxCorniceType: 'classic',
@@ -117,7 +126,12 @@ export function createInteriorTabLocalStateDefaults(): InteriorTabLocalStateDefa
     sketchExtDrawerHeightDraft: String(DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM),
     sketchIntDrawerHeightCm: DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_CM,
     sketchIntDrawerHeightDraft: String(DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_CM),
-    sketchShelfDepthDraftByVariant: { regular: '', double: '', glass: '', brace: '' },
+    sketchShelfDepthDraftByVariant: {
+      regular: DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE,
+      double: DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE,
+      glass: DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE,
+      brace: DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE,
+    },
     doorTrimPanelOpen: false,
     doorTrimColor: 'nickel',
     doorTrimHorizontalSpan: 'full',

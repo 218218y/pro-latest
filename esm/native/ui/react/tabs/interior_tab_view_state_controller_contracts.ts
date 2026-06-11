@@ -14,6 +14,7 @@ export type InteriorTabViewStateSyncInput = {
   isExtDrawerMode: boolean;
   modeExtDrawer: string;
   isSketchToolActive: boolean;
+  isSketchDivisionToolActive: boolean;
   manualToolRaw: string;
   isDoorTrimMode: boolean;
   modeOpts: UnknownRecord;
@@ -39,7 +40,12 @@ export type InteriorTabViewStateController = {
   syncSketchExtDrawersState: (isSketchToolActive: boolean, manualToolRaw: string) => void;
   syncSketchIntDrawersState: (isSketchToolActive: boolean, manualToolRaw: string) => void;
   syncSketchShelfDepthState: (isSketchToolActive: boolean, manualToolRaw: string) => void;
-  syncManualUiToolState: (isManualLayoutMode: boolean, manualTool: 'shelf' | 'rod' | 'storage') => void;
+  syncManualUiToolState: (
+    isManualLayoutMode: boolean,
+    isSketchToolActive: boolean,
+    isSketchDivisionToolActive: boolean,
+    manualTool: 'shelf' | 'rod' | 'storage'
+  ) => void;
 };
 
 export type CreateInteriorTabViewStateControllerArgs = {

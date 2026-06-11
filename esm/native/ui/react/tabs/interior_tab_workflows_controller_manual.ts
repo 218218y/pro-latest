@@ -17,6 +17,8 @@ import {
   mkSketchExternalDrawersTool,
   mkSketchInternalDrawersTool,
   mkSketchShelfTool,
+  mkSketchStorageTool,
+  SKETCH_TOOL_ROD,
 } from './interior_tab_helpers.js';
 import type {
   LayoutTypeId,
@@ -48,6 +50,7 @@ type InteriorTabManualWorkflowController = Pick<
   | 'exitManual'
   | 'setGridDivisions'
   | 'setGridShelfVariant'
+  | 'enterSketchDivision'
   | 'activateManualToolId'
   | 'enterSketchShelfTool'
   | 'enterSketchBoxTool'
@@ -76,9 +79,25 @@ export function createInteriorTabManualWorkflowController(
     }
   };
 
+  const enterSketchDivision = (
+    tool: ManualToolId,
+    shelfVariant: 'regular' | 'double' | 'glass' | 'brace'
+  ) => {
+    if (tool === 'rod') {
+      activateManualToolId(SKETCH_TOOL_ROD);
+      return;
+    }
+    if (tool === 'storage') {
+      activateManualToolId(mkSketchStorageTool(state.sketchStorageHeightCm));
+      return;
+    }
+    enterSketchShelfTool(shelfVariant);
+  };
+
   return {
     activateManualToolId,
     enterSketchShelfTool,
+    enterSketchDivision,
 
     enterSketchBoxTool(heightCm: number, widthCm: number | '', depthCm: number | '') {
       enterManualLayoutMode(

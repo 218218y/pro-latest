@@ -1,8 +1,10 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   DragEventHandler,
   InputHTMLAttributes,
   MutableRefObject,
   PointerEventHandler,
+  PointerEvent as ReactPointerEvent,
   ReactElement,
   ReactNode,
 } from 'react';
@@ -21,7 +23,16 @@ import type {
   OrderPdfDetailsEditorHandlers,
   OrderPdfNotesEditorHandlers,
 } from './order_pdf_overlay_rich_editors.js';
+import { OrderPdfOverlayPdfPageAnnotationLayer } from './order_pdf_overlay_pdf_page_annotation_layer.js';
 import { OrderPdfOverlaySketchPanel } from './order_pdf_overlay_sketch_panel.js';
+import { revealOrderPdfSketchPreviewInStage } from './order_pdf_overlay_sketch_preview_reveal_runtime.js';
+import {
+  captureStagePointerDown,
+  captureStagePointerMove,
+  createInitialStageGesture,
+  finishStagePointerUp,
+  resetStageGesture,
+} from './order_pdf_overlay_stage_interactions.js';
 
 type OrderPdfInputDescriptor = {
   key: OrderPdfEditableScalarField;
@@ -126,7 +137,9 @@ export type OrderPdfOverlayEditorSurfaceProps = {
   sketchPreviewBusy: boolean;
   sketchPreviewError: string | null;
   sketchPreviewEntries: OrderPdfSketchPreviewEntry[];
+  sketchPreviewReady: boolean;
   onToggleSketchPreview: () => void;
+  onCloseSketchPreview: () => void;
   onRefreshSketchPreview: () => void;
   onAppendSketchStroke: (key: OrderPdfSketchAnnotationPageKey, stroke: OrderPdfSketchStroke) => void;
   onUpsertSketchTextBox: (key: OrderPdfSketchAnnotationPageKey, textBox: OrderPdfSketchTextBox) => void;
@@ -168,7 +181,9 @@ export function OrderPdfOverlayEditorSurface(props: OrderPdfOverlayEditorSurface
     sketchPreviewBusy,
     sketchPreviewError,
     sketchPreviewEntries,
+    sketchPreviewReady,
     onToggleSketchPreview,
+    onCloseSketchPreview,
     onRefreshSketchPreview,
     onAppendSketchStroke,
     onUpsertSketchTextBox,
@@ -177,6 +192,118 @@ export function OrderPdfOverlayEditorSurface(props: OrderPdfOverlayEditorSurface
     onRedoSketchAnnotation,
     onClearSketchStrokes,
   } = props;
+  const [pdfPageAnnotationOpen, setPdfPageAnnotationOpen] = useState(false);
+  const pdfPageAnnotationDismissGestureRef = useRef(createInitialStageGesture());
+  const editorStageRef = useRef<HTMLDivElement | null>(null);
+  const sketchPreviewPanelRef = useRef<HTMLElement | null>(null);
+  const pendingSketchPreviewRevealRef = useRef(false);
+  const pdfPageAnnotationTooltip = pdfPageAnnotationOpen
+    ? 'סגור ציור על עמוד ה-PDF'
+    : 'פתח ציור והערות על עמוד ה-PDF';
+  const sketchPreviewTooltip = sketchPreviewOpen ? 'הסתר ציור על תמונות הסקיצה' : 'פתח ציור על תמונות הסקיצה';
+  const closePdfPageAnnotationMode = useCallback(() => {
+    resetStageGesture(pdfPageAnnotationDismissGestureRef.current);
+    setPdfPageAnnotationOpen(false);
+  }, []);
+  const handleTogglePdfPageAnnotationMode = useCallback(() => {
+    if (pdfPageAnnotationOpen) {
+      closePdfPageAnnotationMode();
+      return;
+    }
+    if (sketchPreviewOpen) onCloseSketchPreview();
+    setPdfPageAnnotationOpen(true);
+  }, [closePdfPageAnnotationMode, onCloseSketchPreview, pdfPageAnnotationOpen, sketchPreviewOpen]);
+  const handleToggleSketchPreview = useCallback(() => {
+    pendingSketchPreviewRevealRef.current = !sketchPreviewOpen;
+    if (pdfPageAnnotationOpen) closePdfPageAnnotationMode();
+    onToggleSketchPreview();
+  }, [closePdfPageAnnotationMode, onToggleSketchPreview, pdfPageAnnotationOpen, sketchPreviewOpen]);
+  useEffect(() => {
+    if (!sketchPreviewOpen) {
+      pendingSketchPreviewRevealRef.current = false;
+      return undefined;
+    }
+    if (!pendingSketchPreviewRevealRef.current) return undefined;
+    if (sketchPreviewBusy) return undefined;
+    if (!sketchPreviewEntries.length && !sketchPreviewError) return undefined;
+
+    const win = editorStageRef.current?.ownerDocument?.defaultView ?? null;
+    let raf1 = 0;
+    let raf2 = 0;
+
+    const reveal = () => {
+      const revealed = revealOrderPdfSketchPreviewInStage({
+        host: editorStageRef.current,
+        target: sketchPreviewPanelRef.current,
+      });
+      if (revealed) pendingSketchPreviewRevealRef.current = false;
+    };
+
+    if (!win || typeof win.requestAnimationFrame !== 'function') {
+      reveal();
+      return undefined;
+    }
+
+    raf1 = win.requestAnimationFrame(() => {
+      raf2 = win.requestAnimationFrame(reveal);
+    });
+
+    return () => {
+      if (raf1) win.cancelAnimationFrame(raf1);
+      if (raf2) win.cancelAnimationFrame(raf2);
+    };
+  }, [sketchPreviewBusy, sketchPreviewEntries.length, sketchPreviewError, sketchPreviewOpen]);
+
+  const handleStagePointerDownCapture = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (pdfPageAnnotationOpen && event.target === event.currentTarget) {
+        captureStagePointerDown(pdfPageAnnotationDismissGestureRef.current, event);
+        return;
+      }
+      resetStageGesture(pdfPageAnnotationDismissGestureRef.current);
+      onStagePointerDownCapture(event);
+    },
+    [onStagePointerDownCapture, pdfPageAnnotationOpen]
+  );
+  const handleStagePointerMoveCapture = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (pdfPageAnnotationOpen && pdfPageAnnotationDismissGestureRef.current.down) {
+        captureStagePointerMove(pdfPageAnnotationDismissGestureRef.current, event);
+        return;
+      }
+      onStagePointerMoveCapture(event);
+    },
+    [onStagePointerMoveCapture, pdfPageAnnotationOpen]
+  );
+  const handleStagePointerUpCapture = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (pdfPageAnnotationOpen && pdfPageAnnotationDismissGestureRef.current.down) {
+        const shouldDismissPdfAnnotation = finishStagePointerUp(
+          pdfPageAnnotationDismissGestureRef.current,
+          event
+        );
+        if (shouldDismissPdfAnnotation) {
+          event.preventDefault();
+          event.stopPropagation();
+          setPdfPageAnnotationOpen(false);
+        }
+        return;
+      }
+      onStagePointerUpCapture(event);
+    },
+    [onStagePointerUpCapture, pdfPageAnnotationOpen]
+  );
+  const handleStagePointerCancelCapture = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (pdfPageAnnotationOpen && pdfPageAnnotationDismissGestureRef.current.down) {
+        resetStageGesture(pdfPageAnnotationDismissGestureRef.current);
+        return;
+      }
+      resetStageGesture(pdfPageAnnotationDismissGestureRef.current);
+      onStagePointerCancelCapture(event);
+    },
+    [onStagePointerCancelCapture, pdfPageAnnotationOpen]
+  );
 
   return (
     <div
@@ -190,13 +317,78 @@ export function OrderPdfOverlayEditorSurface(props: OrderPdfOverlayEditorSurface
     >
       {toolbar}
 
+      {pdfPageAnnotationOpen ? (
+        <button
+          type="button"
+          className="wp-pdf-editor-mode-toast"
+          dir="rtl"
+          onClick={closePdfPageAnnotationMode}
+          aria-label="מצב עריכה פעיל: ציור והערות על עמוד ה-PDF. לחץ על הרקע הריק כדי לצאת מהציור"
+        >
+          <span className="status-dot" aria-hidden="true" />
+          <span className="status-texts">
+            <span className="status-label">מצב עריכה: ציור והערות על עמוד ה-PDF</span>
+            <span className="status-hint">לחץ על הרקע הריק כדי לצאת מהציור</span>
+          </span>
+        </button>
+      ) : null}
+
+      {sketchPreviewReady ? (
+        <div
+          className="wp-pdf-editor-mode-toast wp-pdf-editor-mode-toast--sketch-ready"
+          dir="rtl"
+          role="status"
+          aria-live="polite"
+          data-testid="order-pdf-sketch-preview-ready-toast"
+        >
+          <span className="status-dot" aria-hidden="true" />
+          <span className="status-texts">
+            <span className="status-label">תמונות סקיצה נוצרו</span>
+            <span className="status-hint">אפשר לגלול ולערוך</span>
+          </span>
+        </div>
+      ) : null}
+
+      <div className="wp-pdf-floating-draw-dock" dir="rtl" aria-label="כלי ציור בעורך PDF">
+        <button
+          type="button"
+          className={`wp-pdf-editor-btn wp-pdf-editor-btn--iconOnly wp-pdf-floating-draw-btn wp-pdf-floating-draw-btn--pdf wp-pdf-ui-hint wp-pdf-ui-hint--above${pdfPageAnnotationOpen ? ' is-on' : ''}`}
+          data-testid="order-pdf-page-annotation-toggle"
+          data-tooltip={pdfPageAnnotationTooltip}
+          aria-label={pdfPageAnnotationTooltip}
+          aria-pressed={pdfPageAnnotationOpen}
+          onClick={handleTogglePdfPageAnnotationMode}
+        >
+          <span className="wp-pdf-floating-draw-icon" aria-hidden="true">
+            <i className="fas fa-file-pdf wp-pdf-floating-draw-icon-base" />
+            <i className="fas fa-pen wp-pdf-floating-draw-icon-corner" />
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className={`wp-pdf-editor-btn wp-pdf-editor-btn--iconOnly wp-pdf-floating-draw-btn wp-pdf-floating-draw-btn--sketch wp-pdf-ui-hint wp-pdf-ui-hint--above${sketchPreviewOpen ? ' is-on' : ''}`}
+          data-testid="order-pdf-sketch-preview-toggle"
+          data-tooltip={sketchPreviewTooltip}
+          aria-label={sketchPreviewTooltip}
+          aria-pressed={sketchPreviewOpen}
+          onClick={handleToggleSketchPreview}
+        >
+          <span className="wp-pdf-floating-draw-icon" aria-hidden="true">
+            <i className="fas fa-images wp-pdf-floating-draw-icon-base" />
+            <i className="fas fa-pen wp-pdf-floating-draw-icon-corner" />
+          </span>
+        </button>
+      </div>
+
       <div
+        ref={editorStageRef}
         className={`wp-pdf-editor-stage${dragOver ? ' is-drop' : ''}`}
         dir="ltr"
-        onPointerDownCapture={onStagePointerDownCapture}
-        onPointerMoveCapture={onStagePointerMoveCapture}
-        onPointerUpCapture={onStagePointerUpCapture}
-        onPointerCancelCapture={onStagePointerCancelCapture}
+        onPointerDownCapture={handleStagePointerDownCapture}
+        onPointerMoveCapture={handleStagePointerMoveCapture}
+        onPointerUpCapture={handleStagePointerUpCapture}
+        onPointerCancelCapture={handleStagePointerCancelCapture}
         onDragOver={onStageDragOver}
         onDragLeave={onStageDragLeave}
         onDrop={onStageDrop}
@@ -260,28 +452,29 @@ export function OrderPdfOverlayEditorSurface(props: OrderPdfOverlayEditorSurface
               {...notesEditorHandlers}
             />
 
+            <OrderPdfOverlayPdfPageAnnotationLayer
+              open={pdfPageAnnotationOpen}
+              layout={layout}
+              draft={draft}
+              pageRef={containerRef}
+              onAppendStroke={onAppendSketchStroke}
+              onUpsertTextBox={onUpsertSketchTextBox}
+              onDeleteTextBox={onDeleteSketchTextBox}
+              onUndo={onUndoSketchStroke}
+              onRedo={onRedoSketchAnnotation}
+              onClear={onClearSketchStrokes}
+            />
+
             <div
               className="wp-pdf-editor-size-anchor"
               style={{ width: layout.size.w * layout.cssScale, height: layout.size.h * layout.cssScale }}
               aria-hidden="true"
             />
           </div>
-
-          <div className="wp-pdf-sketch-cta-wrap" dir="rtl">
-            <div className="wp-pdf-sketch-cta-dock">
-              <button
-                type="button"
-                className={`wp-pdf-editor-btn wp-pdf-editor-btn--primary wp-pdf-sketch-cta${sketchPreviewOpen ? ' is-on' : ''}`}
-                onClick={onToggleSketchPreview}
-              >
-                <i className={`fas ${sketchPreviewOpen ? 'fa-eye-slash' : 'fa-pen'}`} />
-                <span>{sketchPreviewOpen ? 'הסתר סקיצות לציור' : 'הצג סקיצות לציור'}</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         <OrderPdfOverlaySketchPanel
+          panelRef={sketchPreviewPanelRef}
           open={sketchPreviewOpen}
           busy={sketchPreviewBusy}
           error={sketchPreviewError}

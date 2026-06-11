@@ -83,9 +83,8 @@ function countInternalDrawerPlacementsFromModuleList(value: unknown): number {
   for (const item of value) {
     const rec = asRecord<Record<string, unknown>>(item);
     if (!rec) continue;
-    const list = Array.isArray(rec.intDrawersList) ? rec.intDrawersList.length : 0;
-    const slot = normalizePerfStatePlacementCount(rec.intDrawersSlot) > 0 ? 1 : 0;
-    total += list + slot;
+    const sketchExtras = asRecord<Record<string, unknown>>(rec.sketchExtras);
+    total += Array.isArray(sketchExtras?.drawers) ? sketchExtras.drawers.length : 0;
   }
   return total;
 }

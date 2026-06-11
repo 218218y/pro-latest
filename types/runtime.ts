@@ -40,7 +40,7 @@ export interface WardrobeProCacheLimits {
 export type WardrobeProSiteVariant = 'main' | 'site2';
 
 /** Known sidebar tab ids used by the React UI (used by site2 gating). */
-export type WardrobeProTabId = Exclude<TabId, 'sketch'>;
+export type WardrobeProTabId = TabId;
 
 /** Supabase Cloud Sync runtime config (injected via deps.config.supabaseCloudSync). */
 export interface WardrobeProSupabaseCloudSyncConfig {
@@ -65,6 +65,20 @@ export interface WardrobeProSupabaseCloudSyncConfig {
   [k: string]: unknown;
 }
 
+/** Store/brand identity injected by a site profile build. */
+export interface WardrobeProBrandingConfig {
+  storeId?: string;
+  displayName?: string;
+  [k: string]: unknown;
+}
+
+/** Order PDF runtime config. */
+export interface WardrobeProOrderPdfConfig {
+  /** Site-root-relative PDF template URL, usually generated as order_template.pdf. */
+  templateUrl?: string;
+  [k: string]: unknown;
+}
+
 /** Runtime configuration surface (deps.config) loaded/injected at boot. */
 export interface WardrobeProRuntimeConfig extends WardrobeProCacheLimits {
   /** Enables optional debug timings in boot/initialization. */
@@ -75,6 +89,15 @@ export interface WardrobeProRuntimeConfig extends WardrobeProCacheLimits {
 
   /** Site2: which tabs are allowed to show when the remote gate is OPEN. */
   site2EnabledTabs?: WardrobeProTabId[];
+
+  /** Optional localStorage namespace. Keep empty for legacy Bargig builds. */
+  storageNamespace?: string;
+
+  /** Optional store/brand identity for multi-store releases. */
+  branding?: WardrobeProBrandingConfig;
+
+  /** Optional order PDF template selection for multi-store releases. */
+  orderPdf?: WardrobeProOrderPdfConfig;
 
   /** Cloud Sync config (preferred DI/runtime config surface). */
   supabaseCloudSync?: WardrobeProSupabaseCloudSyncConfig;
@@ -94,6 +117,11 @@ export interface DoorsSyncVisualsOptionsLike extends UnknownRecord {
   open?: boolean;
   /** When true, also snap drawers (default: true). */
   includeDrawers?: boolean;
+}
+
+export interface DoorsCloseDrawerOptionsLike extends UnknownRecord {
+  /** Snap immediately to the closed target. Defaults to true; false lets render motion animate. */
+  snap?: boolean;
 }
 
 export interface DoorsReleaseEditHoldOptionsLike extends UnknownRecord {
@@ -146,7 +174,7 @@ export interface DoorsServiceAccessLike extends UnknownRecord {
   setOpen?: (open: boolean, meta?: ActionMetaLike) => unknown;
   toggle?: (meta?: ActionMetaLike) => unknown;
   releaseEditHold?: (opts?: DoorsReleaseEditHoldOptionsLike) => unknown;
-  closeDrawerById?: (drawerId: string | number) => unknown;
+  closeDrawerById?: (drawerId: string | number, opts?: DoorsCloseDrawerOptionsLike) => unknown;
   captureLocalOpenStateBeforeBuild?: (opts?: DoorsCaptureLocalOpenOptionsLike) => unknown;
   applyLocalOpenStateAfterBuild?: () => unknown;
   applyEditHoldAfterBuild?: () => unknown;

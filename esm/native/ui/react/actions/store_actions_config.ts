@@ -24,6 +24,7 @@ export {
 export {
   runHistoryBatch,
   setCfgBoardMaterial,
+  setCfgDoorMountMode,
   setCfgColorSwatchesOrder,
   setCfgGlobalHandleType,
   setCfgLibraryMode,

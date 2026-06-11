@@ -235,7 +235,7 @@ export interface CameraPvInfoLike extends UnknownRecord {
   camPos: Vec3Like | null;
 }
 
-export type OrderPdfSketchAnnotationPageKeyLike = 'renderSketch' | 'openClosed';
+export type OrderPdfSketchAnnotationPageKeyLike = 'orderPdfPage1' | 'renderSketch' | 'openClosed';
 
 export interface OrderPdfSketchPointLike extends UnknownRecord {
   x?: number;

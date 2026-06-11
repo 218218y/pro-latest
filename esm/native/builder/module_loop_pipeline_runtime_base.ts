@@ -1,10 +1,7 @@
 import { getInternalGridMap } from '../runtime/cache_access.js';
 import { assertApp, assertTHREE } from '../runtime/api.js';
 import { getStackKeyFromFlags, getStackHeightOffsetCm } from '../features/stack_split/index.js';
-import {
-  getActiveHeightCmFromConfig,
-  moduleHasAnyActiveSpecialDims,
-} from '../features/special_dims/index.js';
+import { getActiveHeightCmFromConfig } from '../features/special_dims/index.js';
 
 import {
   asDims,
@@ -16,6 +13,7 @@ import {
   asStrings,
   asValueRecord,
 } from './module_loop_pipeline_shared.js';
+import { moduleRequiresCustomBoundaryGeometry } from './module_custom_geometry_policy.js';
 import { reqNumber } from './module_loop_pipeline_runtime_shared.js';
 
 import type { BuildContextLike, ConfigStateLike, UiStateLike } from '../../../types/index.js';
@@ -91,7 +89,7 @@ export function resolveModuleLoopRuntimeBase(ctx: BuildContextLike): ModuleLoopR
 
   const moduleIsCustom = modules.map((_m, i) => {
     const cfgMod = moduleCfgList[i] || {};
-    return moduleHasAnyActiveSpecialDims(cfgMod, heightOffsetCm);
+    return moduleRequiresCustomBoundaryGeometry(cfgMod, heightOffsetCm);
   });
 
   const moduleBodyHeights = modules.map((_m, i) => {

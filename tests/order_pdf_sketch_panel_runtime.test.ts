@@ -20,6 +20,10 @@ import {
   readOrderPdfDrawingRect,
   updateOrderPdfDrawingPointsFromClientBatch,
 } from '../esm/native/ui/react/pdf/order_pdf_overlay_sketch_panel_runtime.ts';
+import {
+  computeOrderPdfSketchPreviewRevealScrollTop,
+  revealOrderPdfSketchPreviewInStage,
+} from '../esm/native/ui/react/pdf/order_pdf_overlay_sketch_preview_reveal_runtime.ts';
 import type {
   OrderPdfSketchStroke,
   OrderPdfSketchTextBox,
@@ -58,18 +62,22 @@ test('[order-pdf] sketch panel runtime builds per-page stroke maps and counts ca
   const map = buildOrderPdfSketchStrokeMap(draft);
   assert.equal(map.renderSketch.length, 1);
   assert.equal(map.openClosed.length, 2);
-  assert.deepEqual(buildOrderPdfSketchStrokeCounts(map), { renderSketch: 1, openClosed: 2 });
+  assert.deepEqual(buildOrderPdfSketchStrokeCounts(map), {
+    orderPdfPage1: 0,
+    renderSketch: 1,
+    openClosed: 2,
+  });
   assert.equal(
     haveOrderPdfSketchStrokeCountsChanged(
-      { renderSketch: 1, openClosed: 2 },
-      { renderSketch: 1, openClosed: 2 }
+      { orderPdfPage1: 0, renderSketch: 1, openClosed: 2 },
+      { orderPdfPage1: 0, renderSketch: 1, openClosed: 2 }
     ),
     false
   );
   assert.equal(
     haveOrderPdfSketchStrokeCountsChanged(
-      { renderSketch: 1, openClosed: 2 },
-      { renderSketch: 2, openClosed: 2 }
+      { orderPdfPage1: 0, renderSketch: 1, openClosed: 2 },
+      { orderPdfPage1: 0, renderSketch: 2, openClosed: 2 }
     ),
     true
   );
@@ -265,6 +273,7 @@ test('[order-pdf] sketch panel runtime builds per-page text-box maps and folds t
   assert.equal(textBoxMap.renderSketch.length, 1);
   assert.equal(textBoxMap.openClosed.length, 2);
   assert.deepEqual(buildOrderPdfSketchStrokeCounts(strokesMap, textBoxMap), {
+    orderPdfPage1: 0,
     renderSketch: 2,
     openClosed: 2,
   });
@@ -302,4 +311,49 @@ test('[order-pdf] sketch panel runtime reads drawing rects once from the measure
   assert.deepEqual(readOrderPdfDrawingRect(host), { left: 40, top: 80, width: 520, height: 280 });
   assert.equal(reads, 1);
   assert.equal(readOrderPdfDrawingRect(null), null);
+});
+
+test('[order-pdf] sketch preview reveal scrolls the editor stage just enough to expose created images', () => {
+  const nextTop = computeOrderPdfSketchPreviewRevealScrollTop({
+    hostScrollTop: 0,
+    hostRect: { top: 100, bottom: 700 },
+    targetRect: { top: 940, bottom: 1240 },
+    topMarginPx: 20,
+    minVisiblePx: 200,
+    visibleRatio: 0.25,
+  });
+
+  assert.equal(nextTop, 440);
+});
+
+test('[order-pdf] sketch preview reveal does not scroll when the panel is already visible', () => {
+  const nextTop = computeOrderPdfSketchPreviewRevealScrollTop({
+    hostScrollTop: 120,
+    hostRect: { top: 100, bottom: 700 },
+    targetRect: { top: 420, bottom: 650 },
+    topMarginPx: 20,
+    minVisiblePx: 200,
+    visibleRatio: 0.25,
+  });
+
+  assert.equal(nextTop, null);
+});
+
+test('[order-pdf] sketch preview reveal uses the stage scroll container instead of the page window', () => {
+  const scrollCalls: ScrollToOptions[] = [];
+  const host = {
+    scrollTop: 25,
+    scrollTo(options: ScrollToOptions) {
+      scrollCalls.push(options);
+      this.scrollTop = Number(options.top ?? this.scrollTop);
+    },
+    getBoundingClientRect: () => ({ top: 80, bottom: 680 }),
+  };
+  const target = {
+    getBoundingClientRect: () => ({ top: 900, bottom: 1200 }),
+  };
+
+  assert.equal(revealOrderPdfSketchPreviewInStage({ host, target, behavior: 'auto' }), true);
+  assert.deepEqual(scrollCalls, [{ top: 465, behavior: 'auto' }]);
+  assert.equal(host.scrollTop, 465);
 });

@@ -2,6 +2,7 @@ import {
   INTERIOR_FITTINGS_DIMENSIONS,
   SKETCH_BOX_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { isShelfBoardPartId } from '../features/shelf_part_identity.js';
 import {
   createSketchModuleShelfPreviewGeometry,
   findNearestSketchModuleShelf,
@@ -55,7 +56,7 @@ export function resolveSketchModuleShelfRemovePreview(
       const ud = o ? asRecord(o.userData) : null;
       if (!ud) return false;
       if (ud.__kind === 'shelf_pin' || ud.__kind === 'brace_seam') return false;
-      return ud.partId === 'all_shelves' || ud.partId === 'corner_shelves';
+      return isShelfBoardPartId(ud.partId);
     });
     const boardY = typeof shelfBoardHit?.point?.y === 'number' ? shelfBoardHit.point.y : null;
     const hitFromBoard = typeof boardY === 'number';

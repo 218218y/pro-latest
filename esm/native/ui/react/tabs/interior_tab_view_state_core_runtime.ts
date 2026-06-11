@@ -35,7 +35,6 @@ export type InteriorModeConsts = {
   modeBraceShelves: string;
   modeExtDrawer: string;
   modeDivider: string;
-  modeIntDrawer: string;
   modeHandle: string;
   modeDoorTrim: string;
 };
@@ -74,7 +73,6 @@ export function readInteriorTabModeConsts(_app: AppContainer): InteriorModeConst
     modeBraceShelves: asStr(MODES.BRACE_SHELVES, 'brace_shelves'),
     modeExtDrawer: asStr(MODES.EXT_DRAWER, 'ext_drawer'),
     modeDivider: asStr(MODES.DIVIDER, 'divider'),
-    modeIntDrawer: asStr(MODES.INT_DRAWER, 'int_drawer'),
     modeHandle: asStr(MODES.HANDLE, 'handle'),
     modeDoorTrim: asStr(MODES.DOOR_TRIM, 'door_trim'),
   };
@@ -101,7 +99,6 @@ export function deriveInteriorTabCoreState(args: InteriorTabDerivedStateArgs) {
     modeBraceShelves: modeConsts.modeBraceShelves,
     modeExtDrawer: modeConsts.modeExtDrawer,
     modeDivider: modeConsts.modeDivider,
-    modeIntDrawer: modeConsts.modeIntDrawer,
     modeHandle: modeConsts.modeHandle,
     modeDoorTrim: modeConsts.modeDoorTrim,
   });
@@ -118,6 +115,7 @@ export function deriveInteriorTabCoreState(args: InteriorTabDerivedStateArgs) {
     manualRowOpen,
     isManualLayoutMode: modeState.isManualLayoutMode,
     isSketchToolActive: modeState.isSketchToolActive,
+    isSketchDivisionToolActive: modeState.isSketchDivisionToolActive,
     manualTool: modeState.manualTool,
     manualUiTool,
   });

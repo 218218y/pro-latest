@@ -9,6 +9,22 @@ This project includes an optional Supabase-backed cloud sync path.
 3. Configure the app with the expected Supabase URL/key through the existing runtime configuration path.
 4. Verify cloud sync panel controls and lifecycle tests before release.
 
+## Multi-store setup in one Supabase project
+
+For the new multi-store build profiles, keep the existing Bargig table as `public.wp_shared_state` and run:
+
+```sql
+-- paste/run the full file in Supabase SQL editor
+-- docs/supabase_cloud_sync_multi_store.sql
+```
+
+The added store profiles use separate tables and Realtime Broadcast prefixes:
+
+- `store-1` -> `public.wp_shared_state_store_1`, channel prefix `wp_cloud_sync_store_1`
+- `store-2` -> `public.wp_shared_state_store_2`, channel prefix `wp_cloud_sync_store_2`
+
+This does not alter or truncate the existing `public.wp_shared_state` table.
+
 ## Notes
 
 - Keep RLS/policies aligned with the SQL file.

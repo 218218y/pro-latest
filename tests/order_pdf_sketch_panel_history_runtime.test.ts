@@ -41,11 +41,11 @@ function makeTextBox(label: string): OrderPdfSketchTextBox {
 }
 
 test('[order-pdf] sketch panel history runtime keeps redo snapshots canonical across append, undo, take, and sync', () => {
-  const strokesByKey = { renderSketch: [makeStroke('base')], openClosed: [] };
-  const textBoxesByKey = { renderSketch: [], openClosed: [makeTextBox('note')] };
+  const strokesByKey = { orderPdfPage1: [], renderSketch: [makeStroke('base')], openClosed: [] };
+  const textBoxesByKey = { orderPdfPage1: [], renderSketch: [], openClosed: [makeTextBox('note')] };
 
   let state = createOrderPdfSketchRedoStateSnapshot({ strokesByKey, textBoxesByKey });
-  assert.deepEqual(state.expectedCounts, { renderSketch: 1, openClosed: 1 });
+  assert.deepEqual(state.expectedCounts, { orderPdfPage1: 0, renderSketch: 1, openClosed: 1 });
 
   state = noteOrderPdfSketchRedoStateSnapshotAppend({ state, key: 'renderSketch' });
   assert.equal(state.expectedCounts.renderSketch, 2);
@@ -64,10 +64,10 @@ test('[order-pdf] sketch panel history runtime keeps redo snapshots canonical ac
 
   const synced = syncOrderPdfSketchRedoStateSnapshot({
     state,
-    strokesByKey: { renderSketch: [], openClosed: [] },
-    textBoxesByKey: { renderSketch: [], openClosed: [] },
+    strokesByKey: { orderPdfPage1: [], renderSketch: [], openClosed: [] },
+    textBoxesByKey: { orderPdfPage1: [], renderSketch: [], openClosed: [] },
   });
-  assert.deepEqual(synced.expectedCounts, { renderSketch: 0, openClosed: 0 });
+  assert.deepEqual(synced.expectedCounts, { orderPdfPage1: 0, renderSketch: 0, openClosed: 0 });
   assert.deepEqual(synced.redoStacks, {});
 });
 

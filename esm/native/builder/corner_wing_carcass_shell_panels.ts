@@ -1,4 +1,5 @@
 import { CORNER_WING_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { addCornerHexDiagonalPanels } from './corner_wing_hex_cell_geometry.js';
 import {
   cloneMaterialRecord,
   cloneMaterialWithSide,
@@ -108,6 +109,15 @@ export function applyCornerWingCarcassPanels(
     }
   } else if (activeWidth > CORNER_WING_DIMENSIONS.wing.minActiveWidthM) {
     __addBackSeg(activeWidth, cabinetBodyHeight, blindWidth + activeWidth / 2, 'corner_wing_back', 'corner');
+  }
+
+  for (const cell of cornerCells) {
+    if (!cell.__hexCellGeometry) continue;
+    addCornerHexDiagonalPanels({
+      params,
+      cell,
+      material: getCornerMat(`corner_hex_cell_c${cell.idx}_diag`, bodyMat),
+    });
   }
 
   const __lastCell = cornerCells.length > 0 ? cornerCells[cornerCells.length - 1] : null;

@@ -79,6 +79,79 @@ function assertMirrorCenterMeasurementStyles(
   assert.ok(vertical.every(entry => entry.styleKey === (expected.heightCentered ? 'center' : 'cell')));
 }
 
+test('glass hover preview treats hex-cell diagonal panels as stationary special fronts', () => {
+  const owner = createIdentityDoorOwner({
+    partId: 'hex_cell_2_diag_left',
+    __wpStationaryGlassPanel: true,
+    __doorWidth: 0.52,
+    __doorHeight: 1.8,
+  });
+  const marker: Record<string, unknown> = {
+    visible: false,
+    material: 'base',
+    userData: {
+      __matAdd: 'add',
+      __matRemove: 'remove',
+      __matGroove: 'groove',
+    },
+    position: {
+      copy(_next: unknown) {
+        return undefined;
+      },
+    },
+    quaternion: {
+      copy(_next: unknown) {
+        return undefined;
+      },
+    },
+    scale: {
+      last: null as [number, number, number] | null,
+      set(x: number, y: number, z: number) {
+        this.last = [x, y, z];
+      },
+    },
+  };
+
+  const handled = tryHandleDoorPaintHoverPreview({
+    App: {
+      maps: {
+        getMap() {
+          return {};
+        },
+      },
+    } as never,
+    THREE: { Vector3: Vec3, Quaternion: Quat },
+    hit: {
+      hitDoorPid: 'hex_cell_2_diag_left',
+      hitDoorGroup: owner as never,
+      hitPoint: null,
+    },
+    groupRec: owner as never,
+    userData: owner.userData as never,
+    wardrobeGroup: {
+      worldToLocal(target: Vec3) {
+        return target;
+      },
+    } as never,
+    doorMarker: marker as never,
+    markerUd: marker.userData as never,
+    local: new Vec3() as never,
+    localHit: new Vec3() as never,
+    wq: new Quat() as never,
+    zOff: 0.02,
+    scopedHitDoorPid: 'hex_cell_2_diag_left',
+    canonDoorPartKeyForMaps: (id: string) => id,
+    normalizedPaintSelection: '__wp_glass_style__:flat',
+    setSketchPreview: null,
+    readUi: () => ({ curtainChoice: 'none' }) as never,
+  });
+
+  assert.equal(handled, true);
+  assert.equal(marker.visible, true);
+  assert.equal(marker.material, 'add');
+  assert.deepEqual((marker.scale as { last: [number, number, number] | null }).last, [0.52, 1.8, 1]);
+});
+
 test('glass hover preview treats regular corner external drawers as special door fronts', () => {
   const owner = createIdentityDoorOwner({
     partId: 'corner_c0_draw_1',
@@ -149,6 +222,157 @@ test('glass hover preview treats regular corner external drawers as special door
   assert.equal(marker.visible, true);
   assert.equal(marker.material, 'add');
   assert.deepEqual((marker.scale as { last: [number, number, number] | null }).last, [0.8, 0.22, 1]);
+});
+
+test('glass curtain hover uses current curtain UI state and shows remove material for the second click', () => {
+  const owner = createIdentityDoorOwner({
+    partId: 'd5_full',
+    __doorWidth: 0.7,
+    __doorHeight: 1.9,
+  });
+  const marker: Record<string, unknown> = {
+    visible: false,
+    material: 'base',
+    userData: {
+      __matAdd: 'add',
+      __matRemove: 'remove',
+      __matGroove: 'groove',
+    },
+    position: {
+      copy(_next: unknown) {
+        return undefined;
+      },
+    },
+    quaternion: {
+      copy(_next: unknown) {
+        return undefined;
+      },
+    },
+    scale: {
+      last: null as [number, number, number] | null,
+      set(x: number, y: number, z: number) {
+        this.last = [x, y, z];
+      },
+    },
+  };
+
+  const handled = tryHandleDoorPaintHoverPreview({
+    App: {
+      maps: {
+        getMap(name: string) {
+          if (name === 'doorSpecialMap') return { d5_full: 'glass' };
+          if (name === 'curtainMap') return { d5_full: 'white' };
+          if (name === 'doorStyleMap') return { d5_full: 'profile' };
+          return {};
+        },
+      },
+    } as never,
+    THREE: { Vector3: Vec3, Quaternion: Quat },
+    hit: {
+      hitDoorPid: 'd5_full',
+      hitDoorGroup: owner as never,
+      hitPoint: null,
+    },
+    groupRec: owner as never,
+    userData: owner.userData as never,
+    wardrobeGroup: {
+      worldToLocal(target: Vec3) {
+        return target;
+      },
+    } as never,
+    doorMarker: marker as never,
+    markerUd: marker.userData as never,
+    local: new Vec3() as never,
+    localHit: new Vec3() as never,
+    wq: new Quat() as never,
+    zOff: 0.02,
+    scopedHitDoorPid: 'd5_full',
+    canonDoorPartKeyForMaps: (id: string) => id,
+    normalizedPaintSelection: 'glass',
+    setSketchPreview: null,
+    readUi: () => ({ currentCurtainChoice: 'white' }) as never,
+  });
+
+  assert.equal(handled, true);
+  assert.equal(marker.visible, true);
+  assert.equal(marker.material, 'remove');
+  assert.deepEqual((marker.scale as { last: [number, number, number] | null }).last, [0.7, 1.9, 1]);
+});
+
+test('paint hover on drawer handles uses the drawer front plane instead of the drawer group depth', () => {
+  const owner = createIdentityDoorOwner({
+    partId: 'chest_drawer_0',
+    __doorWidth: 0.8,
+    __doorHeight: 0.24,
+    __frontMaxZ: 0.24,
+  });
+  let markerPosition: { x: number; y: number; z: number } | null = null;
+  const marker: Record<string, unknown> = {
+    visible: false,
+    material: 'base',
+    userData: {
+      __matAdd: 'add',
+      __matRemove: 'remove',
+      __matGroove: 'groove',
+    },
+    position: {
+      copy(next: { x: number; y: number; z: number }) {
+        markerPosition = { x: next.x, y: next.y, z: next.z };
+      },
+    },
+    quaternion: {
+      copy(_next: unknown) {
+        return undefined;
+      },
+    },
+    scale: {
+      last: null as [number, number, number] | null,
+      set(x: number, y: number, z: number) {
+        this.last = [x, y, z];
+      },
+    },
+  };
+
+  const handled = tryHandleDoorPaintHoverPreview({
+    App: {
+      maps: {
+        getMap() {
+          return {};
+        },
+      },
+    } as never,
+    THREE: { Vector3: Vec3, Quaternion: Quat },
+    hit: {
+      hitDoorPid: 'chest_drawer_0',
+      hitDoorGroup: owner as never,
+      hitPoint: null,
+    },
+    groupRec: owner as never,
+    userData: owner.userData as never,
+    wardrobeGroup: {
+      worldToLocal(target: Vec3) {
+        return target;
+      },
+    } as never,
+    doorMarker: marker as never,
+    markerUd: marker.userData as never,
+    local: new Vec3() as never,
+    localHit: new Vec3() as never,
+    wq: new Quat() as never,
+    zOff: 0.02,
+    scopedHitDoorPid: 'chest_drawer_0',
+    canonDoorPartKeyForMaps: (id: string) => id,
+    normalizedPaintSelection: 'oak',
+    setSketchPreview: null,
+    readUi: () => ({}) as never,
+  });
+
+  assert.equal(handled, true);
+  assert.equal(marker.visible, true);
+  assert.equal(marker.material, 'add');
+  assert.ok(markerPosition);
+  assert.ok(Math.abs(markerPosition!.z - 0.26) < 1e-9);
+  assert.deepEqual((marker.scale as { last: [number, number, number] | null }).last, [0.8, 0.24, 1]);
 });
 
 test('mirror remove hover uses the canonical size rect even when door bounds metadata differs', () => {
@@ -240,6 +464,95 @@ test('mirror remove hover uses the canonical size rect even when door bounds met
     normalizedPaintSelection: 'mirror',
     setSketchPreview: null,
     readUi: () => ({ currentMirrorDraftWidthCm: 30, currentMirrorDraftHeightCm: 60 }) as never,
+  });
+
+  assert.equal(handled, true);
+  assert.equal(marker.visible, true);
+  assert.equal(marker.material, 'remove');
+  assert.deepEqual((marker.scale as { last: [number, number, number] | null }).last, [
+    expectedPlacement.mirrorWidthM,
+    expectedPlacement.mirrorHeightM,
+    1,
+  ]);
+});
+
+test('full-door mirror hover shows remove material for the canonical outside mirror stored without a layout entry', () => {
+  const owner = createIdentityDoorOwner({
+    partId: 'd5_full',
+    __doorWidth: 1,
+    __doorHeight: 2,
+  });
+  const expectedPlacement = resolveMirrorPlacementInRect({
+    rect: { minX: -0.5, maxX: 0.5, minY: -1, maxY: 1 },
+    layout: null,
+  });
+  const marker: Record<string, unknown> = {
+    visible: false,
+    material: 'base',
+    userData: {
+      __matAdd: 'add',
+      __matRemove: 'remove',
+      __matGroove: 'groove',
+      __matMirror: 'mirror',
+    },
+    position: {
+      copy(_next: unknown) {
+        return undefined;
+      },
+    },
+    quaternion: {
+      copy(_next: unknown) {
+        return undefined;
+      },
+    },
+    scale: {
+      last: null as [number, number, number] | null,
+      set(x: number, y: number, z: number) {
+        this.last = [x, y, z];
+      },
+    },
+  };
+
+  const handled = tryHandleDoorPaintHoverPreview({
+    App: {
+      maps: {
+        getMap(name: string) {
+          if (name === 'doorSpecialMap') return { d5_full: 'mirror' };
+          return {};
+        },
+      },
+    } as never,
+    THREE: { Vector3: Vec3, Quaternion: Quat },
+    hit: {
+      hitDoorPid: 'd5_full',
+      hitDoorGroup: owner as never,
+      hitPoint: {
+        x: 0,
+        y: 0,
+        z: 0.1,
+        set() {
+          return undefined;
+        },
+      } as never,
+    },
+    groupRec: owner as never,
+    userData: owner.userData as never,
+    wardrobeGroup: {
+      worldToLocal(target: Vec3) {
+        return target;
+      },
+    } as never,
+    doorMarker: marker as never,
+    markerUd: marker.userData as never,
+    local: new Vec3() as never,
+    localHit: new Vec3() as never,
+    wq: new Quat() as never,
+    zOff: 0.02,
+    scopedHitDoorPid: 'd5_full',
+    canonDoorPartKeyForMaps: (id: string) => id,
+    normalizedPaintSelection: 'mirror',
+    setSketchPreview: null,
+    readUi: () => ({}) as never,
   });
 
   assert.equal(handled, true);

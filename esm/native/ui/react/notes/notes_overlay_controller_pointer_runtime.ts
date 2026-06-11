@@ -91,7 +91,7 @@ export function readCreatePreviewRect(
 }
 
 export function finalizeCreatePointerInteraction(args: FinalizeCreateArgs): FinalizeCreateResult {
-  const { App, interaction, endPoint, draftNotes, draftNotesRef, captureEditorsIntoNotes, refs } = args;
+  const { App, interaction, endPoint, draftNotes, draftNotesRef, refs } = args;
   const end = refs.createLastPointRef.current || endPoint;
   resetPointerInteractionRefs(refs);
   if (!end) return { rect: null, nextDraft: null, shouldExitDrawMode: false };
@@ -111,7 +111,7 @@ export function finalizeCreatePointerInteraction(args: FinalizeCreateArgs): Fina
   const base = draftNotesRef.current || draftNotes;
   return {
     rect,
-    nextDraft: [...captureEditorsIntoNotes(base), createEmptyNoteFromRect(rect, doorsOpen)],
+    nextDraft: [...base, createEmptyNoteFromRect(rect, doorsOpen)],
     shouldExitDrawMode: false,
   };
 }

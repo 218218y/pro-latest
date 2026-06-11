@@ -4,10 +4,12 @@ export type ObservedDrawingRectPublishMode = 'size' | 'full';
 
 export type ObservedViewportValueArgs<T> = {
   enabled: boolean;
-  anchor: Node | null;
+  anchor?: Node | null;
+  resolveAnchor?: () => Node | null | undefined;
   initialValue: T;
   observeScroll?: boolean;
   resizeTargets?: ReadonlyArray<Element | null | undefined>;
+  resolveResizeTargets?: () => ReadonlyArray<Element | null | undefined>;
   measure: () => T;
   areEqual: (prev: T, next: T) => boolean;
 };

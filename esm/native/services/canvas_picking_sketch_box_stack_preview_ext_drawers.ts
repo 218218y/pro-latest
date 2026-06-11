@@ -3,6 +3,7 @@ import {
   buildManualLayoutSketchInternalDrawerBlockers,
   resolveManualLayoutSketchExternalDrawerPlacement,
 } from './canvas_picking_manual_layout_sketch_stack_placement.js';
+import { sketchStackFitsAvailableHeight } from '../features/sketch_drawer_sizing.js';
 import { buildSketchBoxStackAwareMeasurementEntries } from './canvas_picking_sketch_neighbor_measurements.js';
 import { createManualLayoutSketchBoxContentHoverRecord } from './canvas_picking_manual_layout_sketch_hover_state.js';
 import type {
@@ -56,6 +57,16 @@ export function resolveSketchBoxExternalDrawersPreview(
   });
   const drawerH = placement.drawerH;
   const baseY = placement.yCenter - placement.stackH / 2;
+  const fitsRenderedBoxSpace = sketchStackFitsAvailableHeight(
+    placement.stackH,
+    Math.max(0, targetHeight - woodThick * 3)
+  );
+  const blockedReason =
+    placement.op === 'blocked'
+      ? 'collision'
+      : placement.op !== 'remove' && (!placement.fitsAvailable || !fitsRenderedBoxSpace)
+        ? 'no-room'
+        : null;
   const faceCenterX = frontOverlay
     ? frontOverlay.x
     : activeSegment
@@ -106,6 +117,8 @@ export function resolveSketchBoxExternalDrawersPreview(
     textScale: SKETCH_BOX_DIMENSIONS.preview.measurementTextScale,
   });
   const drawersPreview: RecordMap[] = [];
+  const hoverOp: 'add' | 'remove' = blockedReason || placement.op === 'blocked' ? 'add' : placement.op;
+  const hoverRemoveId = blockedReason || placement.op === 'blocked' ? null : placement.removeId;
   for (let i = 0; i < placement.drawerCount; i++) {
     drawersPreview.push({
       y: baseY + i * drawerH + drawerH / 2,
@@ -122,8 +135,8 @@ export function resolveSketchBoxExternalDrawersPreview(
       contentKind: 'ext_drawers',
       boxId,
       freePlacement,
-      op: placement.op,
-      removeId: placement.removeId,
+      op: hoverOp,
+      removeId: hoverRemoveId,
       contentXNorm: activeSegment ? activeSegment.xNorm : 0.5,
       boxYNorm: clampUnit((placement.yCenter - boxBottomY) / targetHeight),
       boxBaseYNorm: clampUnit((baseY - boxBottomY) / targetHeight),
@@ -132,6 +145,7 @@ export function resolveSketchBoxExternalDrawersPreview(
       drawerCount: placement.drawerCount,
       drawerHeightM: args.drawerHeightM ?? placement.drawerH,
       drawerH,
+      blockedReason,
     }),
     preview: {
       kind: 'ext_drawers',
@@ -142,7 +156,8 @@ export function resolveSketchBoxExternalDrawersPreview(
       d: previewD,
       woodThick,
       drawers: drawersPreview,
-      op: placement.op,
+      op: blockedReason ? 'blocked' : placement.op,
+      blockedReason: blockedReason ?? undefined,
       clearanceMeasurements,
       ...buildSketchBoxFrontOverlayFields(frontOverlay),
     },

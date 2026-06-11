@@ -93,6 +93,77 @@ function resolveSketchBoxDoorPatchTargets(
   return out;
 }
 
+function readSketchBoxDoorModulesForStack(
+  state: UnknownRecord | null,
+  stack: 'top' | 'bottom'
+): UnknownRecord[] {
+  const bucketKey = stack === 'bottom' ? 'stackSplitLowerModulesConfiguration' : 'modulesConfiguration';
+  const modules = Array.isArray(state?.[bucketKey]) ? state?.[bucketKey] : [];
+  return modules.map(item => asRecord(item)).filter((item): item is UnknownRecord => !!item);
+}
+
+function findSketchBoxDoorInModule(
+  cfg: UnknownRecord | null,
+  boxId: string,
+  doorId: string | null
+): UnknownRecord | null {
+  const extra = asRecord(cfg?.sketchExtras);
+  const boxes = Array.isArray(extra?.boxes) ? extra.boxes : [];
+  for (let i = 0; i < boxes.length; i++) {
+    const boxRec = asRecord(boxes[i]);
+    if (!boxRec || boxRec.id == null || String(boxRec.id) !== boxId) continue;
+    const doors = Array.isArray(boxRec.doors) ? boxRec.doors : [];
+    for (let di = 0; di < doors.length; di++) {
+      const doorRec = asRecord(doors[di]);
+      if (!doorRec) continue;
+      if (doorId && String(doorRec.id ?? '') !== doorId) continue;
+      return doorRec;
+    }
+    return null;
+  }
+  return null;
+}
+
+export function readSketchBoxDoorRecord(
+  App: AppContainer,
+  target: SketchBoxDoorTarget | null,
+  preferredStack: 'top' | 'bottom'
+): UnknownRecord | null {
+  if (!target?.boxId) return null;
+  const state = asRecord(readRootState(App));
+  const orderedStacks: Array<'top' | 'bottom'> =
+    preferredStack === 'bottom' ? ['bottom', 'top'] : ['top', 'bottom'];
+  const rawDoorId = target.doorId != null && String(target.doorId) ? String(target.doorId) : null;
+
+  for (const stack of orderedStacks) {
+    const modules = readSketchBoxDoorModulesForStack(state, stack);
+    if (target.moduleKey != null && target.moduleKey !== '') {
+      const moduleKey = String(target.moduleKey);
+      const numericIndex = /^\d+$/.test(moduleKey) ? Number(moduleKey) : NaN;
+      const exactCandidates = modules.filter((cfg, index) => {
+        if (Number.isInteger(numericIndex) && index === numericIndex) return true;
+        const cfgRec = asRecord(cfg);
+        return (
+          String(cfgRec?.id ?? '') === moduleKey ||
+          String(cfgRec?.moduleKey ?? '') === moduleKey ||
+          String(cfgRec?.key ?? '') === moduleKey
+        );
+      });
+      for (const cfg of exactCandidates) {
+        const found = findSketchBoxDoorInModule(cfg, target.boxId, rawDoorId);
+        if (found) return found;
+      }
+    }
+
+    for (const cfg of modules) {
+      const found = findSketchBoxDoorInModule(cfg, target.boxId, rawDoorId);
+      if (found) return found;
+    }
+  }
+
+  return null;
+}
+
 export function patchSketchBoxDoor(
   App: AppContainer,
   target: SketchBoxDoorTarget | null,

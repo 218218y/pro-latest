@@ -1,10 +1,17 @@
 import type { AppContainer } from '../../../types';
+import type { MouseVectorLike, RaycasterLike } from './canvas_picking_engine.js';
 
 export interface CanvasDoorSplitClickArgs {
   App: AppContainer;
   effectiveDoorId: string;
   foundModuleStack: 'top' | 'bottom';
   doorHitY: number | null;
+  ndcX?: number | null;
+  ndcY?: number | null;
+  raycaster?: RaycasterLike | null;
+  mouse?: MouseVectorLike | null;
+  camera?: unknown;
+  doorHitGroup?: unknown;
 }
 
 export type CanvasDoorSplitBounds = {

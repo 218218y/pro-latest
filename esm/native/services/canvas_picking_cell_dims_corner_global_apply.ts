@@ -1,7 +1,7 @@
 import { applyOverrideToSpecialDims, assignSpecialDimsToConfig } from '../features/special_dims/index.js';
 import type { CornerCellDimsContext } from './canvas_picking_cell_dims_corner_shared.js';
 import {
-  patchCornerConfig,
+  patchCornerConfigForStack,
   syncCornerUi,
   commitCornerHistory,
   refreshCornerStructure,
@@ -16,6 +16,8 @@ export function applyCornerGlobalDimsTargetState(
 ): void {
   const {
     App,
+    stackKey,
+    isBottomStack,
     applyW,
     applyH,
     applyD,
@@ -84,8 +86,14 @@ export function applyCornerGlobalDimsTargetState(
     reportCornerDimsIssue(App, err, 'cellDims.corner.connectorSpecialDims.normalize');
   }
 
-  patchCornerConfig(App, nextCornerCfg, 'cellDims.apply.corner', 'cellDims.corner.patchConfig');
-  syncCornerUi(App, uiPatch, 'cellDims.apply.corner', 'cellDims.corner.syncUi');
+  patchCornerConfigForStack(
+    App,
+    nextCornerCfg,
+    'cellDims.apply.corner',
+    'cellDims.corner.patchConfig',
+    stackKey
+  );
+  if (!isBottomStack) syncCornerUi(App, uiPatch, 'cellDims.apply.corner', 'cellDims.corner.syncUi');
 
   commitCornerHistory('cellDims.apply.corner', App);
   refreshCornerStructure(App, 'cellDims.apply.corner', 'cellDims.corner.refresh');

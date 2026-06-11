@@ -4,6 +4,11 @@ import {
   MATERIAL_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { CornerCellCfg } from './corner_geometry_plan.js';
+import {
+  CORNER_SHELF_GROUP_PART_ID,
+  createCornerShelfPartId,
+  markShelfBoardUserData,
+} from '../features/shelf_part_identity.js';
 import type {
   CornerWingInteriorCellRuntime,
   CornerWingInteriorRuntime,
@@ -11,6 +16,7 @@ import type {
 
 export type CornerWingInteriorShelfRuntime = {
   shelfMat: unknown;
+  braceShelfMat: unknown;
   glassShelfMat: unknown | null;
   GLASS_SHELF_THICK: number;
   DOUBLE_SHELF_THICK: number;
@@ -23,14 +29,16 @@ export type CornerWingInteriorShelfRuntime = {
     isBrace: boolean,
     leftInnerX: number,
     rightInnerX: number,
-    moduleIndex: string
+    moduleIndex: string,
+    shelfPartId?: string
   ): void;
 };
 
 export function createCornerWingInteriorShelfRuntime(
   runtime: CornerWingInteriorRuntime
 ): CornerWingInteriorShelfRuntime {
-  const shelfMat = runtime.getCornerMat('corner_shelves', runtime.bodyMat);
+  const shelfMat = runtime.getCornerShelfMat(CORNER_SHELF_GROUP_PART_ID, false);
+  const braceShelfMat = runtime.getCornerShelfMat(CORNER_SHELF_GROUP_PART_ID, true);
   const GLASS_SHELF_THICK = MATERIAL_DIMENSIONS.glassShelf.thicknessM;
   const DOUBLE_SHELF_THICK = Math.max(
     runtime.woodThick,
@@ -109,7 +117,8 @@ export function createCornerWingInteriorShelfRuntime(
     isBrace: boolean,
     leftInnerX: number,
     rightInnerX: number,
-    moduleIndex: string
+    moduleIndex: string,
+    shelfPartId?: string
   ) => {
     if (isBrace) return;
     if (!(rightInnerX > leftInnerX) || !(shelfDepth > 0)) return;
@@ -132,9 +141,10 @@ export function createCornerWingInteriorShelfRuntime(
       m.rotation.z = Math.PI / 2;
       m.position.set(x, yPin, z);
       m.userData = m.userData || {};
-      m.userData.partId = 'corner_shelves';
+      m.userData.partId = shelfPartId || CORNER_SHELF_GROUP_PART_ID;
       m.userData.moduleIndex = moduleIndex;
       m.userData.__kind = 'shelf_pin';
+      markShelfBoardUserData(m.userData, { groupPartId: CORNER_SHELF_GROUP_PART_ID });
       runtime.asRecord(m.material).__keepMaterial = true;
       runtime.wingGroup.add(m);
     };
@@ -147,6 +157,7 @@ export function createCornerWingInteriorShelfRuntime(
 
   return {
     shelfMat,
+    braceShelfMat,
     glassShelfMat,
     GLASS_SHELF_THICK,
     DOUBLE_SHELF_THICK,
@@ -206,14 +217,25 @@ export function addCornerWingGridShelf(
   const shelfDepth = isBraceShelf ? cellRuntime.__internalDepth : cellRuntime.__regularDepth;
   const shelfH = cornerShelfHeightForVariant(runtime, shelfRuntime, shelfVariant);
   const shelfZ = cellRuntime.__backFaceZ + shelfDepth / 2;
+  const rawShelfPartId = createCornerShelfPartId(cellKey, gridIndex);
+  const shelfPartId =
+    runtime.__stackKey === 'bottom' ? runtime.__stackScopePartKey(rawShelfPartId) : rawShelfPartId;
   const shelfMaterial =
-    isGlassShelf && shelfRuntime.glassShelfMat ? shelfRuntime.glassShelfMat : shelfRuntime.shelfMat;
+    isGlassShelf && shelfRuntime.glassShelfMat
+      ? shelfRuntime.glassShelfMat
+      : runtime.getCornerShelfMat(shelfPartId, isBraceShelf);
   const shelf = new runtime.THREE.Mesh(
     new runtime.THREE.BoxGeometry(cellShelfW, shelfH, shelfDepth),
     shelfMaterial
   );
   shelf.position.set(cellInnerCenterX, y, shelfZ);
-  shelf.userData = { partId: 'corner_shelves', moduleIndex: cellKey };
+  shelf.userData = { partId: shelfPartId, moduleIndex: cellKey };
+  markShelfBoardUserData(shelf.userData, {
+    groupPartId: CORNER_SHELF_GROUP_PART_ID,
+    shelfIndex: gridIndex,
+    variant: shelfVariant,
+    isBrace: isBraceShelf,
+  });
   if (isGlassShelf) {
     const shelfRec = runtime.asRecord(shelf);
     shelfRec.castShadow = false;
@@ -233,10 +255,11 @@ export function addCornerWingGridShelf(
     isBraceShelf,
     cellRuntime.cellInnerLeftX,
     cellRuntime.cellInnerRightX,
-    cellKey
+    cellKey,
+    shelfPartId
   );
 
-  if (!(cfgCell.intDrawersList || []).includes(gridIndex + 1) && runtime.showContentsEnabled) {
+  if (runtime.showContentsEnabled) {
     runtime.addFoldedClothes(
       cellInnerCenterX,
       y + shelfH / 2,

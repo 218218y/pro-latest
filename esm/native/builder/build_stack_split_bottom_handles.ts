@@ -30,6 +30,7 @@ export function buildShiftedBottomHingedPivotMap(args: {
           })(),
           moduleInternalWidths: args.bottomModuleInternalWidths,
           moduleIsCustom: Array.isArray(args.bottomModules) ? args.bottomModules.map(() => false) : null,
+          doorMountMode: readRecord(args.cfg)?.doorMountMode,
         });
 
   const shifted: UnknownRecord = {};

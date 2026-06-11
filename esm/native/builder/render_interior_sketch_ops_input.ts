@@ -78,6 +78,7 @@ export function resolveInteriorSketchExtrasInput(
     input.moduleKey != null ? String(input.moduleKey) : moduleIndex >= 0 ? String(moduleIndex) : '';
 
   const currentShelfMat = input.currentShelfMat;
+  const currentBraceShelfMat = input.currentBraceShelfMat || currentShelfMat;
   const bodyMat = input.bodyMat || currentShelfMat;
   const getPartMaterial = owner.isFn(input.getPartMaterial) ? input.getPartMaterial : undefined;
   const getPartColorValue = owner.isFn(input.getPartColorValue) ? input.getPartColorValue : undefined;
@@ -137,6 +138,7 @@ export function resolveInteriorSketchExtrasInput(
     modulesLength,
     moduleKeyStr,
     currentShelfMat,
+    currentBraceShelfMat,
     bodyMat,
     getPartMaterial,
     getPartColorValue,

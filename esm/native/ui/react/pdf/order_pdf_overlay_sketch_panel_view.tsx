@@ -9,6 +9,7 @@ import type { OrderPdfOverlaySketchPanelProps } from './order_pdf_overlay_sketch
 
 export function OrderPdfOverlaySketchPanel(props: OrderPdfOverlaySketchPanelProps): ReactElement {
   const {
+    panelRef,
     open,
     busy,
     error,
@@ -78,11 +79,11 @@ export function OrderPdfOverlaySketchPanel(props: OrderPdfOverlaySketchPanelProp
   });
 
   if (!open) {
-    return <section className="wp-pdf-sketch-panel" dir="rtl" aria-hidden="true" />;
+    return <section ref={panelRef} className="wp-pdf-sketch-panel" dir="rtl" aria-hidden="true" />;
   }
 
   return (
-    <section className="wp-pdf-sketch-panel is-open" dir="rtl">
+    <section ref={panelRef} className="wp-pdf-sketch-panel is-open" dir="rtl">
       <div className="wp-pdf-sketch-panel-body">
         <div className="wp-pdf-sketch-panel-shell">
           <OrderPdfSketchShapeToolbar

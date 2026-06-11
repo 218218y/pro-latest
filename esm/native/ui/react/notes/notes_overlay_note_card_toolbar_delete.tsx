@@ -9,8 +9,9 @@ export function NoteCardToolbarDeleteButton(
   const { index, requestDeleteNote } = props;
   return (
     <button
-      className="toolbar-btn toolbar-btn--square close-btn"
+      className="toolbar-btn toolbar-btn--square close-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-right"
       type="button"
+      data-tooltip="מחק הערה"
       onMouseDown={(e: import('react').MouseEvent<HTMLButtonElement>) =>
         stopToolbarPointer(e, 'J:DELETE:mouseDown')
       }

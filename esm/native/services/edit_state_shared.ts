@@ -24,7 +24,6 @@ export type ModeConstantsLike = {
   LAYOUT?: unknown;
   MANUAL_LAYOUT?: unknown;
   BRACE_SHELVES?: unknown;
-  INT_DRAWER?: unknown;
   DIVIDER?: unknown;
 };
 

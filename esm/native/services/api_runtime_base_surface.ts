@@ -219,6 +219,16 @@ export { getBrowserSurfaceMaybe } from '../runtime/browser_surface_access.js';
 export { asRecord } from '../runtime/record.js';
 
 export {
+  cancelCanvasPostBuildHoverRefresh,
+  consumeCanvasPostBuildHoverRefresh,
+  consumeSuppressNextCanvasPostClickHoverRefresh,
+  requestCanvasPostBuildHoverRefresh,
+  requestSuppressNextCanvasPostClickHoverRefresh,
+  updateCanvasPostBuildHoverRefresh,
+} from '../runtime/canvas_interaction_flags.js';
+export type { PendingCanvasPostBuildHoverRefresh } from '../runtime/canvas_interaction_flags.js';
+
+export {
   beginOwnedAsyncFamilyFlight,
   runOwnedAsyncFamilySingleFlight,
   createKeyedAsyncSingleFlightRunner,

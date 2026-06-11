@@ -19,7 +19,6 @@ export const MODES: ModeMap = Object.freeze({
   BRACE_SHELVES: 'brace_shelves',
   CELL_DIMS: 'cell_dims',
   EXT_DRAWER: 'ext_drawer',
-  INT_DRAWER: 'int_drawer',
   SCREEN_NOTE: 'screen_note',
   DOOR_TRIM: 'door_trim',
 });

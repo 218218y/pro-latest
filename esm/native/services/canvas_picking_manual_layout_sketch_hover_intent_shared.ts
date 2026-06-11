@@ -82,6 +82,7 @@ export type ManualLayoutSketchBoxContentHoverIntent = {
   baseLegHeightCm: number | null;
   baseLegWidthCm: number | null;
   corniceType: string | null;
+  blockedReason: string | null;
 };
 
 export type ManualLayoutSketchStackHoverIntent = {
@@ -98,6 +99,7 @@ export type ManualLayoutSketchStackHoverIntent = {
   stackH: number | null;
   drawerHeightM: number | null;
   drawerCount: number | null;
+  blockedReason: string | null;
 };
 
 export type ManualLayoutSketchShelfHoverIntent = {
@@ -114,6 +116,13 @@ export type ManualLayoutSketchRodHoverIntent = {
   removeKind: 'base' | 'sketch' | '';
   removeIdx: number | null;
   rodIndex: number | null;
+};
+
+export type ManualLayoutSketchStorageHoverIntent = {
+  kind: 'storage';
+  op: 'add' | 'remove';
+  removeKind: 'base' | 'sketch' | '';
+  removeIdx: number | null;
 };
 
 export function readNumber(value: unknown): number | null {

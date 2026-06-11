@@ -9,6 +9,7 @@ import {
   type ManualLayoutSketchRodHoverIntent,
   type ManualLayoutSketchShelfHoverIntent,
   type ManualLayoutSketchStackHoverIntent,
+  type ManualLayoutSketchStorageHoverIntent,
 } from './canvas_picking_manual_layout_sketch_hover_intent_shared.js';
 
 export function readManualLayoutSketchBoxHoverIntent(
@@ -62,6 +63,7 @@ export function readManualLayoutSketchBoxContentHoverIntent(
     baseLegHeightCm: readRecordNumber(record, 'baseLegHeightCm'),
     baseLegWidthCm: readRecordNumber(record, 'baseLegWidthCm'),
     corniceType: readRecordString(record, 'corniceType'),
+    blockedReason: readRecordString(record, '__wpBlockedReason'),
   };
 }
 
@@ -85,6 +87,7 @@ export function readManualLayoutSketchStackHoverIntent(
     stackH: readRecordNumber(record, 'stackH'),
     drawerHeightM: readRecordNumber(record, 'drawerHeightM'),
     drawerCount: readRecordNumber(record, 'drawerCount'),
+    blockedReason: readRecordString(record, '__wpBlockedReason'),
   };
 }
 
@@ -98,6 +101,19 @@ export function readManualLayoutSketchShelfHoverIntent(
     removeKind: readRecordString(record, 'removeKind') || '',
     removeIdx: readRecordNumber(record, 'removeIdx'),
     shelfIndex: readRecordNumber(record, 'shelfIndex'),
+  };
+}
+
+export function readManualLayoutSketchStorageHoverIntent(
+  record: unknown
+): ManualLayoutSketchStorageHoverIntent | null {
+  if (readRecordString(record, 'kind') !== 'storage') return null;
+  const removeKindRaw = readRecordString(record, 'removeKind') || '';
+  return {
+    kind: 'storage',
+    op: normalizeOp(readRecordValue(record, 'op')),
+    removeKind: removeKindRaw === 'base' ? 'base' : removeKindRaw === 'sketch' ? 'sketch' : '',
+    removeIdx: readRecordNumber(record, 'removeIdx'),
   };
 }
 

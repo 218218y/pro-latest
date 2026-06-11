@@ -14,15 +14,7 @@ type AutosaveInfo = {
 
 export function selectActiveTabId(ui: UiState): TabId {
   const t = typeof ui.activeTab === 'string' ? ui.activeTab.trim().toLowerCase() : '';
-  if (
-    t === 'structure' ||
-    t === 'design' ||
-    t === 'interior' ||
-    t === 'render' ||
-    t === 'export' ||
-    t === 'sketch'
-  )
-    return t;
+  if (t === 'structure' || t === 'design' || t === 'interior' || t === 'settings' || t === 'sketch') return t;
   return 'structure';
 }
 

@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { FocusEvent, KeyboardEvent } from 'react';
 
 import { notesOverlayReportNonFatal } from './notes_overlay_helpers_shared.js';
 import type { SanitizedNotesHtmlString } from '../../notes_service_sanitize.js';
@@ -11,7 +11,7 @@ type NoteEditorProps = {
   baseTextColor: string;
   noteHtml: SanitizedNotesHtmlString;
   registerRef: (index: number, el: HTMLDivElement | null) => void;
-  onBlur: (index: number) => void;
+  onBlur: (index: number, e: FocusEvent<HTMLDivElement>) => void;
   onMouseUp: (index: number) => void;
   onKeyUp: (index: number, e: KeyboardEvent<HTMLDivElement>) => void;
   onInput: (index: number) => void;
@@ -48,7 +48,7 @@ export const NoteEditor = memo(
         ref={setRef}
         contentEditable={!!isActive}
         suppressContentEditableWarning={true}
-        onBlur={() => onBlur(index)}
+        onBlur={(e: import('react').FocusEvent<HTMLDivElement>) => onBlur(index, e)}
         onMouseDown={(e: import('react').MouseEvent<HTMLDivElement>) => {
           try {
             e.stopPropagation();

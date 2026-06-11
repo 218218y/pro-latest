@@ -7,6 +7,7 @@
 // - Returns a fresh object each call (no shared references)
 
 import type { RootStateLike } from '../../../types';
+import { DEFAULT_FRONT_COLOR_SHELF_INHERITANCE_MODE } from '../../shared/front_color_shelf_inheritance_shared.js';
 
 import {
   DEFAULT_CHEST_DRAWERS_COUNT,
@@ -71,6 +72,7 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
       // Sliding wardrobes: top/bottom rails finish (default requested: nickel).
       slidingTracksColor: 'nickel',
       colorChoice: '#ffffff',
+      frontColorShelfInheritanceMode: DEFAULT_FRONT_COLOR_SHELF_INHERITANCE_MODE,
       customColor: '#ffffff',
       groovesEnabled: false,
       splitDoors: false,
@@ -85,6 +87,7 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
       showHanger: true,
       showDimensions: true,
       globalClickMode: true,
+      darkMode: false,
 
       // Additional toggles (default off)
       notesEnabled: false,
@@ -123,7 +126,6 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
           layout: 'hanging_top2',
           extDrawersCount: 0,
           hasShoeDrawer: false,
-          intDrawersSlot: 0,
           isCustom: false,
           customData: {
             shelves: [false, false, false, false, false, false],
@@ -137,7 +139,6 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
           layout: 'shelves',
           extDrawersCount: 0,
           hasShoeDrawer: false,
-          intDrawersSlot: 0,
           isCustom: false,
           customData: {
             shelves: [false, false, false, false, false, false],
@@ -153,7 +154,6 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
           layout: 'shelves',
           extDrawersCount: 0,
           hasShoeDrawer: false,
-          intDrawersSlot: 0,
           isCustom: true,
           gridDivisions: 6,
           customData: {
@@ -167,7 +167,6 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
           layout: 'shelves',
           extDrawersCount: 0,
           hasShoeDrawer: false,
-          intDrawersSlot: 0,
           isCustom: true,
           gridDivisions: 6,
           customData: {
@@ -194,6 +193,7 @@ export function createDefaultState(opts?: { noneMode?: string }): RootStateLike 
       preChestState: null,
       isLibraryMode: false,
       wardrobeType: 'hinged',
+      doorMountMode: 'overlay',
       globalHandleType: 'standard',
       isMultiColorMode: false,
       showDimensions: true,

@@ -3,6 +3,8 @@ import {
   createManualLayoutSketchNormalizedCenterReader,
   resolveManualLayoutSketchInternalDrawerPlacement,
 } from './canvas_picking_manual_layout_sketch_stack_placement.js';
+import { buildManualLayoutVerticalContentBlockers } from './canvas_picking_manual_layout_vertical_blockers.js';
+import { buildSketchModuleBoxVerticalBlockers } from './canvas_picking_sketch_module_box_blockers.js';
 import { createManualLayoutSketchStackHoverRecord } from './canvas_picking_manual_layout_sketch_hover_state.js';
 import type {
   CommitSketchModuleInternalDrawerArgs,
@@ -10,11 +12,11 @@ import type {
 } from './canvas_picking_sketch_module_stack_commit_contracts.js';
 import {
   buildNormalizedStackPosition,
-  removeStandardDrawer,
   removeStackItemById,
 } from './canvas_picking_sketch_module_stack_commit_mutation.js';
 import { resolveInternalDrawerHoverIntent } from './canvas_picking_sketch_module_stack_commit_hover.js';
 import { resolveSketchInternalDrawerMetrics } from '../features/sketch_drawer_sizing.js';
+import { markSketchInternalDrawersDirty } from '../features/sketch_drawer_sizing.js';
 import {
   createRandomId,
   ensureRecord,
@@ -24,21 +26,27 @@ import {
 export function commitSketchModuleInternalDrawers(
   args: CommitSketchModuleInternalDrawerArgs
 ): RecordMap | null {
-  const extra = ensureRecord(args.cfg, 'sketchExtras');
-  const list = ensureRecordList(extra, 'drawers');
+  const existingExtra =
+    args.cfg.sketchExtras &&
+    typeof args.cfg.sketchExtras === 'object' &&
+    !Array.isArray(args.cfg.sketchExtras)
+      ? (args.cfg.sketchExtras as RecordMap)
+      : null;
+  const list = Array.isArray(existingExtra?.drawers) ? (existingExtra.drawers as RecordMap[]) : [];
+  const externalDrawers = Array.isArray(existingExtra?.extDrawers)
+    ? (existingExtra.extDrawers as RecordMap[])
+    : [];
+  const shelves = Array.isArray(existingExtra?.shelves) ? (existingExtra.shelves as RecordMap[]) : [];
+  const storageBarriers = Array.isArray(existingExtra?.storageBarriers)
+    ? (existingExtra.storageBarriers as RecordMap[])
+    : [];
+  const boxes = Array.isArray(existingExtra?.boxes) ? (existingExtra.boxes as RecordMap[]) : [];
 
   const stackMetrics = resolveSketchInternalDrawerMetrics({
     drawerHeightM: args.drawerHeightM,
     availableHeightM: Math.max(0, args.topY - args.bottomY - args.pad * 2),
   });
   const stackH = stackMetrics.stackH;
-
-  const clampCenter = (yCenter: number) => {
-    const lo = args.bottomY + args.pad + stackH / 2;
-    const hi = args.topY - args.pad - stackH / 2;
-    if (!(hi > lo)) return Math.max(args.bottomY + args.pad, Math.min(args.topY - args.pad, yCenter));
-    return Math.max(lo, Math.min(hi, yCenter));
-  };
 
   const readNormalizedCenterY = createManualLayoutSketchNormalizedCenterReader({
     bottomY: args.bottomY,
@@ -49,22 +57,22 @@ export function commitSketchModuleInternalDrawers(
     hoverOk: args.hoverOk,
     hoverRec: args.hoverRec,
     hitYClamped: args.hitYClamped,
-    clampCenter,
+    clampCenter: yCenter => yCenter,
   });
 
   if (hover.hoverOp === 'remove') {
-    if (
-      hover.hoverRemoveKind === 'std' &&
-      removeStandardDrawer({
-        cfg: args.cfg,
-        hoverRemovePid: hover.hoverRemovePid,
-        hoverRemoveSlot: hover.hoverRemoveSlot,
-      })
-    ) {
-      return null;
-    }
-
-    if (removeStackItemById(list, hover.hoverRemoveId)) return null;
+    removeStackItemById(list, hover.hoverRemoveId);
+    markSketchInternalDrawersDirty(args.cfg);
+    return createManualLayoutSketchStackHoverRecord({
+      host: args.hoverHost,
+      kind: 'drawers',
+      op: 'add',
+      yCenter: hover.yCenterAbs,
+      drawerH: stackMetrics.drawerH,
+      drawerGap: stackMetrics.drawerGap,
+      drawerHeightM: args.drawerHeightM,
+      stackH,
+    });
   }
 
   const placement = resolveManualLayoutSketchInternalDrawerPlacement({
@@ -76,29 +84,72 @@ export function commitSketchModuleInternalDrawers(
     drawerHeightM: args.drawerHeightM,
     drawers: list,
     readCenterY: readNormalizedCenterY,
-    blockers: buildManualLayoutSketchExternalDrawerBlockers({
-      extDrawers: ensureRecordList(extra, 'extDrawers'),
-      bottomY: args.bottomY,
-      topY: args.topY,
-      pad: args.pad,
-      readCenterY: readNormalizedCenterY,
-    }),
+    blockers: [
+      ...buildManualLayoutSketchExternalDrawerBlockers({
+        extDrawers: externalDrawers,
+        bottomY: args.bottomY,
+        topY: args.topY,
+        pad: args.pad,
+        readCenterY: readNormalizedCenterY,
+      }),
+      ...buildManualLayoutVerticalContentBlockers({
+        cfgRef: args.cfg,
+        shelves,
+        rods: Array.isArray(existingExtra?.rods) ? (existingExtra.rods as RecordMap[]) : [],
+        storageBarriers,
+        bottomY: args.bottomY,
+        topY: args.topY,
+        totalHeight: args.totalHeight,
+        pad: args.pad,
+        woodThick: args.woodThick,
+      }),
+      ...buildSketchModuleBoxVerticalBlockers({
+        cfgRef: args.cfg,
+        boxes,
+        bottomY: args.bottomY,
+        topY: args.topY,
+        totalHeight: args.totalHeight,
+        pad: args.pad,
+        woodThick: args.woodThick,
+      }),
+    ],
   });
-  if (placement.op === 'remove' && removeStackItemById(list, placement.removeId)) return null;
+  if (placement.op === 'blocked') return null;
+  const extra = ensureRecord(args.cfg, 'sketchExtras');
+  const mutableList = ensureRecordList(extra, 'drawers');
+  if (placement.op === 'remove') {
+    removeStackItemById(mutableList, placement.removeId);
+    markSketchInternalDrawersDirty(args.cfg);
+    return createManualLayoutSketchStackHoverRecord({
+      host: args.hoverHost,
+      kind: 'drawers',
+      op: 'add',
+      yCenter: placement.yCenter,
+      drawerH: placement.drawerH,
+      drawerGap: placement.drawerGap,
+      drawerHeightM: args.drawerHeightM,
+      stackH: placement.stackH,
+    });
+  }
+  if (!placement.fitsAvailable) return null;
 
   const normalized = buildNormalizedStackPosition({
     centerY: placement.yCenter,
     stackH: placement.stackH,
     bottomY: args.bottomY,
+    topY: args.topY,
     totalHeight: args.totalHeight,
+    pad: args.pad,
   });
   const item = {
     id: createRandomId('sd'),
     yNormC: normalized.yNormC,
     yNorm: normalized.yNormBase,
+    yAnchor: normalized.yAnchor,
     drawerHeightM: args.drawerHeightM,
   };
-  list.push(item);
+  mutableList.push(item);
+  markSketchInternalDrawersDirty(args.cfg);
   return createManualLayoutSketchStackHoverRecord({
     host: args.hoverHost,
     kind: 'drawers',

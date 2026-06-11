@@ -272,3 +272,85 @@ test('kernel history lifecycle: applyState preserves a detached sanitized orderP
   assert.equal((h.lastLoadedState?.orderPdfEditorDraft as AnyRecord)?.meta?.keep?.accent, 'oak');
   assert.deepEqual(h.reports, []);
 });
+
+test('kernel history lifecycle: undo/redo reset coalesce boundaries so later same-key edits stay undoable', () => {
+  const h = createHarness();
+  h.setRestoring(false);
+
+  h.setSnapshot({ runtime: { version: 0 }, ui: {} });
+  h.system.init();
+
+  h.setSnapshot({ runtime: { version: 1 }, ui: {} });
+  h.system.pushState({ coalesceKey: 'notes:id:n1', coalesceMs: 1200 });
+  assert.equal(h.system.undoStack.length, 1);
+  assert.equal(h.system._lastCoalesceKey, 'notes:id:n1');
+
+  h.system.undo();
+  assert.equal(h.system.undoStack.length, 0);
+  assert.equal(h.system.redoStack.length, 1);
+  assert.equal(h.system._lastCoalesceKey, '');
+  assert.equal(h.system._lastCoalesceAt, 0);
+
+  h.setSnapshot({ runtime: { version: 2 }, ui: {} });
+  h.system.pushState({ coalesceKey: 'notes:id:n1', coalesceMs: 1200 });
+  assert.equal(h.system.undoStack.length, 1);
+  assert.equal(h.system.redoStack.length, 0);
+});
+
+test('kernel history lifecycle: coalesceAcrossIdle keeps create plus first note text as one undo step', () => {
+  const h = createHarness();
+  h.setRestoring(false);
+
+  const realNow = Date.now;
+  let now = 1000;
+  Date.now = () => now;
+  try {
+    h.setSnapshot({ savedNotes: [], runtime: {}, ui: {} });
+    h.system.init();
+
+    h.setSnapshot({
+      savedNotes: [{ id: 'n1', text: '', style: { left: '0px', top: '0px' } }],
+      runtime: {},
+      ui: {},
+    });
+    h.system.pushState({ coalesceKey: 'notes:id:n1', coalesceMs: 1200 });
+    assert.equal(h.system.undoStack.length, 1);
+
+    now += 60_000;
+    h.setSnapshot({
+      savedNotes: [{ id: 'n1', text: '<p>first text</p>', style: { left: '0px', top: '0px' } }],
+      runtime: {},
+      ui: {},
+    });
+    h.system.pushState({ coalesceKey: 'notes:id:n1', coalesceMs: 1200, coalesceAcrossIdle: true });
+
+    assert.equal(h.system.undoStack.length, 1);
+    h.system.undo();
+    assert.deepEqual(h.lastLoadedState?.savedNotes, []);
+    assert.equal(h.system.redoStack.length, 1);
+
+    h.system.redo();
+    assert.deepEqual(h.lastLoadedState?.savedNotes, [
+      { id: 'n1', text: '<p>first text</p>', style: { left: '0px', top: '0px' } },
+    ]);
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+test('kernel history lifecycle: no-op duplicate stack entries are pruned before undo/redo navigation', () => {
+  const h = createHarness();
+  h.setRestoring(false);
+
+  h.setSnapshot({ savedNotes: [], runtime: {}, ui: {} });
+  h.system.init();
+
+  const baseline = h.system.lastSavedJSON;
+  assert.ok(baseline);
+  h.system.undoStack.push(baseline);
+
+  h.system.undo();
+  assert.equal(h.system.undoStack.length, 0);
+  assert.equal(h.system.redoStack.length, 0);
+  assert.equal(h.loadCount, 0);
+});

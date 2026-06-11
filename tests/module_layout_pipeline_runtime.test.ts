@@ -74,3 +74,52 @@ test('module layout pipeline keeps current precomputed build structure without c
     [1, 2, 1]
   );
 });
+
+test('module layout pipeline supports inset hinged doors with thick frame and reveal instead of overlay', () => {
+  const result = computeModulesAndLayout(
+    createArgs({
+      cfg: {
+        wardrobeType: 'hinged',
+        modulesConfiguration: [],
+        doorMountMode: 'inset',
+      },
+      totalW: 1,
+      woodThick: 0.036,
+      doorsCount: 1,
+      calculateModuleStructure() {
+        return [{ doors: 1 }];
+      },
+    })
+  ) as any;
+
+  const spec = result.hingedDoorPivotMap?.['1'];
+  assert.ok(spec, 'expected first hinged door pivot spec');
+  assert.equal(result.moduleInternalWidths.length, 1);
+  assert.ok(Math.abs(result.moduleInternalWidths[0] - 0.928) < 1e-9);
+  assert.ok(Math.abs(spec.doorWidth - 0.922) < 1e-9);
+  assert.ok(Math.abs(spec.doorLeftEdge - -0.461) < 1e-9);
+});
+
+test('module layout pipeline keeps overlay hinged doors on the existing external-door geometry', () => {
+  const result = computeModulesAndLayout(
+    createArgs({
+      cfg: {
+        wardrobeType: 'hinged',
+        modulesConfiguration: [],
+        doorMountMode: 'overlay',
+      },
+      totalW: 1,
+      woodThick: 0.018,
+      doorsCount: 1,
+      calculateModuleStructure() {
+        return [{ doors: 1 }];
+      },
+    })
+  ) as any;
+
+  const spec = result.hingedDoorPivotMap?.['1'];
+  assert.ok(spec, 'expected first hinged door pivot spec');
+  assert.ok(Math.abs(result.moduleInternalWidths[0] - 0.964) < 1e-9);
+  assert.ok(Math.abs(spec.doorWidth - 0.982) < 1e-9);
+  assert.ok(Math.abs(spec.doorLeftEdge - -0.491) < 1e-9);
+});

@@ -9,12 +9,17 @@ export type CornerConfigShape = UnknownRecord & {
 
 export interface CornerCellDimsContext {
   App: AppContainer;
+  stackKey: 'top' | 'bottom';
+  isBottomStack: boolean;
   ui: UnknownRecord;
   cfg: UnknownRecord;
   raw: UnknownRecord;
   applyW: number | null;
   applyH: number | null;
   applyD: number | null;
+  hexCellMode?: boolean;
+  hexCellProtrusionCm?: number | null;
+  hexCellDoorWidthCm?: number | null;
   foundModuleIndex: string | number;
   foundPartId: string | null;
   ensureCornerCellConfigRef: (cellIdx: number) => ModuleConfigLike | null;

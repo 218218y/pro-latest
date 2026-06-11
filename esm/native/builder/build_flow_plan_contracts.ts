@@ -31,6 +31,7 @@ export type BuildFlowPlan = {
   stackSplitEnabled: boolean;
   stackSplitDecorativeSeparatorEnabled: boolean;
   splitActiveForBuild: boolean;
+  stackSplitUnifiedFrame: boolean;
   lowerHeightCm: number;
   lowerDepthCm: number;
   lowerWidthCm: number;
@@ -67,6 +68,8 @@ export type BuildFlowPlan = {
   whiteMat: CommonMatsLike['whiteMat'];
   shadowMat: CommonMatsLike['shadowMat'];
   legMat: unknown;
+  defaultShelfMat: unknown;
+  braceShelfMat: unknown;
   getPartColorValue: PartColorValueResolver;
   getPartMaterial: PartMaterialResolver;
   modules: ModuleLayoutResult['modules'];
@@ -92,6 +95,7 @@ export type BuildFlowPlanInputs = Pick<
   | 'stackSplitEnabled'
   | 'stackSplitDecorativeSeparatorEnabled'
   | 'splitActiveForBuild'
+  | 'stackSplitUnifiedFrame'
   | 'lowerHeightCm'
   | 'lowerDepthCm'
   | 'lowerWidthCm'
@@ -130,6 +134,8 @@ export type BuildFlowPlanMaterials = Pick<
   | 'whiteMat'
   | 'shadowMat'
   | 'legMat'
+  | 'defaultShelfMat'
+  | 'braceShelfMat'
   | 'getPartColorValue'
   | 'getPartMaterial'
 >;
@@ -176,6 +182,7 @@ export type BuildFlowPlanLayoutArgs = {
   doorsCount: number;
   calculateModuleStructureFn: BuilderCalculateModuleStructureFn | null;
   splitActiveForBuild: boolean;
+  stackSplitUnifiedFrame?: boolean;
   lowerHeightCm: number;
   H: number;
   D: number;

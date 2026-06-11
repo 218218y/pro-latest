@@ -215,8 +215,10 @@ export function createInteriorTabSketchViewStateController(
       );
     },
 
-    syncManualUiToolState(isManualLayoutMode, manualTool) {
-      if (isManualLayoutMode) setManualUiTool(manualTool);
+    syncManualUiToolState(isManualLayoutMode, isSketchToolActive, isSketchDivisionToolActive, manualTool) {
+      if (isManualLayoutMode && (!isSketchToolActive || isSketchDivisionToolActive)) {
+        setManualUiTool(manualTool);
+      }
     },
   };
 }

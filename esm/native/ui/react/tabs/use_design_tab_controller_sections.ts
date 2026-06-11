@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import type { AppContainer, UiFeedbackNamespaceLike } from '../../../../../types';
 
+import { setUiFrontColorShelfInheritanceMode } from '../actions/store_actions.js';
+import { getNextFrontColorShelfInheritanceMode } from '../../../features/front_color_shelf_inheritance.js';
 import { useDesignTabColorManager } from './use_design_tab_color_manager.js';
 import { useDesignTabEditModes } from './use_design_tab_edit_modes.js';
 import { createDesignTabControllerRuntime } from './design_tab_controller_runtime.js';
@@ -57,9 +59,27 @@ export function useDesignTabControllerSections(args: {
     [state.doorStyle, controllerRuntime.setDoorStyle]
   );
 
+  const toggleFrontColorShelfInheritanceMode = useCallback(() => {
+    setUiFrontColorShelfInheritanceMode(
+      app,
+      getNextFrontColorShelfInheritanceMode(state.frontColorShelfInheritanceMode),
+      { source: 'react:design:frontColorShelfInheritanceMode', immediate: true }
+    );
+  }, [app, state.frontColorShelfInheritanceMode]);
+
   const colorSection = useMemo<DesignTabColorSectionModel>(
-    () => ({ colorChoice: state.colorChoice, ...colorManager }),
-    [state.colorChoice, colorManager]
+    () => ({
+      colorChoice: state.colorChoice,
+      frontColorShelfInheritanceMode: state.frontColorShelfInheritanceMode,
+      toggleFrontColorShelfInheritanceMode,
+      ...colorManager,
+    }),
+    [
+      state.colorChoice,
+      state.frontColorShelfInheritanceMode,
+      toggleFrontColorShelfInheritanceMode,
+      colorManager,
+    ]
   );
 
   const doorFeaturesSection = useMemo<DesignTabDoorFeaturesSectionModel>(

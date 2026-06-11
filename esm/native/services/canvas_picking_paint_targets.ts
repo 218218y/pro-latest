@@ -5,6 +5,12 @@ import {
 } from './canvas_picking_core_helpers.js';
 
 export const MAIN_BODY_PARTS = ['body_left', 'body_right', 'body_ceil', 'body_floor'];
+export const LOWER_MAIN_BODY_PARTS = [
+  'lower_body_left',
+  'lower_body_right',
+  'lower_body_ceil',
+  'lower_body_floor',
+];
 export const CHEST_BODY_PARTS = ['chest_left', 'chest_right', 'chest_ceil', 'chest_floor'];
 export const CORNER_BODY_PARTS = ['corner_body', 'corner_floor', 'corner_ceil', 'corner_side_far'];
 export const CORNICE_PARTS = [
@@ -13,6 +19,7 @@ export const CORNICE_PARTS = [
   'cornice_wave_side_left',
   'cornice_wave_side_right',
 ];
+export const CORNICE_WAVE_PARTS = ['cornice_wave_front', 'cornice_wave_side_left', 'cornice_wave_side_right'];
 export const CORNER_CORNICE_PARTS = [
   'corner_cornice',
   'corner_cornice_front',
@@ -22,6 +29,10 @@ export const CORNER_CORNICE_PARTS = [
 
 export function __isCornicePart(partId: string): boolean {
   return CORNICE_PARTS.includes(partId);
+}
+
+export function __isCorniceWavePart(partId: string): boolean {
+  return CORNICE_WAVE_PARTS.includes(partId);
 }
 
 export function __isCornerCornicePart(partId: string): boolean {
@@ -39,8 +50,10 @@ export function resolvePaintTargetKeys(
   const partId = typeof foundPartId === 'string' ? String(foundPartId) : '';
   if (!partId) return [];
   if (MAIN_BODY_PARTS.includes(partId)) return [...MAIN_BODY_PARTS];
+  if (LOWER_MAIN_BODY_PARTS.includes(partId)) return [...LOWER_MAIN_BODY_PARTS];
   if (CHEST_BODY_PARTS.includes(partId)) return [...CHEST_BODY_PARTS];
-  if (__isCornicePart(partId)) return [...CORNICE_PARTS];
+  if (__isCorniceWavePart(partId)) return [partId];
+  if (__isCornicePart(partId)) return ['cornice_color'];
   if (__isCornerCornicePart(partId))
     return __wp_scopeCornerPartKeysForStack(CORNER_CORNICE_PARTS, activeStack);
   if (CORNER_BODY_PARTS.includes(partId))

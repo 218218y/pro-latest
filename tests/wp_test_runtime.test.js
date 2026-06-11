@@ -18,16 +18,25 @@ function tempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'wp-test-'));
 }
 
-test('test arg parsing keeps tsx/no-build/pattern policy canonical', () => {
-  assert.deepEqual(parseTestArgs(['--tsx', '--no-build', '--pattern', 'door']), {
-    forceTsx: true,
-    noBuild: true,
-    pattern: 'door',
-  });
-  assert.deepEqual(parseTestArgs([]), {
+test('test arg parsing keeps tsx/no-build/pattern and parallel policy canonical', () => {
+  assert.deepEqual(
+    parseTestArgs(['--tsx', '--no-build', '--pattern', 'door', '--batch-size', '32', '--jobs=3']),
+    {
+      forceTsx: true,
+      noBuild: true,
+      pattern: 'door',
+      serial: false,
+      batchSize: 32,
+      jobs: 3,
+    }
+  );
+  assert.deepEqual(parseTestArgs(['--serial']), {
     forceTsx: false,
     noBuild: false,
     pattern: '',
+    serial: true,
+    batchSize: null,
+    jobs: null,
   });
 });
 
@@ -83,6 +92,57 @@ test('test flow derives tsx loader when ts tests exist and dist build is missing
   assert.equal(runCalls.length, 1);
   assert.deepEqual(runCalls[0].nodeArgs, ['--import', 'tsx']);
   assert.equal(result.ok, true);
+});
+
+test('test flow batches files by default and keeps serial fallback opt-in', () => {
+  const root = tempDir();
+  fs.mkdirSync(path.join(root, 'tests'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'dist', 'esm'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'dist', 'esm', 'main.js'), 'export {}\n', 'utf8');
+  fs.writeFileSync(path.join(root, 'tests', 'a_runtime.test.js'), 'export {}\n', 'utf8');
+  fs.writeFileSync(path.join(root, 'tests', 'b_runtime.test.js'), 'export {}\n', 'utf8');
+
+  const batchCalls = [];
+  const runCalls = [];
+  const result = runTestFlow({
+    projectRoot: root,
+    childEnv: { ...process.env, WP_TEST_BATCH_SIZE: '1', WP_TEST_JOBS: '2' },
+    flags: { forceTsx: false, noBuild: true, pattern: '', serial: false, batchSize: null, jobs: null },
+    runners: {
+      runBatch({ batch, jobs }) {
+        batchCalls.push({ batch, jobs });
+        return { status: 0 };
+      },
+      runOne({ filePath }) {
+        runCalls.push(filePath);
+        return { status: 0 };
+      },
+    },
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(batchCalls.length, 0, 'custom runOne keeps legacy serial unit-test path');
+  assert.equal(runCalls.length, 2);
+
+  const realBatchCalls = [];
+  const batched = runTestFlow({
+    projectRoot: root,
+    childEnv: { ...process.env, WP_TEST_BATCH_SIZE: '1', WP_TEST_JOBS: '2' },
+    flags: { forceTsx: false, noBuild: true, pattern: '', serial: false, batchSize: null, jobs: null },
+    runners: {
+      runBatch({ batch, jobs }) {
+        realBatchCalls.push({ batch, jobs });
+        return { status: 0 };
+      },
+    },
+  });
+
+  assert.equal(batched.ok, true);
+  assert.equal(realBatchCalls.length, 2);
+  assert.deepEqual(
+    realBatchCalls.map(call => call.jobs),
+    [2, 2]
+  );
 });
 
 test('test flow writes failure diagnostics with parsed test names and junit output', () => {

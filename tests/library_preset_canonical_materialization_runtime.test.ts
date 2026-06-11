@@ -47,8 +47,6 @@ test('library preset invariants rematerialize preserved modules against canonica
     layout: 'mixed',
     isCustom: false,
     extDrawersCount: '2',
-    intDrawersSlot: '3',
-    intDrawersList: null,
     gridDivisions: '5',
     customData: {
       shelves: [1, false],
@@ -66,8 +64,6 @@ test('library preset invariants rematerialize preserved modules against canonica
   assert.equal(normalized?.isCustom, false);
   assert.equal(normalized?.doors, 2);
   assert.equal(normalized?.extDrawersCount, 2);
-  assert.equal(normalized?.intDrawersSlot, 3);
-  assert.deepEqual(normalized?.intDrawersList, []);
   assert.equal(normalized?.gridDivisions, 5);
   assert.deepEqual(normalized?.customData?.shelves, [true, false, true, true, false]);
   assert.deepEqual(normalized?.customData?.rods, [false, false, false, false, false]);

@@ -21,6 +21,12 @@ const sandbox = {
   module: { exports: {} },
   exports: {},
   require: spec => {
+    if (spec === '../../../../shared/wardrobe_dimension_tokens_shared.js') {
+      return {
+        INTERIOR_FITTINGS_DIMENSIONS: { shelves: { regularDepthM: 0.45 } },
+        mToCm: value => value * 100,
+      };
+    }
     if (spec === '../../../features/sketch_drawer_sizing.js') {
       return {
         DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_CM: 22,
@@ -35,6 +41,9 @@ vm.runInNewContext(transpiled, sandbox, { filename: srcPath });
 
 const {
   createInteriorTabLocalStateDefaults,
+  DEFAULT_SKETCH_SHELF_DEPTH_EDIT_CM,
+  DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE,
+  DEFAULT_SKETCH_STORAGE_HEIGHT_CM,
   INTERIOR_EXT_COUNTS,
   INTERIOR_GRID_DIVS,
   INTERIOR_HANDLE_TYPES,
@@ -46,7 +55,10 @@ test('[interior-local-state-runtime] defaults stay canonical for drafts/options'
   const defaults = createInteriorTabLocalStateDefaults();
 
   assert.equal(defaults.sketchBoxHeightCm, 40);
-  assert.equal(defaults.sketchStorageHeightCm, 50);
+  assert.equal(DEFAULT_SKETCH_STORAGE_HEIGHT_CM, 50);
+  assert.equal(DEFAULT_SKETCH_SHELF_DEPTH_EDIT_CM, 45);
+  assert.equal(DEFAULT_SKETCH_SHELF_DEPTH_OVERRIDE, '');
+  assert.equal(defaults.sketchStorageHeightCm, DEFAULT_SKETCH_STORAGE_HEIGHT_CM);
   assert.equal(defaults.sketchBoxCorniceType, 'classic');
   assert.equal(defaults.sketchBoxBaseType, 'plinth');
   assert.equal(defaults.sketchBoxLegWidthCm, 4);

@@ -1,6 +1,10 @@
 import { getThreeMaybe } from '../runtime/three_access.js';
 import { __wp_resolveInteriorHoverTarget } from './canvas_picking_local_helpers.js';
-import { resolveShelfBoardPick } from './canvas_picking_shelf_hit_targets.js';
+import {
+  resolveShelfBoardPick,
+  resolveShelfPickVerticalToleranceM,
+  resolveShelfSelectorPickToleranceM,
+} from './canvas_picking_shelf_hit_targets.js';
 import type { CanvasInteriorHoverFlowArgs } from './canvas_picking_interior_hover_shared.js';
 import {
   getSketchPreviewFns,
@@ -57,8 +61,8 @@ export function tryHandleCanvasBraceShelvesHover(args: CanvasInteriorHoverFlowAr
       bottomY: target.bottomY,
       topY: target.topY,
       divisions,
-      boardToleranceM: Math.max(0.035, target.woodThick * 2),
-      selectorHitToleranceM: Math.min(0.03, Math.max(0.018, step * 0.12)),
+      boardToleranceM: resolveShelfPickVerticalToleranceM(target.woodThick, 2.75),
+      selectorHitToleranceM: resolveShelfSelectorPickToleranceM(step),
     });
     if (!shelfPick) {
       hideSketchPreview({ App, hideSketchPreview: hideSketchPreviewFn });

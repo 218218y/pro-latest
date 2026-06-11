@@ -22,6 +22,7 @@ export type PositionAttributeLike = {
   count: number;
   needsUpdate?: boolean;
   getX: (index: number) => number;
+  getY?: (index: number) => number;
   getZ: (index: number) => number;
   setZ: (index: number, value: number) => unknown;
 };
@@ -132,6 +133,7 @@ export type CorniceSegment = {
   waveCycles?: unknown;
   miterStartTrim?: unknown;
   miterEndTrim?: unknown;
+  miterMode?: unknown;
 };
 
 export type LegacyCorniceOp = {

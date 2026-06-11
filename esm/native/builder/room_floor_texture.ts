@@ -34,7 +34,7 @@ function __paintParquetTexture(
 ): void {
   const plankW = 180;
   const plankH = 60;
-  const plankColor = typeof p.color2 === 'string' ? p.color2 : '#d4c5b0';
+  const plankColor = typeof p.color2 === 'string' ? p.color2 : '#cdbda7';
   ctx.fillStyle = plankColor;
   for (let y = 0; y < 512; y += plankH) {
     const offset = (y / plankH) % 2 === 0 ? 0 : -100;
@@ -56,11 +56,22 @@ function __paintTileTexture(
   p: RoomTextureParams
 ): void {
   const size = 512 / (typeof p.size === 'number' && Number.isFinite(p.size) ? p.size : 4);
-  ctx.strokeStyle = typeof p.lines === 'string' ? p.lines : '#e0e0e0';
-  ctx.lineWidth = 3;
+  const lineColor = typeof p.lines === 'string' ? p.lines : '#d0d0cc';
+  const accentColor =
+    typeof p.color2 === 'string' ? p.color2 : typeof p.color1 === 'string' ? p.color1 : null;
   for (let y = 0; y < 512; y += size) {
     for (let x = 0; x < 512; x += size) {
+      if (accentColor) {
+        ctx.globalAlpha = (x / size + y / size) % 2 === 0 ? 0.16 : 0.08;
+        ctx.fillStyle = accentColor;
+        ctx.fillRect(x + 2, y + 2, Math.max(0, size - 4), Math.max(0, size - 4));
+        ctx.globalAlpha = 1.0;
+      }
+
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 3;
       ctx.strokeRect(x, y, size, size);
+
       if (p.id === 'terrazzo') {
         ctx.globalAlpha = 0.4;
         for (let i = 0; i < 5; i++) {

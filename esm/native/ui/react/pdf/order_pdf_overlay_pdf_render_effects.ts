@@ -102,6 +102,7 @@ export function useOrderPdfOverlayPdfRenderEffects(args: {
     let cancelled = false;
     (async () => {
       const templateBytes = await pdfRenderApi.fetchOrderPdfTemplateBytes({
+        app,
         pdfTemplateBytesRef,
         fetchFirstOk,
         withV,

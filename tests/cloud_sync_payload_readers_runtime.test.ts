@@ -5,6 +5,7 @@ import {
   readCloudSyncJsonField,
   readCloudSyncNumberOrStringField,
   readCloudSyncScalarField,
+  readCloudSyncContentsTogglePayloadLike,
   readCloudSyncSketchPayloadLike,
   readCloudSyncStringField,
   readCloudSyncSyncPinPayloadLike,
@@ -45,7 +46,7 @@ test('cloud sync JSON reader preserves JSON-like values and rejects non-JSON pri
   assert.equal(readCloudSyncJsonField(Symbol('bad')), undefined);
 });
 
-test('cloud sync payload readers normalize sketch, sync-pin, and tabs-gate fields without hand-written boolean/string branches', () => {
+test('cloud sync payload readers normalize sketch, sync-pin, show-contents, and tabs-gate fields without hand-written boolean/string branches', () => {
   assert.deepEqual(
     readCloudSyncSketchPayloadLike({
       sketchRev: '12',
@@ -72,6 +73,19 @@ test('cloud sync payload readers normalize sketch, sync-pin, and tabs-gate field
       syncPinEnabled: false,
       syncPinRev: 9,
       syncPinBy: 'client-pin',
+    }
+  );
+
+  assert.deepEqual(
+    readCloudSyncContentsTogglePayloadLike({
+      showContentsEnabled: 'yes',
+      showContentsRev: '10',
+      showContentsBy: 'client-contents',
+    }),
+    {
+      showContentsEnabled: 'yes',
+      showContentsRev: '10',
+      showContentsBy: 'client-contents',
     }
   );
 
@@ -117,6 +131,19 @@ test('cloud sync payload readers keep null/undefined control-row fields intact f
       syncPinEnabled: undefined,
       syncPinRev: null,
       syncPinBy: undefined,
+    }
+  );
+
+  assert.deepEqual(
+    readCloudSyncContentsTogglePayloadLike({
+      showContentsEnabled: undefined,
+      showContentsRev: null,
+      showContentsBy: undefined,
+    }),
+    {
+      showContentsEnabled: undefined,
+      showContentsRev: null,
+      showContentsBy: undefined,
     }
   );
 

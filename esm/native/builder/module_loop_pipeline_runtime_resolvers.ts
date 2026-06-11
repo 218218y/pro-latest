@@ -24,9 +24,12 @@ import type { ModuleLoopRuntime } from './module_loop_pipeline_runtime_contracts
 export type ModuleLoopRuntimeResolvers = Pick<
   ModuleLoopRuntime,
   | 'bodyMat'
+  | 'whiteMat'
   | 'globalFrontMat'
   | 'shadowMat'
   | 'legMat'
+  | 'defaultShelfMat'
+  | 'braceShelfMat'
   | 'isGroovesEnabled'
   | 'isInternalDrawersEnabled'
   | 'showHangerEnabled'
@@ -82,9 +85,12 @@ export function resolveModuleLoopRuntimeResolvers(ctx: BuildContextLike): Module
 
   return {
     bodyMat: materials.bodyMat,
+    whiteMat: materials.whiteMat,
     globalFrontMat: materials.globalFrontMat,
     shadowMat: materials.shadowMat,
     legMat: materials.legMat,
+    defaultShelfMat: materials.defaultShelfMat || materials.bodyMat,
+    braceShelfMat: materials.braceShelfMat || materials.bodyMat,
     isGroovesEnabled: !!flags.isGroovesEnabled,
     isInternalDrawersEnabled: !!flags.isInternalDrawersEnabled,
     showHangerEnabled: !!flags.showHangerEnabled,

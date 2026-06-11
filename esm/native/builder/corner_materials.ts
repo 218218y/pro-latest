@@ -1,5 +1,6 @@
 // Corner wing: material resolution + multi-color/special doors
 
+import { CORNER_SHELF_GROUP_PART_ID } from '../features/shelf_part_identity.js';
 import { getCfg } from './store_access.js';
 import { getCommonMatsOrThrow } from './common_mats_resolver.js';
 import { asRecord, cloneRecord } from '../runtime/record.js';
@@ -20,6 +21,8 @@ import type {
 type MaterialsLike = {
   body: unknown;
   front: unknown;
+  defaultShelfMat?: unknown;
+  braceShelfMat?: unknown;
 };
 
 type ThreeCtorLike = Pick<ThreeLike, 'MeshBasicMaterial' | 'MeshStandardMaterial' | 'DoubleSide'>;
@@ -49,8 +52,11 @@ type CornerWingMaterialsResult = {
   getMirrorMat: () => unknown;
   resolveSpecial: (partId: string, curtainVal: unknown) => SpecialDoorMode;
   getCornerMat: (partId: string, defaultMat: unknown) => unknown;
+  getCornerShelfMat: (partId: string, isBraceShelf?: boolean) => unknown;
   bodyMat: unknown;
   frontMat: unknown;
+  defaultShelfMat: unknown;
+  braceShelfMat: unknown;
 };
 
 function asSavedColorSnapshot(value: unknown, App: AppContainer): ConfigStateLike {
@@ -197,6 +203,16 @@ export function createCornerWingMaterials(args: {
 
   const bodyMat = getCornerMat('corner_body', materials.body);
   const frontMat = materials.front;
+  const defaultShelfMat = materials.defaultShelfMat || bodyMat;
+  const braceShelfMat = materials.braceShelfMat || bodyMat;
+
+  const getCornerShelfMat = (partId: string, isBraceShelf = false): unknown => {
+    const groupFallback = getCornerMat(
+      CORNER_SHELF_GROUP_PART_ID,
+      isBraceShelf ? braceShelfMat : defaultShelfMat
+    );
+    return getCornerMat(partId, groupFallback);
+  };
 
   return {
     masoniteMat,
@@ -212,7 +228,10 @@ export function createCornerWingMaterials(args: {
     getMirrorMat,
     resolveSpecial,
     getCornerMat,
+    getCornerShelfMat,
     bodyMat,
     frontMat,
+    defaultShelfMat,
+    braceShelfMat,
   };
 }

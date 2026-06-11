@@ -1,6 +1,5 @@
 import { applyExternalDrawersForModule } from './external_drawers_pipeline.js';
 import { makeRodCreator } from './contents_pipeline.js';
-import { makeInternalDrawerCreator } from './internal_drawers_pipeline.js';
 import { applyInteriorLayout } from './interior_pipeline.js';
 import { appendHingedDoorOpsForModule } from './hinged_doors_pipeline.js';
 import { getWardrobeGroup } from '../runtime/render_access.js';
@@ -8,7 +7,6 @@ import { getWardrobeGroup } from '../runtime/render_access.js';
 import type { ModuleLoopRuntime } from './module_loop_pipeline_runtime.js';
 import type { ModuleLoopMutableState } from './module_loop_pipeline_module_contracts.js';
 import type { ModuleVerticalMetrics, ResolvedModuleFrame } from './module_loop_pipeline_module_frame.js';
-
 export function applyModuleContents(
   runtime: ModuleLoopRuntime,
   state: ModuleLoopMutableState,
@@ -54,11 +52,16 @@ export function applyModuleContents(
       globalFrontMat: runtime.globalFrontMat,
       isGroovesEnabled: runtime.isGroovesEnabled,
       bodyMat: runtime.bodyMat,
+      braceShelfMat: runtime.braceShelfMat,
+      whiteMat: runtime.whiteMat,
+      drawerBoxBaseMat: runtime.whiteMat,
       addOutlines: runtime.addOutlines,
       getPartMaterial: runtime.getPartMaterial,
       getPartColorValue: runtime.getPartColorValue,
       createDoorVisual: runtime.createDoorVisual,
       createInternalDrawerBox: runtime.createInternalDrawerBox,
+      showContentsEnabled: runtime.showContentsEnabled,
+      addFoldedClothes: runtime.addFoldedClothes,
       createBoard: runtime.createBoard,
       innerW: metrics.innerW,
       internalDepth: frame.moduleInternalDepth,
@@ -75,13 +78,15 @@ export function applyModuleContents(
     config: frame.config,
     moduleIndex: index,
     effectiveBottomY: metrics.effectiveBottomY,
+    effectiveTopY: metrics.effectiveTopY,
+    gridDivisions: metrics.gridDivisions,
     localGridStep: metrics.localGridStep,
-    isInternalDrawersEnabled: runtime.isInternalDrawersEnabled,
+    woodThick: runtime.woodThick,
     innerW: metrics.innerW,
     internalCenterX: metrics.internalCenterX,
     internalZ: frame.moduleInternalZ,
     internalDepth: frame.moduleInternalDepth,
-    doorFrontZ: frame.moduleFrontZ,
+    doorFrontZ: frame.moduleDoorFrontZ,
     legMat: runtime.legMat,
     wardrobeGroup,
     addOutlines: runtime.addOutlines,
@@ -92,35 +97,8 @@ export function applyModuleContents(
     doorStyle: runtime.doorStyle,
   });
 
-  const checkAndCreateInternalDrawer = makeInternalDrawerCreator({
-    App: runtime.App,
-    THREE: runtime.THREE,
-    cfg: runtime.cfg,
-    config: frame.config,
-    moduleIndex: index,
-    keyPrefix: runtime.drawerKeyPrefix,
-    effectiveBottomY: metrics.effectiveBottomY,
-    localGridStep: metrics.localGridStep,
-    drawerSizingGridStep:
-      metrics.fullInternalHeight > 0 ? metrics.fullInternalHeight / 6 : metrics.localGridStep,
-    internalCenterX: metrics.internalCenterX,
-    internalZ: frame.moduleInternalZ,
-    internalDepth: frame.moduleInternalDepth,
-    innerW: metrics.innerW,
-    isInternalDrawersEnabled: runtime.isInternalDrawersEnabled,
-    wardrobeGroup,
-    createInternalDrawerBox: runtime.createInternalDrawerBox,
-    addOutlines: runtime.addOutlines,
-    getPartMaterial: runtime.getPartMaterial,
-    bodyMat: runtime.bodyMat,
-    showContentsEnabled: runtime.showContentsEnabled,
-    addFoldedClothes: runtime.addFoldedClothes,
-  });
-
-  const currentShelfMat =
-    runtime.cfg.isMultiColorMode && runtime.getPartColorValue && runtime.getPartColorValue('all_shelves')
-      ? runtime.getPartMaterial('all_shelves')
-      : runtime.bodyMat;
+  const currentShelfMat = runtime.defaultShelfMat || runtime.bodyMat;
+  const currentBraceShelfMat = runtime.braceShelfMat || runtime.bodyMat;
 
   applyInteriorLayout({
     App: runtime.App,
@@ -132,7 +110,6 @@ export function applyModuleContents(
     createBoard: runtime.createBoard,
     createRod,
     addFoldedClothes: runtime.addFoldedClothes,
-    checkAndCreateInternalDrawer,
     effectiveBottomY: metrics.effectiveBottomY,
     effectiveTopY: metrics.effectiveTopY,
     localGridStep: metrics.localGridStep,
@@ -152,8 +129,8 @@ export function applyModuleContents(
     externalW: metrics.externalW,
     externalCenterX: metrics.externalCenterX,
     currentShelfMat,
+    currentBraceShelfMat,
     bodyMat: runtime.bodyMat,
-    isInternalDrawersEnabled: runtime.isInternalDrawersEnabled,
     getPartMaterial: runtime.getPartMaterial,
     getPartColorValue: runtime.getPartColorValue,
     createDoorVisual: runtime.createDoorVisual,
@@ -184,7 +161,7 @@ export function applyModuleContents(
     cabinetBodyHeight: frame.moduleCabinetBodyHeight,
     cabinetTopY: frame.moduleCabinetTopY,
     D: runtime.D,
-    moduleDoorFrontZ: frame.moduleFrontZ,
+    moduleDoorFrontZ: frame.moduleDoorFrontZ,
     splitLineY: metrics.localSplitLineY,
     splitDoors: runtime.splitDoors,
     opsList: runtime.hingedDoorOpsList,

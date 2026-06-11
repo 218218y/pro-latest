@@ -39,19 +39,3 @@ export function removeSketchExternalDrawerById(
     }
   }
 }
-
-export function removeInternalDrawerSlot(cfg: SketchConfigLike, slot: number): void {
-  const list = Array.isArray(cfg.intDrawersList) ? cfg.intDrawersList : null;
-  if (list) {
-    for (let i = list.length - 1; i >= 0; i--) {
-      if (Number(list[i]) === slot) list.splice(i, 1);
-    }
-  }
-  if (Number(cfg.intDrawersSlot) === slot) {
-    try {
-      delete cfg.intDrawersSlot;
-    } catch {
-      cfg.intDrawersSlot = null;
-    }
-  }
-}

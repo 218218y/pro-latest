@@ -46,7 +46,6 @@ export function InteriorSketchDrawersSection(props: InteriorSketchDrawersSection
       props.enterSketchIntDrawersTool(next);
     },
   };
-
   return (
     <>
       <div className="wp-field">
@@ -131,13 +130,18 @@ export function InteriorSketchDrawersSection(props: InteriorSketchDrawersSection
             }
             onClick={() => {
               props.setSketchShelvesOpen(false);
-              if (isSketchInternalDrawersToolActive) props.exitManual();
-              else props.enterSketchIntDrawersTool(props.sketchIntDrawerHeightCm);
+              props.setSketchExtDrawersPanelOpen(false);
+              if (isSketchInternalDrawersToolActive) {
+                props.exitManual();
+                return;
+              }
+              props.enterSketchIntDrawersTool(props.sketchIntDrawerHeightCm);
             }}
           >
-            הוסף/הסר מגירות פנימיות
+            {isSketchInternalDrawersToolActive ? 'סיום עריכה' : 'הוסף/הסר מגירות פנימיות'}
           </ModeToggleButton>
         </div>
+
         <SketchDrawerHeightField
           label={'גובה מגירה פנימית (ס"מ)'}
           value={props.sketchIntDrawerHeightDraft}

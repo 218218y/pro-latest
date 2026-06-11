@@ -63,6 +63,7 @@ export function buildProjectConfigSnapshot(
     ...persistedConfig,
     savedColors: normalizeSavedColorObjectsSnapshot(persistedConfig.savedColors),
     wardrobeType: settings.wardrobeType || 'hinged',
+    doorMountMode: settings.doorMountMode === 'inset' ? 'inset' : 'overlay',
     boardMaterial: settings.boardMaterial === 'melamine' ? 'melamine' : 'sandwich',
     isManualWidth: !!settings.isManualWidth,
     showDimensions: typeof toggles.showDimensions !== 'undefined' ? toggles.showDimensions !== false : true,

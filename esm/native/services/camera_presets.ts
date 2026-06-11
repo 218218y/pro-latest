@@ -31,6 +31,9 @@ const CORNER_CAM = {
   targetXMax: 0.75,
 };
 
+type CameraPresetVector = { x: number; y: number; z: number };
+export type CameraPresetPose = { pos: CameraPresetVector; target: CameraPresetVector };
+
 type UiSnapshotLike = UnknownRecord & { raw?: UnknownRecord | null; width?: unknown };
 type RenderAccessLike = { camera: unknown; controls: unknown };
 
@@ -130,6 +133,87 @@ function getRenderAccess(App: AppContainer): RenderAccessLike | null {
   return isRenderAccessLike(access) ? access : null;
 }
 
+function cloneCameraPose(pose: CameraPresetPose): CameraPresetPose {
+  return {
+    pos: { x: pose.pos.x, y: pose.pos.y, z: pose.pos.z },
+    target: { x: pose.target.x, y: pose.target.y, z: pose.target.z },
+  };
+}
+
+function readBool(record: UnknownRecord | null | undefined, key: string): boolean | null {
+  const value = record ? record[key] : null;
+  return typeof value === 'boolean' ? value : null;
+}
+
+function readString(record: UnknownRecord | null | undefined, key: string): string | null {
+  const value = record ? record[key] : null;
+  return typeof value === 'string' && value ? value : null;
+}
+
+function isChestUiSnapshot(ui: UiSnapshotLike): boolean {
+  const raw = ui.raw && typeof ui.raw === 'object' ? ui.raw : null;
+  return !!(
+    readBool(ui, 'isChestMode') ??
+    readBool(ui, 'chestMode') ??
+    readBool(raw, 'isChestMode') ??
+    readBool(raw, 'chestMode')
+  );
+}
+
+function readCornerSideFromUiSnapshot(ui: UiSnapshotLike): 'left' | 'right' | null {
+  const raw = ui.raw && typeof ui.raw === 'object' ? ui.raw : null;
+  const cornerMode = !!(
+    readBool(ui, 'cornerMode') ??
+    readBool(ui, 'isCornerMode') ??
+    readBool(raw, 'cornerMode') ??
+    readBool(raw, 'isCornerMode') ??
+    readBool(ui, 'cornerConnectorEnabled') ??
+    readBool(raw, 'cornerConnectorEnabled')
+  );
+
+  if (!cornerMode) return null;
+
+  const sideValue =
+    readString(ui, 'cornerSide') ??
+    readString(raw, 'cornerSide') ??
+    readString(ui, 'cornerDirection') ??
+    readString(raw, 'cornerDirection');
+
+  return sideValue === 'left' ? 'left' : 'right';
+}
+
+function resolveCornerCameraPresetPose(ui: UiSnapshotLike, side: 'left' | 'right'): CameraPresetPose {
+  const raw = ui.raw && typeof ui.raw === 'object' ? ui.raw : null;
+  const wCm = asNum(raw?.width ?? ui.width);
+  const wM = wCm ? wCm / 100 : null;
+
+  const w = Math.max(1.2, Math.min(2.8, wM ?? 1.8));
+  const t = w - 1.2;
+
+  const posX = Math.min(CORNER_CAM.posXMax, CORNER_CAM.posXBase + t * CORNER_CAM.posXScale);
+  const posZ = CORNER_CAM.posZBase + t * CORNER_CAM.posZScale;
+  const targetX = Math.min(CORNER_CAM.targetXMax, CORNER_CAM.targetXBase + t * CORNER_CAM.targetXScale);
+
+  const camSign = side === 'right' ? -1 : 1;
+  const tgtSign = side === 'right' ? 1 : -1;
+
+  return {
+    pos: { x: camSign * posX, y: CORNER_CAM.posY, z: posZ },
+    target: { x: tgtSign * targetX, y: CORNER_CAM.targetY, z: 0 },
+  };
+}
+
+export function resolveCurrentDefaultCameraPresetPose(App: AppContainer): CameraPresetPose {
+  const ui = getUiSnapshot(App);
+
+  if (isChestUiSnapshot(ui)) return cloneCameraPose(CHEST_CAM);
+
+  const cornerSide = readCornerSideFromUiSnapshot(ui);
+  if (cornerSide) return resolveCornerCameraPresetPose(ui, cornerSide);
+
+  return cloneCameraPose(DEFAULT_CAM);
+}
+
 function applyCamera(
   App: AppContainer,
   pos: { x: number; y: number; z: number },
@@ -160,24 +244,6 @@ export function resetCameraPreset(App: AppContainer): boolean {
 }
 
 export function adjustCameraForCorner(App: AppContainer, side: 'left' | 'right'): boolean {
-  const ui = getUiSnapshot(App);
-  const raw = ui.raw && typeof ui.raw === 'object' ? ui.raw : null;
-  const wCm = asNum(raw?.width ?? ui.width);
-  const wM = wCm ? wCm / 100 : null;
-
-  const w = Math.max(1.2, Math.min(2.8, wM ?? 1.8));
-  const t = w - 1.2;
-
-  const posX = Math.min(CORNER_CAM.posXMax, CORNER_CAM.posXBase + t * CORNER_CAM.posXScale);
-  const posZ = CORNER_CAM.posZBase + t * CORNER_CAM.posZScale;
-  const targetX = Math.min(CORNER_CAM.targetXMax, CORNER_CAM.targetXBase + t * CORNER_CAM.targetXScale);
-
-  const camSign = side === 'right' ? -1 : 1;
-  const tgtSign = side === 'right' ? 1 : -1;
-
-  return applyCamera(
-    App,
-    { x: camSign * posX, y: CORNER_CAM.posY, z: posZ },
-    { x: tgtSign * targetX, y: CORNER_CAM.targetY, z: 0 }
-  );
+  const pose = resolveCornerCameraPresetPose(getUiSnapshot(App), side);
+  return applyCamera(App, pose.pos, pose.target);
 }

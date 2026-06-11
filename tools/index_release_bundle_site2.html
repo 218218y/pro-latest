@@ -43,7 +43,7 @@
 
     <!-- Site2 identity is supplied via <meta> tags (no window globals). -->
     <meta name="wp-site-variant" content="site2" />
-    <meta name="wp-site2-enabled-tabs" content="structure,design,interior,render" />
+    <meta name="wp-site2-enabled-tabs" content="structure,design,interior,sketch,settings" />
 
     <script src="./wp_logo_data.js"></script>
   </head>
@@ -141,12 +141,12 @@
             const { boot } = await import('./wardrobepro.bundle.js');
 
             // Runtime config module (optional):
-            // ../wp_runtime_config.mjs can export either:
+            // ./wp_runtime_config.mjs can export either:
             //   export default { supabaseCloudSync: { ... } };
             //   export default { config: { ... }, flags: { ... } };
             async function loadRuntimeModule() {
               try {
-                const url = new URL('../wp_runtime_config.mjs', import.meta.url).toString();
+                const url = new URL('./wp_runtime_config.mjs', import.meta.url).toString();
                 const mod = await import(url);
                 const raw = mod && typeof mod === 'object' && 'default' in mod ? mod.default : mod;
                 if (!raw || typeof raw !== 'object') return { config: null, flags: null };
@@ -181,7 +181,7 @@
 
                 // Site2 identity defaults (no window globals).
                 siteVariant: 'site2',
-                site2EnabledTabs: ['structure', 'design', 'interior', 'render', 'export'],
+                site2EnabledTabs: ['structure', 'design', 'interior', 'sketch', 'settings'],
               },
               runtime.config || {}
             );

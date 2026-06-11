@@ -39,6 +39,50 @@ export function readConnectorSpecialDims(cfg: unknown): SpecialDimsRecord | null
   return dims || null;
 }
 
+function readPositiveSpecialDimCm(sd: unknown, key: string): number | null {
+  const rec = asRecord(sd);
+  if (!rec) return null;
+  const n = __asNum(rec[key], NaN);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function readCornerDoorsCount(ui: UnknownRecord, raw: UnknownRecord): number {
+  const doors = __asInt(ui.cornerDoors, __asInt(raw.cornerDoors, WARDROBE_DEFAULTS.corner.doorsCount));
+  return Number.isFinite(doors) && doors > 0 ? doors : WARDROBE_DEFAULTS.corner.doorsCount;
+}
+
+function resolveAutoCornerWidthForDoors(ui: UnknownRecord, raw: UnknownRecord): number {
+  const doors = readCornerDoorsCount(ui, raw);
+  const perDoor = WARDROBE_DEFAULTS.byType.hinged.perDoorWidthCm;
+  return Math.max(perDoor, doors * perDoor);
+}
+
+function readRootCornerConfiguration(cfg: unknown): UnknownRecord | null {
+  const root = asRecord(cfg);
+  if (!root) return null;
+  const nested = asRecord(root.cornerConfiguration);
+  return nested || root;
+}
+
+function hasTopCornerWidthSpecialDims(cfg: unknown): boolean {
+  const corner = readRootCornerConfiguration(cfg);
+  const sd = corner ? asRecord(corner.specialDims) : null;
+  if (!sd) return false;
+  return (
+    readPositiveSpecialDimCm(sd, 'widthCm') != null || readPositiveSpecialDimCm(sd, 'baseWidthCm') != null
+  );
+}
+
+function resolveBottomCornerWidthBase(args: {
+  ui: UnknownRecord;
+  raw: UnknownRecord;
+  cfg: UnknownRecord;
+  topCornerWidthBase: number;
+}): number {
+  if (hasTopCornerWidthSpecialDims(args.cfg)) return resolveAutoCornerWidthForDoors(args.ui, args.raw);
+  return args.topCornerWidthBase;
+}
+
 export function readCornerModules(cfg: unknown): UnknownRecord[] {
   return readModulesConfigurationListFromConfigSnapshot(cfg, 'modulesConfiguration').map(
     item => asRecord(item) || {}
@@ -88,25 +132,49 @@ export function buildCornerCellDimsContext(args: CanvasCornerCellDimsArgs): Corn
     applyW,
     applyH,
     applyD,
+    hexCellMode,
+    hexCellProtrusionCm,
+    hexCellDoorWidthCm,
     foundModuleIndex,
     foundPartId,
     ensureCornerCellConfigRef,
   } = args;
 
-  const cornerWBase = __asNum(ui.cornerWidth, CORNER_WING_DIMENSIONS.wing.defaultWidthCm);
-  const cornerHBase = __asNum(ui.cornerHeight, __asNum(raw.height, WARDROBE_DEFAULTS.heightCm));
-  const cornerDBase = __asNum(ui.cornerDepth, __asNum(raw.depth, WARDROBE_DEFAULTS.byType.hinged.depthCm));
+  const isBottomStack = args.isBottomStack === true;
+  const stackKey = isBottomStack ? 'bottom' : 'top';
+  const topCornerWidthBase = __asNum(ui.cornerWidth, CORNER_WING_DIMENSIONS.wing.defaultWidthCm);
+  const topCornerHeightBase = __asNum(ui.cornerHeight, __asNum(raw.height, WARDROBE_DEFAULTS.heightCm));
+  const topCornerDepthBase = __asNum(
+    ui.cornerDepth,
+    __asNum(raw.depth, WARDROBE_DEFAULTS.byType.hinged.depthCm)
+  );
+  const lowerCornerWidthBase = resolveBottomCornerWidthBase({
+    ui,
+    raw,
+    cfg,
+    topCornerWidthBase,
+  });
+  const cornerWBase = isBottomStack ? lowerCornerWidthBase : topCornerWidthBase;
+  const cornerHBase = isBottomStack
+    ? __asNum(raw.stackSplitLowerHeight, topCornerHeightBase)
+    : topCornerHeightBase;
+  const cornerDBase = isBottomStack
+    ? __asNum(raw.stackSplitLowerDepth, topCornerDepthBase)
+    : topCornerDepthBase;
   const wallLenBase = __asNum(
     ui.cornerCabinetWallLenCm,
     __asNum(ui.cornerCabinetWallLen, CORNER_WING_DIMENSIONS.connector.defaultWallLengthM * CM_PER_METER)
   );
 
-  const cornerCfg0 = asCornerConfig(readCornerConfigurationSnapshotForStack(cfg, 'top'));
+  const cornerCfg0 = asCornerConfig(readCornerConfigurationSnapshotForStack(cfg, stackKey));
   const nextCornerCfg: CornerConfigShape = cloneRecord(cornerCfg0);
   const sd = cloneSpecialDims(readCornerSpecialDims(nextCornerCfg));
   const connSd = cloneSpecialDims(readConnectorSpecialDims(nextCornerCfg));
 
-  const curWingW = getActiveOverrideCm(sd, 'widthCm', 'baseWidthCm') ?? cornerWBase;
+  const curWingW =
+    readPositiveSpecialDimCm(sd, 'widthCm') ??
+    getActiveOverrideCm(sd, 'widthCm', 'baseWidthCm') ??
+    cornerWBase;
   const curH = getActiveOverrideCm(sd, 'heightCm', 'baseHeightCm') ?? cornerHBase;
   const curD = getActiveOverrideCm(sd, 'depthCm', 'baseDepthCm') ?? cornerDBase;
   const curWallL = getActiveOverrideCm(connSd, 'widthCm', 'baseWidthCm') ?? wallLenBase;
@@ -119,12 +187,17 @@ export function buildCornerCellDimsContext(args: CanvasCornerCellDimsArgs): Corn
 
   return {
     App,
+    stackKey,
+    isBottomStack,
     ui,
     cfg,
     raw,
     applyW,
     applyH,
     applyD,
+    hexCellMode,
+    hexCellProtrusionCm,
+    hexCellDoorWidthCm,
     foundModuleIndex,
     foundPartId,
     ensureCornerCellConfigRef,

@@ -2,12 +2,55 @@ import type {
   ResolveSketchBoxGeometryFn,
   ResolvedModuleBoxLike,
 } from './canvas_picking_sketch_box_overlap_contracts.js';
+import type { VerticalOccupancyRange } from './canvas_picking_manual_layout_sketch_vertical_stack.js';
 import {
   clampSketchModuleBoxCenterY,
   isWithinModuleVerticalBounds,
 } from './canvas_picking_sketch_box_overlap_bounds.js';
 import { collectOverlaps } from './canvas_picking_sketch_box_overlap_geometry.js';
 import { resolveModuleBoxes } from './canvas_picking_sketch_box_overlap_resolved_boxes.js';
+
+function resolvePlacementBlockersAsBoxes(args: {
+  blockers?: VerticalOccupancyRange[] | null;
+  desiredCenterX: number;
+  boxW: number;
+}): ResolvedModuleBoxLike[] {
+  const blockers = Array.isArray(args.blockers) ? args.blockers : [];
+  const desiredCenterX = Number(args.desiredCenterX);
+  const boxW = Number(args.boxW);
+  if (!Number.isFinite(desiredCenterX) || !Number.isFinite(boxW) || !(boxW > 0)) return [];
+
+  const resolved: ResolvedModuleBoxLike[] = [];
+  for (let i = 0; i < blockers.length; i += 1) {
+    const blocker = blockers[i];
+    if (!blocker) continue;
+    const minY0 = Number(blocker.minY);
+    const maxY0 = Number(blocker.maxY);
+    if (!Number.isFinite(minY0) || !Number.isFinite(maxY0)) continue;
+    const minY = Math.min(minY0, maxY0);
+    const maxY = Math.max(minY0, maxY0);
+    if (!(maxY > minY)) continue;
+    const gap =
+      typeof blocker.collisionGapM === 'number' && Number.isFinite(blocker.collisionGapM)
+        ? Math.max(0, blocker.collisionGapM)
+        : 0;
+    const id = blocker.id != null && blocker.id !== '' ? String(blocker.id) : `blocker_${i}`;
+    const inflatedMinY = minY - gap;
+    const inflatedMaxY = maxY + gap;
+    resolved.push({
+      id: `blocker:${id}`,
+      box: { id: `blocker:${id}` },
+      centerX: desiredCenterX,
+      centerY: (inflatedMinY + inflatedMaxY) / 2,
+      boxW,
+      boxH: inflatedMaxY - inflatedMinY,
+      widthM: null,
+      depthM: null,
+      xNorm: null,
+    });
+  }
+  return resolved;
+}
 
 function pickNextAnchor(direction: 1 | -1, overlaps: ResolvedModuleBoxLike[]): ResolvedModuleBoxLike | null {
   let nextAnchor: ResolvedModuleBoxLike | null = null;
@@ -27,6 +70,93 @@ function pickNextAnchor(direction: 1 | -1, overlaps: ResolvedModuleBoxLike[]): R
           : nextAnchor;
   }
   return nextAnchor;
+}
+
+function boxXOverlaps(args: { centerX: number; boxW: number; other: ResolvedModuleBoxLike }): boolean {
+  const centerX = Number(args.centerX);
+  const boxW = Number(args.boxW);
+  const otherCenterX = Number(args.other.centerX);
+  const otherW = Number(args.other.boxW);
+  if (
+    !Number.isFinite(centerX) ||
+    !Number.isFinite(boxW) ||
+    !(boxW > 0) ||
+    !Number.isFinite(otherCenterX) ||
+    !Number.isFinite(otherW) ||
+    !(otherW > 0)
+  ) {
+    return false;
+  }
+
+  return Math.abs(centerX - otherCenterX) < boxW / 2 + otherW / 2 - 1e-7;
+}
+
+function alignCenterWithinPointerSlot(args: {
+  desiredCenterX: number;
+  desiredCenterY: number;
+  boxW: number;
+  boxH: number;
+  bottomY: number;
+  spanH: number;
+  pad: number;
+  resolved: ResolvedModuleBoxLike[];
+}): number {
+  const desiredCenterY = Number(args.desiredCenterY);
+  const boxH = Number(args.boxH);
+  const bottomY = Number(args.bottomY);
+  const spanH = Number(args.spanH);
+  const pad = Number(args.pad);
+  if (
+    !Number.isFinite(desiredCenterY) ||
+    !Number.isFinite(boxH) ||
+    !(boxH > 0) ||
+    !Number.isFinite(bottomY) ||
+    !Number.isFinite(spanH) ||
+    !(spanH > 0)
+  ) {
+    return desiredCenterY;
+  }
+
+  const freeBottomY = bottomY + pad;
+  const freeTopY = bottomY + spanH - pad;
+  if (!(freeTopY > freeBottomY)) return desiredCenterY;
+
+  const blockersByY = args.resolved
+    .filter(box => boxXOverlaps({ centerX: args.desiredCenterX, boxW: args.boxW, other: box }))
+    .map(box => ({
+      minY: box.centerY - box.boxH / 2,
+      maxY: box.centerY + box.boxH / 2,
+    }))
+    .filter(
+      box =>
+        Number.isFinite(box.minY) &&
+        Number.isFinite(box.maxY) &&
+        box.maxY > freeBottomY &&
+        box.minY < freeTopY
+    )
+    .sort((a, b) => a.minY - b.minY);
+
+  let slotBottomY = freeBottomY;
+  for (const blocker of blockersByY) {
+    const blockerMinY = Math.max(freeBottomY, blocker.minY);
+    const blockerMaxY = Math.min(freeTopY, blocker.maxY);
+
+    if (desiredCenterY >= blockerMinY && desiredCenterY <= blockerMaxY) {
+      return desiredCenterY;
+    }
+
+    if (desiredCenterY < blockerMinY) {
+      const lo = slotBottomY + boxH / 2;
+      const hi = blockerMinY - boxH / 2;
+      return hi >= lo ? Math.max(lo, Math.min(hi, desiredCenterY)) : desiredCenterY;
+    }
+
+    slotBottomY = Math.max(slotBottomY, blockerMaxY);
+  }
+
+  const lo = slotBottomY + boxH / 2;
+  const hi = freeTopY - boxH / 2;
+  return hi >= lo ? Math.max(lo, Math.min(hi, desiredCenterY)) : desiredCenterY;
 }
 
 function resolvePlacementCandidateY(args: {
@@ -91,6 +221,8 @@ export function resolveSketchModuleBoxPlacement(args: {
   woodThick: number;
   resolveSketchBoxGeometry: ResolveSketchBoxGeometryFn;
   ignoreBoxId?: unknown;
+  blockers?: VerticalOccupancyRange[] | null;
+  confineToPointerSlot?: boolean;
 }): {
   centerX: number;
   centerY: number;
@@ -131,7 +263,13 @@ export function resolveSketchModuleBoxPlacement(args: {
     };
   }
 
-  const resolved = resolveModuleBoxes(args);
+  const resolved = resolveModuleBoxes(args).concat(
+    resolvePlacementBlockersAsBoxes({
+      blockers: args.blockers,
+      desiredCenterX,
+      boxW,
+    })
+  );
   if (!resolved.length) {
     return {
       centerX: desiredCenterX,
@@ -142,9 +280,22 @@ export function resolveSketchModuleBoxPlacement(args: {
     };
   }
 
+  const alignedCenterY = args.confineToPointerSlot
+    ? alignCenterWithinPointerSlot({
+        desiredCenterX,
+        desiredCenterY,
+        boxW,
+        boxH,
+        bottomY,
+        spanH,
+        pad,
+        resolved,
+      })
+    : desiredCenterY;
+
   const initialOverlaps = collectOverlaps({
     centerX: desiredCenterX,
-    centerY: desiredCenterY,
+    centerY: alignedCenterY,
     boxW,
     boxH,
     boxes: resolved,
@@ -153,10 +304,20 @@ export function resolveSketchModuleBoxPlacement(args: {
   if (!initialOverlaps.length) {
     return {
       centerX: desiredCenterX,
-      centerY: desiredCenterY,
-      adjusted: false,
+      centerY: alignedCenterY,
+      adjusted: Math.abs(alignedCenterY - desiredCenterY) > 1e-6,
       blocked: false,
       anchorBoxId: null,
+    };
+  }
+
+  if (args.confineToPointerSlot) {
+    return {
+      centerX: desiredCenterX,
+      centerY: alignedCenterY,
+      adjusted: Math.abs(alignedCenterY - desiredCenterY) > 1e-6,
+      blocked: true,
+      anchorBoxId: initialOverlaps[0]?.id ?? null,
     };
   }
 

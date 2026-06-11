@@ -6,6 +6,7 @@ import { getDoorsArray } from '../runtime/render_access.js';
 import type { AppContainer, BuildContextLike, ThreeLike } from '../../../types/index.js';
 
 import { asRecord } from './post_build_extras_shared.js';
+import { notifyHandleFitSuppressions } from './handles_fit_suppression_feedback.js';
 import { applyFrontRevealFrames } from './post_build_front_reveal_frames.js';
 import {
   SKETCH_BOX_DOOR_PENDING_STATE_KEY,
@@ -54,6 +55,10 @@ export function applyPostBuildSketchVisualOverlays(args: {
   const { App, THREE, ctx, cfg, bodyMat, globalFrontMat, stackKey } = args;
   const moduleCutStackKeys: Array<'top' | 'bottom'> =
     stackKey === 'bottom' ? ['bottom', 'top'] : ['top', 'bottom'];
+  const suppressedHandlePartIds: string[] = [];
+  const collectSuppressedHandlePartIds = (partIds: string[]) => {
+    for (let i = 0; i < partIds.length; i += 1) suppressedHandlePartIds.push(partIds[i]);
+  };
   for (let i = 0; i < moduleCutStackKeys.length; i++) {
     applySketchExternalDrawerDoorCuts({
       App,
@@ -64,6 +69,7 @@ export function applyPostBuildSketchVisualOverlays(args: {
       globalFrontMat,
       stackKey: moduleCutStackKeys[i],
       allowConfigDerivedCuts: moduleCutStackKeys[i] === stackKey,
+      collectSuppressedHandlePartIds,
     });
   }
   applySketchBoxExternalDrawerDoorCuts({
@@ -73,6 +79,11 @@ export function applyPostBuildSketchVisualOverlays(args: {
     cfg: asRecord(cfg) || {},
     bodyMat,
     globalFrontMat,
+    collectSuppressedHandlePartIds,
+  });
+  notifyHandleFitSuppressions(App, suppressedHandlePartIds, {
+    scope: 'sketch-segment-door-handles',
+    completePass: true,
   });
   applyFrontRevealFrames(ctx);
 }

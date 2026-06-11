@@ -23,6 +23,7 @@ export {
   cfgDefaultCornerConfiguration,
   cfgSetScalar,
   setCfgBoardMaterial,
+  setCfgDoorMountMode,
   setCfgColorSwatchesOrder,
   setCfgCornerConfiguration,
   setCfgCustomUploadedDataURL,

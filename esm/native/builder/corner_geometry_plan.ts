@@ -1,4 +1,5 @@
 import { CORNER_WING_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import type { HexCellGeometry } from '../features/hex_cell/index.js';
 // Corner wing: shared geometry + plan helpers
 //
 // Extracted from the original monolithic `corner_wing.ts` to keep the main builder
@@ -203,7 +204,6 @@ export type CornerCellCfg = ValueRecord & {
   layout: string;
   extDrawersCount: number;
   hasShoeDrawer: boolean;
-  intDrawersList: unknown[];
   isCustom: boolean;
   gridDivisions: number;
   customData: CornerCellCustomData;
@@ -228,6 +228,7 @@ export type CornerCell = {
   __hasActiveHeight: boolean;
   __hasActiveDepth: boolean;
   __hasActiveSpecialDims: boolean;
+  __hexCellGeometry?: HexCellGeometry | null;
 
   cfg: CornerCellCfg;
 

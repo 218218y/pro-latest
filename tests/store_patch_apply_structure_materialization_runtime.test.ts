@@ -48,3 +48,83 @@ test('store patch apply keeps lower-module sanitization canonical without struct
   assert.equal(lower[0].layout, 'shelves');
   assert.equal(lower[0].gridDivisions, 6);
 });
+
+test('store patch apply replace-owned corner snapshot clears stale lower corner stack state', () => {
+  const prevConfig = {
+    cornerConfiguration: {
+      layout: 'shelves',
+      modulesConfiguration: [{ layout: 'top-cell' }],
+      stackSplitLower: {
+        specialDims: { baseWidthCm: 170, widthCm: 170 },
+        modulesConfiguration: [
+          { specialDims: { baseWidthCm: 80, widthCm: 80 } },
+          { specialDims: { baseWidthCm: 80, widthCm: 90 } },
+        ],
+      },
+    },
+  };
+
+  const next = applyConfigPatch(
+    prevConfig,
+    {
+      cornerConfiguration: {
+        layout: 'shelves',
+        modulesConfiguration: [{ layout: 'top-cell' }],
+      },
+      __replace: { cornerConfiguration: true },
+    },
+    { source: 'history.undoRedo' },
+    { raw: { doors: 4 }, cornerDoors: 4 }
+  );
+
+  assert.equal(Object.prototype.hasOwnProperty.call(next.cornerConfiguration, 'stackSplitLower'), false);
+});
+
+test('store patch apply merge-owned corner patch preserves existing lower corner stack state', () => {
+  const prevConfig = {
+    cornerConfiguration: {
+      layout: 'shelves',
+      modulesConfiguration: [{ layout: 'top-cell' }],
+      stackSplitLower: {
+        specialDims: { baseWidthCm: 170, widthCm: 170 },
+        modulesConfiguration: [{ specialDims: { baseWidthCm: 80, widthCm: 80 } }],
+      },
+    },
+  };
+
+  const next = applyConfigPatch(
+    prevConfig,
+    {
+      cornerConfiguration: {
+        layout: 'drawers',
+        modulesConfiguration: [{ layout: 'top-cell' }],
+      },
+    },
+    { source: 'regular.patch' },
+    { raw: { doors: 4 }, cornerDoors: 4 }
+  );
+
+  assert.equal(next.cornerConfiguration.layout, 'drawers');
+  assert.deepEqual(next.cornerConfiguration.stackSplitLower.specialDims, {
+    baseWidthCm: 170,
+    widthCm: 170,
+  });
+});
+
+test('store patch apply replace-owned lower modules list can clear stale lower linear cells', () => {
+  const next = applyConfigPatch(
+    {
+      stackSplitLowerModulesConfiguration: [
+        { layout: 'shelves', specialDims: { baseWidthCm: 60, widthCm: 90 } },
+      ],
+    },
+    {
+      stackSplitLowerModulesConfiguration: [],
+      __replace: { stackSplitLowerModulesConfiguration: true },
+    },
+    { source: 'history.undoRedo' },
+    { raw: { doors: 4 } }
+  );
+
+  assert.deepEqual(next.stackSplitLowerModulesConfiguration, []);
+});

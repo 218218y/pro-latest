@@ -23,7 +23,7 @@ function createFakeTimers() {
   };
 }
 
-test('[interior-workflows-controller] drawer bootstrap stays single-flight and cancels before direct toggle', () => {
+test('[interior-workflows-controller] drawer bootstrap stays single-flight and cancels before direct sketch edit', () => {
   const timers = createFakeTimers();
   const { calls, controller } = createInteriorWorkflowControllerHarness({}, timers);
 
@@ -36,7 +36,11 @@ test('[interior-workflows-controller] drawer bootstrap stays single-flight and c
   controller.toggleIntDrawerMode();
   timers.flush();
 
-  assert.equal(calls.filter(entry => entry[0] === 'toggleIntDrawerMode').length, 1);
+  assert.equal(calls.filter(entry => entry[0] === 'toggleIntDrawerMode').length, 0);
+  assert.equal(
+    calls.filter(entry => entry[0] === 'enterManualLayoutMode' && entry[2] === 'sketch_int_drawers').length,
+    1
+  );
 });
 
 test('[interior-workflows-controller] drawer bootstrap uses injected browser timers instead of global setTimeout', () => {

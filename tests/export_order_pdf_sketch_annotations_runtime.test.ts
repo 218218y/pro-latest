@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   compositeOrderPdfSketchStrokesOntoBase,
+  createOrderPdfRenderAnnotationLayerPngOp,
   listOrderPdfSketchStrokes,
   listOrderPdfSketchTextBoxes,
   paintOrderPdfSketchAnnotationsForPage,
@@ -96,6 +97,56 @@ class MockCanvasElement {
     return kind === '2d' ? (this.ctx as unknown as CanvasRenderingContext2D) : null;
   }
 }
+
+test('createOrderPdfRenderAnnotationLayerPngOp renders first-page PDF annotations to PNG bytes', async () => {
+  const ctx = new MockCanvasContext2D();
+  const canvas = new MockCanvasElement(ctx);
+  const op = createOrderPdfRenderAnnotationLayerPngOp(
+    {
+      _createDomCanvas: (_app, width, height) => {
+        canvas.width = width;
+        canvas.height = height;
+        return canvas as unknown as HTMLCanvasElement;
+      },
+      _exportReportThrottled: () => assert.fail('page annotation export should not report on a valid canvas'),
+    } as never,
+    async exportedCanvas => {
+      assert.equal(exportedCanvas, canvas);
+      return Uint8Array.from([1, 2, 3]);
+    }
+  );
+
+  const bytes = await op({
+    app: {} as never,
+    draft: {
+      sketchAnnotations: {
+        orderPdfPage1: {
+          strokes: [
+            {
+              tool: 'pen',
+              color: '#111827',
+              width: 2,
+              points: [
+                { x: 0.1, y: 0.2 },
+                { x: 0.9, y: 0.8 },
+              ],
+            },
+          ],
+        },
+      },
+    },
+    key: 'orderPdfPage1',
+    width: 1000.4,
+    height: 800.2,
+  });
+
+  assert.deepEqual(Array.from(bytes || []), [1, 2, 3]);
+  assert.equal(canvas.width, 1000);
+  assert.equal(canvas.height, 800);
+  assert.equal(ctx.strokeCount, 1);
+  assert.deepEqual(ctx.moves, [[100, 160]]);
+  assert.deepEqual(ctx.lines, [[900, 640]]);
+});
 
 test('listOrderPdfSketchStrokes keeps only valid strokes for the requested page', () => {
   const draft: OrderPdfDraftLike = {

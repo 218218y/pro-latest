@@ -15,6 +15,7 @@ function createCtx(overrides: Record<string, unknown> = {}) {
     doorBottomY: 0.02,
     totalDoorSpace: 1.98,
     doorFrontZ: 0.25,
+    doorOpZ: 0.26,
     globalHandleAbsY: 0.05,
     isGroovesEnabled: true,
     removeDoorsEnabled: false,

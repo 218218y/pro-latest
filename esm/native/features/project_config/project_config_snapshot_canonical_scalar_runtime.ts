@@ -53,6 +53,7 @@ const PROJECT_CONFIG_SCALAR_NORMALIZERS: Record<string, ProjectConfigScalarNorma
   isManualWidth: value => !!value,
   wardrobeType: value => (value == null ? '' : String(value)),
   boardMaterial: value => (value == null ? '' : String(value)),
+  doorMountMode: value => (value == null ? '' : String(value)),
   globalHandleType: value => (value == null ? '' : String(value)),
   customUploadedDataURL: value => (value == null ? null : String(value)),
   grooveLinesCount: normalizeGrooveLinesCount,

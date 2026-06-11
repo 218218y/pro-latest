@@ -51,7 +51,7 @@ export function StructureStackSplitControls(props: {
             הפרדה מעוצבת בין ארון עליון לארון תחתון
           </ModeToggleButton>
 
-          <div className="wp-r-cell-dims-row" style={{ marginTop: 10 }}>
+          <div className="wp-r-cell-dims-row wp-r-stack-split-dims-row" style={{ marginTop: 10 }}>
             <div className="wp-r-dims-height">
               <DimField
                 label={'גובה חלק תחתון (ס"מ)'}
@@ -82,7 +82,7 @@ export function StructureStackSplitControls(props: {
             </div>
           </div>
 
-          <div className="wp-r-cell-dims-row">
+          <div className="wp-r-cell-dims-row wp-r-stack-split-dims-row">
             <div className="wp-r-dims-doors">
               <DimField
                 label="דלתות חלק תחתון"

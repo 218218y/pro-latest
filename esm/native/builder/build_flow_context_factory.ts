@@ -137,6 +137,7 @@ export function createBuildFlowContext(args: BuildFlowContextFactoryArgs): Build
       stackSplitEnabled: !!plan.stackSplitEnabled,
       stackSplitDecorativeSeparatorEnabled: !!plan.stackSplitDecorativeSeparatorEnabled,
       stackSplitActive: !!plan.splitActiveForBuild,
+      stackSplitUnifiedFrame: !!plan.stackSplitUnifiedFrame,
       stackSplitLowerHeightCm: plan.lowerHeightCm,
       stackSplitLowerDepthCm: plan.lowerDepthCm,
       stackSplitLowerWidthCm: plan.lowerWidthCm,
@@ -191,6 +192,8 @@ export function createBuildFlowContext(args: BuildFlowContextFactoryArgs): Build
       whiteMat: plan.whiteMat,
       shadowMat: plan.shadowMat,
       legMat: plan.legMat,
+      defaultShelfMat: plan.defaultShelfMat,
+      braceShelfMat: plan.braceShelfMat,
     },
 
     create: {

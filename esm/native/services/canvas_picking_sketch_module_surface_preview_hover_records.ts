@@ -22,6 +22,25 @@ export function createShelfRemoveHoverRecord(args: {
   };
 }
 
+export function createStorageRemoveHoverRecord(args: {
+  host: ManualLayoutSketchHoverHost;
+  removeKind: 'sketch' | 'base';
+  removeIdx: number | null;
+}): RecordMap {
+  return {
+    ts: args.host.ts ?? Date.now(),
+    tool: args.host.tool,
+    moduleKey: args.host.moduleKey,
+    isBottom: args.host.isBottom,
+    hostModuleKey: args.host.moduleKey,
+    hostIsBottom: args.host.isBottom,
+    kind: 'storage',
+    op: 'remove',
+    removeKind: args.removeKind,
+    removeIdx: args.removeIdx ?? undefined,
+  };
+}
+
 export function createRodRemoveHoverRecord(args: {
   host: ManualLayoutSketchHoverHost;
   removeKind: 'sketch' | 'base';

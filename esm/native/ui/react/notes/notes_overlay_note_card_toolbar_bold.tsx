@@ -43,9 +43,13 @@ export function NoteCardToolbarBoldButton(
   return (
     <button
       className={
-        toolbarBoldOn ? 'toolbar-btn toolbar-btn--square active-state' : 'toolbar-btn toolbar-btn--square'
+        toolbarBoldOn
+          ? 'toolbar-btn toolbar-btn--square active-state wp-pdf-ui-hint wp-pdf-ui-hint--side-right'
+          : 'toolbar-btn toolbar-btn--square wp-pdf-ui-hint wp-pdf-ui-hint--side-right'
       }
       type="button"
+      aria-pressed={toolbarBoldOn}
+      data-tooltip="מודגש"
       onMouseDown={(e: import('react').MouseEvent<HTMLButtonElement>) => {
         try {
           saveSelectionForIndex(i);

@@ -3,6 +3,11 @@
 // Owns runtime surface resolution for segmented sketch-door rebuild flows.
 
 import { resolveConfiguredHandleColor } from './handle_finish_runtime.js';
+import {
+  EDGE_HANDLE_VARIANT_GLOBAL_KEY,
+  edgeHandleVariantPartKey,
+  normEdgeHandleVariant,
+} from './handles_shared.js';
 import { readDoorStyleMap } from '../features/door_style_overrides.js';
 import { makeDoorRemovalChecker } from './doors_state_utils.js';
 import { readDoorVisualMapValue, readDoorVisualMirrorLayout } from './door_visual_lookup_state.js';
@@ -22,7 +27,7 @@ import type {
 } from './post_build_sketch_door_cuts_contracts.js';
 
 export function createSketchDoorCutsRuntime(args: SketchDoorCutsRuntimeArgs): SketchDoorCutsRuntime {
-  const { THREE, ctx, cfg, bodyMat, globalFrontMat, getMirrorMaterial = null } = args;
+  const { App, THREE, ctx, cfg, bodyMat, globalFrontMat, getMirrorMaterial = null } = args;
   const stackKey = args.stackKey === 'bottom' ? 'bottom' : 'top';
   const createRec = readCtxCreateSurface(ctx);
   const resolversRec = readCtxResolversSurface(ctx);
@@ -43,6 +48,7 @@ export function createSketchDoorCutsRuntime(args: SketchDoorCutsRuntimeArgs): Sk
   const mirrorLayoutMap = asRecord(readKey(cfg, 'mirrorLayoutMap'));
   const doorStyleMap = readDoorStyleMap(readKey(cfg, 'doorStyleMap'));
   const isDoorRemoved = makeDoorRemovalChecker(cfg);
+  const handlesMap = asRecord(readKey(cfg, 'handlesMap'));
 
   const resolveCurtain = (partId: string): string | null => {
     const raw = readDoorVisualMapValue(curtainMap, partId);
@@ -65,8 +71,24 @@ export function createSketchDoorCutsRuntime(args: SketchDoorCutsRuntimeArgs): Sk
     readDoorVisualMirrorLayout(mirrorLayoutMap, partId);
   const resolveHandleColor = (partId: string): string =>
     resolveConfiguredHandleColor(readKey(cfg, 'handlesMap'), partId);
+  const stripSuffix = (partId: string): string => partId.replace(/_(top|mid|bot|full)$/, '');
+  const readHandleOverride = (key: string): string | undefined => {
+    if (!handlesMap || !Object.prototype.hasOwnProperty.call(handlesMap, key)) return undefined;
+    const value = handlesMap[key];
+    return value == null || value === '' ? undefined : String(value);
+  };
+  const resolveEdgeHandleVariant = (partId: string): 'short' | 'long' => {
+    const base = stripSuffix(partId);
+    const partValue =
+      readHandleOverride(edgeHandleVariantPartKey(partId)) ??
+      (base !== partId ? readHandleOverride(edgeHandleVariantPartKey(base)) : undefined);
+    if (partValue === 'long') return 'long';
+    if (partValue === 'short') return 'short';
+    return normEdgeHandleVariant(readHandleOverride(EDGE_HANDLE_VARIANT_GLOBAL_KEY));
+  };
 
   return {
+    App,
     THREE,
     bodyMat,
     globalFrontMat,
@@ -75,6 +97,7 @@ export function createSketchDoorCutsRuntime(args: SketchDoorCutsRuntimeArgs): Sk
     getPartMaterial,
     getMirrorMaterial,
     resolveHandleType,
+    resolveEdgeHandleVariant,
     resolveHandleColor,
     resolveCurtain,
     resolveSpecial,

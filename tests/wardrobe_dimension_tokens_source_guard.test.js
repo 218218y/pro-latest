@@ -338,7 +338,7 @@ test('[dimension tokens] sketch drawer cut, handle placement, rods, and storage 
     assertUsesToken(rel, 'INTERIOR_FITTINGS_DIMENSIONS');
   }
 
-  assertUsesToken('esm/native/builder/external_drawers_pipeline.ts', 'DRAWER_DIMENSIONS');
+  assertUsesToken('esm/native/builder/external_drawer_shelf.ts', 'DRAWER_DIMENSIONS');
 
   const cutsApply = read('esm/native/builder/post_build_sketch_door_cuts_apply.ts');
   assert.doesNotMatch(cutsApply, /overlap > 0\.005/);
@@ -450,10 +450,6 @@ test('[dimension tokens] final preview/sketch/drawer/interior sweep reads canoni
     ['esm/native/builder/render_preview_sketch_pipeline_linear.ts', ['SKETCH_BOX_DIMENSIONS']],
     ['esm/native/builder/render_preview_sketch_pipeline_object_boxes.ts', ['SKETCH_BOX_DIMENSIONS']],
     [
-      'esm/native/services/canvas_picking_interior_hover_int_drawer.ts',
-      ['DRAWER_DIMENSIONS', 'INTERIOR_FITTINGS_DIMENSIONS'],
-    ],
-    [
       'esm/native/services/canvas_picking_manual_layout_sketch_hover_module_context_base.ts',
       ['cmToM', 'SKETCH_BOX_DIMENSIONS', 'INTERIOR_FITTINGS_DIMENSIONS'],
     ],
@@ -485,10 +481,7 @@ test('[dimension tokens] final preview/sketch/drawer/interior sweep reads canoni
       'esm/native/services/canvas_picking_sketch_module_surface_preview_shelf.ts',
       ['SKETCH_BOX_DIMENSIONS', 'INTERIOR_FITTINGS_DIMENSIONS'],
     ],
-    [
-      'esm/native/services/canvas_picking_sketch_neighbor_measurements.ts',
-      ['DRAWER_DIMENSIONS', 'INTERIOR_FITTINGS_DIMENSIONS'],
-    ],
+    ['esm/native/services/canvas_picking_sketch_neighbor_measurements.ts', ['INTERIOR_FITTINGS_DIMENSIONS']],
     [
       'esm/native/services/canvas_picking_manual_layout_sketch_tools.ts',
       ['MATERIAL_DIMENSIONS', 'SKETCH_BOX_DIMENSIONS'],

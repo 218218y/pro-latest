@@ -1,5 +1,5 @@
 import type { CornerBuildMeta, CornerBuildUI } from './corner_state_normalize_contracts.js';
-import { CORNER_WING_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { CORNER_WING_DIMENSIONS, WARDROBE_DEFAULTS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { readBaseLegOptions, type BaseLegColor, type BaseLegStyle } from '../features/base_leg_support.js';
 import { getBasePlinthHeightM, normalizeBasePlinthHeightCm } from '../features/base_plinth_support.js';
 import {
@@ -13,6 +13,79 @@ import {
 
 const CORNER_WING = CORNER_WING_DIMENSIONS.wing;
 const CORNER_CONNECTOR = CORNER_WING_DIMENSIONS.connector;
+
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function readPositiveSpecialCm(config: unknown, key: string): number | null {
+  const cfg = isRecord(config) ? config : null;
+  const specialDims = isRecord(cfg?.specialDims) ? cfg.specialDims : null;
+  if (!specialDims) return null;
+  const n = readPositiveCm(specialDims[key]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function readPositiveConnectorSpecialCm(config: unknown, key: string): number | null {
+  const cfg = isRecord(config) ? config : null;
+  const specialDims = isRecord(cfg?.connectorSpecialDims) ? cfg.connectorSpecialDims : null;
+  if (!specialDims) return null;
+  const n = readPositiveCm(specialDims[key]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function readUiRawRecord(uiAny: CornerBuildUI): UnknownRecord | null {
+  return isRecord(uiAny.raw) ? uiAny.raw : null;
+}
+
+function readPositiveUiRawCm(uiAny: CornerBuildUI, key: string): number | null {
+  const raw = readUiRawRecord(uiAny);
+  const n = raw ? readPositiveCm(raw[key]) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function readCornerDoorsCount(uiAny: CornerBuildUI): number {
+  const rec = isRecord(uiAny) ? uiAny : {};
+  const raw = readUiRawRecord(uiAny);
+  const rawDoors = raw ? raw.cornerDoors : undefined;
+  const parsed = Math.round(
+    Number(rec.cornerDoors ?? rec.cornerDoorCount ?? rec.cornerDoorsCount ?? rawDoors)
+  );
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : WARDROBE_DEFAULTS.corner.doorsCount;
+}
+
+function resolveAutoCornerWidthForDoors(uiAny: CornerBuildUI): number {
+  const doors = readCornerDoorsCount(uiAny);
+  const perDoor = WARDROBE_DEFAULTS.byType.hinged.perDoorWidthCm;
+  return Math.max(perDoor, doors * perDoor);
+}
+
+function readRootCornerConfiguration(rootConfig: unknown): UnknownRecord | null {
+  const root = isRecord(rootConfig) ? rootConfig : null;
+  if (!root) return null;
+  const nested = isRecord(root.cornerConfiguration) ? root.cornerConfiguration : null;
+  return nested || root;
+}
+
+function hasTopCornerWidthSpecialDims(rootConfig: unknown): boolean {
+  const corner = readRootCornerConfiguration(rootConfig);
+  const specialDims = isRecord(corner?.specialDims) ? corner.specialDims : null;
+  if (!specialDims) return false;
+  const widthCm = readPositiveCm(specialDims.widthCm);
+  const baseWidthCm = readPositiveCm(specialDims.baseWidthCm);
+  return (Number.isFinite(widthCm) && widthCm > 0) || (Number.isFinite(baseWidthCm) && baseWidthCm > 0);
+}
+
+function resolveBottomCornerWidthBase(
+  uiAny: CornerBuildUI,
+  fallbackWingLengthCm: number,
+  rootConfig?: unknown
+): number {
+  if (hasTopCornerWidthSpecialDims(rootConfig)) return resolveAutoCornerWidthForDoors(uiAny);
+  return fallbackWingLengthCm;
+}
 
 export type CornerWingStackMetaState = {
   __stackKey: 'top' | 'bottom';
@@ -95,6 +168,8 @@ export function resolveCornerWingStackMeta(
 
 export function resolveCornerWingMetrics(args: {
   uiAny: CornerBuildUI;
+  config?: unknown;
+  rootConfig?: unknown;
   mainH: number;
   mainD: number;
   woodThick: number;
@@ -102,7 +177,8 @@ export function resolveCornerWingMetrics(args: {
   __stackKey: 'top' | 'bottom';
   __stackSplitEnabled: boolean;
 }): CornerWingMetricsState {
-  const { uiAny, mainH, mainD, startY, woodThick, __stackKey, __stackSplitEnabled } = args;
+  const { uiAny, config, rootConfig, mainH, mainD, startY, woodThick, __stackKey, __stackSplitEnabled } =
+    args;
 
   const cornerConnectorEnabled =
     typeof uiAny.cornerConnectorEnabled !== 'undefined' ? !!uiAny.cornerConnectorEnabled : true;
@@ -119,6 +195,19 @@ export function resolveCornerWingMetrics(args: {
 
   let __cornerDepthCM = readPositiveCm(uiAny.cornerDepth ?? uiAny.cornerDepthCm);
   if (!Number.isFinite(__cornerDepthCM) || __cornerDepthCM <= 0) __cornerDepthCM = NaN;
+
+  if (__stackSplitEnabled && __stackKey === 'bottom') {
+    wingLengthCM = resolveBottomCornerWidthBase(uiAny, wingLengthCM, rootConfig);
+
+    const lowerWingWidthCm = readPositiveSpecialCm(config, 'widthCm');
+    if (lowerWingWidthCm != null) wingLengthCM = lowerWingWidthCm;
+
+    const lowerRawWingDepthCm = readPositiveUiRawCm(uiAny, 'stackSplitLowerDepth');
+    if (lowerRawWingDepthCm != null) __cornerDepthCM = lowerRawWingDepthCm;
+
+    const lowerWingDepthCm = readPositiveSpecialCm(config, 'depthCm');
+    if (lowerWingDepthCm != null) __cornerDepthCM = lowerWingDepthCm;
+  }
 
   const __stackCornerTopBodyH =
     Number.isFinite(__cornerHeightCM) && __stackSplitEnabled && __stackKey === 'top'
@@ -176,7 +265,7 @@ export function resolveCornerWingFlags(args: {
     doorStyle: readStringValue(uiAny, 'doorStyle'),
     splitDoors: readBool(uiAny, 'splitDoors'),
     groovesEnabled: readBool(uiAny, 'groovesEnabled') || isMode(readModeConstant('GROOVE', 'groove')),
-    internalDrawersEnabled: readBool(uiAny, 'internalDrawersEnabled'),
+    internalDrawersEnabled: false,
     showHangerEnabled: readBool(uiAny, 'showHanger'),
     showContentsEnabled: readBool(uiAny, 'showContents'),
     hasCorniceEnabled: readBool(uiAny, 'hasCornice'),
@@ -187,6 +276,7 @@ export function resolveCornerWingFlags(args: {
 
 export function resolveCornerWingPlacement(args: {
   uiAny: CornerBuildUI;
+  config?: unknown;
   mainW: number;
   mainD: number;
   startY: number;
@@ -204,6 +294,7 @@ export function resolveCornerWingPlacement(args: {
 }): CornerWingPlacementState {
   const {
     uiAny,
+    config,
     mainW,
     mainD,
     startY,
@@ -276,6 +367,12 @@ export function resolveCornerWingPlacement(args: {
     : CORNER_CONNECTOR.defaultWallLengthM;
   if (!Number.isFinite(cornerWallL) || cornerWallL <= CORNER_CONNECTOR.minWallLengthM) {
     cornerWallL = CORNER_CONNECTOR.defaultWallLengthM;
+  }
+  if (__stackSplitEnabled && __stackKey === 'bottom') {
+    const lowerConnectorWallCm = readPositiveConnectorSpecialCm(config, 'widthCm');
+    if (lowerConnectorWallCm != null) {
+      cornerWallL = Math.max(CORNER_CONNECTOR.minWallLengthM, lowerConnectorWallCm / 100);
+    }
   }
 
   const rawOX = uiAny.cornerCabinetOffsetXcm;

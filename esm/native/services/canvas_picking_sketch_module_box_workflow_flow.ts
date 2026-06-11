@@ -4,6 +4,7 @@ import {
   type ResolveSketchBoxGeometryFn,
   type SketchModuleBoxActionState,
 } from './canvas_picking_sketch_module_box_workflow_shared.js';
+import type { VerticalOccupancyRange } from './canvas_picking_manual_layout_sketch_vertical_stack.js';
 import { resolveSketchModuleBoxRemoveAction } from './canvas_picking_sketch_module_box_workflow_remove.js';
 import { resolveSketchModuleBoxPlacementAction } from './canvas_picking_sketch_module_box_workflow_placement.js';
 
@@ -26,6 +27,7 @@ export function resolveSketchModuleBoxAction(args: {
   resolveSketchBoxGeometry: ResolveSketchBoxGeometryFn;
   enableCenterSnap?: boolean;
   removeIdHint?: string | null;
+  placementBlockers?: VerticalOccupancyRange[] | null;
 }): SketchModuleBoxActionState {
   const cursorY = clampSketchModuleBoxCenterY({
     centerY: Number(args.cursorY),
@@ -80,5 +82,6 @@ export function resolveSketchModuleBoxAction(args: {
     woodThick: Number(args.woodThick),
     boxGeo,
     resolveSketchBoxGeometry: args.resolveSketchBoxGeometry,
+    placementBlockers: args.placementBlockers,
   });
 }

@@ -1,3 +1,4 @@
+import type { AppContainer } from '../../../types';
 import {
   cmToM,
   INTERIOR_FITTINGS_DIMENSIONS,
@@ -25,6 +26,7 @@ export type SketchBoxPlacementMetrics = RecordMap & {
 export type ResolveSketchBoxGeometryFn = (args: SketchBoxGeometryArgs) => SketchBoxGeometry;
 
 export type CommitSketchModuleSurfaceToolArgs = {
+  App?: AppContainer;
   cfg: RecordMap;
   tool: string;
   hoverOk: boolean;

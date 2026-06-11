@@ -2,7 +2,7 @@ import type { UnknownRecord } from '../../../types';
 
 import { asRecord } from './record.js';
 import { runPlatformRenderFollowThrough } from './platform_access.js';
-import { getViewportSurface } from './render_access.js';
+import { getViewportSurface, refreshTrackedMirrorSurfacesNow } from './render_access.js';
 import type {
   BuilderRenderFollowThroughOpts,
   BuilderRenderFollowThroughResult,
@@ -30,6 +30,7 @@ export function renderBuilderViewportNowRuntime(App: unknown): BuilderViewportRe
   let renderedViewport = false;
   const renderFn = renderer && typeof renderer.render === 'function' ? renderer.render : null;
   if (renderFn && render?.scene && render?.camera) {
+    refreshTrackedMirrorSurfacesNow(App);
     renderFn.call(renderer, render.scene, render.camera);
     renderedViewport = true;
   }

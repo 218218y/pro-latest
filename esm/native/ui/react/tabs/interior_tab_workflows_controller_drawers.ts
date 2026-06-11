@@ -2,11 +2,15 @@ import type { AppContainer } from '../../../../../types';
 import { exitPrimaryMode } from '../actions/modes_actions.js';
 import {
   enterExtDrawerMode as interiorEnterExtDrawerMode,
+  enterManualLayoutMode as interiorEnterManualLayoutMode,
   toggleDividerMode as interiorToggleDividerMode,
-  toggleIntDrawerMode as interiorToggleDrawerMode,
   setInternalDrawersEnabled as interiorSetInternalDrawersEnabled,
 } from '../actions/interior_actions.js';
-import type { ExtDrawerType } from './interior_tab_helpers.js';
+import {
+  isSketchInternalDrawersTool,
+  mkSketchInternalDrawersTool,
+  type ExtDrawerType,
+} from './interior_tab_helpers.js';
 import type {
   InteriorTabWorkflowController,
   InteriorTabWorkflowStateLike,
@@ -16,6 +20,7 @@ import {
   clearInteriorDrawerModeBootstrap,
   scheduleInteriorDrawerModeBootstrap,
 } from './interior_tab_workflows_controller_shared.js';
+import { CLOSE_DOORS_OPTS } from './interior_tab_workflows_controller_contracts.js';
 
 type CreateInteriorTabDrawersWorkflowControllerArgs = {
   app: AppContainer;
@@ -51,22 +56,44 @@ export function createInteriorTabDrawersWorkflowController(
 
     toggleIntDrawerMode() {
       clearInteriorDrawerModeBootstrap(app);
-      interiorToggleDrawerMode(app);
+      const manualToolRaw = String(state.modeOpts?.manualTool || '');
+      if (state.isManualLayoutMode && isSketchInternalDrawersTool(manualToolRaw)) {
+        exitPrimaryMode(app, modeIds.manualLayout, CLOSE_DOORS_OPTS);
+        return;
+      }
+      interiorEnterManualLayoutMode(app, mkSketchInternalDrawersTool(state.sketchIntDrawerHeightCm));
     },
 
     setInternalDrawersEnabled(on: boolean) {
       const enabled = !!on;
+      const manualToolRaw = String(state.modeOpts?.manualTool || '');
+      const isSketchInternalDrawerEditing =
+        state.isManualLayoutMode && isSketchInternalDrawersTool(manualToolRaw);
+
       if (enabled === !!state.internalDrawersEnabled) {
         if (!enabled) {
           clearInteriorDrawerModeBootstrap(app);
           return;
         }
-        if (!state.hasIntDrawerData && !state.isIntDrawerMode) scheduleInteriorDrawerModeBootstrap(app);
+        if (!state.hasIntDrawerData && !isSketchInternalDrawerEditing) {
+          scheduleInteriorDrawerModeBootstrap(app);
+        }
         return;
       }
-      if (!enabled) clearInteriorDrawerModeBootstrap(app);
+
+      if (!enabled) {
+        clearInteriorDrawerModeBootstrap(app);
+        if (isSketchInternalDrawerEditing) exitPrimaryMode(app, modeIds.manualLayout, CLOSE_DOORS_OPTS);
+      }
+
       interiorSetInternalDrawersEnabled(app, enabled);
-      if (enabled && !state.internalDrawersEnabled && !state.hasIntDrawerData && !state.isIntDrawerMode) {
+
+      if (
+        enabled &&
+        !state.internalDrawersEnabled &&
+        !state.hasIntDrawerData &&
+        !isSketchInternalDrawerEditing
+      ) {
         scheduleInteriorDrawerModeBootstrap(app);
       }
     },

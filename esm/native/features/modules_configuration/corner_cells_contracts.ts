@@ -5,7 +5,6 @@ import type {
   CornerConfigurationLike as SharedCornerConfigurationLike,
   CornerCustomDataLike as SharedCornerCustomDataLike,
   ModuleConfigLike,
-  ModuleInternalDrawerSlotLike,
   NormalizedCornerConfigurationLike as SharedNormalizedCornerConfigurationLike,
   NormalizedCornerCustomDataLike as SharedNormalizedCornerCustomDataLike,
 } from '../../../../types';
@@ -21,8 +20,6 @@ export interface NormalizedLowerCornerConfigurationLike extends CornerConfigurat
   layout: string;
   extDrawersCount: number;
   hasShoeDrawer: boolean;
-  intDrawersList: ModuleInternalDrawerSlotLike[];
-  intDrawersSlot: number;
   isCustom: boolean;
   gridDivisions: number;
   customData: NormalizedCornerCustomDataLike;

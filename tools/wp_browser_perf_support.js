@@ -1262,11 +1262,12 @@ function normalizeUserFlowJourneyName(value) {
 function inferUserFlowJourneyName(stepName) {
   const name = typeof stepName === 'string' ? stepName.trim() : '';
   if (!name) return 'uncategorized';
-  if (name.startsWith('boot.') || name.startsWith('tab.render.open')) return 'boot-and-shell';
+  if (name.startsWith('boot.') || name.startsWith('tab.settings.open')) return 'boot-and-shell';
   if (name.startsWith('render.') || name.startsWith('cabinet-core.')) {
     return 'cabinet-core-authoring';
   }
-  if (name.startsWith('tab.export.open') || name.startsWith('export.')) return 'export-authoring';
+  if (name.startsWith('export.')) return 'export-authoring';
+  if (name.startsWith('settings.visual.')) return 'cabinet-core-authoring';
   if (name.startsWith('cloud-sync.')) return 'cloud-sync-controls';
   if (name.startsWith('order-pdf.')) return 'order-pdf-lifecycle';
   if (name.startsWith('settings-backup.')) return 'settings-backup-resilience';

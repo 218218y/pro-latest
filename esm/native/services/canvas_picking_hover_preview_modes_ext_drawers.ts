@@ -1,4 +1,6 @@
 import { getThreeMaybe } from '../runtime/three_access.js';
+import { shouldBlockDrawerBuildInHexCell } from '../features/hex_cell/index.js';
+import { resolveExternalDrawerFitFromBounds } from '../../shared/wardrobe_construction_validation_shared.js';
 import {
   classifyCrossDrawerPart,
   resolveExternalCrossDrawerStackPreview,
@@ -13,6 +15,43 @@ import {
   __withAppThree,
   type ExtDrawersHoverPreviewArgs,
 } from './canvas_picking_hover_preview_modes_shared.js';
+
+function readFiniteFromRecord(rec: Record<string, unknown> | null | undefined, key: string): number | null {
+  const value = rec ? rec[key] : null;
+  const n = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+  return Number.isFinite(n) ? n : null;
+}
+
+function externalDrawerHoverBlockedByFit(args: {
+  target: { bottomY: number; topY: number; woodThick: number; info?: Record<string, unknown> | null };
+  drawerType: string;
+  hasShoe: boolean;
+  currentCount: number;
+  drawerCount: number;
+  op: string;
+}): boolean {
+  if (args.op === 'remove') return false;
+  const info = args.target.info || null;
+  const targetWoodThick = Number(args.target.woodThick);
+  const targetBottomY = Number(args.target.bottomY);
+  const targetTopY = Number(args.target.topY);
+  const woodThick =
+    readFiniteFromRecord(info, 'woodThick') ?? (Number.isFinite(targetWoodThick) ? targetWoodThick : 0);
+  const startY =
+    readFiniteFromRecord(info, 'startY') ??
+    (Number.isFinite(targetBottomY) ? targetBottomY - woodThick : NaN);
+  const effectiveTopY = readFiniteFromRecord(info, 'effectiveTopY') ?? targetTopY;
+  if (!Number.isFinite(startY) || !Number.isFinite(effectiveTopY)) return false;
+
+  const fit = resolveExternalDrawerFitFromBounds({
+    startY,
+    effectiveTopY,
+    woodThick,
+    hasShoe: args.drawerType === 'shoe' ? true : args.hasShoe,
+    regCount: args.drawerType === 'shoe' ? args.currentCount : args.drawerCount,
+  });
+  return !fit.fitsRequested;
+}
 
 export function tryHandleExtDrawersHoverPreview(args: ExtDrawersHoverPreviewArgs): boolean {
   if (!args.isExtDrawerEditMode) return false;
@@ -103,6 +142,18 @@ export function tryHandleExtDrawersHoverPreview(args: ExtDrawersHoverPreviewArgs
     const hasShoe = !!cfgRef?.hasShoeDrawer;
     const op =
       drawerType === 'shoe' ? (hasShoe ? 'remove' : 'add') : currentCount === drawerCount ? 'remove' : 'add';
+    const blockedByHexCell = op !== 'remove' && shouldBlockDrawerBuildInHexCell(cfgRef);
+    const blockedByFit =
+      !blockedByHexCell &&
+      externalDrawerHoverBlockedByFit({
+        target,
+        drawerType,
+        hasShoe,
+        currentCount,
+        drawerCount,
+        op,
+      });
+    const previewOp = blockedByHexCell || blockedByFit ? 'blocked' : op;
 
     const outerW =
       selectorBox && selectorBox.width > 0
@@ -168,7 +219,8 @@ export function tryHandleExtDrawersHoverPreview(args: ExtDrawersHoverPreviewArgs
       d: visualT,
       woodThick: target.woodThick,
       drawers,
-      op,
+      op: previewOp,
+      blockedReason: blockedByHexCell ? 'hex-cell' : blockedByFit ? 'no-room' : undefined,
     });
     return true;
   } catch {

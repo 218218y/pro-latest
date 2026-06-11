@@ -3,6 +3,9 @@ import {
   setCfgModulesConfiguration,
   setUiCellDimsDepth,
   setUiCellDimsHeight,
+  setUiCellDimsHexDoorWidth,
+  setUiCellDimsHexMode,
+  setUiCellDimsHexProtrusion,
   setUiCellDimsWidth,
   setUiWidth,
 } from '../actions/store_actions.js';
@@ -19,6 +22,7 @@ import type { StructureTabViewState } from './use_structure_tab_view_state_contr
 
 export const STRUCTURE_CELL_DIMS_MODE_FALLBACK_ID = 'cell_dims';
 export const STRUCTURE_CELL_DIMS_MODE_MESSAGE = 'מצב עריכה: הקלד מידות ואז לחץ על תא בארון כדי להחיל';
+export const STRUCTURE_HEX_CELL_DIMS_MODE_MESSAGE = 'מצב עריכה: לחץ על תא כדי להפוך אותו לתא משושה';
 
 function readNoBuildNoHistoryImmediateMeta(meta: MetaActionsNamespaceLike, source: string): ActionMetaLike {
   if (typeof meta.noHistoryImmediate === 'function') {
@@ -67,11 +71,32 @@ export function createStructureWorkflowOps(
       });
     },
     clearCellDim: key => {
-      const source = `react:structure:cellDims${key === 'width' ? 'Width' : key === 'height' ? 'Height' : 'Depth'}:clear`;
+      const source = `react:structure:cellDims${
+        key === 'width'
+          ? 'Width'
+          : key === 'height'
+            ? 'Height'
+            : key === 'depth'
+              ? 'Depth'
+              : key === 'hexProtrusion'
+                ? 'HexProtrusion'
+                : 'HexDoorWidth'
+      }:clear`;
       const actionMeta = meta.uiOnlyImmediate(source);
       if (key === 'width') setUiCellDimsWidth(app, null, actionMeta);
       else if (key === 'height') setUiCellDimsHeight(app, null, actionMeta);
-      else setUiCellDimsDepth(app, null, actionMeta);
+      else if (key === 'depth') setUiCellDimsDepth(app, null, actionMeta);
+      else if (key === 'hexProtrusion') {
+        setUiCellDimsHexProtrusion(app, null, actionMeta);
+        setUiCellDimsHexMode(app, true, actionMeta);
+      } else {
+        setUiCellDimsHexDoorWidth(app, null, actionMeta);
+        setUiCellDimsHexMode(app, true, actionMeta);
+      }
+    },
+    setCellDimsHexMode: on => {
+      const source = on ? 'react:structure:cellDimsHex:enter' : 'react:structure:cellDimsHex:exit';
+      setUiCellDimsHexMode(app, !!on, meta.uiOnlyImmediate(source));
     },
     setAutoWidth: nextWidth => {
       const source = 'react:structure:width:auto';

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { resetAllEditModes, syncWardrobeState } from '../esm/native/services/edit_state.ts';
+import { consumeDrawerRebuildIntent, setDrawerRebuildIntent } from '../esm/native/runtime/doors_access.ts';
 
 function createAppForReset(primary = 'manual_layout') {
   const modePatches: Array<Record<string, unknown>> = [];
@@ -162,6 +163,15 @@ test('resetAllEditModes clears active interior tool state, edit chrome, and rout
     ),
     true
   );
+});
+
+test('resetAllEditModes clears stale drawer rebuild intent with drawer open selection', () => {
+  const { App } = createAppForReset('divider');
+
+  setDrawerRebuildIntent(App, 'drawer-7');
+  resetAllEditModes(App);
+
+  assert.equal(consumeDrawerRebuildIntent(App), null);
 });
 
 test('syncWardrobeState refreshes builder buildUi + runtime dims through canonical seams', () => {

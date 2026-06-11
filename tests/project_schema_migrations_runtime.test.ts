@@ -33,7 +33,7 @@ test('project schema migrations canonicalize segmented door maps and infer drawe
     doorStyleMap: { d1: 'profile' },
     curtainMap: { d1: 'linen' },
     mirrorLayoutMap: { d1: [{ x: 1, y: 2, width: 3, height: 4 }] },
-    modulesConfiguration: [{ intDrawersSlot: '2' }],
+    modulesConfiguration: [{}],
     cornerConfiguration: {
       modulesConfiguration: 'bad-shape',
       stackSplitLower: { modulesConfiguration: 'bad-shape' },
@@ -66,7 +66,7 @@ test('project schema migrations canonicalize segmented door maps and infer drawe
   assert.equal(data.toggles.showHanger, true);
   assert.equal(data.toggles.showDimensions, true);
   assert.equal(data.toggles.globalClickMode, true);
-  assert.equal(data.toggles.internalDrawers, true);
+  assert.equal(data.toggles.internalDrawers, undefined);
   assert.equal('hingeDoorsMap' in data, false);
   assert.equal('grooveMap' in data, false);
   assert.equal('modulesConfiguration' in data.settings, false);

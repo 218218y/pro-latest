@@ -2,6 +2,12 @@ import {
   INTERIOR_FITTINGS_DIMENSIONS,
   MATERIAL_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import {
+  SHELF_GROUP_PART_ID,
+  createModuleShelfPartId,
+  markShelfBoardUserData,
+  resolveShelfPartMaterial,
+} from '../features/shelf_part_identity.js';
 import type {
   InteriorGroupLike,
   InteriorMaterialLike,
@@ -47,6 +53,10 @@ export function createAddCustomGridShelf(args: {
   ) => unknown;
   addFoldedClothes: unknown;
   currentShelfMat: unknown;
+  currentBraceShelfMat?: unknown;
+  moduleKey: string;
+  getPartMaterial?: (partId: string) => unknown;
+  getPartColorValue?: (partId: string) => unknown;
   braceSet: Record<number, true>;
   shelfSet: Record<number, true>;
   shelfVariantByIndex: Record<number, ShelfVariant>;
@@ -70,6 +80,10 @@ export function createAddCustomGridShelf(args: {
     createBoard,
     addFoldedClothes,
     currentShelfMat,
+    currentBraceShelfMat,
+    moduleKey,
+    getPartMaterial,
+    getPartColorValue,
     braceSet,
     shelfSet,
     shelfVariantByIndex,
@@ -113,7 +127,13 @@ export function createAddCustomGridShelf(args: {
     return { geo: braceSeamGeoCache[key], mat: braceSeamMat };
   };
 
-  const addBraceDarkSeams = (shelfY: number, shelfZ: number, shelfDepth: number, isBrace: boolean) => {
+  const addBraceDarkSeams = (
+    shelfY: number,
+    shelfZ: number,
+    shelfDepth: number,
+    isBrace: boolean,
+    shelfPartId: string
+  ) => {
     if (!isBrace || !threeSurface) return;
     const resources = ensureBraceSeamResources(shelfDepth);
     if (!resources) return;
@@ -126,7 +146,8 @@ export function createAddCustomGridShelf(args: {
       mesh.castShadow = false;
       mesh.receiveShadow = false;
       mesh.userData = mesh.userData || {};
-      mesh.userData.partId = 'all_shelves';
+      mesh.userData.partId = shelfPartId;
+      markShelfBoardUserData(mesh.userData, { groupPartId: SHELF_GROUP_PART_ID });
       mesh.userData.__kind = 'brace_seam';
       group.add?.(mesh);
     };
@@ -147,7 +168,8 @@ export function createAddCustomGridShelf(args: {
     shelfZ: number,
     shelfDepth: number,
     shelfH: number,
-    isBrace: boolean
+    isBrace: boolean,
+    shelfPartId: string
   ) => {
     if (isBrace || !threeSurface) return;
     if (!(innerW > 0) || !(shelfDepth > 0)) return;
@@ -170,7 +192,8 @@ export function createAddCustomGridShelf(args: {
       if (mesh.rotation) mesh.rotation.z = Math.PI / 2;
       mesh.position?.set?.(x, yPin, z);
       mesh.userData = mesh.userData || {};
-      mesh.userData.partId = 'all_shelves';
+      mesh.userData.partId = shelfPartId;
+      markShelfBoardUserData(mesh.userData, { groupPartId: SHELF_GROUP_PART_ID });
       mesh.userData.__kind = 'shelf_pin';
       const material = asMaterial(mesh.material);
       if (material) material.__keepMaterial = true;
@@ -235,14 +258,33 @@ export function createAddCustomGridShelf(args: {
     const shelfZ = isBrace ? internalZ : braceMetrics.regularZ;
     const shelfW = isBrace ? braceMetrics.braceShelfWidth : braceMetrics.regularShelfWidth;
     const shelfX = isBrace ? braceMetrics.braceCenterX : internalCenterX;
-    const material = isGlass && glassMat ? glassMat : currentShelfMat;
+    const shelfPartId = createModuleShelfPartId(moduleKey, gridIndex);
+    const material =
+      isGlass && glassMat
+        ? glassMat
+        : resolveShelfPartMaterial({
+            partId: shelfPartId,
+            currentShelfMat: isBrace ? currentBraceShelfMat || currentShelfMat : currentShelfMat,
+            getPartColorValue,
+            getPartMaterial,
+          });
 
     const mesh = asMesh(
-      createBoard(shelfW, shelfH, shelfDepth, shelfX, shelfY, shelfZ, material, 'all_shelves')
+      createBoard(shelfW, shelfH, shelfDepth, shelfX, shelfY, shelfZ, material, shelfPartId)
     );
 
-    addBraceDarkSeams(shelfY, shelfZ, shelfDepth, isBrace);
-    addShelfPins(shelfY, shelfZ, shelfDepth, shelfH, isBrace);
+    if (mesh && typeof mesh === 'object') {
+      mesh.userData = mesh.userData || {};
+      markShelfBoardUserData(mesh.userData, {
+        groupPartId: SHELF_GROUP_PART_ID,
+        shelfIndex: gridIndex,
+        variant: shelfVariant,
+        isBrace,
+      });
+    }
+
+    addBraceDarkSeams(shelfY, shelfZ, shelfDepth, isBrace, shelfPartId);
+    addShelfPins(shelfY, shelfZ, shelfDepth, shelfH, isBrace, shelfPartId);
 
     if (isGlass && mesh && typeof mesh === 'object') {
       mesh.userData = mesh.userData || {};

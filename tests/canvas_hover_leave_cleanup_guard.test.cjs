@@ -26,11 +26,13 @@ expectIncludes(
   "import { createCanvasPointerInteractionOps } from './canvas_interactions_pointer.js';",
   'pointer seam import'
 );
-expectIncludes(
-  src,
-  "import { clearSketchHoverPreview, getBrowserTimers, getBuilderRenderOps } from '../../services/api.js';",
-  'canvas interactions public api import'
-);
+if (
+  !/import\s*\{[\s\S]*clearSketchHoverPreview[\s\S]*getBrowserTimers[\s\S]*getBuilderRenderOps[\s\S]*\}\s*from '\.\.\/\.\.\/services\/api\.js';/.test(
+    src
+  )
+) {
+  throw new Error('Missing canvas interactions public api import');
+}
 if (src.includes('../../runtime/builder_service_access.js')) {
   throw new Error('canvas_interactions must not import builder render ops from runtime directly');
 }
@@ -39,11 +41,13 @@ if (src.includes('../../services/canvas_picking_local_helpers.js')) {
     'canvas_interactions must not import sketch hover helpers from services internals directly'
   );
 }
-expectIncludes(
-  src,
-  'export function createClearTransientHoverPreview(App: AppContainer, domEl: HTMLElement, state: CanvasInteractionState) {',
-  'clear helper seam'
-);
+if (
+  !/export function createClearTransientHoverPreview\(\s*App: AppContainer,\s*domEl: HTMLElement,\s*state: CanvasInteractionState\s*\)\s*\{/.test(
+    src
+  )
+) {
+  throw new Error('Missing clear helper seam');
+}
 expectIncludes(
   src,
   "ro.hideSketchPlacementPreview({ App, __reason: 'canvas.pointerleave.hideSketchPlacementPreview' });",

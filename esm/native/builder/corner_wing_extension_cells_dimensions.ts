@@ -1,4 +1,6 @@
 import { CORNER_WING_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { resolveExternalDrawerFitFromBody } from '../../shared/wardrobe_construction_validation_shared.js';
+import { resolveCornerCellHexGeometry } from './corner_wing_hex_cell_geometry.js';
 import type { CornerCell, CornerCellCfg } from './corner_geometry_plan.js';
 import type {
   CornerWingCellCfgResolver,
@@ -52,11 +54,21 @@ export function buildCornerWingCells(
     cursorX += width;
     const key = `corner:${ci}`;
     const cfgCell = cellCfgs[ci];
-
-    const drawerHeightTotal = resolveCornerWingDrawerHeight(cfgCell);
-    const effectiveBottomY = args.startY + args.woodThick + drawerHeightTotal;
-
     const { bodyHeight, hasActiveHeight } = resolveCornerWingCellHeight(args, cfgCell, globalAbsHeightCm);
+    const drawerFit = resolveExternalDrawerFitFromBody({
+      startY: args.startY,
+      cabinetBodyHeight: bodyHeight,
+      woodThick: args.woodThick,
+      hasShoe: cfgCell.hasShoeDrawer,
+      regCount: cfgCell.extDrawersCount,
+    });
+    const drawerHeightTotal = drawerFit.drawerHeightTotal;
+    const effectiveBottomY = args.startY + args.woodThick + drawerHeightTotal;
+    const effectiveCfgCell =
+      drawerFit.hasShoe === cfgCell.hasShoeDrawer && drawerFit.regCount === cfgCell.extDrawersCount
+        ? cfgCell
+        : { ...cfgCell, hasShoeDrawer: drawerFit.hasShoe, extDrawersCount: drawerFit.regCount };
+
     const effectiveTopY = args.startY + bodyHeight - args.woodThick;
     const gridDivisions =
       cfgCell.isCustom && cfgCell.gridDivisions
@@ -65,6 +77,13 @@ export function buildCornerWingCells(
     const localGridStep = (effectiveTopY - effectiveBottomY) / gridDivisions;
 
     const { depth, hasActiveDepth } = resolveCornerWingCellDepth(args, cfgCell, globalDepthCm);
+    const hexGeometry = resolveCornerCellHexGeometry({
+      cfgCell,
+      cellWidthM: width,
+      defaultDepthM: args.wingD,
+      woodThickM: args.woodThick,
+    });
+    const renderDepth = hexGeometry ? hexGeometry.sideDepthM : depth;
 
     cornerCells.push({
       idx: ci,
@@ -75,11 +94,12 @@ export function buildCornerWingCells(
       startX,
       centerX,
       bodyHeight,
-      depth,
+      depth: renderDepth,
       __hasActiveHeight: hasActiveHeight,
       __hasActiveDepth: hasActiveDepth,
-      __hasActiveSpecialDims: hasActiveHeight || hasActiveDepth,
-      cfg: cfgCell,
+      __hasActiveSpecialDims: hasActiveHeight || hasActiveDepth || !!hexGeometry,
+      __hexCellGeometry: hexGeometry,
+      cfg: effectiveCfgCell,
       drawerHeightTotal,
       effectiveBottomY,
       effectiveTopY,
@@ -123,10 +143,13 @@ function resolveCornerWingCellWidths(
     const fixedWidth = fixedWidths[ci];
     let width = fixedWidth != null ? fixedWidth : (remainingWidth * doorsUnits) / denominator;
     if (!Number.isFinite(width) || width <= 0) width = defaultCellWidths[ci];
-    const minWidth = Math.max(
-      CORNER_WING_DIMENSIONS.cells.minWidthM,
-      doorsUnits * CORNER_WING_DIMENSIONS.cells.minDoorUnitWidthM
-    );
+    const minWidth =
+      fixedWidth != null
+        ? Math.max(CORNER_WING_DIMENSIONS.cells.minWidthM, CORNER_WING_DIMENSIONS.cells.minDoorUnitWidthM)
+        : Math.max(
+            CORNER_WING_DIMENSIONS.cells.minWidthM,
+            doorsUnits * CORNER_WING_DIMENSIONS.cells.minDoorUnitWidthM
+          );
     if (width < minWidth) width = minWidth;
     widths.push(width);
   }
@@ -150,15 +173,6 @@ function resolveCornerWingCellWidths(
   }
 
   return widths;
-}
-
-function resolveCornerWingDrawerHeight(cfgCell: CornerCellCfg): number {
-  let total = 0;
-  if (cfgCell.hasShoeDrawer) total += CORNER_WING_DIMENSIONS.drawers.shoeHeightM;
-  if (cfgCell.extDrawersCount > 0) {
-    total += cfgCell.extDrawersCount * CORNER_WING_DIMENSIONS.drawers.externalRegularHeightM;
-  }
-  return total;
 }
 
 function resolveCornerWingCellHeight(

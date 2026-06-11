@@ -10,8 +10,6 @@ function expectedLowerModuleConfig(): AnyRecord {
     layout: 'shelves',
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersSlot: 0,
-    intDrawersList: [],
     isCustom: true,
     gridDivisions: 6,
     customData: {
@@ -27,8 +25,6 @@ function expectedLowerCornerConfig(): AnyRecord {
     layout: 'shelves',
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersSlot: 0,
-    intDrawersList: [],
     isCustom: true,
     gridDivisions: 6,
     customData: {

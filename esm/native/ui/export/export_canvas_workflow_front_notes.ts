@@ -41,9 +41,13 @@ export function captureFrontNotesTransform(
   const rendererSourceRect = readCanvasImageSourceRect(deps._getRendererCanvasSource(input.renderer));
   const captureRect = rendererSourceRect || containerRect;
 
-  // The notes are authored in the currently visible viewport, so the pre-export
-  // side of the transform must be captured before any export-only camera move.
-  deps._guard(App, 'export.prerenderCurrentForNotes', () => {
+  // Regular wardrobe exports are intentionally normalized to the front preset
+  // before measuring the notes baseline. If the user leaves the live viewport
+  // angled (side/top/back), using that live camera as the pre-zoom side makes
+  // the plane remap skew the text. The export image itself is front + auto-zoom,
+  // so the notes transform must be front-baseline -> front-auto-zoom as well.
+  deps._snapCameraToFrontPreset(App);
+  deps._guard(App, 'export.prerenderFrontBaselineForNotes', () => {
     deps._renderSceneForExport(App, input.renderer, input.scene, input.camera);
   });
 
@@ -57,10 +61,6 @@ export function captureFrontNotesTransform(
     : null;
   const prePv = deps._captureCameraPvInfo(App, input.camera);
 
-  deps._snapCameraToFrontPreset(App);
-  deps._guard(App, 'export.prerenderFrontForNotes', () => {
-    deps._renderSceneForExport(App, input.renderer, input.scene, input.camera);
-  });
   deps.autoZoomCamera(App);
   deps.scaleViewportCameraDistance(App, 1.05);
 

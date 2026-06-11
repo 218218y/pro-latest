@@ -101,6 +101,45 @@ export function validateRuntimeConfig(
     }
   }
 
+  if (typeof out.storageNamespace !== 'undefined') {
+    if (typeof out.storageNamespace !== 'string') {
+      issues.push({
+        kind: 'warn',
+        path: 'storageNamespace',
+        message: 'storageNamespace must be a string (ignored)',
+      });
+      delete out.storageNamespace;
+    } else {
+      out.storageNamespace = out.storageNamespace.trim();
+    }
+  }
+
+  if (typeof out.orderPdf !== 'undefined') {
+    if (!isPlainObject(out.orderPdf)) {
+      issues.push({
+        kind: 'warn',
+        path: 'orderPdf',
+        message: 'orderPdf must be an object (ignored)',
+      });
+      delete out.orderPdf;
+    } else {
+      const orderPdf = { ...out.orderPdf } as Record<string, unknown>;
+      if (typeof orderPdf.templateUrl !== 'undefined') {
+        if (typeof orderPdf.templateUrl !== 'string' || !orderPdf.templateUrl.trim()) {
+          issues.push({
+            kind: 'warn',
+            path: 'orderPdf.templateUrl',
+            message: 'orderPdf.templateUrl must be a non-empty string (ignored)',
+          });
+          delete orderPdf.templateUrl;
+        } else {
+          orderPdf.templateUrl = orderPdf.templateUrl.trim();
+        }
+      }
+      out.orderPdf = orderPdf;
+    }
+  }
+
   if (typeof out.supabaseCloudSync !== 'undefined') {
     const next = validateSupabaseCloudSync(out.supabaseCloudSync, issues, opts);
     if (next) out.supabaseCloudSync = next;

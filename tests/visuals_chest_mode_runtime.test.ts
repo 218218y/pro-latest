@@ -1,9 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { makeDrawerBoxPartId } from '../esm/native/features/drawer_box_identity.ts';
 import { buildChestOnly } from '../esm/native/builder/visuals_chest_mode.ts';
-import { resolveChestModeBodyMaterialState } from '../esm/native/builder/visuals_chest_mode_materials.ts';
+import {
+  resolveChestModeBodyMaterialState,
+  resolveChestModeDrawerBoxMaterial,
+  resolveChestModeMaterialPalette,
+} from '../esm/native/builder/visuals_chest_mode_materials.ts';
 import { resolveChestModeBuildInputs } from '../esm/native/builder/visuals_chest_mode_inputs.ts';
+import {
+  CARCASS_BASE_DIMENSIONS,
+  CHEST_MODE_DIMENSIONS,
+} from '../esm/shared/wardrobe_dimension_tokens_shared.ts';
 
 class FakeVector3 {
   x: number;
@@ -71,6 +80,19 @@ class FakeMaterial {
 }
 class FakeMeshStandardMaterial extends FakeMaterial {}
 class FakeMeshBasicMaterial extends FakeMaterial {}
+
+function assertChestDimensionScales(
+  actual: unknown[],
+  expectedKinds: Array<'total' | 'segment'>,
+  message: string
+) {
+  const expected = expectedKinds.map(kind =>
+    kind === 'total'
+      ? CHEST_MODE_DIMENSIONS.dimensionGuideTextScale.total
+      : CHEST_MODE_DIMENSIONS.dimensionGuideTextScale.segment
+  );
+  assert.deepEqual(actual, expected, message);
+}
 
 function createChestApp(opts: { createDoorVisual?: (...args: any[]) => unknown } = {}) {
   const dimensionCalls: any[] = [];
@@ -221,6 +243,56 @@ test('visuals chest mode input/material helpers normalize chest-only UI and text
   );
 });
 
+test('visuals chest mode material palette keeps drawer boxes on independent white body material', () => {
+  const calls: any[] = [];
+  const palette = resolveChestModeMaterialPalette({
+    App: {} as any,
+    bodyState: { colorHex: '#445566', useTexture: false },
+    legColor: 'nickel',
+    getMaterial(color: unknown, part: unknown, useTexture?: unknown) {
+      const material = { color, part, useTexture: !!useTexture };
+      calls.push(material);
+      return material as any;
+    },
+  });
+
+  assert.deepEqual(palette.globalBodyMat, { color: '#445566', part: 'front', useTexture: false });
+  assert.deepEqual(palette.drawerBoxMat, { color: '#ffffff', part: 'body', useTexture: false });
+  assert.notEqual(palette.drawerBoxMat, palette.globalBodyMat);
+  assert.deepEqual(calls[0], { color: '#445566', part: 'front', useTexture: false });
+  assert.deepEqual(calls[1], { color: '#ffffff', part: 'body', useTexture: false });
+});
+
+test('visuals chest mode drawer box material follows only explicit drawer-box paint', () => {
+  const globalMat = { id: 'global' };
+  const drawerPaintMat = { id: 'drawer-paint' };
+
+  assert.equal(
+    resolveChestModeDrawerBoxMaterial({
+      globalDrawerBoxMat: globalMat,
+      drawerBoxMaterial: drawerPaintMat,
+      drawerBoxColorValue: '#123456',
+    }),
+    drawerPaintMat
+  );
+  assert.equal(
+    resolveChestModeDrawerBoxMaterial({
+      globalDrawerBoxMat: globalMat,
+      drawerBoxMaterial: { id: 'mirror' },
+      drawerBoxColorValue: 'mirror',
+    }),
+    globalMat
+  );
+  assert.equal(
+    resolveChestModeDrawerBoxMaterial({
+      globalDrawerBoxMat: globalMat,
+      drawerBoxMaterial: { id: 'glass' },
+      drawerBoxColorValue: 'glass',
+    }),
+    globalMat
+  );
+});
+
 test('visuals chest mode build creates wide-leg chest drawers, mirror override, and dimensions via focused owners', () => {
   const { App, wardrobeGroup, dimensionCalls, outlined, getRenderCalls, getUpdateCalls } = createChestApp();
   buildChestOnly(App, {
@@ -251,14 +323,25 @@ test('visuals chest mode build creates wide-leg chest drawers, mirror override, 
   );
   assert.ok(mirrorDrawer);
   assert.deepEqual(mirrorDrawer.children[0].material, { mirror: true });
+  const mirrorDrawerBox = mirrorDrawer.children[1];
+  assert.deepEqual(
+    mirrorDrawerBox.children[0].material,
+    { color: '#ffffff', part: 'body', useTexture: false },
+    'mirror drawer boxes should keep the independent white drawer-box material instead of becoming mirror material'
+  );
 
   const labels = dimensionCalls.map(call => call[3]);
   assert.deepEqual(labels, ['160', '90']);
+  assertChestDimensionScales(
+    dimensionCalls.map(call => call[4]),
+    ['total', 'total'],
+    'chest-only total width and height dimensions should use the compact black total style'
+  );
   assert.ok(outlined.length >= 10);
 });
 
-test('visuals chest mode build adds commode back panel with tracked mirror surface when enabled', () => {
-  const { App, wardrobeGroup } = createChestApp();
+test('visuals chest mode build adds commode back panel, tracked mirror surface, and commode dimensions', () => {
+  const { App, wardrobeGroup, dimensionCalls } = createChestApp();
   buildChestOnly(App, {
     H: 0.9,
     totalW: 1.6,
@@ -288,6 +371,95 @@ test('visuals chest mode build adds commode back panel with tracked mirror surfa
   assert.equal(mirror.material.mirror, true);
   assert.equal(mirror.userData.__wpMirrorSurface, true);
   assert.equal(App.render.meta.mirrors.includes(mirror), true);
+
+  const labels = dimensionCalls.map(call => call[3]);
+  assert.deepEqual(labels, ['160', '150', '90', '110', '200']);
+  assertChestDimensionScales(
+    dimensionCalls.map(call => call[4]),
+    ['total', 'segment', 'segment', 'segment', 'total'],
+    'commode total width and combined total height should use the compact black total style; segment dimensions stay blue'
+  );
+  const heightLines = dimensionCalls.filter(call => call[0].x === call[1].x);
+  assert.equal(heightLines.length, 3);
+  assert.equal(heightLines[0][0].x < heightLines[2][0].x, true);
+});
+
+test('visuals chest mode commode dimensions do not duplicate mirror width when it follows the chest width', () => {
+  const { App, dimensionCalls } = createChestApp();
+  buildChestOnly(App, {
+    H: 0.9,
+    totalW: 1.6,
+    D: 0.45,
+    drawersCount: 3,
+    baseType: 'legs',
+    baseLegStyle: 'square',
+    baseLegColor: 'nickel',
+    baseLegHeightCm: 15,
+    baseLegWidthCm: 5,
+    colorChoice: '#ffffff',
+    chestCommodeEnabled: true,
+    chestCommodeMirrorHeightCm: 110,
+    chestCommodeMirrorWidthCm: 160,
+  });
+
+  const labels = dimensionCalls.map(call => call[3]);
+  assert.deepEqual(labels, ['160', '90', '110', '200']);
+  assertChestDimensionScales(
+    dimensionCalls.map(call => call[4]),
+    ['total', 'segment', 'segment', 'total'],
+    'matching-width commode dimensions should keep chest width and combined height compact-emphasized'
+  );
+});
+
+test('visuals chest mode build keeps drawer boxes white unless the drawer box is painted directly', () => {
+  const { App, wardrobeGroup } = createChestApp();
+  const secondDrawerBoxId = makeDrawerBoxPartId('chest_drawer_1');
+  App.store.getState = () => ({
+    config: {
+      showDimensions: false,
+      isMultiColorMode: true,
+      individualColors: { chest_drawer_0: '#884422', [secondDrawerBoxId]: '#226688' },
+    },
+    ui: {},
+    runtime: {},
+    mode: {},
+    meta: {},
+  });
+
+  buildChestOnly(App, {
+    H: 0.9,
+    totalW: 1.6,
+    D: 0.45,
+    drawersCount: 2,
+    baseType: 'legs',
+    baseLegStyle: 'square',
+    baseLegColor: 'nickel',
+    baseLegHeightCm: 15,
+    baseLegWidthCm: 5,
+    colorChoice: '#ffffff',
+  });
+
+  const firstDrawer = wardrobeGroup.children.find(
+    (child: any) => child?.userData?.partId === 'chest_drawer_0'
+  );
+  const secondDrawer = wardrobeGroup.children.find(
+    (child: any) => child?.userData?.partId === 'chest_drawer_1'
+  );
+  assert.ok(firstDrawer);
+  assert.ok(secondDrawer);
+
+  const firstDrawerBoxId = makeDrawerBoxPartId('chest_drawer_0');
+  const expectedFrontPaintMat = { color: '#884422', part: 'front', useTexture: false };
+  const expectedWhiteBoxMat = { color: '#ffffff', part: 'body', useTexture: false };
+  const expectedBoxPaintMat = { color: '#226688', part: 'front', useTexture: false };
+  assert.deepEqual(firstDrawer.children[0].material, expectedFrontPaintMat);
+  assert.deepEqual(firstDrawer.children[1].children[0].material, expectedWhiteBoxMat);
+  assert.deepEqual(firstDrawer.children[2].material, expectedWhiteBoxMat);
+  assert.equal(firstDrawer.children[1].userData.partId, firstDrawerBoxId);
+  assert.equal(firstDrawer.children[2].userData.partId, firstDrawerBoxId);
+  assert.deepEqual(secondDrawer.children[1].children[0].material, expectedBoxPaintMat);
+  assert.deepEqual(secondDrawer.children[2].material, expectedBoxPaintMat);
+  assert.equal(secondDrawer.children[1].userData.partId, secondDrawerBoxId);
 });
 
 test('visuals chest mode build routes chest drawer fronts through regular door visual style and groove pipeline', () => {
@@ -376,4 +548,58 @@ test('visuals chest mode build routes chest drawer fronts through regular door v
   assert.equal(frontVisual.userData.partId, 'chest_drawer_0');
   assert.equal(typeof frontVisual.userData.__doorWidth, 'number');
   assert.equal(typeof frontVisual.userData.__doorHeight, 'number');
+});
+
+test('visuals chest mode uses inset door mount thickness and sinks drawer fronts inside the frame', () => {
+  const { App, wardrobeGroup } = createChestApp();
+  App.store.getState = () => ({
+    config: {
+      showDimensions: false,
+      isMultiColorMode: false,
+      doorMountMode: 'inset',
+      individualColors: {},
+    },
+    ui: {},
+    runtime: {},
+    mode: {},
+    meta: {},
+  });
+
+  buildChestOnly(App, {
+    H: 0.9,
+    totalW: 1.6,
+    D: 0.45,
+    drawersCount: 2,
+    baseType: 'legs',
+    baseLegStyle: 'square',
+    baseLegColor: 'nickel',
+    baseLegHeightCm: 15,
+    baseLegWidthCm: 5,
+    colorChoice: '#ffffff',
+  });
+
+  const leftSide = wardrobeGroup.children.find((child: any) => child?.userData?.partId === 'chest_left');
+  assert.ok(leftSide);
+  assert.equal(leftSide.geometry.args[0], 0.036);
+
+  const firstDrawer = wardrobeGroup.children.find(
+    (child: any) => child?.userData?.partId === 'chest_drawer_0'
+  );
+  assert.ok(firstDrawer);
+  assert.equal(firstDrawer.userData.__doorWidth, 1.6 - 2 * 0.036 - 0.004);
+  assert.equal(firstDrawer.userData.__frontMaxZ, 0.45 / 2 - 0.003);
+  const front = firstDrawer.children[0];
+  assert.equal(front.position.z, 0.45 / 2 - 0.018 / 2 - 0.003);
+  const connector = firstDrawer.children[2];
+  const connectorDepth = CARCASS_BASE_DIMENSIONS.chest.connectorDepthM;
+  const expectedFrontBackZ = front.position.z - 0.018 / 2;
+  assert.equal(
+    connector.position.z,
+    expectedFrontBackZ - CARCASS_BASE_DIMENSIONS.chest.connectorBackInsetM - connectorDepth / 2
+  );
+  assert.equal(
+    connector.position.z + connectorDepth / 2 <=
+      expectedFrontBackZ - CARCASS_BASE_DIMENSIONS.chest.connectorBackInsetM,
+    true
+  );
 });

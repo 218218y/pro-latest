@@ -6,6 +6,10 @@ import {
   createRectCacheOps,
 } from '../esm/native/ui/interactions/canvas_interactions_shared.ts';
 import { createCanvasHoverInteractionOps } from '../esm/native/ui/interactions/canvas_interactions_hover.ts';
+import {
+  consumeCanvasPostBuildHoverRefresh,
+  requestCanvasPostBuildHoverRefresh,
+} from '../esm/native/runtime/canvas_interaction_flags.ts';
 
 function createDomEl() {
   return {
@@ -88,6 +92,40 @@ test('canvas hover interactions queue one RAF and use the latest pointer positio
   assert.equal(state.hoverMoveQueued, false);
   assert.deepEqual(hoverCalls, [{ x: 0, y: 0 }]);
   assert.equal(domEl.style.cursor, 'pointer');
+});
+
+test('canvas hover interactions retarget a pending post-build hover refresh to the latest pointer position', () => {
+  const domEl = createDomEl();
+  const state = createCanvasInteractionState();
+  const rectOps = createRectCacheOps(domEl, state);
+  const { App, rafQueue } = createApp();
+  requestCanvasPostBuildHoverRefresh(App, -0.6, 0.6, 'test.pending');
+
+  const ops = createCanvasHoverInteractionOps(
+    App,
+    {
+      domEl,
+      triggerRender() {
+        return undefined;
+      },
+      handleCanvasClickNDC() {
+        return null;
+      },
+      handleCanvasHoverNDC() {
+        return true;
+      },
+    },
+    state,
+    rectOps
+  );
+
+  ops.onPointerMove({ clientX: 60, clientY: 45, pointerId: 1 } as any);
+
+  assert.equal(rafQueue.length, 1);
+  const pending = consumeCanvasPostBuildHoverRefresh(App);
+  assert.equal(pending?.ndcX, 0);
+  assert.equal(pending?.ndcY, 0);
+  assert.equal(pending?.reason, 'test.pending');
 });
 
 test('canvas hover pointerleave cancels queued hover work, clears previews, and triggers a render refresh', () => {

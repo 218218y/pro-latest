@@ -38,8 +38,6 @@ export function createDefaultTopModuleConfig(index: number, doors: number): Norm
     layout: i === 0 ? 'hanging_top2' : 'shelves',
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersSlot: 0,
-    intDrawersList: [],
     isCustom: false,
     customData: createDefaultModuleCustomData(DEFAULT_MODULE_CELL_COUNT),
     doors: d,

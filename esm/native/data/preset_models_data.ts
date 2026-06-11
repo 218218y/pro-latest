@@ -62,7 +62,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'hanging_top2',
         extDrawersCount: 0,
         hasShoeDrawer: false,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: false,
         customData: {
@@ -75,7 +74,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'shelves',
         extDrawersCount: 4,
         hasShoeDrawer: false,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: true,
         customData: {
@@ -90,7 +88,6 @@ export const PRESET_MODELS_RAW = [
       layout: 'shelves',
       extDrawersCount: 0,
       hasShoeDrawer: false,
-      intDrawersList: [],
       isCustom: false,
       customData: {
         shelves: [false, false, false, false, false, false],
@@ -149,7 +146,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'shelves',
         extDrawersCount: 4,
         hasShoeDrawer: false,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: false,
         customData: {
@@ -163,7 +159,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'hanging_top2',
         extDrawersCount: 0,
         hasShoeDrawer: false,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: false,
         customData: {
@@ -178,7 +173,6 @@ export const PRESET_MODELS_RAW = [
       layout: 'shelves',
       extDrawersCount: 0,
       hasShoeDrawer: false,
-      intDrawersList: [],
       isCustom: false,
       customData: {
         shelves: [false, false, false, false, false, false],
@@ -237,7 +231,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'hanging_top2',
         extDrawersCount: 4,
         hasShoeDrawer: false,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: false,
         customData: {
@@ -250,7 +243,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'shelves',
         extDrawersCount: 0,
         hasShoeDrawer: false,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: true,
         customData: {
@@ -264,7 +256,6 @@ export const PRESET_MODELS_RAW = [
       layout: 'shelves',
       extDrawersCount: 0,
       hasShoeDrawer: false,
-      intDrawersList: [],
       isCustom: false,
       customData: {
         shelves: [false, false, false, false, false, false],
@@ -323,7 +314,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'hanging_top2',
         extDrawersCount: 0,
         hasShoeDrawer: false,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: false,
         customData: {
@@ -336,7 +326,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'shelves',
         extDrawersCount: 4,
         hasShoeDrawer: false,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: true,
         customData: {
@@ -350,7 +339,6 @@ export const PRESET_MODELS_RAW = [
       layout: 'shelves',
       extDrawersCount: 0,
       hasShoeDrawer: false,
-      intDrawersList: [],
       isCustom: false,
       customData: {
         shelves: [false, false, false, false, false, false],
@@ -409,7 +397,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'hanging_top2',
         extDrawersCount: 0,
         hasShoeDrawer: true,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: false,
         customData: {
@@ -422,7 +409,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'shelves',
         extDrawersCount: 0,
         hasShoeDrawer: true,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: false,
         customData: {
@@ -435,7 +421,6 @@ export const PRESET_MODELS_RAW = [
         layout: 'shelves',
         extDrawersCount: 0,
         hasShoeDrawer: true,
-        intDrawersSlot: 0,
         doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
         isCustom: false,
         customData: {
@@ -449,7 +434,6 @@ export const PRESET_MODELS_RAW = [
       layout: 'shelves',
       extDrawersCount: 0,
       hasShoeDrawer: false,
-      intDrawersList: [],
       isCustom: false,
       customData: {
         shelves: [false, false, false, false, false, false],

@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import type { KeyboardEvent, MouseEvent } from 'react';
+import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
 
 import {
   NOTES_OUTSIDE_POINTER_IGNORE_SELECTOR,
@@ -29,9 +29,6 @@ export function useNotesOverlayEditorWorkflowEvents(
     suppressNextClickRef,
     ignoreOutsideClickUntilRef,
     readPointerEventTarget,
-    captureEditorsIntoNotes,
-    commitNotes,
-    setDraftNotes,
     setColorPaletteOpen,
     setSizePaletteOpen,
   } = args;
@@ -73,14 +70,12 @@ export function useNotesOverlayEditorWorkflowEvents(
   );
 
   const onEditorBlur = useCallback(
-    (_index: number) => {
-      setDraftNotes(prev => {
-        const next = captureEditorsIntoNotes(prev);
-        commitNotes(next, 'react:notes:textBlur');
-        return next;
-      });
+    (_index: number, e?: FocusEvent<HTMLDivElement>) => {
+      const relatedTarget = readPointerEventTarget(e?.relatedTarget || null);
+      if (isNotesUiTarget(relatedTarget, NOTES_OUTSIDE_POINTER_IGNORE_SELECTOR)) return;
+      captureAndCommitDraft('react:notes:textBlur');
     },
-    [captureEditorsIntoNotes, commitNotes, setDraftNotes]
+    [captureAndCommitDraft, readPointerEventTarget]
   );
 
   const onEditorMouseUp = useCallback(

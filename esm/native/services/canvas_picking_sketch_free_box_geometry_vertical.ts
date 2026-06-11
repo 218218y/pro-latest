@@ -69,6 +69,41 @@ export function clampSketchFreeBoxCenterYToWorkspace(args: {
   return Math.max(lo, Math.min(hi, centerY));
 }
 
+export function isSketchFreeBoxUnderWardrobeColumn(args: {
+  planeX: number;
+  planeY: number;
+  boxH: number;
+  wardrobeBox: { centerX: number; centerY: number; width: number; height: number };
+}): boolean {
+  const planeX = Number(args.planeX);
+  const planeY = Number(args.planeY);
+  const boxH = Number(args.boxH);
+  const wardrobeBox = args.wardrobeBox;
+  const wardrobeCenterX = Number(wardrobeBox?.centerX);
+  const wardrobeCenterY = Number(wardrobeBox?.centerY);
+  const wardrobeWidth = Number(wardrobeBox?.width);
+  const wardrobeHeight = Number(wardrobeBox?.height);
+  if (
+    !Number.isFinite(planeX) ||
+    !Number.isFinite(planeY) ||
+    !Number.isFinite(boxH) ||
+    !(boxH > 0) ||
+    !Number.isFinite(wardrobeCenterX) ||
+    !Number.isFinite(wardrobeCenterY) ||
+    !Number.isFinite(wardrobeWidth) ||
+    !(wardrobeWidth > 0) ||
+    !Number.isFinite(wardrobeHeight) ||
+    !(wardrobeHeight > 0)
+  ) {
+    return false;
+  }
+
+  const wardrobeMinX = wardrobeCenterX - wardrobeWidth / 2;
+  const wardrobeMaxX = wardrobeCenterX + wardrobeWidth / 2;
+  const wardrobeFloorY = wardrobeCenterY - wardrobeHeight / 2;
+  return planeX >= wardrobeMinX && planeX <= wardrobeMaxX && planeY <= wardrobeFloorY + boxH / 2 + 1e-6;
+}
+
 export function isWithinSketchFreePlacementBounds(args: {
   planeX: number;
   planeY: number;

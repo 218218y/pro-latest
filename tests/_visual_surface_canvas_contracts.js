@@ -43,10 +43,6 @@ const interiorHoverConfig = readSource(
   '../esm/native/services/canvas_picking_interior_hover_config.ts',
   import.meta.url
 );
-const interiorHoverIntDrawer = readSource(
-  '../esm/native/services/canvas_picking_interior_hover_int_drawer.ts',
-  import.meta.url
-);
 const interiorHoverLayoutFamily = readSource(
   '../esm/native/services/canvas_picking_interior_hover_layout_family.ts',
   import.meta.url
@@ -249,20 +245,13 @@ test('[canvas-family] core + interior-hover seams stay thin over focused owners'
   assertMatchesAll(
     assert,
     interiorHoverOwner,
-    [
-      /canvas_picking_interior_hover_int_drawer\.js/,
-      /canvas_picking_interior_hover_layout_family\.js/,
-      /canvas_picking_interior_hover_shared\.js/,
-    ],
+    [/canvas_picking_interior_hover_layout_family\.js/, /canvas_picking_interior_hover_shared\.js/],
     'interior hover owner'
   );
   assertLacksAll(
     assert,
     interiorHoverOwner,
-    [
-      /const\s+__intDrawerMode\s*=\s*getModeId\(App, 'INT_DRAWER'/,
-      /const\s+__layoutMode\s*=\s*getModeId\(App, 'LAYOUT'/,
-    ],
+    [/const\s+__layoutMode\s*=\s*getModeId\(App, 'LAYOUT'/],
     'interior hover owner inline mode reads'
   );
 
@@ -316,17 +305,6 @@ test('[canvas-family] core + interior-hover seams stay thin over focused owners'
     ],
     'interior hover config'
   );
-  assertMatchesAll(
-    assert,
-    interiorHoverIntDrawer,
-    [
-      /canvas_picking_interior_hover_shared\.js/,
-      /readModuleSelectorHit\(intersects\[i\], __wp_toModuleKey\)/,
-      /const selectorMetrics = resolveSelectorInternalMetrics\(\{/,
-    ],
-    'interior hover int-drawer mode'
-  );
-
   assertMatchesAll(
     assert,
     interiorHoverLayoutFamily,

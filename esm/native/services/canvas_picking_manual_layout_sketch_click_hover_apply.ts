@@ -9,10 +9,12 @@ import {
   readManualLayoutSketchBoxContentHoverIntent,
   readManualLayoutSketchRodHoverIntent,
   readManualLayoutSketchShelfHoverIntent,
+  readManualLayoutSketchStorageHoverIntent,
 } from './canvas_picking_manual_layout_sketch_hover_intent.js';
 import {
   removeManualLayoutBaseRod,
   removeManualLayoutBaseShelf,
+  removeManualLayoutBaseStorage,
   removeManualLayoutSketchExtraByIndex,
 } from './canvas_picking_manual_layout_config_ops.js';
 
@@ -104,6 +106,27 @@ export function tryApplyManualLayoutSketchHoverClick(args: ManualLayoutSketchCli
         });
       },
       { source: 'sketch.hoverRemoveRod', immediate: true }
+    );
+    return true;
+  }
+
+  const storageHover = __hoverOk ? readManualLayoutSketchStorageHoverIntent(__hoverRec) : null;
+  if (storageHover && storageHover.op === 'remove') {
+    __patchConfigForKey(
+      __activeModuleKey,
+      cfg => {
+        if (storageHover.removeKind === 'sketch') {
+          removeManualLayoutSketchExtraByIndex(cfg, 'storageBarriers', storageHover.removeIdx ?? NaN);
+          return;
+        }
+        if (storageHover.removeKind !== 'base') return;
+        removeManualLayoutBaseStorage(cfg, {
+          divs: readGridDivisions(__gridInfo),
+          topY,
+          bottomY,
+        });
+      },
+      { source: 'sketch.hoverRemoveStorage', immediate: true }
     );
     return true;
   }

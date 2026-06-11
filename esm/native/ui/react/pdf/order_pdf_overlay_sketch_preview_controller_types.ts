@@ -18,6 +18,8 @@ export type OrderPdfOverlaySketchPreviewController = {
   sketchPreviewBusy: boolean;
   sketchPreviewError: string | null;
   sketchPreviewEntries: OrderPdfSketchPreviewEntry[];
+  sketchPreviewReady: boolean;
   toggleSketchPreview: () => void;
+  closeSketchPreview: () => void;
   refreshSketchPreview: () => Promise<void>;
 };

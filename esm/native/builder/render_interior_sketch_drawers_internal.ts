@@ -12,8 +12,14 @@ import {
   DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_M,
   readSketchDrawerHeightMFromItem,
   resolveSketchInternalDrawerMetrics,
+  sketchStackFitsAvailableHeight,
 } from '../features/sketch_drawer_sizing.js';
+import { resolveSketchStackCenterYFromNormalizedItem } from '../features/sketch_stack_positioning.js';
 import { hasSketchDrawerDivider } from './render_interior_sketch_drawer_dividers.js';
+import {
+  buildSketchExternalDrawerCollisionRanges,
+  sketchStackRangeOverlaps,
+} from './render_interior_sketch_stack_collision.js';
 
 export function buildSketchInternalDrawerRuntimeArgs(
   args: ApplySketchInternalDrawersOwnerArgs
@@ -22,6 +28,7 @@ export function buildSketchInternalDrawerRuntimeArgs(
     App,
     input,
     drawers,
+    extDrawers,
     THREE,
     group,
     effectiveBottomY,
@@ -47,6 +54,7 @@ export function buildSketchInternalDrawerRuntimeArgs(
   const ops = buildSketchInternalDrawerOps({
     App,
     drawers,
+    extDrawers,
     input,
     moduleIndex,
     moduleKeyStr,
@@ -94,6 +102,7 @@ export function buildSketchInternalDrawerRuntimeArgs(
 export function buildSketchInternalDrawerOps(args: {
   App?: ApplySketchInternalDrawersOwnerArgs['App'] | null;
   drawers: ApplySketchInternalDrawersOwnerArgs['drawers'];
+  extDrawers?: ApplySketchInternalDrawersOwnerArgs['extDrawers'];
   input: ApplySketchInternalDrawersOwnerArgs['input'];
   moduleIndex: number;
   moduleKeyStr: string;
@@ -108,6 +117,7 @@ export function buildSketchInternalDrawerOps(args: {
 }): SketchInternalDrawerOp[] {
   const {
     drawers,
+    extDrawers = [],
     input,
     moduleIndex,
     moduleKeyStr,
@@ -139,53 +149,62 @@ export function buildSketchInternalDrawerOps(args: {
     DRAWER_DIMENSIONS.sketch.internalDepthMinM,
     internalDepth - DRAWER_DIMENSIONS.sketch.internalDepthClearanceM
   );
+  const availableStackHeightM = Math.max(0, effectiveTopY - effectiveBottomY - padDrawer * 2);
+  const externalBlockers = buildSketchExternalDrawerCollisionRanges({
+    extDrawers,
+    bottomY: effectiveBottomY,
+    topY: effectiveTopY,
+    totalHeight: spanH,
+  });
 
   for (let i = 0; i < drawers.length; i++) {
     const item = drawers[i] || null;
     if (!item) continue;
     const metrics = resolveSketchInternalDrawerMetrics({
       drawerHeightM: readSketchDrawerHeightMFromItem(item, DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_M),
-      availableHeightM: Math.max(0, effectiveTopY - effectiveBottomY - padDrawer * 2),
     });
     const singleDrawerH = metrics.drawerH;
     const drawerGap = metrics.drawerGap;
     const stackH = metrics.stackH;
+    if (!sketchStackFitsAvailableHeight(stackH, availableStackHeightM)) continue;
     const clampBaseY = (y: number) => {
       const lo = effectiveBottomY + padDrawer;
       const hi = effectiveTopY - padDrawer - stackH;
       return Math.max(lo, Math.min(hi, y));
     };
-    const clampCenterY = (yCenter: number) => {
-      const lo = effectiveBottomY + padDrawer + stackH / 2;
-      const hi = effectiveTopY - padDrawer - stackH / 2;
-      if (!(hi > lo))
-        return Math.max(effectiveBottomY + padDrawer, Math.min(effectiveTopY - padDrawer, yCenter));
-      return Math.max(lo, Math.min(hi, yCenter));
-    };
-
-    const nC = typeof item.yNormC === 'number' ? item.yNormC : Number(item.yNormC);
-    const nBase = typeof item.yNorm === 'number' ? item.yNorm : Number(item.yNorm);
-
-    let baseY0: number | null = null;
-    if (Number.isFinite(nC)) {
-      const center0 = effectiveBottomY + Math.max(0, Math.min(1, nC)) * spanH;
-      const center = clampCenterY(center0);
-      baseY0 = center - stackH / 2;
-    } else if (Number.isFinite(nBase)) {
-      baseY0 = effectiveBottomY + Math.max(0, Math.min(1, nBase)) * spanH;
-    }
+    const centerY = resolveSketchStackCenterYFromNormalizedItem({
+      item,
+      bottomY: effectiveBottomY,
+      topY: effectiveTopY,
+      totalHeight: spanH,
+      stackH,
+      pad: padDrawer,
+    });
+    const baseY0: number | null = centerY == null ? null : centerY - stackH / 2;
     if (baseY0 == null) continue;
 
     const baseY = clampBaseY(baseY0);
+    if (
+      sketchStackRangeOverlaps(
+        { id: item.id != null ? String(item.id) : String(i), minY: baseY, maxY: baseY + stackH },
+        externalBlockers
+      )
+    ) {
+      continue;
+    }
     const drawerId = item.id != null ? String(item.id) : String(i);
-    const partId = moduleKeyStr ? `div_int_sketch_${moduleKeyStr}_${drawerId}` : `div_int_sketch_${drawerId}`;
-    const hasDivider = hasSketchDrawerDivider({ App: args.App || null, input, partId });
+    const stackPartId = moduleKeyStr
+      ? `div_int_sketch_${moduleKeyStr}_${drawerId}`
+      : `div_int_sketch_${drawerId}`;
     const drawerBottomLift = Math.min(
       DRAWER_DIMENSIONS.sketch.internalBottomLiftMaxM,
       woodThick * DRAWER_DIMENSIONS.sketch.internalBottomLiftWoodRatio
     );
 
     for (let j = 0; j < 2; j++) {
+      const drawerSlot = j === 0 ? 'lower' : 'upper';
+      const partId = `${stackPartId}_${drawerSlot}`;
+      const hasDivider = hasSketchDrawerDivider({ App: args.App || null, input, partId });
       const yFinal =
         j === 0
           ? baseY + singleDrawerH / 2 + drawerBottomLift

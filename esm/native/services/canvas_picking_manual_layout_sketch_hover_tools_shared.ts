@@ -96,7 +96,7 @@ export type ManualLayoutSketchHoverPreviewArgs = {
     args: ResolveSketchFreeBoxHoverPlacementArgs
   ) => ResolveSketchFreeBoxHoverPlacementResult | null;
   __wp_resolveDrawerHoverPreviewTarget: ResolveDrawerHoverPreviewTargetFn;
-  __wp_writeSketchHover: (App: AppContainer, snap: UnknownRecord) => void;
+  __wp_writeSketchHover: (App: AppContainer, snap: UnknownRecord | null) => void;
   __wp_clearSketchHover: (App: AppContainer) => void;
 };
 

@@ -3,6 +3,7 @@ import { getThreeMaybe } from '../runtime/three_access.js';
 import { getMode } from '../kernel/api.js';
 import { isManualHandlePositionMode } from '../features/manual_handle_position.js';
 import { resolveDoorHitOwnerByPartId } from './canvas_picking_door_shared.js';
+import { __wp_isDoorActionPaintTargetPartId } from './canvas_picking_core_helpers.js';
 import type {
   DoorActionHoverModeState,
   DoorActionHoverResolvedState,
@@ -152,13 +153,16 @@ export function resolveDoorActionHoverState(args: {
           str: hoverArgs.str,
         })
       : null;
+  const hoverPartMatcher = modeState.isPaintHoverMode
+    ? __wp_isDoorActionPaintTargetPartId
+    : modeState.isHandleHoverMode
+      ? hoverArgs.isDoorOrDrawerLikePartId
+      : hoverArgs.isDoorLikePartId;
   const hit =
     preferredFaceHit ||
     __resolveHoverHit(
       { ...hoverArgs, allowTransparentRestoreTargets: hoverArgs.isRemoveDoorMode },
-      modeState.isPaintHoverMode || modeState.isHandleHoverMode
-        ? hoverArgs.isDoorOrDrawerLikePartId
-        : hoverArgs.isDoorLikePartId
+      hoverPartMatcher
     );
   if (!hit) return null;
 

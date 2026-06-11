@@ -40,7 +40,6 @@ export {
 export {
   removeSketchDrawerById,
   removeSketchExternalDrawerById,
-  removeInternalDrawerSlot,
 } from './canvas_picking_sketch_direct_hit_workflow_drawers_shared.js';
 
 export { tryRemoveSketchShelfByHit } from './canvas_picking_sketch_direct_hit_workflow_shelves_shared.js';

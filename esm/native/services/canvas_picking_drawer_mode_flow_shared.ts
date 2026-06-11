@@ -1,4 +1,10 @@
 import type { ActionMetaLike, DrawerVisualEntryLike, ModuleConfigLike, UnknownRecord } from '../../../types';
+import {
+  collectDrawerVisualIdentityAliases,
+  drawerVisualMatchesId,
+  readDrawerVisualPrimaryId,
+  readDrawerVisualUserData,
+} from '../runtime/drawer_visual_identity.js';
 
 export type ModuleKey = number | 'corner' | `corner:${number}`;
 
@@ -12,6 +18,8 @@ export type InternalGridInfoLike = UnknownRecord & {
   effectiveBottomY?: number;
   effectiveTopY?: number;
   gridDivisions?: number;
+  startY?: number;
+  woodThick?: number;
 };
 
 export type DrawerVisualLike = DrawerVisualEntryLike & {
@@ -31,19 +39,19 @@ export function asInternalGridInfo(value: unknown): InternalGridInfoLike | null 
 }
 
 export function readDrawerUserData(drawer: DrawerVisualEntryLike | null | undefined): UnknownRecord | null {
-  const group = drawer?.group;
-  const groupRecord = asRecord(group);
-  return groupRecord ? asRecord(groupRecord.userData) : null;
+  return readDrawerVisualUserData(drawer);
 }
 
 export function hasPartId(drawer: DrawerVisualEntryLike | null | undefined, partId: string | null): boolean {
-  if (!drawer || !partId) return false;
-  const userData = readDrawerUserData(drawer);
-  return typeof userData?.partId === 'string' && userData.partId === partId;
+  return drawerVisualMatchesId(drawer, partId);
 }
 
 export function readDrawerId(drawer: DrawerVisualEntryLike | null | undefined): string | null {
-  return drawer && drawer.id != null ? String(drawer.id) : null;
+  return readDrawerVisualPrimaryId(drawer);
+}
+
+export function readDrawerIdentityAliases(drawer: DrawerVisualEntryLike | null | undefined): string[] {
+  return collectDrawerVisualIdentityAliases(drawer);
 }
 
 export function readDrawerIsInternal(

@@ -60,6 +60,8 @@ test('build_flow_plan inputs clear top base when stack split is active and slidi
       raw: {
         stackSplitLowerHeight: 90,
         stackSplitLowerHeightManual: true,
+        stackSplitLowerDepth: 55,
+        stackSplitLowerDepthManual: true,
       },
       stackSplitEnabled: true,
     } as any,
@@ -74,7 +76,9 @@ test('build_flow_plan inputs clear top base when stack split is active and slidi
   });
 
   assert.equal(plan.splitActiveForBuild, true);
+  assert.equal(plan.stackSplitUnifiedFrame, false);
   assert.equal(plan.lowerHeightCm, 90);
+  assert.equal(plan.lowerDepthCm, 55);
   assert.equal(plan.baseTypeBottom, 'toeKick');
   assert.equal(plan.baseTypeTop, '');
   assert.equal(plan.baseLegStyle, 'round');
@@ -86,6 +90,227 @@ test('build_flow_plan inputs clear top base when stack split is active and slidi
   assert.equal(plan.depthReduction, 0.12);
   assert.equal(plan.splitSeamGapM, 0.002);
   assert.ok(plan.H < 1.7);
+});
+
+test('build_flow_plan inputs keep one frame for stack split when lower width and depth match the upper unit', () => {
+  const plan = resolveBuildFlowPlanInputs({
+    ui: {
+      baseType: 'legs',
+      raw: {
+        stackSplitLowerHeight: 90,
+        stackSplitLowerHeightManual: true,
+        stackSplitLowerDepth: 60,
+        stackSplitLowerDepthManual: false,
+        stackSplitLowerWidth: 180,
+        stackSplitLowerWidthManual: false,
+      },
+      stackSplitEnabled: true,
+    } as any,
+    cfg: {
+      wardrobeType: 'hinged',
+    } as any,
+    widthCm: 180,
+    heightCm: 240,
+    depthCm: 60,
+    doorsCount: 3,
+    toStr,
+  });
+
+  assert.equal(plan.splitActiveForBuild, true);
+  assert.equal(plan.stackSplitUnifiedFrame, true);
+  assert.equal(plan.splitSeamGapM, 0);
+  assert.equal(plan.baseTypeBottom, 'legs');
+  assert.equal(plan.baseTypeTop, 'legs');
+  assert.equal(plan.H, 1.5 + 0.018);
+});
+
+test('build_flow_plan inputs force separate stack frames when decorative separator is enabled', () => {
+  const plan = resolveBuildFlowPlanInputs({
+    ui: {
+      baseType: 'legs',
+      raw: {
+        stackSplitLowerHeight: 90,
+        stackSplitLowerHeightManual: true,
+        stackSplitLowerDepth: 60,
+        stackSplitLowerDepthManual: false,
+        stackSplitLowerWidth: 180,
+        stackSplitLowerWidthManual: false,
+      },
+      stackSplitEnabled: true,
+      stackSplitDecorativeSeparatorEnabled: true,
+    } as any,
+    cfg: {
+      wardrobeType: 'hinged',
+    } as any,
+    widthCm: 180,
+    heightCm: 240,
+    depthCm: 60,
+    doorsCount: 3,
+    toStr,
+  });
+
+  assert.equal(plan.splitActiveForBuild, true);
+  assert.equal(plan.stackSplitDecorativeSeparatorEnabled, true);
+  assert.equal(plan.stackSplitUnifiedFrame, false);
+  assert.equal(plan.splitSeamGapM, 0.002);
+  assert.equal(plan.baseTypeBottom, 'legs');
+  assert.equal(plan.baseTypeTop, '');
+});
+
+test('build_flow_plan inputs use separate stack frames when top per-cell depth differs', () => {
+  const plan = resolveBuildFlowPlanInputs({
+    ui: {
+      baseType: 'legs',
+      raw: {
+        stackSplitLowerHeight: 90,
+        stackSplitLowerHeightManual: true,
+        stackSplitLowerDepth: 60,
+        stackSplitLowerDepthManual: false,
+        stackSplitLowerWidth: 180,
+        stackSplitLowerWidthManual: false,
+      },
+      stackSplitEnabled: true,
+    } as any,
+    cfg: {
+      wardrobeType: 'hinged',
+      modulesConfiguration: [
+        {
+          specialDims: {
+            depthCm: 45,
+            baseDepthCm: 60,
+          },
+        },
+        {},
+      ],
+    } as any,
+    widthCm: 180,
+    heightCm: 240,
+    depthCm: 60,
+    doorsCount: 3,
+    toStr,
+  });
+
+  assert.equal(plan.splitActiveForBuild, true);
+  assert.equal(plan.stackSplitUnifiedFrame, false);
+  assert.equal(plan.splitSeamGapM, 0.002);
+  assert.equal(plan.baseTypeBottom, 'legs');
+  assert.equal(plan.baseTypeTop, '');
+});
+
+test('build_flow_plan inputs use separate stack frames when lower per-cell depth differs', () => {
+  const plan = resolveBuildFlowPlanInputs({
+    ui: {
+      baseType: 'legs',
+      raw: {
+        stackSplitLowerHeight: 90,
+        stackSplitLowerHeightManual: true,
+        stackSplitLowerDepth: 60,
+        stackSplitLowerDepthManual: false,
+        stackSplitLowerWidth: 180,
+        stackSplitLowerWidthManual: false,
+      },
+      stackSplitEnabled: true,
+    } as any,
+    cfg: {
+      wardrobeType: 'hinged',
+      stackSplitLowerModulesConfiguration: [
+        {},
+        {
+          specialDims: {
+            depthCm: 50,
+            baseDepthCm: 60,
+          },
+        },
+      ],
+    } as any,
+    widthCm: 180,
+    heightCm: 240,
+    depthCm: 60,
+    doorsCount: 3,
+    toStr,
+  });
+
+  assert.equal(plan.splitActiveForBuild, true);
+  assert.equal(plan.stackSplitUnifiedFrame, false);
+  assert.equal(plan.splitSeamGapM, 0.002);
+});
+
+test('build_flow_plan inputs use separate stack frames when top module is hex cell', () => {
+  const plan = resolveBuildFlowPlanInputs({
+    ui: {
+      baseType: 'legs',
+      raw: {
+        stackSplitLowerHeight: 90,
+        stackSplitLowerHeightManual: true,
+        stackSplitLowerDepth: 60,
+        stackSplitLowerDepthManual: false,
+        stackSplitLowerWidth: 180,
+        stackSplitLowerWidthManual: false,
+      },
+      stackSplitEnabled: true,
+    } as any,
+    cfg: {
+      wardrobeType: 'hinged',
+      modulesConfiguration: [
+        {
+          hexCell: {
+            enabled: true,
+            protrusionCm: 10,
+          },
+        },
+        {},
+      ],
+    } as any,
+    widthCm: 180,
+    heightCm: 240,
+    depthCm: 60,
+    doorsCount: 3,
+    toStr,
+  });
+
+  assert.equal(plan.splitActiveForBuild, true);
+  assert.equal(plan.stackSplitUnifiedFrame, false);
+  assert.equal(plan.splitSeamGapM, 0.002);
+  assert.equal(plan.baseTypeTop, '');
+});
+
+test('build_flow_plan inputs use separate stack frames when lower module is hex cell', () => {
+  const plan = resolveBuildFlowPlanInputs({
+    ui: {
+      baseType: 'legs',
+      raw: {
+        stackSplitLowerHeight: 90,
+        stackSplitLowerHeightManual: true,
+        stackSplitLowerDepth: 60,
+        stackSplitLowerDepthManual: false,
+        stackSplitLowerWidth: 180,
+        stackSplitLowerWidthManual: false,
+      },
+      stackSplitEnabled: true,
+    } as any,
+    cfg: {
+      wardrobeType: 'hinged',
+      stackSplitLowerModulesConfiguration: [
+        {},
+        {
+          hexCell: {
+            enabled: true,
+            protrusionCm: 10,
+          },
+        },
+      ],
+    } as any,
+    widthCm: 180,
+    heightCm: 240,
+    depthCm: 60,
+    doorsCount: 3,
+    toStr,
+  });
+
+  assert.equal(plan.splitActiveForBuild, true);
+  assert.equal(plan.stackSplitUnifiedFrame, false);
+  assert.equal(plan.splitSeamGapM, 0.002);
+  assert.equal(plan.baseTypeTop, '');
 });
 
 test('build_flow_plan layout filters moduleInternalWidths and keeps carcass depth at default in mixed manual-depth mode', () => {
@@ -127,4 +352,67 @@ test('build_flow_plan layout filters moduleInternalWidths and keeps carcass dept
   assert.equal(layout.carcassH, 2.6);
   assert.deepEqual(layout.moduleDepthsTotal, [0.45, 0.6]);
   assert.equal(layout.carcassD, 0.6);
+});
+
+test('build_flow_plan layout expands the outer carcass to the full height for unified stack split frames', () => {
+  const layout = resolveBuildFlowPlanLayout({
+    App: {} as any,
+    state: {} as any,
+    cfg: {} as any,
+    ui: {} as any,
+    totalW: 1.8,
+    woodThick: 0.018,
+    doorsCount: 3,
+    calculateModuleStructureFn: null,
+    splitActiveForBuild: true,
+    stackSplitUnifiedFrame: true,
+    lowerHeightCm: 90,
+    H: 1.518,
+    D: 0.6,
+    computeModulesAndLayoutFn: () =>
+      ({
+        modules: [{ id: 'm1' }],
+        moduleCfgList: [{}],
+        singleUnitWidth: 0.6,
+        moduleInternalWidths: [0.56],
+        hingedDoorPivotMap: {},
+      }) as any,
+  });
+
+  assert.equal(layout.moduleHeightsTotal[0], 1.518);
+  assert.ok(Math.abs(layout.carcassH - 2.4) < 1e-9);
+});
+
+test('build_flow_plan inputs use 36mm frame thickness only for inset hinged doors', () => {
+  const insetPlan = resolveBuildFlowPlanInputs({
+    ui: {} as any,
+    cfg: { wardrobeType: 'hinged', doorMountMode: 'inset' } as any,
+    widthCm: 120,
+    heightCm: 240,
+    depthCm: 60,
+    doorsCount: 2,
+    toStr,
+  });
+  const overlayPlan = resolveBuildFlowPlanInputs({
+    ui: {} as any,
+    cfg: { wardrobeType: 'hinged', doorMountMode: 'overlay' } as any,
+    widthCm: 120,
+    heightCm: 240,
+    depthCm: 60,
+    doorsCount: 2,
+    toStr,
+  });
+  const slidingPlan = resolveBuildFlowPlanInputs({
+    ui: {} as any,
+    cfg: { wardrobeType: 'sliding', doorMountMode: 'inset' } as any,
+    widthCm: 120,
+    heightCm: 240,
+    depthCm: 60,
+    doorsCount: 2,
+    toStr,
+  });
+
+  assert.equal(insetPlan.woodThick, 0.036);
+  assert.equal(overlayPlan.woodThick, 0.018);
+  assert.equal(slidingPlan.woodThick, 0.018);
 });

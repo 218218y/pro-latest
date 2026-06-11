@@ -21,6 +21,15 @@ export function SidebarHeader() {
     handleSaveProject,
   } = useSidebarHeaderActions();
 
+  const site2GateTooltip = hasAnyTabsConfigured
+    ? site2GateOpen
+      ? site2GateMinutesLeft
+        ? `סגור טאבים באתר 2 (נותרו ~${site2GateMinutesLeft} דק׳)`
+        : 'סגור טאבים באתר 2'
+      : 'פתח טאבים באתר 2 (90 דקות)'
+    : 'פתיחה/סגירה של טאבים באתר 2';
+  const sketchTooltip = sketch ? 'מצב סקיצה פעיל' : 'מצב סקיצה';
+
   return (
     <div className="header wp-r-header">
       <img src={logoSrc} alt="WardrobePro" className="header-logo wp-r-header-logo" data-wp-logo="1" />
@@ -32,30 +41,22 @@ export function SidebarHeader() {
           <div className="wp-r-header-actions-col wp-r-header-actions-col--gate">
             <Button
               variant="header"
-              className={`btn-header-tabs-toggle ${site2GateOpen ? 'wp-r-btn-active' : ''}`}
+              className={`btn-header-tabs-toggle wp-r-header-hint hint-bottom ${site2GateOpen ? 'wp-r-btn-active' : ''}`}
               data-testid="header-site2-gate-button"
               aria-pressed={site2GateOpen}
               onClick={handleSite2GateToggle}
-              title={
-                hasAnyTabsConfigured
-                  ? site2GateOpen
-                    ? site2GateMinutesLeft
-                      ? `סגור טאבים באתר 2 (נותרו ~${site2GateMinutesLeft} דק׳)`
-                      : 'סגור טאבים באתר 2'
-                    : 'פתח טאבים באתר 2 (90 דקות)'
-                  : 'פתיחה/סגירה של טאבים באתר 2'
-              }
-              aria-label="פתח/סגור טאבים באתר 2"
+              data-tooltip={site2GateTooltip}
+              aria-label={site2GateTooltip}
             >
               <i className={`fas ${site2GateOpen ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" />
             </Button>
 
             <Button
               variant="header"
-              className="btn-header-reset-default"
+              className="btn-header-reset-default wp-r-header-hint hint-bottom"
               data-testid="header-reset-default-button"
               onClick={handleResetDefault}
-              title="איפוס לארון ברירת מחדל"
+              data-tooltip="איפוס לארון ברירת מחדל"
               aria-label="איפוס לארון ברירת מחדל"
             >
               <i className="fas fa-trash" aria-hidden="true" />
@@ -66,11 +67,11 @@ export function SidebarHeader() {
         <div className="wp-r-header-actions-col wp-r-header-actions-col--export">
           <Button
             variant="header"
-            className="btn-header-export-pdf"
+            className="btn-header-export-pdf wp-r-header-hint hint-bottom"
             data-testid="header-open-pdf-button"
             onClick={handleOpenPdf}
             onMouseEnter={handleWarmPdf}
-            title="עורך PDF"
+            data-tooltip="עורך PDF"
             aria-label="עורך PDF"
           >
             <i className="fas fa-file-pdf" aria-hidden="true" />
@@ -78,10 +79,10 @@ export function SidebarHeader() {
 
           <Button
             variant="header"
-            className="btn-header-export-load"
+            className="btn-header-export-load wp-r-header-hint hint-bottom"
             data-testid="header-project-load-button"
             onClick={handleOpenLoad}
-            title="טען פרויקט"
+            data-tooltip="טען פרויקט"
             aria-label="טען פרויקט"
           >
             <i className="fas fa-folder-open" aria-hidden="true" />
@@ -91,22 +92,22 @@ export function SidebarHeader() {
         <div className="wp-r-header-actions-col wp-r-header-actions-col--main">
           <Button
             variant="header"
-            className={`btn-header-sketch ${sketch ? 'wp-r-btn-active' : ''}`}
+            className={`btn-header-sketch wp-r-header-hint hint-bottom ${sketch ? 'wp-r-btn-active' : ''}`}
             data-testid="header-sketch-toggle-button"
             aria-pressed={sketch}
             onClick={handleToggleSketch}
-            title={sketch ? 'מצב סקיצה פעיל' : 'מצב סקיצה'}
-            aria-label={sketch ? 'מצב סקיצה פעיל' : 'מצב סקיצה'}
+            data-tooltip={sketchTooltip}
+            aria-label={sketchTooltip}
           >
             <i className="fas fa-pencil-alt" aria-hidden="true" />
           </Button>
 
           <Button
             variant="header"
-            className="btn-save btn-header-save"
+            className="btn-save btn-header-save wp-r-header-hint hint-bottom"
             data-testid="header-project-save-button"
             onClick={handleSaveProject}
-            title="שמור פרויקט"
+            data-tooltip="שמור פרויקט"
             aria-label="שמור פרויקט"
           >
             <i className="fas fa-save" aria-hidden="true" />

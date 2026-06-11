@@ -7,6 +7,7 @@ import { MATERIAL_DIMENSIONS, SKETCH_BOX_DIMENSIONS } from '../../shared/wardrob
 
 import type { RebuildSketchSegmentedDoorArgs } from './post_build_sketch_door_cuts_contracts.js';
 import { maybeAttachSegmentHandle } from './post_build_sketch_door_cuts_rebuild_handles.js';
+import { notifyHandleFitSuppressions } from './handles_fit_suppression_feedback.js';
 import {
   applySegmentPosition,
   applySketchSegmentPickMeta,
@@ -45,6 +46,7 @@ export function rebuildSketchSegmentedDoor(args: RebuildSketchSegmentedDoorArgs)
   const thicknessRaw = parseNum(readKey(ud, '__wpFrontThickness'));
   const thickness =
     Number.isFinite(thicknessRaw) && thicknessRaw > 0 ? thicknessRaw : MATERIAL_DIMENSIONS.wood.thicknessM;
+  const suppressedHandlePartIds: string[] = [];
 
   removeAllChildren(g);
   ud.__wpSketchCustomHandles = true;
@@ -126,7 +128,7 @@ export function rebuildSketchSegmentedDoor(args: RebuildSketchSegmentedDoorArgs)
     });
     g.add(visualObj);
 
-    maybeAttachSegmentHandle({
+    const handleResult = maybeAttachSegmentHandle({
       runtime,
       g,
       width,
@@ -137,5 +139,15 @@ export function rebuildSketchSegmentedDoor(args: RebuildSketchSegmentedDoorArgs)
       isLeftHinge,
       segmentPartId,
     });
+    if (handleResult === 'suppressed') suppressedHandlePartIds.push(segmentPartId);
   }
+
+  if (args.collectSuppressedHandlePartIds) {
+    args.collectSuppressedHandlePartIds(suppressedHandlePartIds);
+    return;
+  }
+
+  notifyHandleFitSuppressions(runtime.App, suppressedHandlePartIds, {
+    scope: 'sketch-segment-door-handles',
+  });
 }

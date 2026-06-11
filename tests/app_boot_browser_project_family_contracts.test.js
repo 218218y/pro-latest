@@ -633,6 +633,7 @@ import {
     import.meta.url,
     { stripNoise: true }
   );
+  const reactStyles = readSource('../css/react_styles.css', import.meta.url);
   const projectDragDrop = readSource('../esm/native/ui/interactions/project_drag_drop.ts', import.meta.url);
   const projectDragDropController = [
     readSource('../esm/native/ui/interactions/project_drag_drop_controller_runtime.ts', import.meta.url),
@@ -642,7 +643,11 @@ import {
   const projectPanel = readSource('../esm/native/ui/react/panels/ProjectPanel.tsx', import.meta.url);
   const sidebarHeader = readSource('../esm/native/ui/react/sidebar_header.tsx', import.meta.url);
   const cloudSyncPanel = readSource('../esm/native/ui/react/panels/CloudSyncPanel.tsx', import.meta.url);
-  const exportTab = readSource('../esm/native/ui/react/tabs/ExportTab.tsx', import.meta.url);
+  const quickActionsDock = readSource(
+    '../esm/native/ui/react/overlay_quick_actions_dock.tsx',
+    import.meta.url
+  );
+  const settingsTab = readSource('../esm/native/ui/react/tabs/SettingsTab.tsx', import.meta.url);
   const orderPdfEditorSurface = readSource(
     '../esm/native/ui/react/pdf/order_pdf_overlay_editor_surface.tsx',
     import.meta.url
@@ -736,9 +741,25 @@ import {
 
     assert.match(projectPanel, /data-testid="project-name-input"/);
     assert.match(projectPanel, /data-testid="project-save-button"/);
+    assert.match(projectPanel, /data-testid="project-load-button"/);
     assert.match(projectPanel, /data-testid="project-load-input"/);
     assert.match(projectPanel, /data-testid="project-restore-button"/);
+    assert.match(projectPanel, /className="btn-header-export-load wp-r-project-icon-btn"/);
+    assert.match(projectPanel, /className="btn-save btn-header-save wp-r-project-icon-btn"/);
+    assert.match(projectPanel, /onKeyDown=\{\(e: import\('react'\)\.KeyboardEvent<HTMLInputElement>\) => \{/);
+    assert.match(projectPanel, /if \(e\.key !== 'Enter'\) return;/);
+    assert.match(projectPanel, /handleSaveDraft\(e\.currentTarget\.value\)/);
     assert.match(projectPanel, /readAutosaveInfoFromStorage\(/);
+    assert.match(reactStyles, /--wp-r-project-name-control-height:\s*40px;/);
+    assert.match(reactStyles, /--wp-r-project-file-icon-width:\s*40px;/);
+    assert.match(
+      reactStyles,
+      /\.wp-r-project-io--structure \.wp-r-project-icon-btn \{[\s\S]*width: var\(--wp-r-project-file-icon-width\);[\s\S]*height: var\(--wp-r-project-name-control-height\);/
+    );
+    assert.doesNotMatch(
+      reactStyles,
+      /\.wp-r-project-io--structure \.wp-r-project-icon-btn \{[\s\S]{0,180}width: var\(--wp-header-action-col-width/
+    );
 
     assert.match(designTabColorSection, /data-testid="design-color-section"/);
     assert.match(designTabColorSection, /data-testid="design-color-swatch-row"/);
@@ -755,6 +776,20 @@ import {
     assert.match(sidebarHeader, /data-testid="header-project-load-input"/);
     assert.match(sidebarHeader, /data-testid="header-sketch-toggle-button"/);
     assert.match(sidebarHeader, /data-testid="header-open-pdf-button"/);
+    assert.equal(sidebarHeader.match(/wp-r-header-hint hint-bottom/g)?.length, 6);
+    assert.match(sidebarHeader, /data-tooltip=\{site2GateTooltip\}/);
+    assert.match(sidebarHeader, /data-tooltip=\{sketchTooltip\}/);
+    assert.match(sidebarHeader, /data-tooltip="שמור פרויקט"/);
+    assert.doesNotMatch(sidebarHeader, /\btitle=/);
+    assert.match(
+      reactStyles,
+      /#reactSidebarRoot \.wp-r-header \.wp-r-header-hint\.hint-bottom::after \{[\s\S]*?top:\s*calc\(100% \+ 8px\);[\s\S]*?direction:\s*rtl;[\s\S]*?font-weight:\s*700;/
+    );
+    assert.match(
+      reactStyles,
+      /#reactSidebarRoot \.wp-r-header \.wp-r-header-hint\.hint-bottom:hover,[\s\S]*?#reactSidebarRoot \.wp-r-header \.wp-r-header-hint\.hint-bottom:focus-visible,[\s\S]*?body\.wp-ui-react \.hint-bottom::after,[\s\S]*?body\.wp-ui-react \.hint-bottom::before \{[\s\S]*?z-index:\s*var\(--wp-z-tooltip\);/
+    );
+    assert.doesNotMatch(reactStyles, /#reactSidebarRoot \.wp-r-header \{[\s\S]*?z-index:\s*20;/);
 
     assert.match(cloudSyncPanel, /data-testid="cloud-sync-panel"/);
     assert.match(cloudSyncPanel, /data-testid="cloud-sync-status"/);
@@ -763,14 +798,22 @@ import {
     assert.match(cloudSyncPanel, /data-testid="cloud-sync-sync-sketch-button"/);
     assert.match(cloudSyncPanel, /data-testid="cloud-sync-delete-models-button"/);
     assert.match(cloudSyncPanel, /data-testid="cloud-sync-delete-colors-button"/);
-    assert.match(cloudSyncPanel, /data-testid="cloud-sync-floating-pin-toggle"/);
+    assert.doesNotMatch(cloudSyncPanel, /data-testid="cloud-sync-floating-pin-toggle"/);
+    assert.match(quickActionsDock, /data-testid="quick-actions-sync-pin-button"/);
+    assert.match(quickActionsDock, /toggleFloatingSyncEnabled\(\)/);
+    assert.match(
+      quickActionsDock,
+      /runPerfAction\([\s\S]*'cloudSync\.floatingSync\.toggle'[\s\S]*toggleFloatingSyncEnabled\(\)/
+    );
 
-    assert.match(exportTab, /testId="export-snapshot-button"/);
-    assert.match(exportTab, /testId="export-copy-button"/);
-    assert.match(exportTab, /testId="export-render-sketch-button"/);
-    assert.match(exportTab, /testId="export-dual-image-button"/);
-    assert.match(exportTab, /testId="export-open-pdf-button"/);
+    assert.match(settingsTab, /testId="export-snapshot-button"/);
+    assert.match(settingsTab, /testId="export-copy-button"/);
+    assert.match(settingsTab, /testId="export-render-sketch-button"/);
+    assert.match(settingsTab, /testId="export-dual-image-button"/);
+    assert.match(settingsTab, /testId="export-open-pdf-button"/);
+    assert.doesNotMatch(settingsTab, /<ProjectPanel/);
     assert.match(orderPdfEditorSurface, /data-testid="order-pdf-overlay"/);
+    assert.match(orderPdfEditorSurface, /data-testid="order-pdf-page-annotation-toggle"/);
     assert.match(orderPdfToolbar, /data-testid="order-pdf-close-button"/);
     assert.match(orderPdfToolbar, /data-testid="order-pdf-refresh-button"/);
     assert.match(orderPdfToolbar, /data-testid="order-pdf-load-button"/);
@@ -778,7 +821,6 @@ import {
     assert.match(orderPdfToolbar, /data-testid="order-pdf-download-button"/);
     assert.match(orderPdfToolbar, /data-testid="order-pdf-print-button"/);
     assert.match(orderPdfToolbar, /data-testid="order-pdf-gmail-button"/);
-    assert.match(orderPdfToolbar, /data-testid="order-pdf-download-gmail-button"/);
     assert.match(orderPdfToolbar, /data-testid="order-pdf-toggle-render-sketch"/);
     assert.match(orderPdfToolbar, /data-testid="order-pdf-toggle-open-closed"/);
     assert.match(smokeHelpers, /export async function expectOrderPdfOverlayToolbar/);
@@ -798,10 +840,21 @@ import {
     assert.match(smokeHelpers, /export async function triggerRestoreLastSessionViaProjectPanel/);
     assert.match(smokeHelpers, /export async function expectRestoreLastSessionUnavailable/);
     assert.match(smokeHelpers, /export async function restoreLastSessionViaProjectPanel/);
+    assert.match(smokeHelpers, /export async function toggleHeaderSketchMode/);
+    assert.match(smokeHelpers, /export async function toggleViewerNoteDrawMode/);
+    assert.match(smokeHelpers, /export async function toggleViewerNotesVisibility/);
+    assert.match(smokeHelpers, /export async function toggleViewerContentsVisibility/);
 
     assert.match(smokeHelpers, /viewer\.locator\('canvas'\)\.first\(\)/);
     assert.doesNotMatch(smoke, /viewer\.locator\('canvas'\)\.first\(\)/);
-    assert.match(smoke, /header-sketch-toggle-button/);
+    assert.match(smokeHelpers, /header-sketch-toggle-button/);
+    assert.match(smokeHelpers, /viewer-note-draw-mode-button/);
+    assert.match(smokeHelpers, /viewer-notes-visibility-button/);
+    assert.match(smokeHelpers, /viewer-contents-toggle-button/);
+    assert.match(smoke, /toggleHeaderSketchMode\(/);
+    assert.match(smoke, /toggleViewerNoteDrawMode\(/);
+    assert.match(smoke, /toggleViewerNotesVisibility\(/);
+    assert.match(smoke, /toggleViewerContentsVisibility\(/);
     assert.match(smokeHelpers, /export-open-pdf-button/);
     assert.doesNotMatch(smoke, /export-open-pdf-button/);
     assert.match(smoke, /openOrderPdfOverlayFromExport\(/);

@@ -17,11 +17,17 @@ export function createStructureTabWorkflowCellDimsApi(
   | 'clearCellDimsWidth'
   | 'clearCellDimsHeight'
   | 'clearCellDimsDepth'
+  | 'clearCellDimsHexProtrusion'
+  | 'clearCellDimsHexDoorWidth'
+  | 'setCellDimsHexMode'
   | 'resetAutoWidth'
 > {
   const { fb, ops, state } = args;
 
-  const clearCellDim = (key: 'width' | 'height' | 'depth', opName: string): void => {
+  const clearCellDim = (
+    key: 'width' | 'height' | 'depth' | 'hexProtrusion' | 'hexDoorWidth',
+    opName: string
+  ): void => {
     try {
       ops.clearCellDim(key);
     } catch (err) {
@@ -60,6 +66,22 @@ export function createStructureTabWorkflowCellDimsApi(
 
     clearCellDimsDepth() {
       clearCellDim('depth', 'structureTabWorkflowsController.clearCellDimsDepth');
+    },
+
+    clearCellDimsHexProtrusion() {
+      clearCellDim('hexProtrusion', 'structureTabWorkflowsController.clearCellDimsHexProtrusion');
+    },
+
+    clearCellDimsHexDoorWidth() {
+      clearCellDim('hexDoorWidth', 'structureTabWorkflowsController.clearCellDimsHexDoorWidth');
+    },
+
+    setCellDimsHexMode(on: boolean) {
+      try {
+        ops.setCellDimsHexMode(on);
+      } catch (err) {
+        reportStructureWorkflowNonFatal(args, 'structureTabWorkflowsController.setCellDimsHexMode', err);
+      }
     },
 
     resetAutoWidth() {

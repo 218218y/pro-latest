@@ -54,7 +54,7 @@ export function createCornerWingEmitContext(args: {
     doorStyle: state.doorStyle,
     splitDoors: state.splitDoors,
     groovesEnabled: state.groovesEnabled,
-    internalDrawersEnabled: state.internalDrawersEnabled,
+    internalDrawersEnabled: false,
     showHangerEnabled: state.showHangerEnabled,
     showContentsEnabled: state.showContentsEnabled,
     hasCorniceEnabled: state.hasCorniceEnabled,
@@ -97,6 +97,9 @@ export function createCornerWingEmitContext(args: {
     __getMirrorMat: mats.getMirrorMat,
     __resolveSpecial: mats.resolveSpecial,
     getCornerMat: mats.getCornerMat,
+    getCornerShelfMat: mats.getCornerShelfMat,
+    defaultShelfMat: mats.defaultShelfMat,
+    braceShelfMat: mats.braceShelfMat,
     bodyMat: mats.bodyMat,
     frontMat: mats.frontMat,
 

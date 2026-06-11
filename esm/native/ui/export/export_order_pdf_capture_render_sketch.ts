@@ -2,6 +2,10 @@ import type { AppContainer } from '../../../../types/app.js';
 import type { OrderPdfDraftLike } from '../../../../types/build.js';
 import type { ExportOrderPdfDeps } from './export_order_pdf_types.js';
 import {
+  createLiveViewportNotesTransform,
+  shouldPreserveLiveViewportForSketchImageExport,
+} from './export_canvas_workflow_viewport_policy.js';
+import {
   buildOrderPdfNotesTransform,
   captureCompositeWithLogoFallback,
   createOrderPdfCompositeCanvas,
@@ -23,7 +27,8 @@ export function createOrderPdfCaptureRenderSketchOp(
     const base = readOrderPdfCompositeBase(App, deps);
     const originalSketchMode = !!deps.readRuntimeScalarOrDefaultFromApp(App, 'sketchMode', false);
     const restoreExportWall = deps._applyExportWallColorOverride(App);
-    const notesTransform = buildOrderPdfNotesTransform(App, deps, base);
+    const preserveLiveViewport = shouldPreserveLiveViewportForSketchImageExport(App);
+    const notesTransform = preserveLiveViewport ? null : buildOrderPdfNotesTransform(App, deps, base);
 
     const createComposite = async (includeLogo: boolean): Promise<HTMLCanvasElement> => {
       const compositeCanvas = createOrderPdfCompositeCanvas(App, deps, base, includeLogo);
@@ -46,7 +51,8 @@ export function createOrderPdfCaptureRenderSketchOp(
       }
 
       deps._renderSceneForExport(App, base.renderer, base.scene, base.camera);
-      ctx.drawImage(deps._getRendererCanvasSource(base.rendererSurface), 0, base.titleHeight);
+      const renderRendererSource = deps._getRendererCanvasSource(base.rendererSurface);
+      ctx.drawImage(renderRendererSource, 0, base.titleHeight);
       if (base.notesEnabled) {
         await deps._renderAllNotesToCanvas(
           App,
@@ -54,7 +60,7 @@ export function createOrderPdfCaptureRenderSketchOp(
           base.originalWidth,
           base.originalHeight,
           base.titleHeight,
-          notesTransform
+          preserveLiveViewport ? createLiveViewportNotesTransform(renderRendererSource) : notesTransform
         );
       }
 
@@ -75,7 +81,8 @@ export function createOrderPdfCaptureRenderSketchOp(
 
       deps._renderSceneForExport(App, base.renderer, base.scene, base.camera);
       const secondImageY = base.titleHeight + base.originalHeight + base.gap;
-      ctx.drawImage(deps._getRendererCanvasSource(base.rendererSurface), 0, secondImageY);
+      const sketchRendererSource = deps._getRendererCanvasSource(base.rendererSurface);
+      ctx.drawImage(sketchRendererSource, 0, secondImageY);
       if (base.notesEnabled) {
         await deps._renderAllNotesToCanvas(
           App,
@@ -83,7 +90,7 @@ export function createOrderPdfCaptureRenderSketchOp(
           base.originalWidth,
           base.originalHeight,
           secondImageY,
-          notesTransform
+          preserveLiveViewport ? createLiveViewportNotesTransform(sketchRendererSource) : notesTransform
         );
       }
       return compositeCanvas;

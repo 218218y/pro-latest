@@ -1,7 +1,8 @@
-import type { UnknownRecord } from '../../../types';
+import type { AppContainer, UnknownRecord } from '../../../types';
 import { DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
-import { isSketchInternalDrawersTool } from '../features/sketch_drawer_sizing.js';
 import { getThreeMaybe } from '../runtime/three_access.js';
+import { getDrawersArray } from '../runtime/render_access.js';
+import { isSketchInternalDrawersTool } from '../features/sketch_drawer_sizing.js';
 import { __wp_measureObjectLocalBox } from './canvas_picking_local_helpers.js';
 import {
   classifyCrossDrawerPart,
@@ -30,10 +31,137 @@ function readNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function isStandardDrawerFamilyForSketchTool(tool: string, family: string): boolean {
-  if (tool.startsWith('sketch_ext_drawers:')) return family === 'standard_external';
-  if (isSketchInternalDrawersTool(tool)) return family === 'standard_internal';
-  return false;
+function isCrossDrawerFamilyForSketchTool(tool: string, family: string): boolean {
+  if (tool.startsWith('sketch_ext_drawers:')) {
+    return family === 'standard_external' || family === 'sketch_internal';
+  }
+  return isSketchInternalDrawersTool(tool) && family === 'sketch_external';
+}
+
+function readEntryGroup(entry: unknown): UnknownRecord | null {
+  const rec = asRecord(entry);
+  const directGroup = asRecord(rec?.group);
+  if (directGroup) return directGroup;
+  const userData = asRecord(rec?.userData);
+  return asRecord(userData?.group);
+}
+
+function readModuleKeyFromRecord(record: UnknownRecord | null): string {
+  return readString(record?.moduleIndex ?? record?.__wpSketchModuleKey);
+}
+
+function readSketchInternalDrawerId(partId: string, moduleKey: unknown): string {
+  const prefix = `div_int_sketch_${String(moduleKey)}_`;
+  if (partId.startsWith(prefix)) return partId.slice(prefix.length);
+  const shortPrefix = 'div_int_sketch_';
+  if (!partId.startsWith(shortPrefix)) return '';
+  const suffix = partId.slice(shortPrefix.length);
+  const splitAt = suffix.indexOf('_');
+  return splitAt >= 0 ? suffix.slice(splitAt + 1) : suffix;
+}
+
+function resolveInternalCrossDrawerStackPreview(args: {
+  App: AppContainer;
+  targetGroup: UnknownRecord;
+  targetParent: UnknownRecord;
+  targetBox: {
+    centerX: number;
+    centerY: number;
+    centerZ: number;
+    width: number;
+    height: number;
+    depth: number;
+  };
+  targetPartId: string;
+  targetModuleKey: string;
+}): {
+  anchor: unknown;
+  anchorParent: unknown;
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+  d: number;
+  stackH: number;
+  drawerH: number;
+  drawerGap: number;
+} | null {
+  const boxes: Array<{
+    centerX: number;
+    centerY: number;
+    centerZ: number;
+    width: number;
+    height: number;
+    depth: number;
+  }> = [];
+  const entries = getDrawersArray(args.App);
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const group = readEntryGroup(entry);
+    if (!group) continue;
+    const userData = asRecord(group.userData);
+    const partId = readString(userData?.partId ?? asRecord(entry)?.id);
+    if (partId !== args.targetPartId) continue;
+    const moduleKey = readModuleKeyFromRecord(userData);
+    if (args.targetModuleKey && moduleKey && moduleKey !== args.targetModuleKey) continue;
+    let box = __wp_measureObjectLocalBox(args.App, group, args.targetParent);
+    if (!box && group === args.targetGroup) box = args.targetBox;
+    if (!box || !(box.width > 0) || !(box.height > 0) || !(box.depth > 0)) continue;
+    boxes.push(box);
+  }
+
+  if (!boxes.length) boxes.push(args.targetBox);
+  boxes.sort((a, b) => a.centerY - b.centerY);
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  let drawerH = 0;
+  let drawerGap: number = DRAWER_DIMENSIONS.sketch.internalGapM;
+  for (let i = 0; i < boxes.length; i++) {
+    const box = boxes[i];
+    minX = Math.min(minX, box.centerX - box.width / 2);
+    maxX = Math.max(maxX, box.centerX + box.width / 2);
+    minY = Math.min(minY, box.centerY - box.height / 2);
+    maxY = Math.max(maxY, box.centerY + box.height / 2);
+    minZ = Math.min(minZ, box.centerZ - box.depth / 2);
+    maxZ = Math.max(maxZ, box.centerZ + box.depth / 2);
+    drawerH = Math.max(drawerH, box.height);
+  }
+
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minY) || !Number.isFinite(maxY)) {
+    return null;
+  }
+
+  if (boxes.length > 1) {
+    const measuredGaps: number[] = [];
+    for (let i = 1; i < boxes.length; i++) {
+      const prev = boxes[i - 1];
+      const curr = boxes[i];
+      const gap = curr.centerY - curr.height / 2 - (prev.centerY + prev.height / 2);
+      if (Number.isFinite(gap) && gap >= 0) measuredGaps.push(gap);
+    }
+    if (measuredGaps.length) drawerGap = Math.max(0, Math.min(...measuredGaps));
+  }
+
+  return {
+    anchor: args.targetGroup,
+    anchorParent: args.targetParent,
+    x: (minX + maxX) / 2,
+    y: minY,
+    z: (minZ + maxZ) / 2,
+    w: Math.max(DRAWER_DIMENSIONS.sketch.internalWidthMinM, maxX - minX),
+    d: Math.max(DRAWER_DIMENSIONS.sketch.internalDepthMinM, maxZ - minZ),
+    stackH: Math.max(0, maxY - minY),
+    drawerH: Math.max(
+      DRAWER_DIMENSIONS.sketch.externalPreviewVisualMinHeightM,
+      drawerH || args.targetBox.height
+    ),
+    drawerGap,
+  };
 }
 
 export function tryHandleSketchHoverOverStandardDrawer(args: SketchStandardDrawerHoverArgs): boolean {
@@ -58,12 +186,14 @@ export function tryHandleSketchHoverOverStandardDrawer(args: SketchStandardDrawe
   const box = target?.box || null;
   const partId = readString(userData?.partId ?? drawer?.id);
   const family = classifyCrossDrawerPart(partId, userData);
-  if (!target || !drawer || !group || !parent || !box || !isStandardDrawerFamilyForSketchTool(tool, family)) {
+  if (!target || !drawer || !group || !parent || !box || !isCrossDrawerFamilyForSketchTool(tool, family)) {
     return false;
   }
   if (!(box.width > 0) || !(box.height > 0) || !(box.depth > 0)) return false;
 
-  const moduleKey = __wp_toModuleKey(userData?.moduleIndex ?? drawer?.moduleIndex);
+  const moduleKey = __wp_toModuleKey(
+    userData?.moduleIndex ?? userData?.__wpSketchModuleKey ?? drawer?.moduleIndex
+  );
   if (moduleKey == null) return false;
   const isBottom = userData?.__wpStack === 'bottom' || drawer?.__wpStack === 'bottom';
   const baseY = box.centerY - box.height / 2;
@@ -131,39 +261,119 @@ export function tryHandleSketchHoverOverStandardDrawer(args: SketchStandardDrawe
     return true;
   }
 
-  __wp_writeSketchHover(
-    App,
-    createManualLayoutSketchStackHoverRecord({
-      host,
-      kind: 'drawers',
-      op: 'remove',
-      yCenter: box.centerY,
-      baseY,
-      removeKind: 'std',
-      removePid: partId,
-      drawerH: box.height,
-      drawerGap: DRAWER_DIMENSIONS.sketch.internalGapM,
-      drawerHeightM: box.height,
-      stackH: box.height,
-    })
-  );
-  if (setPreview) {
-    setPreview({
+  if (family === 'sketch_external') {
+    const drawerId = readString(userData?.__wpSketchExtDrawerId);
+    if (!drawerId) return false;
+    const visualT = DRAWER_DIMENSIONS.external.visualThicknessM;
+    const stackPreview = resolveExternalCrossDrawerStackPreview({
       App,
-      THREE: getThreeMaybe(App),
-      anchor: group,
-      anchorParent: parent,
-      kind: 'drawers',
-      x: box.centerX,
-      y: baseY,
-      z: box.centerZ,
-      w: Math.max(DRAWER_DIMENSIONS.sketch.internalPreviewMinWidthM, box.width),
-      d: Math.max(DRAWER_DIMENSIONS.sketch.internalPreviewMinDepthM, box.depth),
-      drawerH: Math.max(DRAWER_DIMENSIONS.sketch.internalPreviewDefaultSingleHeightM, box.height),
-      drawerGap: DRAWER_DIMENSIONS.sketch.internalGapM,
-      woodThick: DRAWER_DIMENSIONS.external.visualThicknessM,
-      op: 'remove',
+      target,
+      measureObjectLocalBox: __wp_measureObjectLocalBox,
+      family: 'sketch_external',
+      minWidth: DRAWER_DIMENSIONS.sketch.externalPreviewVisualMinWidthM,
+      minHeight: DRAWER_DIMENSIONS.sketch.externalPreviewVisualMinHeightM,
+      minDepth: DRAWER_DIMENSIONS.sketch.externalPreviewVisualMinDepthM,
+      visualThickness: visualT,
+      frontZOffset: DRAWER_DIMENSIONS.sketch.externalPreviewFrontZOffsetM,
     });
+    const previewBaseY = stackPreview?.y ?? baseY;
+    const previewStackH = stackPreview?.stackH ?? box.height;
+    const previewDrawerH = stackPreview?.drawerH ?? box.height;
+    const previewDrawerCount = stackPreview?.drawerCount ?? readNumber(drawer?.drawerCount) ?? 1;
+    __wp_writeSketchHover(
+      App,
+      createManualLayoutSketchStackHoverRecord({
+        host,
+        kind: 'ext_drawers',
+        op: 'remove',
+        yCenter: previewBaseY + previewStackH / 2,
+        baseY: previewBaseY,
+        removeKind: 'sketch',
+        removeId: drawerId,
+        drawerCount: previewDrawerCount,
+        drawerH: previewDrawerH,
+        drawerHeightM: previewDrawerH,
+        stackH: previewStackH,
+      })
+    );
+    if (setPreview) {
+      setPreview({
+        App,
+        THREE: getThreeMaybe(App),
+        anchor: stackPreview?.anchor || group,
+        anchorParent: stackPreview?.anchorParent || parent,
+        kind: 'ext_drawers',
+        x: stackPreview?.x ?? box.centerX,
+        y: previewBaseY,
+        z:
+          stackPreview?.z ??
+          box.centerZ + box.depth / 2 + visualT / 2 + DRAWER_DIMENSIONS.sketch.externalPreviewFrontZOffsetM,
+        w: stackPreview?.w ?? Math.max(DRAWER_DIMENSIONS.sketch.externalPreviewVisualMinWidthM, box.width),
+        d: stackPreview?.d ?? Math.max(DRAWER_DIMENSIONS.sketch.externalPreviewVisualMinDepthM, visualT),
+        woodThick: visualT,
+        drawers: stackPreview?.drawers ?? [
+          {
+            y: box.centerY,
+            h: Math.max(DRAWER_DIMENSIONS.sketch.externalPreviewVisualMinHeightM, box.height),
+          },
+        ],
+        op: 'remove',
+      });
+    }
+    return true;
   }
-  return true;
+
+  if (family === 'sketch_internal') {
+    const removeId = readSketchInternalDrawerId(partId, moduleKey);
+    if (!removeId) return false;
+    const stackPreview = resolveInternalCrossDrawerStackPreview({
+      App,
+      targetGroup: group,
+      targetParent: parent,
+      targetBox: box,
+      targetPartId: partId,
+      targetModuleKey: String(moduleKey),
+    });
+    const previewBaseY = stackPreview?.y ?? baseY;
+    const previewStackH = stackPreview?.stackH ?? box.height;
+    const previewDrawerH = stackPreview?.drawerH ?? box.height;
+    const previewDrawerGap = stackPreview?.drawerGap ?? DRAWER_DIMENSIONS.sketch.internalGapM;
+    __wp_writeSketchHover(
+      App,
+      createManualLayoutSketchStackHoverRecord({
+        host,
+        kind: 'drawers',
+        op: 'remove',
+        yCenter: previewBaseY + previewStackH / 2,
+        baseY: previewBaseY,
+        removeKind: 'sketch',
+        removeId,
+        drawerH: previewDrawerH,
+        drawerGap: previewDrawerGap,
+        drawerHeightM: previewDrawerH,
+        stackH: previewStackH,
+      })
+    );
+    if (setPreview) {
+      setPreview({
+        App,
+        THREE: getThreeMaybe(App),
+        anchor: stackPreview?.anchor || group,
+        anchorParent: stackPreview?.anchorParent || parent,
+        kind: 'drawers',
+        x: stackPreview?.x ?? box.centerX,
+        y: previewBaseY,
+        z: stackPreview?.z ?? box.centerZ,
+        w: stackPreview?.w ?? Math.max(DRAWER_DIMENSIONS.sketch.internalWidthMinM, box.width),
+        d: stackPreview?.d ?? Math.max(DRAWER_DIMENSIONS.sketch.internalDepthMinM, box.depth),
+        drawerH: previewDrawerH,
+        drawerGap: previewDrawerGap,
+        woodThick: DRAWER_DIMENSIONS.external.visualThicknessM,
+        op: 'remove',
+      });
+    }
+    return true;
+  }
+
+  return false;
 }

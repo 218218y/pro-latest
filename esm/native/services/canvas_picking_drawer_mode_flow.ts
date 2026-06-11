@@ -1,7 +1,6 @@
 import type { AppContainer } from '../../../types';
 import type { RaycastHitLike } from './canvas_picking_engine.js';
 import type { ModuleKey, PatchConfigForKeyFn } from './canvas_picking_drawer_mode_flow_shared.js';
-import { tryHandleInternalDrawerModeClick } from './canvas_picking_drawer_mode_flow_internal.js';
 import { tryHandleExternalDrawerModeClick } from './canvas_picking_drawer_mode_flow_external.js';
 import { tryHandleDrawerDividerModeClick } from './canvas_picking_drawer_mode_flow_divider.js';
 
@@ -23,26 +22,11 @@ export type CanvasDrawerModeClickArgs = {
 
 export function tryHandleCanvasDrawerModeClick(args: CanvasDrawerModeClickArgs): boolean {
   if (
-    tryHandleInternalDrawerModeClick({
-      App: args.App,
-      foundModuleIndex: args.foundModuleIndex,
-      activeModuleKey: args.__activeModuleKey,
-      isBottomStack: args.__isBottomStack,
-      isManualLayoutMode: args.__isManualLayoutMode,
-      isIntDrawerEditMode: args.__isIntDrawerEditMode,
-      moduleHitY: args.moduleHitY,
-      intersects: args.intersects,
-      patchConfigForKey: args.__patchConfigForKey,
-    })
-  ) {
-    return true;
-  }
-
-  if (
     tryHandleExternalDrawerModeClick({
       App: args.App,
       foundModuleIndex: args.foundModuleIndex,
       activeModuleKey: args.__activeModuleKey,
+      isBottomStack: args.__isBottomStack,
       isExtDrawerEditMode: args.__isExtDrawerEditMode,
       patchConfigForKey: args.__patchConfigForKey,
       intersects: args.intersects,

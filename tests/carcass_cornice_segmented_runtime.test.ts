@@ -96,6 +96,51 @@ test('segmented classic cornice follows module depth and only exposes the deeper
   );
 });
 
+test('segmented wave cornice paints internal depth-step side returns with the front fascia', () => {
+  const totalW = 2.4;
+  const woodThick = 0.018;
+  const w = moduleInternalWidth(totalW, woodThick, 3);
+  const ops = asRecord(
+    computeCarcassOps({
+      totalW,
+      D: 0.55,
+      H: 2.4,
+      woodThick,
+      baseType: '',
+      doorsCount: 3,
+      hasCornice: true,
+      corniceType: 'wave',
+      moduleInternalWidths: [w, w, w],
+      moduleHeightsTotal: [2.4, 2.4, 2.4],
+      moduleDepthsTotal: [0.55, 0.75, 0.55],
+    })
+  );
+
+  const segments = asSegments(asRecord(ops.cornice).segments);
+  const shortInternalReturns = segments.filter(
+    seg =>
+      seg.kind === 'cornice_wave_side' &&
+      seg.partId === 'cornice_wave_front' &&
+      Number(Number(seg.depth).toFixed(3)) === 0.2
+  );
+  assert.equal(
+    shortInternalReturns.length,
+    2,
+    'the two exposed side returns of a deeper module should not share paint keys with the cabinet outer sides'
+  );
+
+  assert.equal(
+    segments.filter(seg => seg.partId === 'cornice_wave_side_left').length,
+    1,
+    'only the real exterior left cornice side should keep the left-side paint key'
+  );
+  assert.equal(
+    segments.filter(seg => seg.partId === 'cornice_wave_side_right').length,
+    1,
+    'only the real exterior right cornice side should keep the right-side paint key'
+  );
+});
+
 test('segmented wave cornice fronts follow the module depth instead of the global cabinet depth', () => {
   const totalW = 2.4;
   const woodThick = 0.018;
@@ -131,6 +176,14 @@ function profileSegmentXBounds(seg: AnyRecord): [number, number] {
   const x = Number(seg.x);
   const length = Number(seg.length);
   return [Number((x - length / 2).toFixed(3)), Number((x + length / 2).toFixed(3))];
+}
+
+function profileSegmentPathXBounds(seg: AnyRecord): [number, number] {
+  const x = Number(seg.x);
+  const length = Number(seg.length);
+  const rotationY = Number(seg.rotationY);
+  const halfDx = (Math.abs(Math.sin(rotationY)) * length) / 2;
+  return [Number((x - halfDx).toFixed(3)), Number((x + halfDx).toFixed(3))];
 }
 
 function moduleRunBoundaries(totalW: number, woodThick: number, moduleCount: number): number[] {
@@ -269,4 +322,138 @@ test('segmented classic cornice cuts the shorter middle module straight and give
   assertInternalSideStopsAtBoundary(sideAtY(leftBoundarySides, 2.4006), boundary01);
   assertInternalSideStopsAtBoundary(sideAtY(rightBoundarySides, 2.4006), boundary12);
   assertExternalSideHasDecorativeOverhang(sideAtY(rightBoundarySides, 2.6006), boundary12);
+});
+
+test('classic cornice follows a hex-cell roof footprint instead of stopping at the side depth', () => {
+  const totalW = 1;
+  const woodThick = 0.018;
+  const w = totalW - woodThick * 2;
+  const ops = asRecord(
+    computeCarcassOps({
+      totalW,
+      D: 0.6,
+      H: 2.4,
+      woodThick,
+      baseType: '',
+      doorsCount: 2,
+      hasCornice: true,
+      corniceType: 'classic',
+      moduleInternalWidths: [w],
+      moduleHeightsTotal: [2.4],
+      moduleDepthsTotal: [0.5],
+      moduleCfgList: [{ hexCell: { enabled: true, protrusionCm: 10, doorWidthCm: 40 } }],
+    })
+  );
+
+  const cornice = asRecord(ops.cornice);
+  assert.equal(cornice.mode, 'profile_open_back_segmented');
+  const segments = asSegments(cornice.segments);
+  const fronts = segments.filter(seg => seg.kind === 'cornice_profile_seg' && Number(seg.rotationY) !== 0);
+  assert.equal(fronts.length, 3);
+  const doorFront = fronts.find(
+    seg => Math.abs(Number(seg.rotationY) + Math.PI / 2) < 1e-9 && Number(seg.z) > 0.29
+  );
+  assert.ok(doorFront, 'expected a straight cornice segment on the projected door front');
+  assert.ok(
+    Number(doorFront?.miterStartTrim) > 0 && Number(doorFront?.miterEndTrim) > 0,
+    'expected the projected door-front profile to be miter-cut toward both diagonal hex runs'
+  );
+  assert.deepEqual(
+    [
+      Number(Number(doorFront?.miterStartTrim).toFixed(4)),
+      Number(Number(doorFront?.miterEndTrim).toFixed(4)),
+    ],
+    [0.0065, 0.0065],
+    'the shared front-path miter trim should fully bevel both joining profile runs so the front and diagonal profiles close cleanly'
+  );
+  const diagonals = fronts.filter(seg => Math.abs(Number(seg.rotationY) + Math.PI / 2) > 1e-3);
+  assert.equal(diagonals.length, 2, 'expected both diagonal hex-cell cornice runs to be present');
+  assert.ok(
+    diagonals.every(seg => Number(seg.miterStartTrim) > 0 || Number(seg.miterEndTrim) > 0),
+    'expected each diagonal profile run to expose a miter cut at its connection'
+  );
+  assert.ok(
+    fronts.every(seg => seg.miterMode === 'outer_extend'),
+    'hex-cell front and diagonal profile runs should extend only their outer lips at miter joints so their roof-edge bases still meet at the footprint vertices'
+  );
+  const leftDiagonal = diagonals.find(seg => Number(seg.x) < 0);
+  const rightDiagonal = diagonals.find(seg => Number(seg.x) > 0);
+  assert.ok(leftDiagonal, 'expected the left diagonal hex cornice run');
+  assert.ok(rightDiagonal, 'expected the right diagonal hex cornice run');
+  assert.deepEqual(
+    [profileSegmentPathXBounds(leftDiagonal), profileSegmentPathXBounds(rightDiagonal)],
+    [
+      [-0.5, -0.2],
+      [0.2, 0.5],
+    ],
+    'hex diagonal cornice runs should stop at the side boundaries instead of being extended outward past the side returns'
+  );
+
+  const exteriorSides = segments.filter(
+    seg => seg.kind === 'cornice_profile_seg' && Number(seg.rotationY) === 0
+  );
+  assert.equal(exteriorSides.length, 2, 'expected the two exterior profile side returns');
+  assert.ok(
+    exteriorSides.every(seg => Number(Number(seg.length).toFixed(4)) === 0.4922),
+    'hex-cell side returns should stop at the side-wall front; only their outer lips are miter-extended toward the diagonal profile'
+  );
+  assert.ok(
+    exteriorSides.every(seg => seg.miterMode === 'outer_extend' && Number(seg.miterEndTrim) > 0),
+    'hex-cell exterior side returns should receive an outer-lip miter instead of extending the whole straight side forward'
+  );
+});
+
+test('wave cornice follows a hex-cell roof footprint with straight diagonal fillers and a waved door front', () => {
+  const totalW = 1;
+  const woodThick = 0.018;
+  const w = totalW - woodThick * 2;
+  const ops = asRecord(
+    computeCarcassOps({
+      totalW,
+      D: 0.6,
+      H: 2.4,
+      woodThick,
+      baseType: '',
+      doorsCount: 2,
+      hasCornice: true,
+      corniceType: 'wave',
+      moduleInternalWidths: [w],
+      moduleHeightsTotal: [2.4],
+      moduleDepthsTotal: [0.5],
+      moduleCfgList: [{ hexCell: { enabled: true, protrusionCm: 10, doorWidthCm: 40 } }],
+    })
+  );
+
+  const cornice = asRecord(ops.cornice);
+  assert.equal(cornice.mode, 'wave_frame_segmented');
+  const segments = asSegments(cornice.segments);
+  const waveFronts = segments.filter(seg => seg.kind === 'cornice_wave_front');
+  assert.equal(waveFronts.length, 1);
+  assert.ok(
+    waveFronts.some(seg => Math.abs(Number(seg.rotationY)) < 1e-9 && Number(seg.z) > 0.28),
+    'expected the projected door front to keep the waved fascia'
+  );
+
+  const diagonalFillers = segments.filter(
+    seg => seg.kind === 'cornice_wave_side' && seg.partId === 'cornice_wave_front'
+  );
+  assert.equal(diagonalFillers.length, 2);
+  assert.ok(
+    diagonalFillers.every(seg => seg.kind === 'cornice_wave_side' && Number(seg.height) > 0),
+    'expected both diagonal hex-cell runs to use straight filler cornice without the top wave crown'
+  );
+  assert.ok(
+    diagonalFillers.every(seg => !('waveAmp' in seg) && !('heightMax' in seg)),
+    'diagonal hex-cell wave fillers must not carry wave-front geometry inputs'
+  );
+  assert.equal(
+    diagonalFillers.filter(seg => Math.abs(Number(seg.rotationY)) > 1e-3).length,
+    2,
+    'expected both straight diagonal fillers to be rotated onto the hex roof diagonals'
+  );
+  const frontPaintSegments = segments.filter(seg => seg.partId === 'cornice_wave_front');
+  assert.ok(
+    frontPaintSegments.length === 3,
+    'the waved door front and both diagonal fillers should share the main front paint part'
+  );
 });

@@ -8,6 +8,7 @@ test('sketch door cuts runtime resolves canonical style, curtain, mirror layout,
   const createHandleMesh = () => ({ kind: 'handle' });
   const getPartMaterial = (partId: string) => `mat:${partId}`;
   const runtime = createSketchDoorCutsRuntime({
+    App: {} as any,
     THREE: { tag: 'THREE' } as any,
     ctx: {
       create: {
@@ -40,6 +41,10 @@ test('sketch door cuts runtime resolves canonical style, curtain, mirror layout,
       },
       doorStyleMap: { d7: 'tom', drawer_1: 'profile', bad: 'glass' },
       removedDoorsMap: { removed_d7_full: true },
+      handlesMap: {
+        __wp_edge_handle_variant_global: 'long',
+        '__wp_edge_handle_variant:d7': 'short',
+      },
     },
     bodyMat: { name: 'body' },
     globalFrontMat: { name: 'front' },
@@ -52,6 +57,8 @@ test('sketch door cuts runtime resolves canonical style, curtain, mirror layout,
   assert.equal(runtime.getPartMaterial('d7_full'), 'mat:d7_full');
   assert.equal(runtime.resolveHandleType('d7_full'), 'profile');
   assert.equal(runtime.resolveHandleType('drawer_1'), 'standard');
+  assert.equal(runtime.resolveEdgeHandleVariant('d7_top'), 'short');
+  assert.equal(runtime.resolveEdgeHandleVariant('drawer_1'), 'long');
   assert.equal(runtime.resolveCurtain('d7'), 'linen');
   assert.equal(runtime.resolveSpecial('d7', null), 'mirror');
   assert.equal(runtime.resolveSpecial('drawer_1', 'linen'), 'glass');

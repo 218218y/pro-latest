@@ -31,7 +31,6 @@ const layoutFlowManual = read('esm/native/services/canvas_picking_layout_edit_fl
 const layoutFlowBrace = read('esm/native/services/canvas_picking_layout_edit_flow_brace.ts');
 const layoutFlowShared = read('esm/native/services/canvas_picking_layout_edit_flow_shared.ts');
 const drawerFlow = read('esm/native/services/canvas_picking_drawer_mode_flow.ts');
-const drawerFlowInternal = read('esm/native/services/canvas_picking_drawer_mode_flow_internal.ts');
 const drawerFlowExternal = read('esm/native/services/canvas_picking_drawer_mode_flow_external.ts');
 const drawerFlowDivider = read('esm/native/services/canvas_picking_drawer_mode_flow_divider.ts');
 const doorEdit = read('esm/native/services/canvas_picking_door_edit_flow.ts');
@@ -183,10 +182,8 @@ test('canvas picking click owner stays thin and routes edit families through foc
     drawerFlow,
     /export function tryHandleCanvasDrawerModeClick\(args: CanvasDrawerModeClickArgs\): boolean/
   );
-  assert.match(drawerFlow, /tryHandleInternalDrawerModeClick\(\{/);
   assert.match(drawerFlow, /tryHandleExternalDrawerModeClick\(\{/);
   assert.match(drawerFlow, /tryHandleDrawerDividerModeClick\(\{/);
-  assert.match(drawerFlowInternal, /source: 'intDrawers\.toggle'/);
   assert.match(drawerFlowExternal, /source: 'extDrawers\.toggle'/);
   assert.match(drawerFlowDivider, /source: 'divider:click'/);
 

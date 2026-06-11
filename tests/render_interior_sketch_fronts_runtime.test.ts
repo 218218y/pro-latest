@@ -64,6 +64,7 @@ function createFrontsArgs() {
   const doorVisualCalls: Array<{ partId: string; faceMat: unknown; isMirror: boolean; baseMat: unknown }> =
     [];
   const group = new FakeGroup();
+  const shelfBoards: FakeMesh[] = [];
   const App: any = {
     services: {
       builder: {
@@ -139,6 +140,24 @@ function createFrontsArgs() {
       woodThick: 0.02,
       moduleIndex: 2,
       moduleKeyStr: 'module_2',
+      currentBraceShelfMat: { id: 'brace-shelf-mat' },
+      createBoard: (
+        w: number,
+        h: number,
+        d: number,
+        x: number,
+        y: number,
+        z: number,
+        mat: unknown,
+        partId: string
+      ) => {
+        const mesh = new FakeMesh(new FakeBoxGeometry(w, h, d), mat);
+        mesh.position.set(x, y, z);
+        mesh.userData.partId = partId;
+        shelfBoards.push(mesh);
+        group.add(mesh);
+        return mesh;
+      },
       createDoorVisual: (
         _faceW: number,
         _faceH: number,
@@ -168,11 +187,11 @@ function createFrontsArgs() {
     },
   };
 
-  return { args, mirrorCallsRef: () => mirrorCalls, doorVisualCalls, App, group, mirrorMat };
+  return { args, mirrorCallsRef: () => mirrorCalls, doorVisualCalls, shelfBoards, App, group, mirrorMat };
 }
 
 test('render sketch box fronts reuses one mirror material across mirrored external drawers', () => {
-  const { args, mirrorCallsRef, doorVisualCalls, App, group, mirrorMat } = createFrontsArgs();
+  const { args, mirrorCallsRef, doorVisualCalls, shelfBoards, App, group, mirrorMat } = createFrontsArgs();
 
   renderSketchBoxFronts(args);
 
@@ -185,5 +204,6 @@ test('render sketch box fronts reuses one mirror material across mirrored extern
   assert.notEqual(doorVisualCalls[0]?.baseMat, mirrorMat);
   assert.notEqual(doorVisualCalls[1]?.baseMat, mirrorMat);
   assert.equal((App.render?.drawersArray || []).length, 2);
-  assert.equal(group.children.length, 2);
+  assert.equal(shelfBoards.length, 2);
+  assert.equal(group.children.length, 4);
 });

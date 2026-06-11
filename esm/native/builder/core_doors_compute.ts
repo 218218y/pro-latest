@@ -4,6 +4,8 @@ import {
   MATERIAL_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
 
+import { readHexCellConfig, resolveDefaultHexDoorWidthCm } from '../features/hex_cell/index.js';
+
 import {
   _asObject,
   __asArray,
@@ -18,6 +20,8 @@ export function computeHingedDoorPivotMap(input: unknown) {
   const inp = _asObject(input) || {};
   let totalW = __asNum(inp.totalW, 0);
   let woodThick = __asNum(inp.woodThick, MATERIAL_DIMENSIONS.wood.thicknessM);
+  const doorMountMode = String(inp.doorMountMode || 'overlay') === 'inset' ? 'inset' : 'overlay';
+  const isInsetDoorMount = doorMountMode === 'inset';
   let singleUnitWidth = __asNum(inp.singleUnitWidth, 0);
   const hingeMap: UnknownRecord = _asObject(inp.hingeMap) || {};
 
@@ -25,12 +29,13 @@ export function computeHingedDoorPivotMap(input: unknown) {
   // - Outer wardrobe sides: doors overlap HALF of the thickness (nice flush look).
   // - Regular INTERNAL dividers: use a smaller overlap (about ONE THIRD) so a subtle
   //   center reveal remains visible and the middle doors don't look like a single slab.
-  // - "Special per-cell" boundaries (double full-depth walls): keep HALF overlap for
+  // - Custom-geometry boundaries (double full-depth walls): keep HALF overlap for
   //   best alignment with the added full-depth partitions.
-  // - When "special per-cell" dims are applied, the module loop may add TWO full-depth
+  // - When custom per-cell geometry is applied, the module loop may add TWO full-depth
   //   partitions at the boundary (one per module). The right module effectively has an
   //   extra left wall inside its span; we compensate in door geometry to keep symmetry.
   const _moduleIsCustomRaw = Array.isArray(inp.moduleIsCustom) ? __asArray(inp.moduleIsCustom) : null;
+  const moduleConfigs = Array.isArray(inp.moduleConfigs) ? __asArray(inp.moduleConfigs) : null;
 
   let modules = __normalizeModulesStructure(inp.modulesStructure);
   const moduleInternalWidths = Array.isArray(inp.moduleInternalWidths)
@@ -56,6 +61,12 @@ export function computeHingedDoorPivotMap(input: unknown) {
   const OVERLAY_OUTER = woodThick / 2;
   const OVERLAY_INNER = woodThick / 3;
   const OVERLAY_SPECIAL = woodThick / 2;
+  const INSET_REVEAL = DOOR_SYSTEM_DIMENSIONS.hinged.insetRevealM;
+
+  const readPositiveCm = (value: unknown): number | null => {
+    const n = __asNum(value, NaN);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
 
   for (let mi = 0; mi < modules.length; mi++) {
     const mod = modules[mi];
@@ -65,12 +76,23 @@ export function computeHingedDoorPivotMap(input: unknown) {
       moduleInternalWidths && Number.isFinite(moduleInternalWidths[mi])
         ? moduleInternalWidths[mi]
         : singleUnitWidth * modDoors;
-    // If the boundary to our LEFT is a "special" one (custom dims on either side), the builder loop
+    const hexCell = moduleConfigs ? readHexCellConfig(moduleConfigs[mi]) : null;
+    const hexDoorWidthCm = hexCell
+      ? readPositiveCm(hexCell.doorWidthCm) || resolveDefaultHexDoorWidthCm(modWidth * 100)
+      : null;
+    const hexDoorWidthM =
+      hexDoorWidthCm != null ? Math.min(modWidth - 2 * woodThick, hexDoorWidthCm / 100) : null;
+
+    // If the boundary to our LEFT has custom geometry, the builder loop
     // adds an extra full-depth wall INSIDE this module at its left edge. Compensate by shifting the
     // effective door start to the right and shrinking the door span by that wall thickness.
     const extraLeftWall = mi > 0 && specialBoundary && specialBoundary[mi - 1] ? woodThick : 0;
-    const effectiveStartX = currentX + extraLeftWall;
-    const effectiveSpanW = Math.max(0, modWidth - extraLeftWall);
+    const effectiveStartX =
+      hexDoorWidthM != null
+        ? currentX + Math.max(0, (modWidth - hexDoorWidthM) / 2)
+        : currentX + extraLeftWall;
+    const effectiveSpanW =
+      hexDoorWidthM != null ? Math.max(woodThick, hexDoorWidthM) : Math.max(0, modWidth - extraLeftWall);
 
     // Slight seam reveal between multiple leaves in the SAME module, so two doors don't read
     // like one big slab when viewed head-on.
@@ -87,25 +109,28 @@ export function computeHingedDoorPivotMap(input: unknown) {
       if (totalDesired > maxTotalGap) leafGap = maxTotalGap / (modDoors - 1);
     }
     const totalGap = (modDoors - 1) * leafGap;
-    const baseLeafW = modDoors > 0 ? Math.max(0, (effectiveSpanW - totalGap) / modDoors) : singleUnitWidth;
+    const insetSideReveal = isInsetDoorMount ? Math.min(INSET_REVEAL, effectiveSpanW / 8) : 0;
+    const insetSpanW = isInsetDoorMount ? Math.max(0, effectiveSpanW - insetSideReveal * 2) : effectiveSpanW;
+    const baseLeafW = modDoors > 0 ? Math.max(0, (insetSpanW - totalGap) / modDoors) : singleUnitWidth;
+    const insetStartX = isInsetDoorMount ? effectiveStartX + insetSideReveal : effectiveStartX;
 
     for (let di = 0; di < modDoors; di++) {
       // Base (inset) door leaf inside the module opening.
-      let doorLeftEdge = effectiveStartX + di * (baseLeafW + leafGap);
+      let doorLeftEdge = insetStartX + di * (baseLeafW + leafGap);
       let doorW = baseLeafW;
 
       // Door overlays on vertical walls.
       // - Outer wardrobe sides: woodThick/2.
       // - Regular internal dividers: woodThick/3 (leaves a small reveal).
       // - Special boundaries (per-cell dims): woodThick/2.
-      if (di === 0) {
+      if (!isInsetDoorMount && hexDoorWidthM == null && di === 0) {
         const isOuterLeft = mi === 0;
         const isSpecialLeft = !isOuterLeft && specialBoundary && specialBoundary[mi - 1];
         const overlayL = isOuterLeft ? OVERLAY_OUTER : isSpecialLeft ? OVERLAY_SPECIAL : OVERLAY_INNER;
         doorLeftEdge -= overlayL;
         doorW += overlayL;
       }
-      if (di === modDoors - 1) {
+      if (!isInsetDoorMount && hexDoorWidthM == null && di === modDoors - 1) {
         const isOuterRight = mi === modules.length - 1;
         const isSpecialRight = !isOuterRight && specialBoundary && specialBoundary[mi];
         const overlayR = isOuterRight ? OVERLAY_OUTER : isSpecialRight ? OVERLAY_SPECIAL : OVERLAY_INNER;

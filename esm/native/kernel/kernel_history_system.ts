@@ -58,6 +58,7 @@ export function createKernelHistorySystem(args: CreateKernelHistorySystemArgs): 
   historySystem._lastCoalesceAt =
     typeof historySystem._lastCoalesceAt === 'number' ? historySystem._lastCoalesceAt : 0;
   historySystem.__didInit = historySystem.__didInit === true;
+  historySystem.__isApplyingState = historySystem.__isApplyingState === true;
   historySystem._statusListeners = readHistoryListenerSetSafe(historySystem._statusListeners);
 
   installKernelHistoryLifecycle(historySystem, args);

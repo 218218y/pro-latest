@@ -6,16 +6,22 @@ export interface CanvasCellDimsClickArgs {
   foundPartId: string | null;
   isBottomStack: boolean;
   ensureCornerCellConfigRef: (cellIdx: number) => ModuleConfigLike | null;
+  ndcX?: number;
+  ndcY?: number;
 }
 
 export interface CanvasCellDimsResolvedDrafts {
   App: AppContainer;
+  isBottomStack?: boolean;
   ui: UnknownRecord;
   cfg: UnknownRecord;
   raw: UnknownRecord;
   applyW: number | null;
   applyH: number | null;
   applyD: number | null;
+  hexCellMode?: boolean;
+  hexCellProtrusionCm?: number | null;
+  hexCellDoorWidthCm?: number | null;
 }
 
 export interface CanvasCornerCellDimsArgs extends CanvasCellDimsResolvedDrafts {

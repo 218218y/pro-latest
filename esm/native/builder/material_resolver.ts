@@ -12,6 +12,7 @@
 import type { AppContainer, RenderOpsLike, ThreeLike, UnknownRecord } from '../../../types';
 import { getBuilderRenderOps } from '../runtime/builder_service_access.js';
 import { getPlatformReportError } from '../runtime/platform_access.js';
+import { isDrawerBoxPartId } from '../features/drawer_box_identity.js';
 
 type SavedColorItemLike = UnknownRecord & {
   id?: string;
@@ -34,6 +35,12 @@ type MaterialResolverArgs = {
   getMaterial: MaterialFactory;
   globalFrontMat: unknown;
 };
+
+const MAIN_WAVE_CORNICE_PARTS = new Set([
+  'cornice_wave_front',
+  'cornice_wave_side_left',
+  'cornice_wave_side_right',
+]);
 
 function _isRecord(x: unknown): x is UnknownRecord {
   return !!x && typeof x === 'object' && !Array.isArray(x);
@@ -72,11 +79,23 @@ export function makeMaterialResolver(args: MaterialResolverArgs): {
   }
 
   const reportError = getPlatformReportError(App);
+  let drawerBoxBaseMat: unknown | undefined;
+  const getDrawerBoxBaseMat = () => {
+    if (!drawerBoxBaseMat) drawerBoxBaseMat = getMaterial('#ffffff', 'body', false);
+    return drawerBoxBaseMat || globalFrontMat;
+  };
 
   function getPartColorValue(partId: string): string | null | undefined {
     if (!cfg.isMultiColorMode) return null;
     const colors = _asObj(cfg.individualColors) || {};
     let value = colors[partId];
+    if (
+      typeof value === 'undefined' &&
+      MAIN_WAVE_CORNICE_PARTS.has(partId) &&
+      Object.prototype.hasOwnProperty.call(colors, 'cornice_color')
+    ) {
+      value = colors.cornice_color;
+    }
     // Inherit full-door paint when a door is split but only the *_full key exists.
     if (typeof value === 'undefined' && /_(top|bot)$/.test(partId)) {
       const fullKey = String(partId).replace(/_(top|bot)$/, '_full');
@@ -89,6 +108,12 @@ export function makeMaterialResolver(args: MaterialResolverArgs): {
 
   function getPartMaterial(partId: string): unknown {
     const specificColorVal = getPartColorValue(partId);
+    if (
+      isDrawerBoxPartId(partId) &&
+      (!specificColorVal || specificColorVal === 'glass' || specificColorVal === 'mirror')
+    ) {
+      return getDrawerBoxBaseMat();
+    }
     if (!cfg.isMultiColorMode || !specificColorVal) return globalFrontMat;
 
     if (specificColorVal === 'glass') return globalFrontMat;

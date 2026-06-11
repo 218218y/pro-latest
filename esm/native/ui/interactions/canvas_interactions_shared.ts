@@ -6,10 +6,15 @@ import {
   getBrowserTimers,
   getBuilderRenderOps,
   reportError,
+  syncCanvasPickingViewportMatrices,
 } from '../../services/api.js';
 
 export type Ndc = { x: number; y: number };
 export type RectLike = { left: number; top: number; width: number; height: number };
+export type CanvasRectOps = {
+  invalidateRectCache: () => void;
+  readRectCached: (maxAgeMs?: number) => RectLike | null;
+};
 
 export type CanvasInteractionsDeps = {
   domEl: HTMLElement;
@@ -223,6 +228,78 @@ export function createHoverCursorApplier(
       reportCanvasInteractionsNonFatal(App, 'hover.cursor', err);
     }
   };
+}
+
+export type HoverCursorApplier = (hoverRes: unknown) => void;
+
+export type CanvasHoverRefreshArgs = {
+  App: AppContainer;
+  deps: CanvasInteractionsDeps;
+  state: CanvasInteractionState;
+  rectOps: CanvasRectOps;
+  applyHoverCursorFromResult: HoverCursorApplier;
+  cx: number;
+  cy: number;
+  rectMaxAgeMs?: number;
+  invalidateRectCache?: boolean;
+  syncPickingMatrices?: boolean;
+  op?: string;
+};
+
+export function refreshCanvasHoverAtClientPoint(args: CanvasHoverRefreshArgs): boolean {
+  const {
+    App,
+    deps,
+    state,
+    rectOps,
+    applyHoverCursorFromResult,
+    cx,
+    cy,
+    rectMaxAgeMs = 24,
+    invalidateRectCache = false,
+    syncPickingMatrices = false,
+    op = 'hover.refresh',
+  } = args;
+
+  state.hoverLastCx = cx;
+  state.hoverLastCy = cy;
+
+  let hoverRes: unknown = null;
+  try {
+    if (invalidateRectCache) rectOps.invalidateRectCache();
+    const rect = rectOps.readRectCached(rectMaxAgeMs);
+    const ndc = rect ? toNdcFromClient(cx, cy, rect) : null;
+    if (ndc && typeof deps.handleCanvasHoverNDC === 'function') {
+      if (syncPickingMatrices) syncCanvasPickingViewportMatrices(App);
+      hoverRes = deps.handleCanvasHoverNDC(ndc.x, ndc.y, App);
+    }
+    applyHoverCursorFromResult(hoverRes);
+    return !!ndc;
+  } catch (err) {
+    try {
+      applyHoverCursorFromResult(null);
+    } catch {
+      // ignore secondary cursor errors; the original hover error is the useful signal.
+    }
+    reportCanvasInteractionsNonFatal(App, op, err);
+    return false;
+  }
+}
+
+export function cancelQueuedCanvasHoverRefresh(
+  App: AppContainer,
+  state: CanvasInteractionState,
+  timers: ReturnType<typeof getInteractionTimers>,
+  op = 'hover.cancelQueued'
+): void {
+  state.hoverMoveQueued = false;
+  if (!state.hoverRafId) return;
+  try {
+    timers.cancelAnimationFrame(state.hoverRafId);
+  } catch (err) {
+    reportCanvasInteractionsNonFatal(App, op, err);
+  }
+  state.hoverRafId = 0;
 }
 
 export function createEventBinding(App: AppContainer, domEl: HTMLElement) {

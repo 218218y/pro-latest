@@ -1,17 +1,25 @@
 import type { AppContainer, ModuleConfigLike } from '../../../types';
-import { __wp_ui } from './canvas_picking_core_helpers.js';
+import { resolveExternalDrawerFitFromBounds } from '../../shared/wardrobe_construction_validation_shared.js';
+import {
+  HEX_CELL_DRAWER_ADD_BLOCKED_MESSAGE,
+  shouldBlockDrawerBuildInHexCell,
+} from '../features/hex_cell/index.js';
+import { getInternalGridMap } from '../runtime/cache_access.js';
+import { __wp_toast, __wp_ui } from './canvas_picking_core_helpers.js';
 import {
   findDirectCrossDrawerHitInIntersects,
   removeSketchExternalDrawerFromConfig,
   sameModuleKey,
 } from './canvas_picking_drawer_cross_family.js';
 import type { ModuleKey, PatchConfigForKeyFn } from './canvas_picking_drawer_mode_flow_shared.js';
+import { asInternalGridInfo } from './canvas_picking_drawer_mode_flow_shared.js';
 import type { RaycastHitLike } from './canvas_picking_engine.js';
 
 export function tryHandleExternalDrawerModeClick(args: {
   App: AppContainer;
   foundModuleIndex: ModuleKey | 'corner' | null;
   activeModuleKey: ModuleKey | 'corner' | null;
+  isBottomStack?: boolean;
   isExtDrawerEditMode: boolean;
   patchConfigForKey: PatchConfigForKeyFn;
   intersects?: RaycastHitLike[];
@@ -36,6 +44,7 @@ export function tryHandleExternalDrawerModeClick(args: {
     return true;
   }
 
+  const targetModuleKey = activeModuleKey ?? foundModuleIndex;
   patchConfigForKey(
     activeModuleKey,
     (cfg: ModuleConfigLike) => {
@@ -45,15 +54,104 @@ export function tryHandleExternalDrawerModeClick(args: {
       const drawerCount = ui && typeof ui.currentExtDrawerCount === 'number' ? ui.currentExtDrawerCount : 1;
 
       if (drawerType === 'shoe') {
-        cfg.hasShoeDrawer = !cfg.hasShoeDrawer;
+        const targetHasShoe = !cfg.hasShoeDrawer;
+        if (targetHasShoe && blockDrawerBuildInHexCell(App, cfg)) return;
+        if (
+          targetHasShoe &&
+          !canApplyExternalDrawerChoice({
+            App,
+            moduleKey: targetModuleKey,
+            isBottomStack: !!args.isBottomStack,
+            hasShoe: targetHasShoe,
+            regCount: cfg.extDrawersCount || 0,
+            drawerType,
+          })
+        ) {
+          return;
+        }
+        cfg.hasShoeDrawer = targetHasShoe;
       } else {
         const currentCount = cfg.extDrawersCount || 0;
         const target = drawerCount >= 1 && drawerCount <= 5 ? drawerCount : 1;
-        cfg.extDrawersCount = currentCount === target ? 0 : target;
+        const nextCount = currentCount === target ? 0 : target;
+        if (nextCount > 0 && blockDrawerBuildInHexCell(App, cfg)) return;
+        if (
+          nextCount > 0 &&
+          !canApplyExternalDrawerChoice({
+            App,
+            moduleKey: targetModuleKey,
+            isBottomStack: !!args.isBottomStack,
+            hasShoe: !!cfg.hasShoeDrawer,
+            regCount: nextCount,
+            drawerType,
+          })
+        ) {
+          return;
+        }
+        cfg.extDrawersCount = nextCount;
       }
     },
     { source: 'extDrawers.toggle', immediate: true }
   );
 
   return true;
+}
+
+function blockDrawerBuildInHexCell(App: AppContainer, cfg: ModuleConfigLike): boolean {
+  if (!shouldBlockDrawerBuildInHexCell(cfg)) return false;
+  __wp_toast(App, HEX_CELL_DRAWER_ADD_BLOCKED_MESSAGE, 'error');
+  return true;
+}
+
+function readFinite(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+  return Number.isFinite(n) ? n : null;
+}
+
+function canApplyExternalDrawerChoice(args: {
+  App: AppContainer;
+  moduleKey: ModuleKey | 'corner' | null;
+  isBottomStack: boolean;
+  hasShoe: boolean;
+  regCount: number;
+  drawerType: string;
+}): boolean {
+  const { App, moduleKey } = args;
+  if (moduleKey == null) return true;
+
+  const gridMap = getInternalGridMap(App, args.isBottomStack);
+  const info = asInternalGridInfo(gridMap[moduleKey]);
+  const effectiveTopY = readFinite(info?.effectiveTopY);
+  const woodThick = readFinite(info?.woodThick);
+  if (effectiveTopY == null || woodThick == null) return true;
+
+  const fit = resolveExternalDrawerFitFromBounds({
+    startY: readFinite(info?.startY) ?? 0,
+    effectiveTopY,
+    woodThick,
+    hasShoe: args.hasShoe,
+    regCount: args.regCount,
+  });
+  if (fit.fitsRequested) return true;
+
+  toastExternalDrawerFitFailure(App, args.drawerType, fit.requestedRegCount, fit.maxRegularDrawers);
+  return false;
+}
+
+function toastExternalDrawerFitFailure(
+  App: AppContainer,
+  drawerType: string,
+  requestedRegCount: number,
+  maxRegularDrawers: number
+): void {
+  if (drawerType === 'shoe') {
+    __wp_toast(App, 'אין מספיק מקום בארון זה למגירת נעליים עם המגירות הקיימות.', 'error');
+    return;
+  }
+
+  const suffix =
+    maxRegularDrawers > 0
+      ? ` ניתן להכניס כאן עד ${maxRegularDrawers} מגירות.`
+      : ' אין כאן מקום למגירה חיצונית בגובה הנוכחי.';
+  __wp_toast(App, `אין מקום בארון זה ל-${requestedRegCount} מגירות חיצוניות.${suffix}`, 'error');
 }

@@ -71,7 +71,10 @@ function loadStructureTabControlsModule(stubs = {}) {
       return { useApp: () => stubs.app, useCfgSelectorShallow: selector => selector(stubs.cfg) };
     }
     if (specifier === '../actions/store_actions.js') {
-      return { setCfgBoardMaterial: (...args) => stubs.calls.push(['setCfgBoardMaterial', ...args]) };
+      return {
+        setCfgBoardMaterial: (...args) => stubs.calls.push(['setCfgBoardMaterial', ...args]),
+        setCfgDoorMountMode: (...args) => stubs.calls.push(['setCfgDoorMountMode', ...args]),
+      };
     }
     if (specifier === '../actions/room_actions.js') {
       return { setWardrobeType: (...args) => stubs.calls.push(['setWardrobeType', ...args]) };
@@ -79,6 +82,8 @@ function loadStructureTabControlsModule(stubs = {}) {
     if (specifier === '../selectors/config_selectors.js') {
       return {
         selectBoardMaterial: cfg => String(cfg.boardMaterial || ''),
+        selectDoorMountMode: cfg =>
+          String(cfg.doorMountMode || 'overlay') === 'inset' ? 'inset' : 'overlay',
         selectWardrobeType: cfg => String(cfg.wardrobeType || ''),
       };
     }
@@ -137,4 +142,52 @@ test('[structure-tab-controls] board material writes collapse to canonical confi
       ],
     ])
   );
+});
+
+test('[structure-tab-controls] hinged door mount writes use canonical config patch plus one structural refresh', () => {
+  const calls = [];
+  const app = { id: 'app' };
+  const mod = loadStructureTabControlsModule({
+    calls,
+    app,
+    cfg: { wardrobeType: 'hinged', boardMaterial: 'sandwich', doorMountMode: 'overlay' },
+    patchViaActions: () => true,
+  });
+  const tree = mod.TypeSelector();
+  const overlayBtn = flattenButtons(tree).find(btn => btn.props?.['data-door-mount-mode'] === 'overlay');
+  const insetBtn = flattenButtons(tree).find(btn => btn.props?.['data-door-mount-mode'] === 'inset');
+  assert.equal(overlayBtn?.props?.['aria-pressed'], true);
+  assert.equal(insetBtn?.props?.['aria-pressed'], false);
+
+  insetBtn.props.onClick();
+  overlayBtn.props.onClick();
+  assert.equal(
+    JSON.stringify(calls),
+    JSON.stringify([
+      [
+        'patchViaActions',
+        app,
+        { config: { doorMountMode: 'inset' } },
+        { source: 'react:doorMountMode', immediate: true, noBuild: true },
+      ],
+      [
+        'requestBuilderStructuralRefresh',
+        app,
+        { source: 'react:doorMountMode', immediate: false, force: false, triggerRender: false },
+      ],
+    ])
+  );
+});
+
+test('[structure-tab-controls] door mount chooser is hidden for sliding wardrobes', () => {
+  const calls = [];
+  const mod = loadStructureTabControlsModule({
+    calls,
+    app: { id: 'app' },
+    cfg: { wardrobeType: 'sliding', boardMaterial: 'melamine', doorMountMode: 'inset' },
+    patchViaActions: () => true,
+  });
+  const tree = mod.TypeSelector();
+  const doorMountButtons = flattenButtons(tree).filter(btn => btn.props?.['data-door-mount-mode']);
+  assert.equal(doorMountButtons.length, 0);
 });

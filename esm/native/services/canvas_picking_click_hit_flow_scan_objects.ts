@@ -9,6 +9,7 @@ import {
 import type { RaycastHitLike } from './canvas_picking_engine.js';
 import { __wp_isViewportRoot } from './canvas_picking_local_helpers.js';
 import { isCanvasPickingMaterialHitEligible } from './canvas_picking_transparent_hit_policy.js';
+import { readDrawerIdFromHitUserData } from '../runtime/drawer_visual_identity.js';
 import type { MutableCanvasPickingClickHitState } from './canvas_picking_click_hit_flow_state.js';
 import {
   mergeCanvasPickingHitIdentityUserData,
@@ -65,13 +66,16 @@ export function scanCanvasPickingClickObjectHit(args: {
             : pid;
         state.effectiveDoorId = resolvedDoorId;
         state.doorHitObject = obj;
+        state.doorHitGroup = curr;
         state.doorHitUserData = mergedUserData;
         state.doorHitPoint = hit.point || null;
         state.doorHitY = hit.point && typeof hit.point.y === 'number' ? hit.point.y : null;
       }
 
-      if (pid.startsWith('drawer_') && !state.foundDrawerId) {
-        state.foundDrawerId = pid;
+      if (!state.foundDrawerId) {
+        const ownerDrawerId = readDrawerIdFromHitUserData(mergedUserData);
+        if (ownerDrawerId) state.foundDrawerId = ownerDrawerId;
+        else if (pid.startsWith('drawer_')) state.foundDrawerId = pid;
       }
     }
     curr = curr.parent || null;

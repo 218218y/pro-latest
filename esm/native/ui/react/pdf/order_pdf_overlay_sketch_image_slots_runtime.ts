@@ -1,6 +1,9 @@
 import type { OrderPdfDraft, OrderPdfSketchAnnotationPageKey } from './order_pdf_overlay_contracts.js';
 
-export type OrderPdfSketchImageSlotKey = OrderPdfSketchAnnotationPageKey;
+export type OrderPdfSketchImageSlotKey = Extract<
+  OrderPdfSketchAnnotationPageKey,
+  'renderSketch' | 'openClosed'
+>;
 export type OrderPdfSketchImageDraftFlag = 'includeRenderSketch' | 'includeOpenClosed';
 export type OrderPdfSketchImageDraftFlags = Pick<OrderPdfDraft, OrderPdfSketchImageDraftFlag>;
 

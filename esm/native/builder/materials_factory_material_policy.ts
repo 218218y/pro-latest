@@ -2,8 +2,6 @@ import { readRuntimeScalarOrDefaultFromApp } from '../runtime/runtime_selectors.
 import { getCustomUploadedTextureMaybe } from '../runtime/textures_cache_access.js';
 import { getCfg } from './store_access.js';
 import {
-  FRONT_LIGHTNESS_BOOST,
-  FRONT_SATURATION_BOOST,
   ensureMaterialsFactoryApp,
   ensureMaterialsRuntime,
   getMaterialsTHREE,
@@ -12,7 +10,6 @@ import {
   type AppLike,
   type MaterialLike,
   type TextureLike,
-  type ThreeColorLike,
 } from './materials_factory_shared.js';
 import { generateTexture, getDataURLTexture } from './materials_factory_texture_runtime.js';
 
@@ -47,30 +44,6 @@ function getSketchMaterial(App: AppLike, cacheKey: string) {
   return renderCache.materialCache.get(cacheKey);
 }
 
-function resolveFrontColor(color: unknown, THREE: ReturnType<typeof getMaterialsTHREE>): string {
-  const safeColor = typeof color === 'string' && /^#([0-9a-f]{3}){1,2}$/i.test(color) ? color : '#ffffff';
-  if (
-    safeColor.toLowerCase() === '#ffffff' ||
-    (FRONT_SATURATION_BOOST === 0 && FRONT_LIGHTNESS_BOOST === 0)
-  ) {
-    return safeColor;
-  }
-
-  try {
-    const c: ThreeColorLike = new THREE.Color();
-    c.setStyle(safeColor);
-    const hsl = { h: 0, s: 0, l: 0 };
-    c.getHSL(hsl);
-    const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-    hsl.s = clamp01(hsl.s + FRONT_SATURATION_BOOST);
-    hsl.l = clamp01(hsl.l + FRONT_LIGHTNESS_BOOST);
-    c.setHSL(hsl.h, hsl.s, hsl.l);
-    return '#' + c.getHexString();
-  } catch {
-    return safeColor;
-  }
-}
-
 function resolveMetalColor(color: unknown): string | number {
   return typeof color === 'string' && /^#([0-9a-f]{3}){1,2}$/i.test(color) ? color : 0x888888;
 }
@@ -99,7 +72,7 @@ function createFrontMaterial(
   }
 
   return new THREE.MeshStandardMaterial({
-    color: resolveFrontColor(safeColor, THREE),
+    color: safeColor,
     roughness: 0.45,
     metalness: 0.02,
   });
@@ -124,12 +97,8 @@ export function getMaterial(
 
   const tex = resolveFrontTexture(App, useCustomTexture, customTextureDataURL);
   const texSig = tex && typeof tex.uuid === 'string' ? tex.uuid : '';
-  const punchSig =
-    String(type) === 'front'
-      ? '_p' + String(FRONT_SATURATION_BOOST) + '_' + String(FRONT_LIGHTNESS_BOOST)
-      : '';
   const cacheKey =
-    'mat_' + String(type) + '_' + String(color) + '_' + String(!!useCustomTexture) + '_' + texSig + punchSig;
+    'mat_' + String(type) + '_' + String(color) + '_' + String(!!useCustomTexture) + '_' + texSig;
 
   const cachedMat = renderCache.materialCache.get(cacheKey);
   if (cachedMat) {

@@ -10,16 +10,18 @@
 // - Strict fail-fast behavior (no silent try/catch)
 
 import { computeExternalDrawersOpsForModule } from './pure_api.js';
-import { DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { requireBuilderRenderOps } from '../runtime/builder_service_access.js';
 import { reportError } from '../runtime/errors.js';
 import { asRecord } from '../runtime/record.js';
+import { createModuleExternalDrawerBraceShelfPartId } from '../features/shelf_part_identity.js';
+import { emitExternalDrawerBraceShelf } from './external_drawer_shelf.js';
 import type {
   UnknownRecord,
   AppContainer,
   BuilderCreateDoorVisualFn,
   BuilderCreateInternalDrawerBoxFn,
   BuilderCreateBoardFn,
+  BuilderContentsSurfaceLike,
   ExternalDrawerOpLike,
   ExternalDrawersOpsLike,
   ThreeLike,
@@ -56,11 +58,16 @@ type ApplyExternalDrawersForModuleParams = {
   globalFrontMat?: unknown;
   isGroovesEnabled?: boolean;
   bodyMat?: unknown;
+  braceShelfMat?: unknown;
+  whiteMat?: unknown;
+  drawerBoxBaseMat?: unknown;
   addOutlines?: unknown;
   getPartMaterial?: (partId: string) => unknown;
   getPartColorValue?: (partId: string) => string | null | undefined;
   createDoorVisual?: BuilderCreateDoorVisualFn;
   createInternalDrawerBox?: BuilderCreateInternalDrawerBoxFn;
+  showContentsEnabled?: boolean;
+  addFoldedClothes?: BuilderContentsSurfaceLike['addFoldedClothes'];
   createBoard?: BuilderVisualFactory;
   innerW?: number;
   internalDepth?: number;
@@ -149,16 +156,25 @@ export function applyExternalDrawersForModule(
     throw new Error('[WardrobePro] external drawers pipeline missing: createBoard');
   }
 
-  // Keep the separator board width clearance centralized with external drawer dimensions.
-  createBoard(
-    innerW - DRAWER_DIMENSIONS.external.separatorBoardWidthClearanceM,
+  const stackKey = params?.__wpStack === 'bottom' ? 'bottom' : 'top';
+  const moduleKey = stackKey === 'bottom' ? `lower_${moduleIndex}` : moduleIndex;
+  const shelfPartId = createModuleExternalDrawerBraceShelfPartId(moduleKey);
+  emitExternalDrawerBraceShelf({
+    createBoard,
+    partId: shelfPartId,
+    shelfIndex: 'external_drawers',
+    innerWidth: innerW,
     woodThick,
-    internalDepth,
-    internalCenterX,
-    effectiveBottomY - woodThick / 2,
-    internalZ,
-    bodyMat
-  );
+    depth: internalDepth,
+    centerX: internalCenterX,
+    stackTopY: effectiveBottomY,
+    centerZ: internalZ,
+    currentBraceShelfMat: params?.braceShelfMat || bodyMat,
+    getPartMaterial: params?.getPartMaterial,
+    getPartColorValue: params?.getPartColorValue,
+    moduleIndex,
+    stackKey,
+  });
 
   let ops: ExternalDrawersOpsLike | null = null;
   try {
@@ -173,6 +189,7 @@ export function applyExternalDrawersForModule(
         frontZ,
         startY,
         woodThick,
+        doorMountMode: cfg.doorMountMode,
         keyPrefix,
         hasShoe,
         regCount,
@@ -232,11 +249,15 @@ export function applyExternalDrawersForModule(
       globalFrontMat: params?.globalFrontMat,
       isGroovesEnabled: !!params?.isGroovesEnabled,
       bodyMat,
+      whiteMat: params?.whiteMat,
+      drawerBoxBaseMat: params?.drawerBoxBaseMat || params?.whiteMat,
       addOutlines: params?.addOutlines,
       getPartMaterial: params?.getPartMaterial,
       getPartColorValue: params?.getPartColorValue,
       createDoorVisual: params?.createDoorVisual,
       createInternalDrawerBox: params?.createInternalDrawerBox,
+      showContentsEnabled: params?.showContentsEnabled === true,
+      addFoldedClothes: params?.addFoldedClothes,
     });
     return true;
   } catch (e) {

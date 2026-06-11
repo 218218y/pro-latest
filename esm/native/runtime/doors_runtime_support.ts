@@ -34,7 +34,6 @@ export {
 export {
   getModeSlice,
   getSketchManualTool,
-  isIntDrawerEditActive,
   isManualLayoutEditActive,
   isSketchEditActive,
   isSketchExtDrawersEditActive,

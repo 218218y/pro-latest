@@ -36,6 +36,13 @@ const sandbox = {
           const n = typeof value === 'number' ? value : Number(value);
           return Number.isFinite(n) ? n : fallback;
         },
+        readSketchDivisionManualToolId: value => {
+          const raw = String(value || '');
+          if (raw.startsWith('sketch_shelf:')) return 'shelf';
+          if (raw === 'sketch_rod') return 'rod';
+          if (raw.startsWith('sketch_storage:')) return 'storage';
+          return null;
+        },
       };
     }
     if (spec === './interior_tab_view_state_shared.js') {
@@ -107,24 +114,46 @@ const { deriveInteriorTabModeState, deriveInteriorTabUiToolState, deriveInterior
 test('interior tab view-state runtime derives primary mode flags and sketch tool state', () => {
   const state = deriveInteriorTabModeState({
     primary: 'manual_layout',
-    modeOptsRaw: { manualTool: 'sketch_shelf_double', layoutType: 'mixed' },
+    modeOptsRaw: { manualTool: 'sketch_shelf:double', layoutType: 'mixed' },
     layoutTypeUiRaw: 'hanging',
     modeLayout: 'layout',
     modeManualLayout: 'manual_layout',
     modeBraceShelves: 'brace_shelves',
     modeExtDrawer: 'ext_drawer',
     modeDivider: 'divider',
-    modeIntDrawer: 'int_drawer',
     modeHandle: 'handle',
     modeDoorTrim: 'door_trim',
   });
   assert.equal(state.isManualLayoutMode, true);
   assert.equal(state.isSketchToolActive, true);
+  assert.equal(state.isSketchDivisionToolActive, true);
   assert.equal(state.layoutActive, true);
   assert.equal(state.layoutType, 'hanging');
   assert.equal(state.manualTool, 'shelf');
-  assert.equal(state.manualToolRaw, 'sketch_shelf_double');
+  assert.equal(state.manualToolRaw, 'sketch_shelf:double');
   assert.equal(state.isManualHandlePositionMode, false);
+});
+
+test('interior tab view-state runtime projects canonical sketch division tools into the shared manual chooser', () => {
+  for (const [manualToolRaw, expected] of [
+    ['sketch_rod', 'rod'],
+    ['sketch_storage:50', 'storage'],
+  ]) {
+    const state = deriveInteriorTabModeState({
+      primary: 'manual_layout',
+      modeOptsRaw: { manualTool: manualToolRaw },
+      layoutTypeUiRaw: 'shelves',
+      modeLayout: 'layout',
+      modeManualLayout: 'manual_layout',
+      modeBraceShelves: 'brace_shelves',
+      modeExtDrawer: 'ext_drawer',
+      modeDivider: 'divider',
+      modeHandle: 'handle',
+      modeDoorTrim: 'door_trim',
+    });
+    assert.equal(state.manualTool, expected);
+    assert.equal(state.isSketchDivisionToolActive, true);
+  }
 });
 
 test('interior tab view-state runtime derives manual handle placement mode canonically', () => {
@@ -137,7 +166,6 @@ test('interior tab view-state runtime derives manual handle placement mode canon
     modeBraceShelves: 'brace_shelves',
     modeExtDrawer: 'ext_drawer',
     modeDivider: 'divider',
-    modeIntDrawer: 'int_drawer',
     modeHandle: 'handle',
     modeDoorTrim: 'door_trim',
   });
@@ -188,23 +216,39 @@ test('interior tab view-state runtime derives manual row visibility from layout 
     manualRowOpen: false,
     isManualLayoutMode: true,
     isSketchToolActive: false,
+    isSketchDivisionToolActive: false,
     manualTool: 'rod',
     manualUiTool: 'storage',
   });
   assert.equal(active.showManualRow, true);
   assert.equal(active.activeManualToolForUi, 'rod');
   assert.equal(active.showGridControls, true);
+  assert.equal(active.showShelfVariantControls, false);
 
   const sketch = deriveInteriorTabVisibilityState({
     manualRowOpen: false,
     isManualLayoutMode: true,
     isSketchToolActive: true,
+    isSketchDivisionToolActive: false,
     manualTool: 'rod',
     manualUiTool: 'storage',
   });
   assert.equal(sketch.showManualRow, false);
   assert.equal(sketch.activeManualToolForUi, 'storage');
   assert.equal(sketch.showGridControls, false);
+
+  const sketchDivision = deriveInteriorTabVisibilityState({
+    manualRowOpen: false,
+    isManualLayoutMode: true,
+    isSketchToolActive: true,
+    isSketchDivisionToolActive: true,
+    manualTool: 'shelf',
+    manualUiTool: 'storage',
+  });
+  assert.equal(sketchDivision.showManualRow, true);
+  assert.equal(sketchDivision.activeManualToolForUi, 'shelf');
+  assert.equal(sketchDivision.showGridControls, false);
+  assert.equal(sketchDivision.showShelfVariantControls, true);
 });
 
 test('interior tab view-state runtime preserves custom and pink handle colors canonically', () => {

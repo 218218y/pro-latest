@@ -88,6 +88,7 @@ export function applySketchBoxExternalDrawerDoorCuts(args: {
   cfg: ValueRecord;
   bodyMat: unknown;
   globalFrontMat: unknown;
+  collectSuppressedHandlePartIds?: (partIds: string[]) => void;
 }): void {
   const { App, THREE, ctx, cfg, bodyMat, globalFrontMat } = args;
   const stackBounds = collectSketchBoxExternalDrawerStackBounds(App);
@@ -98,6 +99,7 @@ export function applySketchBoxExternalDrawerDoorCuts(args: {
   );
   if (!boxStacks.size) return;
   const runtime = createSketchDoorCutsRuntime({
+    App,
     THREE,
     ctx,
     cfg,
@@ -108,6 +110,7 @@ export function applySketchBoxExternalDrawerDoorCuts(args: {
   applySketchDrawerDoorCuts({
     App,
     runtime,
+    collectSuppressedHandlePartIds: args.collectSuppressedHandlePartIds,
     selectDoorCuts: (_entry, _g, ud) => {
       const boxId = readStringOrNull(ud.__wpSketchBoxId);
       if (!boxId) return null;

@@ -175,5 +175,4 @@ test('project import fixtures materialize empty replace-owned branches as explic
   assert.equal(Array.isArray(configRecord.stackSplitLowerModulesConfiguration), true);
   const cornerConfiguration = asRecord(configRecord.cornerConfiguration, 'empty cornerConfiguration');
   assert.equal(cornerConfiguration.layout, 'shelves');
-  assert.equal(Array.isArray(cornerConfiguration.intDrawersList), true);
 });

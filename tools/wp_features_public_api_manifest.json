@@ -6,11 +6,15 @@
     "base_plinth_support.js",
     "door_style_overrides.js",
     "door_trim.js",
+    "drawer_box_identity.js",
+    "front_color_shelf_inheritance.js",
     "handle_finish_shared.js",
-    "manual_handle_position.js",
+    "hex_cell/index.js",
     "interior_layout_presets/api.js",
     "library_preset/library_preset.js",
     "library_preset/module_defaults.js",
+    "manual_handle_position.js",
+    "metal_finish_palette.js",
     "mirror_layout.js",
     "model_record/model_record_normalizer.js",
     "modules_configuration/calc_module_structure.js",
@@ -21,7 +25,9 @@
     "project_config/project_config_persisted_payload_shared.js",
     "project_config/project_config_persisted_snapshot.js",
     "project_config/project_config_snapshot_canonical.js",
+    "shelf_part_identity.js",
     "sketch_drawer_sizing.js",
+    "sketch_stack_positioning.js",
     "special_dims/index.js",
     "special_dims/special_dims.js",
     "stack_split/index.js",
@@ -29,12 +35,17 @@
   ],
   "families": {
     "base_leg_support": ["base_leg_support.js"],
+    "base_plinth_support": ["base_plinth_support.js"],
     "door_style_overrides": ["door_style_overrides.js"],
     "door_trim": ["door_trim.js"],
+    "drawer_box_identity": ["drawer_box_identity.js"],
+    "front_color_shelf_inheritance": ["front_color_shelf_inheritance.js"],
     "handle_finish_shared": ["handle_finish_shared.js"],
-    "manual_handle_position": ["manual_handle_position.js"],
+    "hex_cell": ["hex_cell/index.js"],
     "interior_layout_presets": ["interior_layout_presets/api.js"],
     "library_preset": ["library_preset/library_preset.js", "library_preset/module_defaults.js"],
+    "manual_handle_position": ["manual_handle_position.js"],
+    "metal_finish_palette": ["metal_finish_palette.js"],
     "mirror_layout": ["mirror_layout.js"],
     "model_record": ["model_record/model_record_normalizer.js"],
     "modules_configuration": [
@@ -49,9 +60,10 @@
       "project_config/project_config_persisted_snapshot.js",
       "project_config/project_config_snapshot_canonical.js"
     ],
+    "shelf_part_identity": ["shelf_part_identity.js"],
     "sketch_drawer_sizing": ["sketch_drawer_sizing.js"],
+    "sketch_stack_positioning": ["sketch_stack_positioning.js"],
     "special_dims": ["special_dims/index.js", "special_dims/special_dims.js"],
-    "stack_split": ["stack_split/index.js", "stack_split/module_config.js"],
-    "base_plinth_support": ["base_plinth_support.js"]
+    "stack_split": ["stack_split/index.js", "stack_split/module_config.js"]
   }
 }

@@ -1,7 +1,7 @@
 import type { UnknownRecord } from '../../../types';
 import {
+  findPreferredModuleSelectorHit,
   readModuleHitCandidateFromIntersection,
-  readModuleSelectorHit,
 } from './canvas_picking_module_selector_hits.js';
 import {
   asHitObject,
@@ -58,9 +58,8 @@ export function scanInteriorHoverHit(args: ResolveInteriorHoverTargetArgs): Inte
   let hitY: number | null = null;
   let hitPoint: UnknownRecord | null = null;
 
-  for (let i = 0; i < intersects.length; i++) {
-    const selectorHit = readModuleSelectorHit(intersects[i], toModuleKey);
-    if (!selectorHit) continue;
+  const selectorHit = findPreferredModuleSelectorHit({ intersects, toModuleKey });
+  if (selectorHit) {
     hitModuleKey = selectorHit.moduleKey;
     hitSelectorObj = selectorHit.object;
     hitFallbackObj = hitSelectorObj;
@@ -73,7 +72,6 @@ export function scanInteriorHoverHit(args: ResolveInteriorHoverTargetArgs): Inte
       projectWorldPointToLocal,
       fallbackY: selectorHit.hitY,
     });
-    break;
   }
 
   if (hitModuleKey == null) {

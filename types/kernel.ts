@@ -106,6 +106,7 @@ export interface UiActionsNamespaceLike extends UnknownRecord {
   setFlag?: (key: string, on: boolean, meta?: ActionMetaLike) => unknown;
   setNotesEnabled?: (on: boolean, meta?: ActionMetaLike) => unknown;
   setGlobalClickUi?: (on: boolean, meta?: ActionMetaLike) => unknown;
+  setDarkMode?: (on: boolean, meta?: ActionMetaLike) => unknown;
   setShowContents?: (on: boolean, meta?: ActionMetaLike) => unknown;
   setShowHanger?: (on: boolean, meta?: ActionMetaLike) => unknown;
   setCurrentFloorType?: (value: string, meta?: ActionMetaLike) => unknown;

@@ -1,9 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { makeDrawerBoxPartId } from '../esm/native/features/drawer_box_identity.ts';
+import {
+  SHELF_GROUP_PART_ID,
+  createSketchExternalDrawerBraceShelfPartId,
+} from '../esm/native/features/shelf_part_identity.ts';
+
 import {
   FakeNode,
-  FakeMaterial,
   createSketchInteriorHarness,
   getWorldY,
   readSketchBoxFrontsBundle,
@@ -19,6 +24,29 @@ function normalizeSource(source: string): string {
     .replace(/\{\s+/g, '{ ')
     .replace(/\s+\}/g, ' }')
     .trim();
+}
+
+function collectSketchNodes(root: FakeNode): FakeNode[] {
+  const nodes: FakeNode[] = [];
+  root.traverse(node => nodes.push(node as FakeNode));
+  return nodes;
+}
+
+function assertSketchExternalDrawerBoxHasIndependentPaintId(drawerGroup: FakeNode): void {
+  const frontPartId = String(drawerGroup.userData.partId || '');
+  assert.ok(frontPartId, 'drawer group should keep the front part id');
+  const drawerBoxPartId = makeDrawerBoxPartId(frontPartId);
+  const descendants = collectSketchNodes(drawerGroup).filter(node => node !== drawerGroup);
+  const boxNodes = descendants.filter(node => node.userData?.__wpDrawerBox === true);
+  assert.ok(boxNodes.length > 0, 'drawer box descendants should be present');
+  assert.ok(
+    boxNodes.every(node => node.userData.partId === drawerBoxPartId),
+    'drawer box descendants must keep the drawer_box__ paint id'
+  );
+  assert.ok(
+    descendants.some(node => node.userData?.partId === frontPartId && node.userData?.__wpDrawerBox !== true),
+    'front descendants should keep the front paint id'
+  );
 }
 
 test('free-placement sketch box internal drawers render through internal drawer ops', () => {
@@ -53,8 +81,48 @@ test('free-placement sketch box internal drawers render through internal drawer 
 
   assert.equal(ok, true);
   assert.equal(capturedOps.length, 2);
-  assert.ok(capturedOps.every(op => String(op.partId || '').includes('freeDrawerBox_int_drawers_fd1')));
+  assert.deepEqual(
+    capturedOps.map(op => String(op.partId || '')),
+    [
+      'sketch_box_free_0_freeDrawerBox_int_drawers_fd1_lower',
+      'sketch_box_free_0_freeDrawerBox_int_drawers_fd1_upper',
+    ]
+  );
   assert.ok(capturedOps.every(op => Math.abs(Number(op.height) - 0.165) < 1e-9));
+});
+
+test('free-placement sketch box internal drawers keep custom height and skip stacks that do not fit', () => {
+  const capturedOps: Array<Record<string, unknown>> = [];
+  const { applyInteriorSketchExtras, makeArgs } = createSketchInteriorHarness({
+    applyInternalDrawersOps: (args: unknown) => {
+      const rec = args as Record<string, unknown>;
+      const ops = Array.isArray(rec.ops) ? (rec.ops as Array<Record<string, unknown>>) : [];
+      capturedOps.push(...ops);
+    },
+  });
+
+  const ok = applyInteriorSketchExtras(
+    makeArgs({
+      sketchExtras: {
+        boxes: [
+          {
+            id: 'freeDrawerBoxTooSmall',
+            freePlacement: true,
+            absX: 0,
+            absY: 1.0,
+            heightM: 0.55,
+            widthM: 0.78,
+            depthM: 0.5,
+            drawers: [{ id: 'fdTooTall', yNormC: 0.5, drawerHeightM: 0.3 }],
+          },
+        ],
+      },
+      createInternalDrawerBox: () => null,
+    })
+  );
+
+  assert.equal(ok, true);
+  assert.equal(capturedOps.length, 0);
 });
 
 test('sketch external drawers render at free Y positions with per-stack metadata', () => {
@@ -83,6 +151,45 @@ test('sketch external drawers render at free Y positions with per-stack metadata
   assert.ok(Math.abs(ys[1] - ys[0] - 0.22) < 1e-6);
   assert.ok(Math.abs(ys[2] - ys[1] - 0.22) < 1e-6);
   assert.ok(Math.abs((ys[0] + ys[2]) / 2 - ys[1]) < 1e-6);
+});
+
+test('sketch external drawers emit folded contents when show contents is enabled', () => {
+  const foldedCalls: any[] = [];
+  const { applyInteriorSketchExtras, makeArgs } = createSketchInteriorHarness();
+
+  const ok = applyInteriorSketchExtras(
+    makeArgs({
+      showContentsEnabled: true,
+      addFoldedClothes: (...call: any[]) => foldedCalls.push(call),
+      sketchExtras: {
+        extDrawers: [{ id: 'edContents', yNormC: 0.5, count: 2 }],
+      },
+    })
+  );
+
+  assert.equal(ok, true);
+  assert.equal(foldedCalls.length, 2);
+  assert.ok(foldedCalls.every(call => call[4]?.userData?.__wpSketchExtDrawer === true));
+  assert.ok(foldedCalls.every(call => Number(call[5]) > 0));
+});
+
+test('sketch external drawer fronts and boxes keep separate paint identities after group metadata is applied', () => {
+  const { wardrobeGroup, applyInteriorSketchExtras, makeArgs } = createSketchInteriorHarness();
+
+  const ok = applyInteriorSketchExtras(
+    makeArgs({
+      sketchExtras: {
+        extDrawers: [{ id: 'edPaintSplit', yNormC: 0.5, count: 1 }],
+      },
+    })
+  );
+
+  assert.equal(ok, true);
+  const drawerGroups = collectSketchNodes(wardrobeGroup).filter(
+    node => node.userData?.__wpType === 'extDrawer' && node.userData?.__wpSketchExtDrawer === true
+  );
+  assert.equal(drawerGroups.length, 1);
+  assertSketchExternalDrawerBoxHasIndependentPaintId(drawerGroups[0]!);
 });
 
 test('sketch box external drawers render with custom per-drawer height', () => {
@@ -114,6 +221,130 @@ test('sketch box external drawers render with custom per-drawer height', () => {
   assert.equal(drawerGroups.length, 2);
   const ys = drawerGroups.map(node => Number(getWorldY(node))).sort((a, b) => a - b);
   assert.ok(Math.abs(ys[1] - ys[0] - 0.3) < 1e-6);
+});
+
+test('sketch box external drawers emit an individually paintable brace shelf above each stack', () => {
+  const { boards, applyInteriorSketchExtras, makeArgs } = createSketchInteriorHarness();
+
+  const ok = applyInteriorSketchExtras(
+    makeArgs({
+      sketchExtras: {
+        boxes: [
+          {
+            id: 'boxShelfExt',
+            freePlacement: true,
+            absX: 0,
+            absY: 1.0,
+            heightM: 1.2,
+            widthM: 0.78,
+            depthM: 0.5,
+            extDrawers: [{ id: 'edShelf', yNormC: 0.5, count: 2 }],
+          },
+        ],
+      },
+    })
+  );
+
+  const shelfPartId = createSketchExternalDrawerBraceShelfPartId('0', 'edShelf', 'boxShelfExt');
+  const shelf = boards.find(board => board.userData.partId === shelfPartId);
+  assert.equal(ok, true);
+  assert.ok(shelf);
+  assert.equal(shelf.userData.__wpShelfGroupPartId, SHELF_GROUP_PART_ID);
+  assert.equal(shelf.userData.__wpShelfVariant, 'brace');
+  assert.equal(shelf.userData.__wpShelfIsBrace, true);
+});
+
+test('sketch box external drawers emit folded contents inside their drawer boxes', () => {
+  const foldedCalls: any[] = [];
+  const { applyInteriorSketchExtras, makeArgs } = createSketchInteriorHarness();
+
+  const ok = applyInteriorSketchExtras(
+    makeArgs({
+      showContentsEnabled: true,
+      addFoldedClothes: (...call: any[]) => foldedCalls.push(call),
+      sketchExtras: {
+        boxes: [
+          {
+            id: 'boxContentsExt',
+            freePlacement: true,
+            absX: 0,
+            absY: 1.0,
+            heightM: 1.2,
+            widthM: 0.78,
+            depthM: 0.5,
+            extDrawers: [{ id: 'edBoxContents', yNormC: 0.5, count: 2 }],
+          },
+        ],
+      },
+    })
+  );
+
+  assert.equal(ok, true);
+  assert.equal(foldedCalls.length, 2);
+  assert.ok(foldedCalls.every(call => call[4]?.userData?.__wpSketchExtDrawer === true));
+  assert.ok(foldedCalls.every(call => Number(call[3]) > 0));
+});
+
+test('sketch box external drawer fronts and boxes keep separate paint identities after group metadata is applied', () => {
+  const { wardrobeGroup, applyInteriorSketchExtras, makeArgs } = createSketchInteriorHarness();
+
+  const ok = applyInteriorSketchExtras(
+    makeArgs({
+      sketchExtras: {
+        boxes: [
+          {
+            id: 'boxPaintSplitExt',
+            freePlacement: true,
+            absX: 0,
+            absY: 1.0,
+            heightM: 1.2,
+            widthM: 0.78,
+            depthM: 0.5,
+            extDrawers: [{ id: 'edBoxPaintSplit', yNormC: 0.5, count: 1 }],
+          },
+        ],
+      },
+    })
+  );
+
+  assert.equal(ok, true);
+  const drawerGroups = collectSketchNodes(wardrobeGroup).filter(
+    node =>
+      node.userData?.__wpType === 'extDrawer' &&
+      node.userData?.__wpSketchExtDrawer === true &&
+      node.userData?.__wpSketchBoxId === 'boxPaintSplitExt'
+  );
+  assert.equal(drawerGroups.length, 1);
+  assertSketchExternalDrawerBoxHasIndependentPaintId(drawerGroups[0]!);
+});
+
+test('sketch box external drawers keep custom height and skip stacks that do not fit', () => {
+  const { wardrobeGroup, applyInteriorSketchExtras, makeArgs } = createSketchInteriorHarness();
+
+  const ok = applyInteriorSketchExtras(
+    makeArgs({
+      sketchExtras: {
+        boxes: [
+          {
+            id: 'boxTooSmallExt',
+            freePlacement: true,
+            absX: 0,
+            absY: 1.0,
+            heightM: 0.9,
+            widthM: 0.78,
+            depthM: 0.5,
+            extDrawers: [{ id: 'edTooTall', yNormC: 0.5, count: 4, drawerHeightM: 0.3 }],
+          },
+        ],
+      },
+    })
+  );
+
+  assert.equal(ok, true);
+  const drawerGroups = wardrobeGroup.children.filter(
+    node => (node as FakeNode).userData?.__wpSketchExtDrawer === true
+  ) as FakeNode[];
+  assert.equal(drawerGroups.length, 0);
 });
 
 test('sketch external drawer cut envelope matches drawer front envelope', async () => {

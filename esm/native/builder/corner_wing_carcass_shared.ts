@@ -1,5 +1,5 @@
 import type { CornerCell } from './corner_geometry_plan.js';
-import type { AppContainer, UnknownRecord } from '../../../types';
+import type { AppContainer, BuilderCreateDoorVisualFn, UnknownRecord } from '../../../types';
 
 export type NodeLike = {
   position: { set(x: number, y: number, z: number): void };
@@ -37,8 +37,13 @@ export type CornerWingCarcassCtx = {
   baseH: number;
   cabinetBodyHeight: number;
   __individualColors: UnknownRecord;
+  __doorSpecialMap?: unknown;
+  __readScopedMapVal?: (mapObj: UnknownRecord | null | undefined, partId: unknown) => unknown;
+  doorStyle?: string;
+  createDoorVisual?: BuilderCreateDoorVisualFn;
   getCornerMat: (partId: string, defaultMaterial: unknown) => unknown;
   bodyMat: unknown;
+  frontMat?: unknown;
   backPanelMaterialArray: unknown[];
   addOutlines: (mesh: unknown) => void;
   __sketchMode: boolean;

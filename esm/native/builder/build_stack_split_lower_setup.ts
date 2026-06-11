@@ -10,6 +10,7 @@ import {
 import { applyCarcassAndGetCabinetMetrics } from './carcass_pipeline.js';
 import { computeModulesAndLayout } from './module_layout_pipeline.js';
 import { readFiniteNumberArray, readRecord } from './build_flow_readers.js';
+import { collectModuleDepths } from './build_flow_plan_dimensions.js';
 import { getExtraLongEdgeHandleLiftAbsY, getMaxGlobalExternalDrawerHeightM } from './build_handle_policy.js';
 import {
   buildBottomModuleConfigSeed,
@@ -39,10 +40,8 @@ export function prepareStackSplitLowerSetup(
 
   const bottomD = splitBottomDepthCm / 100;
   const bottomH = splitBottomHeightCm / 100;
-  const splitMaxDepth = Math.max(args.carcassDepthM || 0, bottomD || 0);
-  const splitDzBottom = Number.isFinite(splitMaxDepth) ? (bottomD - splitMaxDepth) / 2 : 0;
-  const splitDzTop = Number.isFinite(splitMaxDepth) ? (args.carcassDepthM - splitMaxDepth) / 2 : 0;
-  const splitY = bottomH + args.splitSeamGapM;
+  const unifiedFrame = !!args.stackSplitUnifiedFrame;
+  const splitY = unifiedFrame ? Math.max(0, bottomH - args.woodThick) : bottomH + args.splitSeamGapM;
 
   const splitBottomStartIndex = group && Array.isArray(group.children) ? group.children.length : -1;
   const bottomWidthCm =
@@ -71,7 +70,10 @@ export function prepareStackSplitLowerSetup(
   const bottomLayout = computeModulesAndLayout({
     App: args.App,
     state: null,
-    cfg: Object.assign({}, args.cfg, { modulesConfiguration: bottomModuleCfgSeed }),
+    cfg: Object.assign({}, args.cfg, {
+      isManualWidth: true,
+      modulesConfiguration: bottomModuleCfgSeed,
+    }),
     ui: uiBottom,
     totalW: bottomTotalW,
     woodThick: args.woodThick,
@@ -87,14 +89,29 @@ export function prepareStackSplitLowerSetup(
   const bottomHingedDoorPivotBase = readRecord(bottomLayoutRec?.hingedDoorPivotMap);
 
   const bottomModuleHeightsTotal = Array.isArray(bottomModules) ? bottomModules.map(() => bottomH) : null;
-  const bottomModuleDepthsTotal = Array.isArray(bottomModules) ? bottomModules.map(() => bottomD) : null;
+  const bottomDepthMetrics = Array.isArray(bottomModules)
+    ? collectModuleDepths({
+        moduleCfgList: bottomModuleCfgList,
+        moduleInternalWidths: bottomModuleInternalWidths,
+        D: bottomD,
+        woodThick: args.woodThick,
+      })
+    : { moduleDepthsTotal: null, carcassD: bottomD };
+  const bottomModuleDepthsTotal = bottomDepthMetrics.moduleDepthsTotal;
+  const bottomCarcassD =
+    Number.isFinite(bottomDepthMetrics.carcassD) && bottomDepthMetrics.carcassD > 0
+      ? bottomDepthMetrics.carcassD
+      : bottomD;
+  const splitMaxDepth = Math.max(args.carcassDepthM || 0, bottomCarcassD || 0);
+  const splitDzBottom = Number.isFinite(splitMaxDepth) ? (bottomCarcassD - splitMaxDepth) / 2 : 0;
+  const splitDzTop = Number.isFinite(splitMaxDepth) ? (args.carcassDepthM - splitMaxDepth) / 2 : 0;
 
   const bottomCarcassRes = applyCarcassAndGetCabinetMetrics({
     App: args.App,
     THREE: args.THREE,
     cfg: args.cfg,
     totalW: bottomTotalW,
-    D: bottomD,
+    D: bottomCarcassD,
     H: bottomH,
     woodThick: args.woodThick,
     baseType: args.baseTypeBottom,
@@ -107,6 +124,7 @@ export function prepareStackSplitLowerSetup(
     moduleInternalWidths: bottomModuleInternalWidths,
     moduleHeightsTotal: bottomModuleHeightsTotal,
     moduleDepthsTotal: bottomModuleDepthsTotal,
+    moduleCfgList: bottomModuleCfgList,
     addOutlines: args.addOutlinesMesh,
     __sketchMode: args.sketchMode,
     legMat: args.legMat,
@@ -118,14 +136,15 @@ export function prepareStackSplitLowerSetup(
     partIdPrefix: 'lower_',
     baseHeight: 0,
     startY: 0,
+    renderCarcass: !unifiedFrame,
   });
 
   const bottomStartY = bottomCarcassRes.startY;
   const bottomCabinetBodyHeight = bottomCarcassRes.cabinetBodyHeight;
   const bottomCabinetTopY = bottomCarcassRes.cabinetTopY;
-  const bottomInternalDepth = Math.max(args.woodThick, bottomD - args.depthReduction);
+  const bottomInternalDepth = Math.max(args.woodThick, bottomCarcassD - args.depthReduction);
   const bottomInternalZ =
-    -bottomD / 2 + bottomInternalDepth / 2 + CARCASS_INTERIOR_DIMENSIONS.internalBackInsetM;
+    -bottomCarcassD / 2 + bottomInternalDepth / 2 + CARCASS_INTERIOR_DIMENSIONS.internalBackInsetM;
   const bottomInternalTotalHeight =
     bottomStartY + bottomCabinetBodyHeight - args.woodThick - (bottomStartY + args.woodThick);
   const bottomGridStep = bottomInternalTotalHeight / CARCASS_SHELL_DIMENSIONS.drawerGridDivisions;
@@ -188,7 +207,8 @@ export function prepareStackSplitLowerSetup(
     bottomWidthCm,
     bottomDoorsCount,
     bottomTotalW,
-    bottomD,
+    bottomD: bottomCarcassD,
+    bottomDefaultD: bottomD,
     bottomH,
     uiBottom,
     bottomModules,

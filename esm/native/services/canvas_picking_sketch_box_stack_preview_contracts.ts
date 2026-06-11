@@ -48,8 +48,8 @@ export type ResolveSketchBoxStackPreviewArgs = {
 
 export type ResolveSketchBoxStackPreviewResult = {
   hoverRecord: RecordMap;
-  preview: RecordMap;
-};
+  preview: RecordMap | null;
+} | null;
 
 export type SketchBoxFrontOverlay = {
   x: number;

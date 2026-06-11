@@ -8,6 +8,8 @@ import type { CanvasCellDimsClickArgs } from './canvas_picking_cell_dims_contrac
 
 import { handleCanvasCornerCellDimsClick } from './canvas_picking_cell_dims_corner.js';
 import { handleCanvasLinearCellDimsClick } from './canvas_picking_cell_dims_linear.js';
+import { handleCanvasLinearHexCellClick } from './canvas_picking_cell_dims_hex_linear.js';
+import { handleCanvasCornerHexCellClick } from './canvas_picking_cell_dims_hex_corner.js';
 import {
   __wp_reportPickingIssue,
   __wp_isCornerKey,
@@ -17,6 +19,7 @@ import {
   __wp_toast,
 } from './canvas_picking_core_helpers.js';
 import { asRecord } from '../runtime/record.js';
+import { rememberCellDimsPostClickHoverTarget } from './canvas_picking_cell_dims_post_click_hover.js';
 
 export type { CanvasCellDimsClickArgs } from './canvas_picking_cell_dims_contracts.js';
 
@@ -27,20 +30,9 @@ export function handleCanvasCellDimsClick(args: CanvasCellDimsClickArgs): void {
     foundPartId,
     isBottomStack: __isBottomStack,
     ensureCornerCellConfigRef,
+    ndcX,
+    ndcY,
   } = args;
-
-  if (__isBottomStack) {
-    try {
-      __wp_toast(App, 'מידות מיוחדות לפי תא זמינות רק לארון העליון', 'info');
-    } catch (_e) {
-      __wp_reportPickingIssue(App, _e, {
-        where: 'canvasPicking',
-        op: 'cellDims.bottomStack.toast',
-        throttleMs: 1000,
-      });
-    }
-    return;
-  }
 
   try {
     const ui = __wp_ui(App);
@@ -50,28 +42,78 @@ export function handleCanvasCellDimsClick(args: CanvasCellDimsClickArgs): void {
     const draftW = __asNum(raw.cellDimsWidth, NaN);
     const draftH = __asNum(raw.cellDimsHeight, NaN);
     const draftD = __asNum(raw.cellDimsDepth, NaN);
+    const draftHexProtrusion = __asNum(raw.cellDimsHexProtrusion, NaN);
+    const draftHexDoorWidth = __asNum(raw.cellDimsHexDoorWidth, NaN);
+    const hexCellMode =
+      raw.cellDimsHexMode === true || raw.cellDimsHexMode === 'true' || raw.cellDimsHexMode === 1;
 
     const applyW = Number.isFinite(draftW) && draftW > 0 ? draftW : null;
-    const applyH = Number.isFinite(draftH) && draftH > 0 ? draftH : null;
+    const applyH = !__isBottomStack && Number.isFinite(draftH) && draftH > 0 ? draftH : null;
     const applyD = Number.isFinite(draftD) && draftD > 0 ? draftD : null;
-    if (!applyW && !applyH && !applyD) return;
+    const hexCellProtrusionCm =
+      Number.isFinite(draftHexProtrusion) && draftHexProtrusion >= 0 ? draftHexProtrusion : null;
+    const hexCellDoorWidthCm =
+      Number.isFinite(draftHexDoorWidth) && draftHexDoorWidth > 0 ? draftHexDoorWidth : null;
+    if (!hexCellMode && !applyW && !applyH && !applyD) {
+      if (__isBottomStack && Number.isFinite(draftH) && draftH > 0) {
+        try {
+          __wp_toast(App, 'בארון התחתון ניתן להחיל לפי תא רק רוחב או עומק', 'info');
+        } catch (_e) {
+          __wp_reportPickingIssue(App, _e, {
+            where: 'canvasPicking',
+            op: 'cellDims.bottomStack.heightToast',
+            throttleMs: 1000,
+          });
+        }
+      }
+      return;
+    }
+
+    rememberCellDimsPostClickHoverTarget({
+      App,
+      moduleKey: foundModuleIndex,
+      isBottom: __isBottomStack,
+      ndcX,
+      ndcY,
+    });
 
     const resolved = {
       App,
+      isBottomStack: __isBottomStack,
       ui,
       cfg,
       raw,
       applyW,
       applyH,
       applyD,
+      hexCellMode,
+      hexCellProtrusionCm,
+      hexCellDoorWidthCm,
     };
 
     if (__wp_isCornerKey(foundModuleIndex)) {
+      if (hexCellMode) {
+        handleCanvasCornerHexCellClick({
+          ...resolved,
+          foundModuleIndex,
+          foundPartId,
+          ensureCornerCellConfigRef,
+        });
+        return;
+      }
       handleCanvasCornerCellDimsClick({
         ...resolved,
         foundModuleIndex,
         foundPartId,
         ensureCornerCellConfigRef,
+      });
+      return;
+    }
+
+    if (hexCellMode) {
+      handleCanvasLinearHexCellClick({
+        ...resolved,
+        foundModuleIndex,
       });
       return;
     }

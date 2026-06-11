@@ -1,6 +1,7 @@
 import type { UnknownRecord } from '../../../types';
 import { getDoorsArray } from '../runtime/render_access.js';
 import { __wp_map } from './canvas_picking_core_helpers.js';
+import { parseSketchBoxDoorTarget, readSketchBoxDoorRecord } from './canvas_picking_door_sketch_box_edit.js';
 import type { DoorActionHoverResolvedState } from './canvas_picking_door_action_hover_contracts.js';
 import type { DoorActionHoverArgs } from './canvas_picking_door_hover_targets.js';
 import { __asObject, __scopeCornerHoverPartKey } from './canvas_picking_door_hover_targets.js';
@@ -83,6 +84,39 @@ export function readDoorActionHoverWillRestore(args: {
   }
 }
 
+function normalizeGrooveHoverPartKey(args: {
+  hoverArgs: DoorActionHoverArgs;
+  state: DoorActionHoverResolvedState;
+}): string {
+  const { hoverArgs, state } = args;
+  const scoped = String(state.scopedHitDoorPid || state.hitDoorPid || '');
+  const canon = hoverArgs.canonDoorPartKeyForMaps(scoped);
+  if (!canon) return '';
+  return canon.replace(/_(?:accent|groove)_(?:top|bottom|left|right)$/i, '');
+}
+
+export function readDoorActionHoverWillRemoveGroove(args: {
+  hoverArgs: DoorActionHoverArgs;
+  state: DoorActionHoverResolvedState;
+}): boolean {
+  const { hoverArgs, state } = args;
+  try {
+    const sketchTarget = parseSketchBoxDoorTarget(state.scopedHitDoorPid || state.hitDoorPid);
+    if (sketchTarget) {
+      const sketchDoor = readSketchBoxDoorRecord(hoverArgs.App, sketchTarget, state.hitDoorStack);
+      return sketchDoor?.groove === true;
+    }
+
+    const partKey = normalizeGrooveHoverPartKey(args);
+    if (!partKey) return false;
+    const groovesMap = __asObject<UnknownRecord>(__wp_map(hoverArgs.App, 'groovesMap'));
+    if (!groovesMap) return false;
+    return groovesMap[`groove_${partKey}`] != null || groovesMap[partKey] != null;
+  } catch {
+    return false;
+  }
+}
+
 export function applyDoorActionHoverMarkerMaterial(args: {
   hoverArgs: DoorActionHoverArgs;
   state: DoorActionHoverResolvedState;
@@ -95,5 +129,16 @@ export function applyDoorActionHoverMarkerMaterial(args: {
     }
     return;
   }
+
+  if (hoverArgs.isGrooveEditMode) {
+    const willRemoveGroove = readDoorActionHoverWillRemoveGroove({ hoverArgs, state });
+    if (hoverArgs.doorMarker) {
+      hoverArgs.doorMarker.material = willRemoveGroove
+        ? state.markerUd.__matRemove || state.markerUd.__matGroove
+        : state.markerUd.__matGroove;
+    }
+    return;
+  }
+
   if (hoverArgs.doorMarker) hoverArgs.doorMarker.material = state.markerUd.__matGroove;
 }

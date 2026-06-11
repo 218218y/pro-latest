@@ -39,7 +39,7 @@ function applySketchRod(args: ApplySketchRodsArgs, y: number): void {
 
   if (isFn(createRod)) {
     try {
-      createRod(y, false, true, null);
+      createRod(y, true, true, null);
       return;
     } catch (error) {
       reportSketchRodSoft(args, 'applyInteriorSketchExtras.rods.installedOwnerRejected', error);

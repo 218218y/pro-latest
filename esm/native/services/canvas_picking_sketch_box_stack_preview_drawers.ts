@@ -49,6 +49,14 @@ export function resolveSketchBoxDrawersPreview(
     }),
   });
   const baseY = placement.yCenter - placement.stackH / 2;
+  const blockedReason =
+    placement.op === 'blocked'
+      ? 'collision'
+      : placement.op !== 'remove' && !placement.fitsAvailable
+        ? 'no-room'
+        : null;
+  const hoverOp: 'add' | 'remove' = blockedReason || placement.op === 'blocked' ? 'add' : placement.op;
+  const hoverRemoveId = blockedReason || placement.op === 'blocked' ? null : placement.removeId;
   const previewX = activeSegment ? activeSegment.centerX : targetGeo.centerX;
   const previewW = Math.max(
     DRAWER_DIMENSIONS.sketch.internalPreviewMinWidthM,
@@ -96,8 +104,8 @@ export function resolveSketchBoxDrawersPreview(
       contentKind: 'drawers',
       boxId,
       freePlacement,
-      op: placement.op,
-      removeId: placement.removeId,
+      op: hoverOp,
+      removeId: hoverRemoveId,
       contentXNorm: activeSegment ? activeSegment.xNorm : 0.5,
       boxYNorm: clampUnit((placement.yCenter - boxBottomY) / targetHeight),
       boxBaseYNorm: clampUnit((baseY - boxBottomY) / targetHeight),
@@ -106,6 +114,7 @@ export function resolveSketchBoxDrawersPreview(
       drawerH: placement.drawerH,
       drawerGap: placement.drawerGap,
       drawerHeightM: args.drawerHeightM ?? placement.drawerH,
+      blockedReason,
     }),
     preview: {
       kind: 'drawers',
@@ -117,7 +126,8 @@ export function resolveSketchBoxDrawersPreview(
       drawerH: placement.drawerH,
       drawerGap: placement.drawerGap,
       woodThick,
-      op: placement.op,
+      op: blockedReason ? 'blocked' : placement.op,
+      blockedReason: blockedReason ?? undefined,
       clearanceMeasurements,
       ...buildSketchBoxFrontOverlayFields(frontOverlay),
     },

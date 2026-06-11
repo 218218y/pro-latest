@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 
 import { OptionBtn, cx } from './interior_tab_helpers.js';
 import { InteriorLayoutManualControls } from './interior_layout_manual_controls.js';
-import { InteriorLayoutSketchControls } from './interior_layout_sketch_controls.js';
 import { InteriorToolCardHeader } from './interior_tab_sections_controls.js';
 import type { InteriorLayoutSectionProps } from './interior_tab_sections_shared.js';
 
@@ -33,7 +32,6 @@ export function InteriorLayoutSection(props: InteriorLayoutSectionProps): ReactE
       </div>
 
       <InteriorLayoutManualControls {...props} />
-      <InteriorLayoutSketchControls {...props} />
     </div>
   );
 }

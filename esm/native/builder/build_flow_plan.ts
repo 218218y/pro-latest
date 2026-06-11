@@ -54,6 +54,7 @@ export function resolveBuildFlowPlan(args: BuildFlowPlanResolveArgs): BuildFlowP
     doorsCount,
     calculateModuleStructureFn,
     splitActiveForBuild: inputs.splitActiveForBuild,
+    stackSplitUnifiedFrame: inputs.stackSplitUnifiedFrame,
     lowerHeightCm: inputs.lowerHeightCm,
     H: inputs.H,
     D: inputs.D,

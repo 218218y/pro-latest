@@ -37,7 +37,7 @@ const jsxFiles = collectFiles(uiReactRoot, '.tsx');
 
 const appErrorBoundary = readFile(path.join(uiReactRoot, 'components/AppErrorBoundary.tsx'));
 const overlayTopControls = readFile(path.join(uiReactRoot, 'overlay_top_controls.tsx'));
-const renderRoomSection = readFile(path.join(uiReactRoot, 'tabs/render_tab_sections_room.tsx'));
+const renderRoomSection = readFile(path.join(uiReactRoot, 'tabs/settings_visual_sections_room.tsx'));
 const editorSurface = readFile(path.join(uiReactRoot, 'pdf/order_pdf_overlay_editor_surface.tsx'));
 
 test('ui react jsx import hardening removes legacy default React imports and namespace access from tsx modules', () => {

@@ -74,6 +74,9 @@ export type ReadCellDimsDraftFn = (App: AppContainer) => {
   applyW?: number | null;
   applyH?: number | null;
   applyD?: number | null;
+  hexCellMode?: boolean;
+  hexCellProtrusionCm?: number | null;
+  hexCellDoorWidthCm?: number | null;
 };
 export type EstimateVisibleModuleFrontZFn = (
   App: AppContainer,

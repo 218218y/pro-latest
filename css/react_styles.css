@@ -92,10 +92,17 @@
   gap: var(--wp-header-btn-icon-gap);
   justify-content: flex-start;
   text-overflow: ellipsis;
+  position: relative;
+  overflow: hidden;
 }
 
 #reactSidebarRoot .wp-r-header .header-btn-small:hover:not(:disabled) {
-  filter: brightness(0.95);
+  filter: brightness(0.98);
+  transform: translateY(-1px);
+}
+
+#reactSidebarRoot .wp-r-header .header-btn-small:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 #reactSidebarRoot .wp-r-header .header-btn-small i {
@@ -105,6 +112,35 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+#reactSidebarRoot .wp-r-header {
+  overflow: visible;
+  position: relative;
+}
+
+#reactSidebarRoot .wp-r-header .wp-r-header-actions,
+#reactSidebarRoot .wp-r-header .wp-r-header-actions-col {
+  overflow: visible;
+}
+
+#reactSidebarRoot .wp-r-header .wp-r-header-hint {
+  overflow: visible;
+}
+
+#reactSidebarRoot .wp-r-header .wp-r-header-hint.hint-bottom::after {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  direction: rtl;
+  font-weight: 700;
+}
+
+#reactSidebarRoot .wp-r-header .wp-r-header-hint.hint-bottom::before {
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* Sketch button (neutral) */
@@ -119,9 +155,10 @@
 }
 
 #reactSidebarRoot .wp-r-header .btn-header-sketch.wp-r-btn-active {
-  background: #d1d5db;
-  border-color: #6b7280;
-  color: #6b7280;
+  background: linear-gradient(180deg, #fff7ed, #ffedd5);
+  border-color: rgba(249, 115, 22, 0.56);
+  color: #9a3412;
+  box-shadow: var(--wp-r-shadow-pressed-control-compact);
 }
 
 #reactSidebarRoot .wp-r-header .btn-header-sketch i {
@@ -194,8 +231,9 @@
 }
 
 #reactSidebarRoot .wp-r-header .btn-header-tabs-toggle.wp-r-btn-active {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.5);
+  background: linear-gradient(180deg, rgba(236, 253, 245, 0.98), rgba(209, 250, 229, 0.96));
+  border-color: rgba(16, 185, 129, 0.56);
+  box-shadow: var(--wp-r-shadow-pressed-control-success);
 }
 
 #reactSidebarRoot .wp-r-header .btn-header-tabs-toggle.wp-r-btn-active i {
@@ -298,7 +336,7 @@
 }
 
 /* --------------------------------------------------------------------------
- * Cloud sync panel (Export tab) layout
+ * Cloud sync panel (Settings tab) layout
  * -------------------------------------------------------------------------- */
 
 #reactSidebarRoot .wp-r-cloudsync-grid {
@@ -409,23 +447,71 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   margin: 2px 0 6px;
 }
 
-#reactSidebarRoot .wp-r-project-input--compact {
-  margin-bottom: 10px;
-}
-
-#reactSidebarRoot .wp-r-project-io-row {
+#reactSidebarRoot .wp-r-project-name-row {
+  --wp-r-project-name-control-height: 40px;
+  --wp-r-project-file-icon-width: 40px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
+  width: 100%;
 }
 
-#reactSidebarRoot .wp-r-project-io-row .wp-r-io-btn {
-  width: auto;
-  min-width: 120px;
+#reactSidebarRoot .wp-r-project-name-row .wp-r-project-input--compact {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--wp-r-project-name-control-height);
+  margin-bottom: 0;
+}
+
+#reactSidebarRoot .wp-r-project-io--structure {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+#reactSidebarRoot .wp-r-project-io--structure .wp-r-project-icon-btn {
+  box-sizing: border-box;
+  flex: 0 0 var(--wp-r-project-file-icon-width);
+  width: var(--wp-r-project-file-icon-width);
+  min-width: var(--wp-r-project-file-icon-width);
+  height: var(--wp-r-project-name-control-height);
+  padding: 0 6px;
+  border-radius: 10px;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+}
+
+#reactSidebarRoot .wp-r-project-io--structure .wp-r-project-icon-btn i {
+  width: 100%;
+  flex: 1 1 auto;
+  margin-inline-end: 0;
+  font-size: 1.15rem;
+}
+
+#reactSidebarRoot .wp-r-project-io--structure .btn-header-export-load {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #1d4ed8;
+}
+
+#reactSidebarRoot .wp-r-project-io--structure .btn-header-export-load i {
+  color: #3b82f6;
+}
+
+#reactSidebarRoot .wp-r-project-io--structure .btn-header-export-load:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+#reactSidebarRoot .wp-r-project-io--structure .btn-header-save.btn-save {
+  border: 1px solid #059669;
 }
 
 #reactSidebarRoot .wp-r-savedmodels {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
@@ -488,7 +574,7 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 
 #reactSidebarRoot .wp-r-savedmodels-rowicon {
   min-width: 34px;
-  padding: 6px 8px;
+  padding: 6px 7px;
 }
 
 #reactSidebarRoot .wp-r-savedmodels-rowicon[aria-disabled='true'] {
@@ -590,7 +676,7 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 /* Wardrobe type selector: 2 big buttons (פתיחה/הזזה) with the original type-option styling,
-   plus a compact material row (סנדביץ/מלמין) underneath. */
+   plus compact material and hinged-door mounting rows underneath. */
 #reactSidebarRoot .wp-r-wardrobe-type-selector {
   flex-direction: column;
   flex-wrap: nowrap;
@@ -598,7 +684,8 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 #reactSidebarRoot .wp-r-wardrobe-type-selector .wp-r-wardrobe-type-row,
-#reactSidebarRoot .wp-r-wardrobe-type-selector .wp-r-wardrobe-material-row {
+#reactSidebarRoot .wp-r-wardrobe-type-selector .wp-r-wardrobe-material-row,
+#reactSidebarRoot .wp-r-wardrobe-type-selector .wp-r-wardrobe-door-mount-row {
   display: flex;
   gap: 12px;
   direction: rtl;
@@ -813,6 +900,70 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   min-width: 0;
 }
 
+#reactSidebarRoot .wp-r-cell-dims-row .wp-r-field {
+  min-width: 0;
+}
+
+#reactSidebarRoot .wp-r-cell-dims-row label {
+  white-space: nowrap;
+}
+
+#reactSidebarRoot .wp-r-cell-dims-row .wp-r-input-row--with-addon {
+  --wp-r-link-badge-width: var(--wp-r-input-h);
+}
+
+#reactSidebarRoot .wp-r-stack-split-dims-row {
+  gap: 8px;
+}
+
+#reactSidebarRoot .wp-r-stack-split-dims-row .wp-r-input-row--with-addon {
+  --wp-r-link-badge-width: 72px;
+  gap: 4px;
+}
+
+#reactSidebarRoot .wp-r-stack-split-dims-row .wp-r-mini-link-toggle {
+  gap: 3px;
+  padding-inline: 6px;
+  font-size: 0.68rem;
+}
+
+#reactSidebarRoot .wp-r-cell-dims-hex-toolbar {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+
+#reactSidebarRoot .wp-r-hex-cell-mode-btn {
+  min-width: 112px;
+}
+
+#reactSidebarRoot .wp-r-cell-dims-hex-row {
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+#reactSidebarRoot .wp-r-cell-dims-hex-row > div {
+  flex-basis: 50%;
+}
+
+#reactSidebarRoot .wp-r-cell-dims-reset-dim-btn {
+  width: var(--wp-r-input-h);
+  min-width: var(--wp-r-input-h);
+  padding: 0;
+  gap: 0;
+}
+
+#reactSidebarRoot .wp-r-cell-dims-reset-dim-btn i {
+  font-size: 0.76rem;
+}
+
+#reactSidebarRoot .wp-r-cell-dims-reset-dim-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  transform: none;
+}
+
 #reactSidebarRoot .wp-r-step-btn {
   width: 34px;
   height: 34px;
@@ -918,6 +1069,8 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   user-select: none;
   white-space: nowrap;
   touch-action: manipulation;
+  position: relative;
+  overflow: hidden;
   transition:
     transform 0.06s ease,
     box-shadow 0.12s ease,
@@ -939,8 +1092,20 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 #reactSidebarRoot .wp-r-mini-link-toggle--manual {
-  background: rgba(59, 130, 246, 0.06);
-  border-color: rgba(59, 130, 246, 0.45);
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.98), rgba(219, 234, 254, 0.86));
+  border-color: rgba(37, 99, 235, 0.5);
+  color: #1d4ed8;
+  box-shadow: var(--wp-r-shadow-pressed-control-compact);
+}
+
+#reactSidebarRoot .wp-r-mini-link-toggle--manual::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #2563eb;
+  box-shadow: var(--wp-r-shadow-ring-primary-3-soft);
 }
 
 #reactSidebarRoot .wp-r-mini-link-toggle:hover {
@@ -1397,7 +1562,10 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
  * Interior tab: Layout & Manual division buttons (match legacy)
  * -------------------------------------------------------------------------- */
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .type-option {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .type-option {
   flex: 1;
   text-align: center;
   padding: 15px;
@@ -1422,29 +1590,44 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   -webkit-appearance: none;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .type-option:hover {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .type-option:hover {
   border-color: #cbd5e1;
   transform: translateY(-2px);
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .type-option.selected {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .type-option.selected {
   border-color: var(--primary, #3b82f6);
   background: rgba(59, 130, 246, 0.05);
   color: var(--primary, #3b82f6);
   box-shadow: var(--shadow-sm);
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .type-option--compact {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .type-option--compact {
   padding: 10px 12px;
   font-size: 0.9rem;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .type-option--iconrow {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .type-option--iconrow {
   gap: 8px;
   min-height: 42px;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-layout-grid {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-layout-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   margin-bottom: 10px;
@@ -1485,7 +1668,10 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 /* Sketch mode controls live inside the "חלוקות פנים" card (compact, like manual tools) */
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-row {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-row {
   /* tighten spacing from the sketch toggle button */
   margin-top: 2px;
   /* reduce bottom "empty" area inside the frame */
@@ -1494,11 +1680,17 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   background: rgba(241, 245, 249, 0.35);
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-r-label--center {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-r-label--center {
   text-align: center;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-row .wp-field {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-row
+  .wp-field {
   /* reduce gaps between the sketch groups (shelves/rod -> drawers -> box) */
   margin-bottom: 4px;
 }
@@ -1508,7 +1700,7 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
  * Keep sketch groups compact.
  */
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-row
   .wp-r-type-selector.type-selector {
@@ -1519,7 +1711,7 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
  * otherwise the whole row becomes taller and looks "misaligned".
  */
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-box-col--btn
   .wp-r-type-selector.type-selector {
@@ -1527,12 +1719,16 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 /* Make sketch headers a bit tighter so sections don't look "floating" */
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-row .wp-r-label {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-row
+  .wp-r-label {
   margin-bottom: 4px;
 }
 
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-row
   .wp-field:last-child {
@@ -1541,7 +1737,7 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 
 /* Make the sketch shelf buttons a bit shorter (user request: lower height) */
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-sketch-shelf-btn.type-option--compact.type-option--iconrow {
   min-height: 34px;
   padding: 8px 10px;
@@ -1549,19 +1745,25 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 /* Sketch shelves group: keep the 3 top buttons and the 4 variant buttons on a single row */
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-shelf-headrow,
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-shelf-subrow {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-shelf-headrow,
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-shelf-subrow {
   flex-wrap: nowrap;
   gap: 6px;
 }
 
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-shelf-headrow
   .type-option,
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-shelf-subrow
   .type-option {
@@ -1571,7 +1773,7 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 
 /* Make the 4 variant buttons a touch more compact so they fit nicely */
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-shelf-subbtn.type-option--compact.type-option--iconrow {
   min-height: 32px;
@@ -1580,12 +1782,18 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 /* Bed storage (sketch box) size input shown under the tool buttons */
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-storage-input {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-storage-input {
   margin-top: 6px;
 }
 
 /* Box controls: 2-column grid (RTL) with buttons and dimensions aligned row-by-row. */
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-box-grid {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-box-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
@@ -1593,16 +1801,22 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   align-items: start;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-box-cell {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-box-cell {
   min-width: 0;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-box-cell--door-hinge {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-box-cell--door-hinge {
   grid-column: 1;
 }
 
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-box-btn.type-option--compact.type-option--iconrow {
   width: 100%;
@@ -1615,13 +1829,17 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-box-btn.type-option:hover {
   transform: translateY(-2px);
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-box-cell .wp-r-input {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-box-cell
+  .wp-r-input {
   width: 100%;
   box-sizing: border-box;
   height: 34px;
@@ -1634,12 +1852,16 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   line-height: 1;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-box-cell .wp-r-label {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-box-cell
+  .wp-r-label {
   margin-bottom: 4px;
 }
 
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-storage-input
   .wp-r-input {
@@ -1654,7 +1876,9 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 /* Interior layout card bottom spacing: keep a comfortable gap before the "סיים מצב עריכה" row,
  * and some space from the bottom of the card.
  */
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout {
   padding-bottom: 10px;
 }
 
@@ -1679,7 +1903,10 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   flex: 1 1 auto;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-chevron {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-chevron {
   font-size: 0.8em;
   margin-right: 5px;
 }
@@ -1790,31 +2017,31 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 /* --------------------------------------------------------------------------
- * Render tab (הדמיה) – match legacy order, sizing and typography
+ * Settings tab visual controls – notes, display, room design and lighting
  * -------------------------------------------------------------------------- */
 
-#reactSidebarRoot .tab-content[data-tab='render'] .toggle-row span i {
+#reactSidebarRoot .tab-content[data-tab='export'] .toggle-row span i {
   margin-inline-end: 8px;
   color: #64748b;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-notes-action-container {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-notes-action-container {
   margin-top: 10px;
   border-top: 1px dashed #e2e8f0;
   padding-top: 10px;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-notes-action-btn {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-notes-action-btn {
   width: 100%;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-floor-type-selector {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-floor-type-selector {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-floor-type-selector .type-option {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-floor-type-selector .type-option {
   width: 100%;
   text-align: center;
   padding: 12px 10px;
@@ -1831,19 +2058,19 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   transform: none;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-floor-type-selector .type-option.selected {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-floor-type-selector .type-option.selected {
   border-color: rgba(59, 130, 246, 0.75);
   box-shadow: var(--wp-r-shadow-ring-primary-2-soft);
   position: relative;
   z-index: var(--wp-z-local-raised);
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-floor-type-selector .type-option i {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-floor-type-selector .type-option i {
   margin-inline-end: 6px;
   font-size: 1.05rem;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .color-picker-row,
+#reactSidebarRoot .tab-content[data-tab='export'] .color-picker-row,
 #reactSidebarRoot .tab-content[data-tab='design'] .color-picker-row {
   display: flex;
   flex-direction: row;
@@ -1868,7 +2095,7 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   min-height: 38px;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .color-picker-row .color-dot-swatch,
+#reactSidebarRoot .tab-content[data-tab='export'] .color-picker-row .color-dot-swatch,
 #reactSidebarRoot .tab-content[data-tab='design'] .color-picker-row .color-dot-swatch {
   width: 38px;
   height: 38px;
@@ -1880,24 +2107,24 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   position: relative;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .color-picker-row .color-dot-swatch:hover,
+#reactSidebarRoot .tab-content[data-tab='export'] .color-picker-row .color-dot-swatch:hover,
 #reactSidebarRoot .tab-content[data-tab='design'] .color-picker-row .color-dot-swatch:hover {
   border-color: rgba(59, 130, 246, 0.45);
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .color-picker-row .color-dot-swatch.is-selected,
+#reactSidebarRoot .tab-content[data-tab='export'] .color-picker-row .color-dot-swatch.is-selected,
 #reactSidebarRoot .tab-content[data-tab='design'] .color-picker-row .color-dot-swatch.is-selected {
   border-color: rgba(59, 130, 246, 0.85);
   box-shadow: var(--wp-r-shadow-ring-primary-2-strong);
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-lighting-wrapper {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-lighting-wrapper {
   margin-top: 15px;
   border-top: 1px dashed #cbd5e1;
   padding-top: 15px;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-btn {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-btn {
   width: 100%;
   min-width: 0;
   display: flex;
@@ -1908,33 +2135,33 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   text-align: center;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-btn--natural i {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-btn--natural i {
   color: #f59e0b;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-btn--evening i {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-btn--evening i {
   color: #64748b;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-btn--front i {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-btn--front i {
   color: #10b981;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-box {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-box {
   background: #f8fafc;
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-label {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-label {
   font-size: 0.85rem;
   color: #475569;
   display: block;
   margin-bottom: 5px;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-subtitle {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-subtitle {
   font-size: 0.8rem;
   color: #94a3b8;
   margin-top: 5px;
@@ -1942,12 +2169,12 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   margin-bottom: 5px;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-box .lighting-slider {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-box .lighting-slider {
   width: 100%;
   margin-bottom: 10px;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-presets {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-presets {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -1955,7 +2182,7 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   align-items: stretch;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-presets .type-option {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-presets .type-option {
   margin: 0;
   border-width: 1px;
   transform: none;
@@ -1967,13 +2194,13 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   z-index: var(--wp-z-local-base);
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-presets .type-option:hover {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-presets .type-option:hover {
   transform: none;
   border-color: #cbd5e1;
   box-shadow: none;
 }
 
-#reactSidebarRoot .tab-content[data-tab='render'] .wp-r-light-presets .type-option.selected {
+#reactSidebarRoot .tab-content[data-tab='export'] .wp-r-light-presets .type-option.selected {
   box-shadow: var(--wp-r-shadow-ring-primary-2-solid);
   border-color: transparent;
   background: rgba(59, 130, 246, 0.05);
@@ -2006,17 +2233,17 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
 }
 
 /* --------------------------------------------------------------------------
- * Export tab: modern, clean layout (React)
+ * Settings tab: modern, clean layout (React)
  * -------------------------------------------------------------------------- */
 
-#reactSidebarRoot .wp-r-export-layout {
+#reactSidebarRoot .wp-r-settings-layout {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding-bottom: 6px;
 }
 
-#reactSidebarRoot .wp-r-export-layout .control-section {
+#reactSidebarRoot .wp-r-settings-layout .control-section {
   margin-bottom: 0;
 }
 
@@ -2056,24 +2283,14 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   flex: 1 1 120px;
 }
 
-#reactSidebarRoot .wp-r-project-panel .wp-r-project-io-btn {
-  min-height: 40px;
-  padding-top: 9px;
-  padding-bottom: 9px;
-}
-
-#reactSidebarRoot .wp-r-project-panel .wp-r-project-restore {
-  margin-top: 10px;
-}
-
-#reactSidebarRoot .wp-r-export-grid {
+#reactSidebarRoot .wp-r-settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
   margin-top: 10px;
 }
 
-#reactSidebarRoot .wp-r-export-action {
+#reactSidebarRoot .wp-r-settings-action {
   width: 100%;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -2093,25 +2310,25 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
     background 0.15s ease;
 }
 
-#reactSidebarRoot .wp-r-export-action:hover {
+#reactSidebarRoot .wp-r-settings-action:hover {
   background: #f8fafc;
   border-color: #cbd5e1;
   box-shadow: var(--wp-r-shadow-action-hover);
   transform: translateY(-1px);
 }
 
-#reactSidebarRoot .wp-r-export-action:active {
+#reactSidebarRoot .wp-r-settings-action:active {
   transform: translateY(0);
   box-shadow: var(--wp-r-shadow-action-active);
 }
 
-#reactSidebarRoot .wp-r-export-action:focus-visible {
+#reactSidebarRoot .wp-r-settings-action:focus-visible {
   outline: none;
   border-color: rgba(59, 130, 246, 0.55);
   box-shadow: var(--wp-r-shadow-ring-primary-3-medium);
 }
 
-#reactSidebarRoot .wp-r-export-action-icon {
+#reactSidebarRoot .wp-r-settings-action-icon {
   width: 34px;
   height: 34px;
   border-radius: 10px;
@@ -2123,51 +2340,51 @@ body.wp-ui-react #sidebar > :not(#reactSidebarRoot) {
   flex: 0 0 auto;
 }
 
-#reactSidebarRoot .wp-r-export-action-icon i {
+#reactSidebarRoot .wp-r-settings-action-icon i {
   color: #3b82f6;
 }
 
-#reactSidebarRoot .wp-r-export-action-text {
+#reactSidebarRoot .wp-r-settings-action-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-#reactSidebarRoot .wp-r-export-action-title {
+#reactSidebarRoot .wp-r-settings-action-title {
   font-weight: 800;
   color: #0f172a;
   font-size: 0.92rem;
   line-height: 1.15;
 }
 
-#reactSidebarRoot .wp-r-export-action-sub {
+#reactSidebarRoot .wp-r-settings-action-sub {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-secondary);
   line-height: 1.15;
 }
 
-#reactSidebarRoot .wp-r-export-action--primary {
+#reactSidebarRoot .wp-r-settings-action--primary {
   background: rgba(59, 130, 246, 0.06);
   border-color: rgba(59, 130, 246, 0.35);
 }
 
-#reactSidebarRoot .wp-r-export-action--primary .wp-r-export-action-icon {
+#reactSidebarRoot .wp-r-settings-action--primary .wp-r-settings-action-icon {
   background: rgba(59, 130, 246, 0.08);
   border-color: rgba(59, 130, 246, 0.25);
 }
 
-#reactSidebarRoot .wp-r-export-action--accent {
+#reactSidebarRoot .wp-r-settings-action--accent {
   background: rgba(16, 185, 129, 0.06);
   border-color: rgba(16, 185, 129, 0.35);
 }
 
-#reactSidebarRoot .wp-r-export-action--accent .wp-r-export-action-icon i {
+#reactSidebarRoot .wp-r-settings-action--accent .wp-r-settings-action-icon i {
   color: #10b981;
 }
 
-#reactSidebarRoot .wp-r-export-action--accent .wp-r-export-action-icon {
+#reactSidebarRoot .wp-r-settings-action--accent .wp-r-settings-action-icon {
   background: rgba(16, 185, 129, 0.08);
   border-color: rgba(16, 185, 129, 0.25);
 }
@@ -2495,18 +2712,28 @@ body.wp-ui-react .btn-cancel:hover {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 #reactSidebarRoot .type-option:hover {
-  border-color: #cbd5e1;
+  border-color: rgba(37, 99, 235, 0.32);
+  background: linear-gradient(180deg, #fff, #f8fafc);
   transform: translateY(-2px);
+  box-shadow: var(--wp-r-shadow-action-hover);
 }
 
 #reactSidebarRoot .type-option.selected {
-  border-color: var(--primary);
-  background: rgba(59, 130, 246, 0.05);
-  color: var(--primary);
-  box-shadow: var(--shadow-sm);
+  border-color: rgba(37, 99, 235, 0.58);
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.98), rgba(219, 234, 254, 0.8));
+  color: #1d4ed8;
+  box-shadow: var(--wp-r-shadow-pressed-control);
+}
+
+#reactSidebarRoot .grid-divisions-row .type-option.selected,
+#reactSidebarRoot .wp-door-trim-panel .type-option.selected {
+  box-shadow: var(--wp-r-shadow-pressed-control-compact);
 }
 
 #reactSidebarRoot .type-option--compact {
@@ -2789,6 +3016,18 @@ body.wp-ui-react .btn-cancel:hover {
   outline: none;
   border-color: #60a5fa;
   box-shadow: var(--wp-r-shadow-ring-reset-focus);
+}
+
+#reactSidebarRoot .wp-r-groove-reset-btn.wp-r-cell-dims-reset-dim-btn {
+  width: var(--wp-r-input-h);
+  min-width: var(--wp-r-input-h);
+  max-width: var(--wp-r-input-h);
+  padding: 0;
+  gap: 0;
+}
+
+#reactSidebarRoot .wp-r-groove-reset-btn.wp-r-cell-dims-reset-dim-btn i {
+  font-size: 0.76rem;
 }
 
 #reactSidebarRoot .wp-r-sketch-drawer-height-field {
@@ -3175,13 +3414,16 @@ body.wp-ui-react .btn .wp-icon {
 #reactSidebarRoot .color-dot:hover {
   transform: scale(1.15);
   border-color: #cbd5e1;
-  z-index: var(--wp-z-local-hover);
 }
 
 #reactSidebarRoot .color-dot.selected {
   border-color: var(--primary);
   box-shadow: var(--wp-r-shadow-ring-primary-3-strong);
   transform: scale(1.2);
+}
+
+#reactSidebarRoot .color-dot:hover,
+#reactSidebarRoot .color-dot.selected {
   z-index: var(--wp-z-local-hover);
 }
 
@@ -3875,7 +4117,6 @@ body.wp-ui-react .undo-redo-container {
   left: 20px;
   display: flex;
   gap: 10px;
-  z-index: var(--wp-z-viewer-controls);
 }
 
 body.wp-ui-react .wp-floating-sketchsync {
@@ -3892,7 +4133,148 @@ body.wp-ui-react .camera-controls {
   left: 20px;
   display: flex;
   gap: 8px;
+}
+
+body.wp-ui-react .wp-viewer-notes-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  pointer-events: none;
+}
+
+body.wp-ui-react .undo-redo-container,
+body.wp-ui-react .camera-controls,
+body.wp-ui-react .wp-viewer-notes-controls {
   z-index: var(--wp-z-viewer-controls);
+}
+
+body.wp-ui-react .wp-viewer-notes-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  direction: rtl;
+  gap: 8px;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+body.wp-ui-react .wp-viewer-notes-wrap {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+body.wp-ui-react .cam-btn.wp-viewer-note-btn,
+body.wp-ui-react .cam-btn.wp-viewer-contents-btn {
+  width: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  max-height: 42px;
+  box-sizing: border-box;
+  flex: 0 0 42px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+  overflow: visible;
+}
+
+body.wp-ui-react .cam-btn.wp-viewer-note-btn.is-on,
+body.wp-ui-react .cam-btn.wp-viewer-contents-btn.is-on {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  box-shadow: var(--wp-r-shadow-ring-primary-3);
+}
+
+body.wp-ui-react .cam-btn.wp-viewer-note-btn.is-on:hover,
+body.wp-ui-react .cam-btn.wp-viewer-contents-btn.is-on:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+body.wp-ui-react .wp-viewer-note-btn-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  font-family: 'Heebo', sans-serif;
+  letter-spacing: -0.02em;
+  transform: translateY(-0.02em);
+}
+
+body.wp-ui-react .wp-viewer-note-eye {
+  position: absolute;
+  left: -6px;
+  right: auto;
+  bottom: 2px;
+  width: 20px;
+  min-width: 20px;
+  max-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  box-shadow: var(--wp-r-shadow-chip);
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  color: #475569;
+  transition:
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: visible;
+}
+
+body.wp-ui-react .wp-viewer-note-eye i {
+  font-size: 11px;
+  line-height: 1;
+}
+
+body.wp-ui-react .wp-viewer-note-eye:hover {
+  border-color: rgba(59, 130, 246, 0.55);
+  background: rgba(255, 255, 255, 0.98);
+  transform: translateY(-2px);
+  color: #3b82f6;
+}
+
+body.wp-ui-react .wp-viewer-note-eye,
+body.wp-ui-react .wp-qa-toggle-pin,
+body.wp-ui-react .wp-qa-sync-pin {
+  z-index: var(--wp-z-quick-actions-pin);
+}
+
+body.wp-ui-react .wp-viewer-note-eye:active {
+  transform: translateY(-1px);
+}
+
+body.wp-ui-react .wp-viewer-note-eye.is-on {
+  background: #eff6ff;
+  border-color: rgba(59, 130, 246, 0.75);
+  color: #2563eb;
+  box-shadow: var(--wp-r-shadow-ring-primary-2-soft);
 }
 
 body.wp-ui-react .cam-btn {
@@ -4006,6 +4388,8 @@ body.wp-ui-react .hint-bottom::before {
   transition: opacity 0.2s;
 }
 
+#reactSidebarRoot .wp-r-header .wp-r-header-hint.hint-bottom:hover,
+#reactSidebarRoot .wp-r-header .wp-r-header-hint.hint-bottom:focus-visible,
 body.wp-ui-react .hint-bottom::after,
 body.wp-ui-react .hint-bottom::before {
   z-index: var(--wp-z-tooltip);
@@ -4015,6 +4399,16 @@ body.wp-ui-react .hint-bottom:hover::after,
 body.wp-ui-react .hint-bottom:hover::before {
   opacity: 1;
   visibility: visible;
+}
+
+/* Viewer notes eye also uses .hint-bottom. Keep this after the tooltip helper,
+   because .hint-bottom intentionally sets position: relative for tooltip anchoring. */
+body.wp-ui-react .wp-viewer-notes-wrap > .wp-viewer-note-eye.hint-bottom {
+  position: absolute;
+  left: -6px;
+  right: auto;
+  bottom: 2px;
+  top: auto;
 }
 
 body.wp-ui-react .sticky-status-toast {
@@ -4512,29 +4906,84 @@ body.wp-ui-react .wp-qa-sync:hover {
   box-shadow: var(--wp-r-shadow-floating-hover);
 }
 
-/* Keep quick-action pins, docks, and hover states in one explicit layer map. */
-body.wp-ui-react .wp-qa-toggle-pin,
-body.wp-ui-react .wp-qa-sync-pin {
-  z-index: var(--wp-z-quick-actions-pin);
-}
+/* Keep quick-action pins, docks, menus, and tooltips in one explicit layer map. */
 
-body.wp-ui-react .wp-qa-toggle-pin:hover,
-body.wp-ui-react .wp-qa-sync-pin:hover {
-  z-index: var(--wp-z-quick-actions-pin-hover);
-}
-
-body.wp-ui-react .wp-qa-sync-dock,
-body.wp-ui-react .wp-qa-menu {
+body.wp-ui-react .wp-qa-sync-dock {
   z-index: var(--wp-z-quick-actions-dock);
 }
 
-body.wp-ui-react .wp-qa-btn:hover,
-body.wp-ui-react .wp-qa-sync:hover {
-  z-index: var(--wp-z-quick-actions-hover);
+body.wp-ui-react .wp-qa-menu {
+  z-index: var(--wp-z-quick-actions-menu);
 }
 
-/* Ensure tooltips never hide behind sibling buttons. */
-body.wp-ui-react .wp-qa-menu .hint-bottom:hover,
+body.wp-ui-react .wp-qa-menu .wp-qa-tooltip {
+  position: absolute;
+  top: 125%;
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  direction: rtl;
+  text-align: center;
+  width: min(144px, calc(100vw - 96px));
+  max-width: calc(100vw - 96px);
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+  box-sizing: border-box;
+  background: #1e293b;
+  color: white;
+  padding: 6px 7px;
+  border-radius: 6px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  box-shadow: var(--wp-r-shadow-tooltip);
+}
+
+body.wp-ui-react .wp-qa-menu .wp-qa-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent #1e293b transparent;
+}
+
+body.wp-ui-react .wp-qa-menu .wp-qa-tooltip-title {
+  display: block;
+  font-size: 0.94rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+body.wp-ui-react .wp-qa-menu .wp-qa-tooltip-detail {
+  display: block;
+  font-family: 'Heebo', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 450;
+  line-height: 1.2;
+}
+
+body.wp-ui-react .wp-qa-menu .wp-qa-btn:hover .wp-qa-tooltip,
+body.wp-ui-react .wp-qa-menu .wp-qa-btn:focus-visible .wp-qa-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Ensure tooltips never hide behind sibling buttons without adding a second layer declaration. */
+body.wp-ui-react .wp-qa-menu .wp-qa-tooltip,
+body.wp-ui-react .wp-qa-menu .wp-qa-btn:hover,
+body.wp-ui-react .wp-qa-menu .wp-qa-btn:focus-visible,
 body.wp-ui-react .wp-qa-anchor .hint-bottom:hover {
   z-index: var(--wp-z-quick-actions-tooltip);
 }
@@ -4550,31 +4999,35 @@ body.wp-ui-react .wp-pdf-editor-overlay {
   flex-direction: column;
 }
 
+body.wp-ui-react .wp-pdf-editor-toolbar,
+body.wp-ui-react .wp-pdf-editor-mode-toast {
+  z-index: var(--wp-z-pdf-editor-toolbar);
+}
+
 body.wp-ui-react .wp-pdf-editor-toolbar {
   position: sticky;
   top: 10px;
-  z-index: var(--wp-z-pdf-editor-toolbar);
-  display: grid;
-  /* Let the middle controls live only inside the space left between zoom and close. */
-  grid-template-columns: max-content minmax(0, 1fr) max-content;
-  align-items: center;
-  gap: 12px;
-  margin: 10px 12px 0;
-  padding: 12px 14px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 18px;
-  box-shadow: var(--wp-r-shadow-pdf-toolbar);
-  backdrop-filter: blur(14px);
+  display: block;
+  min-height: 62px;
+  margin: 8px 12px 0;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
   overflow: visible;
   isolation: isolate;
 }
 
 body.wp-ui-react .wp-pdf-editor-toolbar-left {
-  justify-self: start;
+  position: absolute;
+  left: 10px;
+  top: 50%;
   display: inline-flex;
   align-items: center;
   overflow: visible;
+  transform: translateY(-50%);
 }
 
 body.wp-ui-react .wp-pdf-editor-toolbar-left .wp-pdf-editor-zoom-val {
@@ -4587,17 +5040,17 @@ body.wp-ui-react .wp-pdf-editor-toolbar-left .wp-pdf-editor-zoom {
 }
 
 body.wp-ui-react .wp-pdf-editor-toolbar-center {
-  justify-self: stretch;
+  position: relative;
   min-width: 0;
-  width: 100%;
-  max-width: 100%;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin-inline: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: visible;
   padding-block: 4px;
   padding-inline: 8px;
   scrollbar-width: none;
@@ -4609,14 +5062,89 @@ body.wp-ui-react .wp-pdf-editor-toolbar-center::-webkit-scrollbar {
 }
 
 body.wp-ui-react .wp-pdf-editor-toolbar-right {
-  justify-self: end;
+  position: absolute;
+  right: 10px;
+  top: 50%;
   display: inline-flex;
   align-items: center;
   overflow: visible;
+  transform: translateY(-50%);
 }
 
 body.wp-ui-react .wp-pdf-editor-toolbar-spacer {
   flex: 1;
+}
+
+body.wp-ui-react .wp-pdf-editor-mode-toast {
+  position: fixed;
+  top: 82px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 10px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: var(--wp-r-shadow-toast);
+  color: #1e293b;
+  font-family: 'Heebo', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translateX(-50%);
+}
+
+body.wp-ui-react .wp-pdf-editor-mode-toast:hover,
+body.wp-ui-react .wp-pdf-editor-mode-toast:focus-visible {
+  transform: translate(-50%, -1px);
+  box-shadow: var(--wp-r-shadow-pdf-button-hover);
+  outline: none;
+}
+
+body.wp-ui-react .wp-pdf-editor-mode-toast .status-texts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  line-height: 1.1;
+}
+
+body.wp-ui-react .wp-pdf-editor-mode-toast .status-label {
+  display: block;
+}
+
+body.wp-ui-react .wp-pdf-editor-mode-toast .status-hint {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+body.wp-ui-react .wp-pdf-editor-mode-toast .status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: var(--wp-r-shadow-danger-glow);
+  animation: pulse-dot 2s infinite;
+}
+
+body.wp-ui-react .wp-pdf-editor-mode-toast--sketch-ready {
+  cursor: default;
+}
+
+body.wp-ui-react .wp-pdf-editor-mode-toast--sketch-ready .status-dot {
+  background: #22c55e;
+  box-shadow: var(--wp-r-shadow-success-ready-ring);
+}
+
+body.wp-ui-react .wp-pdf-editor-mode-toast--sketch-ready .status-hint {
+  color: #15803d;
 }
 
 body.wp-ui-react .wp-pdf-editor-btn {
@@ -4765,20 +5293,245 @@ body.wp-ui-react .wp-pdf-editor-btn--gmail:hover:not(:disabled) {
   border-color: rgba(234, 67, 53, 0.46);
 }
 
+body.wp-ui-react .wp-pdf-editor-toolbar .wp-pdf-editor-btn {
+  width: 46px;
+  min-width: 46px;
+  max-width: 46px;
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  box-sizing: border-box;
+  flex: 0 0 46px;
+  padding: 0;
+  border-radius: 50%;
+  gap: 0;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  box-shadow: var(--wp-r-shadow-floating);
+  font-size: 1.08rem;
+}
+
+body.wp-ui-react .wp-pdf-editor-toolbar .wp-pdf-editor-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #bfdbfe;
+  color: #2563eb;
+  box-shadow: var(--wp-r-shadow-floating-hover);
+  transform: translateY(-3px);
+}
+
+body.wp-ui-react .wp-pdf-editor-toolbar .wp-pdf-editor-btn:active:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+body.wp-ui-react .wp-pdf-editor-toolbar .wp-pdf-editor-btn:disabled {
+  background: #f1f5f9;
+  color: #cbd5e1;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+body.wp-ui-react .wp-pdf-editor-toolbar .wp-pdf-editor-btn i {
+  font-size: 17px;
+}
+
+body.wp-ui-react .wp-pdf-editor-toolbar .wp-pdf-editor-btn .wp-icon-gmail {
+  width: 21px;
+  height: 21px;
+}
+
+body.wp-ui-react .wp-pdf-ui-hint {
+  position: relative;
+  overflow: visible;
+}
+
+body.wp-ui-react .wp-pdf-ui-hint:hover,
+body.wp-ui-react .wp-pdf-ui-hint:focus-visible,
+body.wp-ui-react .wp-pdf-ui-hint:focus-within {
+  z-index: var(--wp-z-tooltip);
+}
+
+body.wp-ui-react .wp-pdf-editor-toolbar:hover,
+body.wp-ui-react .wp-pdf-editor-toolbar:focus-within,
+body.wp-ui-react .wp-pdf-sketch-toolbar--floating:hover,
+body.wp-ui-react .wp-pdf-sketch-toolbar--floating:focus-within {
+  z-index: var(--wp-z-pdf-editor-tooltip-host);
+}
+
+body.wp-ui-react .wp-pdf-ui-hint::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  display: inline-block;
+  width: auto;
+  max-width: min(360px, calc(100vw - 32px));
+  min-width: max-content;
+  box-sizing: border-box;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: center;
+  background: #1e293b;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  font-family: 'Heebo', sans-serif;
+  font-weight: 700;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    visibility 0.18s ease;
+  box-shadow: var(--wp-r-shadow-tooltip);
+}
+
+body.wp-ui-react .wp-pdf-ui-hint::before {
+  content: '';
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent #1e293b transparent;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    visibility 0.18s ease;
+}
+
+body.wp-ui-react .wp-pdf-ui-hint::after,
+body.wp-ui-react .wp-pdf-ui-hint::before {
+  z-index: var(--wp-z-tooltip);
+}
+
+body.wp-ui-react .wp-pdf-ui-hint:hover::after,
+body.wp-ui-react .wp-pdf-ui-hint:hover::before,
+body.wp-ui-react .wp-pdf-ui-hint:focus-visible::after,
+body.wp-ui-react .wp-pdf-ui-hint:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+body.wp-ui-react .wp-pdf-ui-hint--above::after {
+  top: auto;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%) translateY(4px);
+}
+
+body.wp-ui-react .wp-pdf-ui-hint--above::before {
+  top: auto;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%) translateY(4px);
+  border-color: #1e293b transparent transparent transparent;
+}
+
+body.wp-ui-react .wp-pdf-ui-hint--above:hover::after,
+body.wp-ui-react .wp-pdf-ui-hint--above:hover::before,
+body.wp-ui-react .wp-pdf-ui-hint--above:focus-visible::after,
+body.wp-ui-react .wp-pdf-ui-hint--above:focus-visible::before {
+  transform: translateX(-50%) translateY(0);
+}
+
+body.wp-ui-react .wp-pdf-floating-draw-btn--sketch.wp-pdf-ui-hint--above::after {
+  left: 0;
+  right: auto;
+  transform: translateY(4px);
+  text-align: right;
+}
+
+body.wp-ui-react .wp-pdf-floating-draw-btn--sketch.wp-pdf-ui-hint--above::before {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%) translateY(4px);
+}
+
+body.wp-ui-react .wp-pdf-floating-draw-btn--sketch.wp-pdf-ui-hint--above:hover::after,
+body.wp-ui-react .wp-pdf-floating-draw-btn--sketch.wp-pdf-ui-hint--above:focus-visible::after {
+  transform: translateY(0);
+}
+
+body.wp-ui-react .wp-pdf-floating-draw-btn--sketch.wp-pdf-ui-hint--above:hover::before,
+body.wp-ui-react .wp-pdf-floating-draw-btn--sketch.wp-pdf-ui-hint--above:focus-visible::before {
+  transform: translateX(-50%) translateY(0);
+}
+
+body.wp-ui-react .wp-pdf-ui-hint--side-left::after {
+  top: 50%;
+  left: auto;
+  right: calc(100% + 10px);
+  transform: translateY(-50%) translateX(4px);
+}
+
+body.wp-ui-react .wp-pdf-ui-hint--side-left::before {
+  top: 50%;
+  left: auto;
+  right: calc(100% + 4px);
+  transform: translateY(-50%) translateX(4px);
+  border-color: transparent transparent transparent #1e293b;
+}
+
+body.wp-ui-react .wp-pdf-ui-hint--side-left:hover::after,
+body.wp-ui-react .wp-pdf-ui-hint--side-left:hover::before,
+body.wp-ui-react .wp-pdf-ui-hint--side-left:focus-visible::after,
+body.wp-ui-react .wp-pdf-ui-hint--side-left:focus-visible::before {
+  transform: translateY(-50%) translateX(0);
+}
+
+body.wp-ui-react .wp-pdf-ui-hint--side-right::after {
+  top: 50%;
+  right: auto;
+  left: calc(100% + 10px);
+  transform: translateY(-50%) translateX(-4px);
+}
+
+body.wp-ui-react .wp-pdf-ui-hint--side-right::before {
+  top: 50%;
+  right: auto;
+  left: calc(100% + 4px);
+  transform: translateY(-50%) translateX(-4px);
+  border-color: transparent #1e293b transparent transparent;
+}
+
+body.wp-ui-react .wp-pdf-ui-hint--side-right:hover::after,
+body.wp-ui-react .wp-pdf-ui-hint--side-right:hover::before,
+body.wp-ui-react .wp-pdf-ui-hint--side-right:focus-visible::after,
+body.wp-ui-react .wp-pdf-ui-hint--side-right:focus-visible::before {
+  transform: translateY(-50%) translateX(0);
+}
+
 body.wp-ui-react .wp-pdf-editor-zoom {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px;
-  border-radius: 15px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 252, 0.74));
-  box-shadow: var(--wp-r-shadow-pdf-button);
+  gap: 7px;
+  padding: 0;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 body.wp-ui-react .wp-pdf-editor-zoom-val {
-  min-width: 52px;
-  padding-inline: 4px;
+  min-width: 58px;
+  min-height: 34px;
+  padding-inline: 10px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--wp-r-shadow-control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   text-align: center;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -4793,10 +5546,24 @@ body.wp-ui-react .wp-pdf-editor-imgopts {
   flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
-  gap: 10px;
-  margin-inline-start: 2px;
-  padding-inline-start: 10px;
-  border-inline-start: 1px solid rgba(148, 163, 184, 0.24);
+  gap: 8px;
+  margin-inline-start: 4px;
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid rgba(148, 163, 184, 0.34);
+}
+
+body.wp-ui-react .wp-pdf-editor-imgopts-label {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(203, 213, 225, 0.86);
+  color: #475569;
+  box-shadow: var(--wp-r-shadow-control);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 body.wp-ui-react .wp-pdf-editor-zoom,
@@ -4832,8 +5599,34 @@ body.wp-ui-react .wp-pdf-editor-toggle {
     color 0.16s ease;
 }
 
-body.wp-ui-react .wp-pdf-editor-toggle i {
-  opacity: 0.88;
+body.wp-ui-react .wp-pdf-editor-toggle .wp-pdf-editor-toggle-check {
+  position: absolute;
+  inset-block-start: -7px;
+  inset-inline-start: -7px;
+  width: 21px;
+  height: 21px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(147, 197, 253, 0.94);
+  background: rgba(255, 255, 255, 0.98);
+  color: #1d4ed8;
+  box-shadow: var(--wp-r-shadow-control);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0;
+  transform: scale(0.76) translateY(3px);
+  transition:
+    opacity 0.14s ease,
+    transform 0.16s ease;
+  pointer-events: none;
+}
+
+body.wp-ui-react .wp-pdf-editor-toggle.is-on .wp-pdf-editor-toggle-check {
+  opacity: 1;
+  transform: scale(1) translateY(0);
 }
 
 body.wp-ui-react .wp-pdf-editor-toggle:hover {
@@ -4849,9 +5642,10 @@ body.wp-ui-react .wp-pdf-editor-toggle:active {
 
 body.wp-ui-react .wp-pdf-editor-toggle.is-on {
   background: linear-gradient(180deg, rgba(219, 234, 254, 1), rgba(191, 219, 254, 0.96));
-  border-color: rgba(37, 99, 235, 0.44);
+  border-color: rgba(37, 99, 235, 0.56);
   box-shadow: var(--wp-r-shadow-pdf-toggle-on);
   color: #1d4ed8;
+  transform: translateY(1px);
 }
 
 body.wp-ui-react .wp-pdf-editor-toggle:focus-visible {
@@ -4886,7 +5680,6 @@ body.wp-ui-react .wp-pdf-editor-toggle:focus-visible {
   }
 
   body.wp-ui-react .wp-pdf-editor-btn i,
-  body.wp-ui-react .wp-pdf-editor-toggle i,
   body.wp-ui-react .wp-pdf-editor-btn .wp-icon-gmail {
     font-size: 13px;
     width: 16px;
@@ -4908,13 +5701,31 @@ body.wp-ui-react .wp-pdf-editor-toggle:focus-visible {
 
   body.wp-ui-react .wp-pdf-editor-zoom-val,
   body.wp-ui-react .wp-pdf-editor-toolbar-left .wp-pdf-editor-zoom-val {
-    min-width: 46px;
+    min-width: 54px;
+    min-height: 31px;
+    padding-inline: 8px;
     font-size: 11px;
   }
 
   body.wp-ui-react .wp-pdf-editor-imgopts {
     gap: 8px;
     padding-inline-start: 8px;
+  }
+
+  body.wp-ui-react .wp-pdf-editor-toolbar .wp-pdf-editor-btn {
+    padding: 0;
+    width: 43px;
+    min-width: 43px;
+    max-width: 43px;
+    height: 43px;
+    min-height: 43px;
+    max-height: 43px;
+    flex-basis: 43px;
+  }
+
+  body.wp-ui-react .wp-pdf-editor-imgopts-label {
+    font-size: 10.5px;
+    padding: 5px 8px;
   }
 }
 
@@ -4945,7 +5756,9 @@ body.wp-ui-react .wp-pdf-editor-toggle:focus-visible {
 
   body.wp-ui-react .wp-pdf-editor-zoom-val,
   body.wp-ui-react .wp-pdf-editor-toolbar-left .wp-pdf-editor-zoom-val {
-    min-width: 42px;
+    min-width: 50px;
+    min-height: 29px;
+    padding-inline: 7px;
     font-size: 10.5px;
   }
 
@@ -4953,6 +5766,22 @@ body.wp-ui-react .wp-pdf-editor-toggle:focus-visible {
     gap: 6px;
     margin-inline-start: 0;
     padding-inline-start: 6px;
+  }
+
+  body.wp-ui-react .wp-pdf-editor-toolbar .wp-pdf-editor-btn {
+    padding: 0;
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    flex-basis: 40px;
+  }
+
+  body.wp-ui-react .wp-pdf-editor-imgopts-label {
+    font-size: 10px;
+    padding: 4px 7px;
   }
 }
 
@@ -5195,46 +6024,94 @@ body.wp-ui-react .wp-pdf-inline-preview {
   flex: 1 1 0;
 }
 
-body.wp-ui-react .wp-pdf-sketch-cta-wrap {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 18px;
-  z-index: var(--wp-z-local-cta);
+body.wp-ui-react .wp-pdf-floating-draw-dock {
+  position: fixed;
+  top: auto;
+  left: 20px;
+  bottom: 22px;
   display: flex;
-  justify-content: center;
-  pointer-events: none;
-}
-
-body.wp-ui-react .wp-pdf-sketch-cta-dock {
-  position: relative;
-  margin: 0 auto;
-  width: fit-content;
-  max-width: calc(100% - 24px);
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  z-index: var(--wp-z-pdf-floating-draw-dock);
   pointer-events: auto;
 }
 
-body.wp-ui-react .wp-pdf-sketch-cta {
-  width: fit-content;
-  min-width: 0;
-  max-width: min(340px, calc(100vw - 64px));
+body.wp-ui-react .wp-pdf-floating-draw-btn {
+  width: 46px;
+  min-width: 46px;
+  max-width: 46px;
+  height: 46px;
   min-height: 46px;
-  padding-inline: 16px;
+  max-height: 46px;
+  box-sizing: border-box;
+  flex: 0 0 46px;
+  padding: 0;
+  border-radius: 50%;
+  gap: 0;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  box-shadow: var(--wp-r-shadow-floating);
+  font-size: 1.08rem;
+}
+
+body.wp-ui-react .wp-pdf-floating-draw-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #bfdbfe;
+  color: #2563eb;
+  box-shadow: var(--wp-r-shadow-floating-hover);
+  transform: translateY(-3px);
+}
+
+body.wp-ui-react .wp-pdf-floating-draw-btn.is-on {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border-color: rgba(248, 113, 113, 0.82);
+  color: #b91c1c;
+  box-shadow: var(--wp-r-shadow-pdf-floating-draw-on);
+}
+
+body.wp-ui-react .wp-pdf-floating-draw-btn.is-on:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fecaca, #fca5a5);
+  border-color: rgba(239, 68, 68, 0.72);
+  color: #991b1b;
+}
+
+body.wp-ui-react .wp-pdf-floating-draw-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  border-radius: 14px;
-  font-weight: 800;
-  white-space: nowrap;
-  box-shadow: var(--wp-r-shadow-pdf-sketch-cta);
+  width: 25px;
+  height: 25px;
+  line-height: 1;
 }
 
-body.wp-ui-react .wp-pdf-sketch-cta:hover:not(:disabled) {
-  box-shadow: var(--wp-r-shadow-pdf-sketch-cta-hover);
+body.wp-ui-react .wp-pdf-floating-draw-icon-base {
+  font-size: 19px;
+  line-height: 1;
 }
 
-body.wp-ui-react .wp-pdf-sketch-cta.is-on {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  border-color: rgba(29, 78, 216, 0.88);
-  color: #ffffff;
-  box-shadow: var(--wp-r-shadow-pdf-sketch-cta-on);
+body.wp-ui-react .wp-pdf-floating-draw-icon-corner {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  box-shadow: var(--wp-r-shadow-chip);
+  font-size: 8px;
+  line-height: 1;
+}
+
+body.wp-ui-react .wp-pdf-floating-draw-btn.is-on .wp-pdf-floating-draw-icon-corner {
+  background: #fee2e2;
+  border-color: rgba(248, 113, 113, 0.75);
 }
 
 body.wp-ui-react .wp-pdf-sketch-panel {
@@ -5313,10 +6190,8 @@ body.wp-ui-react .wp-pdf-sketch-toolbar-stack {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  max-height: inherit;
-  overflow-y: auto;
-  overflow-x: visible;
-  overscroll-behavior: contain;
+  max-height: none;
+  overflow: visible;
 }
 
 body.wp-ui-react .wp-pdf-sketch-toolbar-rail {
@@ -5465,8 +6340,7 @@ body.wp-ui-react .wp-pdf-sketch-floating-palette {
   transform: none;
   margin: 0;
   z-index: var(--wp-z-pdf-sketch-floating-palette);
-  overflow: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
 }
 
 body.wp-ui-react .wp-pdf-sketch-color-palette {
@@ -5745,38 +6619,56 @@ body.wp-ui-react .wp-pdf-sketch-card-text-layer.is-text-mode .annotation-box .ed
  * .wp-layout-grid because that global utility is intentionally two columns.
  * These panels declare their own 2/3-column grid so three choices stay on one row.
  */
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-choice-panel {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-choice-panel {
   grid-column: 1 / -1;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-choice-panel-inner {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-choice-panel-inner {
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.55);
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-choice-title {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-choice-title {
   margin-bottom: 8px;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-choice-grid {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-choice-grid {
   display: grid;
   gap: 6px;
   margin-bottom: 0;
   direction: rtl;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-choice-grid--three {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-choice-grid--three {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-choice-grid--two {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-choice-grid--two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-choice-option.type-option {
   width: 100%;
@@ -5793,14 +6685,17 @@ body.wp-ui-react .wp-pdf-sketch-card-text-layer.is-text-mode .annotation-box .ed
 }
 
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-sketch-choice-option.type-option
   i {
   font-size: 0.9em;
 }
 
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-sketch-choice-notice {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-sketch-choice-notice {
   margin-top: 8px;
 }
 
@@ -5808,13 +6703,16 @@ body.wp-ui-react .wp-pdf-sketch-card-text-layer.is-text-mode .annotation-box .ed
  * must span the full row first; otherwise each field gets only a quarter of the
  * panel and the Hebrew labels wrap.
  */
-#reactSidebarRoot .tab-content[data-tab='interior'] .wp-tool-card--layout .wp-r-sketch-box-leg-size-fields {
+#reactSidebarRoot
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .wp-r-sketch-box-leg-size-fields {
   grid-column: 1 / -1;
   margin-top: 2px;
 }
 
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-r-sketch-box-leg-size-fields
   .wp-sketch-box-cell--input {
@@ -5824,7 +6722,7 @@ body.wp-ui-react .wp-pdf-sketch-card-text-layer.is-text-mode .annotation-box .ed
 }
 
 #reactSidebarRoot
-  .tab-content[data-tab='interior']
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
   .wp-tool-card--layout
   .wp-r-sketch-box-leg-size-fields
   .wp-r-label {
@@ -5870,4 +6768,607 @@ body.wp-ui-react .wp-pdf-sketch-card-text-layer.is-text-mode .annotation-box .ed
 
 #reactSidebarRoot .wp-r-option-button--compact {
   min-height: 38px;
+}
+
+/* PDF page annotations: reuse the sketch drawing engine directly on the first PDF page. */
+body.wp-ui-react .wp-pdf-page-annotation-layer {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+body.wp-ui-react .wp-pdf-page-annotation-layer.is-editing {
+  pointer-events: auto;
+}
+
+body.wp-ui-react .wp-pdf-page-annotation-canvas {
+  pointer-events: none;
+}
+
+body.wp-ui-react .wp-pdf-page-annotation-layer.is-editing .wp-pdf-page-annotation-canvas {
+  pointer-events: auto;
+}
+
+body.wp-ui-react .wp-pdf-page-annotation-tools {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+body.wp-ui-react .wp-pdf-page-annotation-tools .wp-pdf-sketch-toolbar-rail {
+  pointer-events: none;
+}
+
+body.wp-ui-react .wp-pdf-page-annotation-tools .wp-pdf-sketch-toolbar--floating {
+  pointer-events: auto;
+}
+
+#reactSidebarRoot .wp-r-main-color-label-row {
+  margin-bottom: 6px;
+}
+
+#reactSidebarRoot .wp-r-main-color-label-row .wp-r-label {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+ * Sidebar dark theme
+ * -------------------------------------------------------------------------- */
+
+#reactSidebarRoot .wp-r-theme-dark {
+  color-scheme: dark;
+  --bg-app: #101214;
+  --panel-bg: #171b20;
+  --primary: #4db6ac;
+  --primary-hover: #76d8ce;
+  --accent: #f2b84b;
+  --text-main: #f4f7f8;
+  --text-secondary: #a8b3bd;
+  --border-color: #343c45;
+  --input-bg: #11161b;
+  --save-color: #2eb67d;
+  --delete-color: #fb7185;
+  --upgrade-color: #c084fc;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.34);
+  --shadow-md: 0 8px 18px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 16px 38px rgba(0, 0, 0, 0.42);
+  --wp-r-shadow-action-base: 0 1px 0 rgba(0, 0, 0, 0.3);
+  --wp-r-shadow-action-hover: 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 22px rgba(0, 0, 0, 0.24);
+  --wp-r-shadow-action-hover-ring:
+    0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 22px rgba(0, 0, 0, 0.24), 0 0 0 3px rgba(77, 182, 172, 0.18);
+  --wp-r-shadow-focus-muted: 0 0 0 2px rgba(77, 182, 172, 0.42);
+  --wp-r-shadow-ring-primary-2: 0 0 0 2px rgba(77, 182, 172, 0.32);
+  --wp-r-shadow-ring-primary-2-faint: 0 0 0 2px rgba(77, 182, 172, 0.16);
+  --wp-r-shadow-ring-primary-2-soft: 0 0 0 2px rgba(77, 182, 172, 0.24);
+  --wp-r-shadow-ring-primary-2-solid: inset 0 0 0 2px #4db6ac;
+  --wp-r-shadow-ring-primary-2-strong: inset 0 0 0 2px rgba(77, 182, 172, 0.46);
+  --wp-r-shadow-ring-primary-3-faint: 0 0 0 3px rgba(77, 182, 172, 0.14);
+  --wp-r-shadow-ring-primary-3-inset: 0 0 0 3px rgba(77, 182, 172, 0.56) inset;
+  --wp-r-shadow-ring-primary-3-intense: 0 0 0 3px rgba(77, 182, 172, 0.52);
+  --wp-r-shadow-ring-primary-3-medium: 0 0 0 3px rgba(77, 182, 172, 0.2);
+  --wp-r-shadow-ring-primary-3-soft: 0 0 0 3px rgba(77, 182, 172, 0.16);
+  --wp-r-shadow-pressed-control:
+    inset 0 1px 2px rgba(0, 0, 0, 0.36), 0 0 0 3px rgba(77, 182, 172, 0.14), 0 10px 20px rgba(0, 0, 0, 0.22);
+  --wp-r-shadow-pressed-control-compact:
+    inset 0 1px 2px rgba(0, 0, 0, 0.32), 0 0 0 2px rgba(77, 182, 172, 0.18);
+  --wp-r-shadow-pressed-control-success:
+    inset 0 1px 2px rgba(0, 0, 0, 0.24), 0 0 0 3px rgba(46, 182, 125, 0.18), 0 10px 20px rgba(0, 0, 0, 0.18);
+  --wp-r-dark-card-bg: #171b20;
+  --wp-r-dark-card-bg-soft: #20262d;
+  --wp-r-dark-card-bg-muted: #151a1f;
+  --wp-r-dark-card-bg-active: rgba(77, 182, 172, 0.12);
+  --wp-r-dark-card-border: #343c45;
+  --wp-r-dark-card-border-active: rgba(77, 182, 172, 0.7);
+  --wp-r-dark-control-bg: #20262d;
+  --wp-r-dark-control-bg-hover: #252b32;
+  --wp-r-dark-control-bg-selected: rgba(77, 182, 172, 0.18);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .header,
+#reactSidebarRoot .wp-r-theme-dark .tabs {
+  background: var(--panel-bg);
+  border-color: var(--border-color);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-header-logo {
+  box-sizing: border-box;
+  max-height: 70px;
+  padding: 7px 9px;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 8px;
+  filter: none;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .scroll-content {
+  background: #101214;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-scroll {
+  scrollbar-color: #4a5561 transparent;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .tab {
+  color: #a8b3bd;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .tab:hover {
+  color: #76d8ce;
+  background: rgba(77, 182, 172, 0.12);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .tab.active {
+  color: #76d8ce;
+  border-bottom-color: #4db6ac;
+  background: linear-gradient(180deg, rgba(77, 182, 172, 0.12), rgba(77, 182, 172, 0.04));
+}
+
+#reactSidebarRoot .wp-r-theme-dark .control-section,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-structure-head,
+#reactSidebarRoot .wp-r-theme-dark .module-config,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-light-box,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-custom-color {
+  background: #171b20;
+  border-color: #343c45;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .section-title {
+  color: #b5c0c8;
+  border-color: #4db6ac;
+}
+
+#reactSidebarRoot .wp-r-theme-dark label,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-label,
+#reactSidebarRoot .wp-r-theme-dark .wp-field-label,
+#reactSidebarRoot .wp-r-theme-dark .module-title,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action-title,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-project-name-title {
+  color: #f4f7f8;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action-sub,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-light-subtitle {
+  color: #a8b3bd;
+}
+
+#reactSidebarRoot .wp-r-theme-dark input[type='number'],
+#reactSidebarRoot .wp-r-theme-dark input[type='text'],
+#reactSidebarRoot .wp-r-theme-dark .project-input,
+#reactSidebarRoot .wp-r-theme-dark select {
+  background: #11161b;
+  border-color: #343c45;
+  color: #f4f7f8;
+}
+
+#reactSidebarRoot .wp-r-theme-dark input[type='number']::placeholder,
+#reactSidebarRoot .wp-r-theme-dark input[type='text']::placeholder,
+#reactSidebarRoot .wp-r-theme-dark .project-input::placeholder {
+  color: #7d8894;
+}
+
+#reactSidebarRoot .wp-r-theme-dark select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a8b3bd'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+}
+
+#reactSidebarRoot .wp-r-theme-dark .type-option,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action,
+#reactSidebarRoot .wp-r-theme-dark .btn-light,
+#reactSidebarRoot .wp-r-theme-dark .btn-accent,
+#reactSidebarRoot .wp-r-theme-dark .btn-cancel,
+#reactSidebarRoot .wp-r-theme-dark .groove-check-label {
+  background: #20262d;
+  border-color: #343c45;
+  color: #d9e0e6;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .type-option:hover,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action:hover,
+#reactSidebarRoot .wp-r-theme-dark .btn-light:hover,
+#reactSidebarRoot .wp-r-theme-dark .btn-accent:hover,
+#reactSidebarRoot .wp-r-theme-dark .btn-cancel:hover,
+#reactSidebarRoot .wp-r-theme-dark .groove-check-label:hover {
+  background: linear-gradient(180deg, #252b32, #1f252b);
+  border-color: rgba(77, 182, 172, 0.46);
+  color: #f4f7f8;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .type-option.selected {
+  background: linear-gradient(180deg, rgba(77, 182, 172, 0.22), rgba(77, 182, 172, 0.12));
+  border-color: rgba(77, 182, 172, 0.7);
+  color: #9ff2e8;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .btn-primary {
+  background: rgba(77, 182, 172, 0.14);
+  border: 1px solid rgba(77, 182, 172, 0.58);
+  color: #9ff2e8;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .btn-primary:hover {
+  background: rgba(77, 182, 172, 0.22);
+  border-color: rgba(118, 216, 206, 0.78);
+  color: #e9fffb;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-header .header-btn-small:not(.btn-save) {
+  background: #20262d;
+  border-color: #3a4652;
+  color: #e3e8ed;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-header .header-btn-small:not(.btn-save):hover {
+  background: #252d34;
+  border-color: rgba(77, 182, 172, 0.52);
+  filter: none;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-header .btn-header-save.btn-save {
+  background: #2eb67d;
+  border-color: #35d69a;
+  color: #06130f;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-header .btn-header-sketch i {
+  color: #f2b84b;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-header .btn-header-sketch.wp-r-btn-active {
+  background: linear-gradient(180deg, rgba(242, 184, 75, 0.22), rgba(242, 184, 75, 0.1));
+  border-color: rgba(242, 184, 75, 0.58);
+  color: #ffe6a8;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-header .btn-header-tabs-toggle.wp-r-btn-active {
+  background: linear-gradient(180deg, rgba(46, 182, 125, 0.22), rgba(46, 182, 125, 0.1));
+  border-color: rgba(46, 182, 125, 0.58);
+  color: #b9f8da;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .toggle-row {
+  color: #e3e8ed;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .toggle-row:hover {
+  background: rgba(77, 182, 172, 0.09);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .toggle-switch {
+  background: #4a5561;
+}
+
+#reactSidebarRoot .wp-r-theme-dark input[type='checkbox']:checked + .toggle-switch {
+  background: #4db6ac;
+  border-color: #76d8ce;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action-icon {
+  background: #151a1f;
+  border-color: #343c45;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action-icon i,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action--primary .wp-r-settings-action-icon i {
+  color: #76d8ce;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action--primary {
+  background: rgba(77, 182, 172, 0.1);
+  border-color: rgba(77, 182, 172, 0.42);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action--primary .wp-r-settings-action-icon {
+  background: rgba(77, 182, 172, 0.12);
+  border-color: rgba(77, 182, 172, 0.32);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action--accent {
+  background: rgba(46, 182, 125, 0.1);
+  border-color: rgba(46, 182, 125, 0.42);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action--accent .wp-r-settings-action-icon {
+  background: rgba(46, 182, 125, 0.12);
+  border-color: rgba(46, 182, 125, 0.32);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-settings-action--accent .wp-r-settings-action-icon i {
+  color: #7ce0af;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .color-dot-swatch {
+  border-color: #4a5561;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .color-dot-swatch:hover {
+  border-color: rgba(77, 182, 172, 0.65);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .color-dot-swatch.is-selected {
+  border-color: rgba(118, 216, 206, 0.95);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-light-label {
+  color: #d9e0e6;
+}
+
+#reactSidebarRoot .wp-r-theme-dark .btn-add-color {
+  background: var(--wp-r-dark-control-bg);
+  border-color: rgba(77, 182, 172, 0.58);
+  color: #9ff2e8;
+  box-shadow: var(--wp-r-shadow-action-base);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .btn-add-color:hover {
+  background: linear-gradient(180deg, var(--wp-r-dark-control-bg-hover), var(--wp-r-dark-control-bg));
+  border-color: rgba(118, 216, 206, 0.78);
+  color: var(--text-main);
+  box-shadow: var(--wp-r-shadow-action-hover);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .btn-add-color.is-open {
+  background: linear-gradient(180deg, rgba(77, 182, 172, 0.22), rgba(77, 182, 172, 0.12));
+  border-color: var(--wp-r-dark-card-border-active);
+  color: #9ff2e8;
+  box-shadow: var(--wp-r-shadow-ring-primary-2-soft);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .btn-add-color.is-open:hover {
+  background: linear-gradient(180deg, rgba(77, 182, 172, 0.28), rgba(77, 182, 172, 0.16));
+  color: var(--text-main);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-custom-picker-title {
+  color: var(--text-main);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-file-btn {
+  background: var(--wp-r-dark-control-bg);
+  border-color: var(--wp-r-dark-card-border);
+  color: #d9e0e6;
+  box-shadow: var(--wp-r-shadow-action-base);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-file-btn:hover {
+  background: linear-gradient(180deg, var(--wp-r-dark-control-bg-hover), var(--wp-r-dark-control-bg));
+  border-color: rgba(77, 182, 172, 0.48);
+  color: var(--text-main);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-file-name {
+  color: var(--text-secondary);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-color-input {
+  border-color: var(--wp-r-dark-card-border);
+  background: var(--input-bg);
+}
+
+/* Dark theme: high-specificity card/control surfaces that opt out of the generic tokens. */
+#reactSidebarRoot .wp-r-theme-dark .wp-r-savedmodels-toggle {
+  background: var(--wp-r-dark-card-bg-soft);
+  border-color: var(--wp-r-dark-card-border);
+  color: var(--text-main);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-savedmodels-toggle:hover {
+  background: linear-gradient(180deg, var(--wp-r-dark-control-bg-hover), var(--wp-r-dark-card-bg-soft));
+  border-color: rgba(77, 182, 172, 0.48);
+  box-shadow: var(--wp-r-shadow-action-hover);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-savedmodels-toggle[aria-expanded='true'] {
+  background: linear-gradient(180deg, rgba(77, 182, 172, 0.2), rgba(77, 182, 172, 0.1));
+  border-color: var(--wp-r-dark-card-border-active);
+  box-shadow: var(--wp-r-shadow-ring-primary-2-soft);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-savedmodels-toggle:focus-visible {
+  outline-color: rgba(118, 216, 206, 0.72);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-savedmodels-toggle .section-title {
+  color: var(--text-main);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .control-section.wp-r-savedmodels {
+  background: var(--wp-r-dark-card-bg);
+  border-color: var(--wp-r-dark-card-border);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-savedmodels-dndhint,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-savedmodels-emptydrop {
+  background: var(--wp-r-dark-card-bg-muted);
+  border-color: var(--wp-r-dark-card-border);
+  color: var(--text-secondary);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-r-savedmodels-emptydrop--active {
+  background: rgba(77, 182, 172, 0.12);
+  border-color: var(--wp-r-dark-card-border-active);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--layout,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--extdrawer,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--intdrawer,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--paint,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--hinge,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--sketch,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--handle,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--divider,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--handles,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--handles-advanced,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--curtain {
+  background: var(--wp-r-dark-card-bg-soft);
+  border-color: var(--wp-r-dark-card-border);
+  color: var(--text-main);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--layout.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--extdrawer.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--intdrawer.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--paint.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--hinge.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--sketch.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--handle.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--divider.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--handles.is-active,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--handles-advanced.is-active {
+  background: var(--wp-r-dark-card-bg-active);
+  border-color: var(--wp-r-dark-card-border-active);
+  box-shadow: var(--wp-r-shadow-ring-primary-3-medium);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card .wp-header-row strong,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--layout .wp-header-row strong,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--extdrawer .wp-header-row strong,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--intdrawer .wp-header-row strong,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--handles .wp-header-row strong,
+#reactSidebarRoot .wp-r-theme-dark .wp-tool-card--handles-advanced .wp-header-row strong {
+  color: var(--text-main);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .wp-manual-row,
+#reactSidebarRoot .wp-r-theme-dark .wp-sketch-row,
+#reactSidebarRoot .wp-r-theme-dark .wp-r-embedded-sketch-drawers,
+#reactSidebarRoot .wp-r-theme-dark .wp-sketch-choice-panel-inner {
+  background: var(--wp-r-dark-card-bg-muted);
+  border-color: var(--wp-r-dark-card-border);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .tab-content[data-tab='sketch'] .wp-tool-card--layout > .wp-sketch-row {
+  background: var(--wp-r-dark-card-bg-soft);
+  border-color: var(--wp-r-dark-card-border);
+}
+
+#reactSidebarRoot
+  .wp-r-theme-dark
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .type-option,
+#reactSidebarRoot .wp-r-theme-dark .tab-content[data-tab='interior'] .wp-tool-card--extdrawer .type-option,
+#reactSidebarRoot .wp-r-theme-dark .tab-content[data-tab='interior'] .wp-r-handle-btn.type-option,
+#reactSidebarRoot .wp-r-theme-dark .tab-content[data-tab='interior'] .wp-tool-card--handles .type-option,
+#reactSidebarRoot
+  .wp-r-theme-dark
+  .tab-content[data-tab='interior']
+  .wp-tool-card--handles-advanced
+  .type-option {
+  background: var(--wp-r-dark-control-bg);
+  border-color: var(--wp-r-dark-card-border);
+  color: #d9e0e6;
+}
+
+#reactSidebarRoot
+  .wp-r-theme-dark
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .type-option:hover,
+#reactSidebarRoot
+  .wp-r-theme-dark
+  .tab-content[data-tab='interior']
+  .wp-tool-card--extdrawer
+  .type-option:hover,
+#reactSidebarRoot .wp-r-theme-dark .tab-content[data-tab='interior'] .wp-r-handle-btn.type-option:hover,
+#reactSidebarRoot
+  .wp-r-theme-dark
+  .tab-content[data-tab='interior']
+  .wp-tool-card--handles
+  .type-option:hover,
+#reactSidebarRoot
+  .wp-r-theme-dark
+  .tab-content[data-tab='interior']
+  .wp-tool-card--handles-advanced
+  .type-option:hover {
+  background: linear-gradient(180deg, var(--wp-r-dark-control-bg-hover), var(--wp-r-dark-control-bg));
+  border-color: rgba(77, 182, 172, 0.48);
+  color: var(--text-main);
+}
+
+#reactSidebarRoot
+  .wp-r-theme-dark
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  .type-option.selected,
+#reactSidebarRoot
+  .wp-r-theme-dark
+  .tab-content[data-tab='interior']
+  .wp-tool-card--extdrawer
+  .type-option.selected,
+#reactSidebarRoot .wp-r-theme-dark .tab-content[data-tab='interior'] .wp-r-handle-btn.type-option.selected,
+#reactSidebarRoot
+  .wp-r-theme-dark
+  .tab-content[data-tab='interior']
+  .wp-tool-card--handles
+  .type-option.selected,
+#reactSidebarRoot
+  .wp-r-theme-dark
+  .tab-content[data-tab='interior']
+  .wp-tool-card--handles-advanced
+  .type-option.selected {
+  background: linear-gradient(180deg, rgba(77, 182, 172, 0.24), var(--wp-r-dark-control-bg-selected));
+  border-color: var(--wp-r-dark-card-border-active);
+  color: #9ff2e8;
+  box-shadow: var(--wp-r-shadow-pressed-control-compact);
+}
+
+#reactSidebarRoot .wp-r-theme-dark .tab-content[data-tab='interior'] .wp-tool-card--extdrawer .btn.btn-count,
+body.wp-ui-react #reactSidebarRoot .wp-r-theme-dark .btn-count {
+  background: var(--wp-r-dark-control-bg);
+  border-color: var(--wp-r-dark-card-border);
+  color: #d9e0e6;
+}
+
+#reactSidebarRoot
+  .wp-r-theme-dark
+  .tab-content[data-tab='interior']
+  .wp-tool-card--extdrawer
+  .btn.btn-count:hover,
+body.wp-ui-react #reactSidebarRoot .wp-r-theme-dark .btn-count:hover {
+  background: var(--wp-r-dark-control-bg-hover);
+  border-color: rgba(77, 182, 172, 0.48);
+  color: var(--text-main);
+}
+
+#reactSidebarRoot
+  .wp-r-theme-dark
+  .tab-content[data-tab='interior']
+  .wp-tool-card--extdrawer
+  .btn.btn-count.is-selected,
+body.wp-ui-react #reactSidebarRoot .wp-r-theme-dark .btn-count.is-selected {
+  background: rgba(77, 182, 172, 0.24);
+  border-color: var(--wp-r-dark-card-border-active);
+  color: #9ff2e8;
+}
+
+#reactSidebarRoot
+  .wp-r-theme-dark
+  :is(.tab-content[data-tab='interior'], .tab-content[data-tab='sketch'])
+  .wp-tool-card--layout
+  :is(.wp-sketch-box-cell, .wp-sketch-storage-input)
+  .wp-r-input {
+  background: var(--input-bg);
+  border-color: var(--wp-r-dark-card-border);
+  color: var(--text-main);
+}
+
+#reactSidebarRoot
+  .wp-r-theme-dark
+  :is(
+    .wp-hint,
+    .wp-hint--paint,
+    .wp-hint--divider,
+    .wp-hint--intdrawer,
+    .wp-hint--hinge,
+    .wp-hint--warn,
+    .wp-hint--danger,
+    .wp-hint--handle
+  ),
+#reactSidebarRoot .wp-r-theme-dark .wp-r-note {
+  background: var(--wp-r-dark-card-bg-muted);
+  border-color: var(--wp-r-dark-card-border);
+  color: var(--text-secondary);
 }

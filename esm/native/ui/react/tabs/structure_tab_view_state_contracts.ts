@@ -56,6 +56,9 @@ export type StructureTabCellDimsState = {
   cellDimsWidth: number | '';
   cellDimsHeight: number | '';
   cellDimsDepth: number | '';
+  cellDimsHexMode: boolean;
+  cellDimsHexProtrusion: number | '';
+  cellDimsHexDoorWidth: number | '';
 };
 
 export type StructureTabSelectionState = {
@@ -92,5 +95,10 @@ export type StructureTabSelectionArgs = {
   wardrobeType: 'hinged' | 'sliding';
 };
 
-export type StructureTabCellDimKey = 'cellDimsWidth' | 'cellDimsHeight' | 'cellDimsDepth';
+export type StructureTabCellDimKey =
+  | 'cellDimsWidth'
+  | 'cellDimsHeight'
+  | 'cellDimsDepth'
+  | 'cellDimsHexProtrusion'
+  | 'cellDimsHexDoorWidth';
 export type StructureTabUiSnapshot = UnknownRecord;

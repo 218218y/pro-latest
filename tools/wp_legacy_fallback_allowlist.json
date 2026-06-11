@@ -57,6 +57,12 @@
         "domain-default": 1
       }
     },
+    "esm/native/builder/corner_materials.ts": {
+      "total": 2,
+      "categories": {
+        "domain-default": 2
+      }
+    },
     "esm/native/builder/corner_wing_cornice_profile.ts": {
       "total": 1,
       "categories": {
@@ -541,6 +547,12 @@
         "domain-default": 2
       }
     },
+    "esm/native/services/canvas_picking_cell_dims_linear_context_modules.ts": {
+      "total": 4,
+      "categories": {
+        "domain-default": 4
+      }
+    },
     "esm/native/services/canvas_picking_click_hit_flow_shared.ts": {
       "total": 1,
       "categories": {
@@ -557,12 +569,6 @@
       "total": 1,
       "categories": {
         "domain-default": 1
-      }
-    },
-    "esm/native/services/canvas_picking_door_split_hover_flow.ts": {
-      "total": 1,
-      "categories": {
-        "compat-boundary": 1
       }
     },
     "esm/native/services/canvas_picking_generic_paint_hover_preview_bounds.ts": {
@@ -601,12 +607,6 @@
         "domain-default": 4
       }
     },
-    "esm/native/services/canvas_picking_interior_hover_int_drawer.ts": {
-      "total": 2,
-      "categories": {
-        "compat-boundary": 2
-      }
-    },
     "esm/native/services/canvas_picking_manual_layout_sketch_click_box_metrics.ts": {
       "total": 1,
       "categories": {
@@ -635,18 +635,6 @@
       "total": 1,
       "categories": {
         "domain-default": 1
-      }
-    },
-    "esm/native/services/canvas_picking_sketch_module_stack_preview_drawers.ts": {
-      "total": 2,
-      "categories": {
-        "compat-boundary": 2
-      }
-    },
-    "esm/native/services/canvas_picking_sketch_neighbor_measurements.ts": {
-      "total": 2,
-      "categories": {
-        "compat-boundary": 2
       }
     },
     "esm/native/services/cloud_sync_delete_temp_runtime.ts": {
@@ -978,7 +966,7 @@
         "domain-default": 1
       }
     },
-    "esm/native/ui/react/tabs/render_tab_shared_room.ts": {
+    "esm/native/ui/react/tabs/settings_visual_shared_room.ts": {
       "total": 6,
       "categories": {
         "domain-default": 6
@@ -998,9 +986,9 @@
       }
     },
     "esm/shared/wardrobe_dimension_tokens_shared.ts": {
-      "total": 6,
+      "total": 5,
       "categories": {
-        "compat-boundary": 3,
+        "compat-boundary": 2,
         "domain-default": 3
       }
     },

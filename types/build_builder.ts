@@ -274,6 +274,8 @@ export type BuilderBuildChestOnlyFn = (opts?: BuilderBuildChestOnlyOptsLike | nu
 export interface BuilderBuildCornerWingMaterialsLike extends UnknownRecord {
   body: unknown;
   front: unknown;
+  defaultShelfMat?: unknown;
+  braceShelfMat?: unknown;
 }
 export interface BuilderCornerBuildMetaLike extends UnknownRecord {
   stackKey?: 'top' | 'bottom';
@@ -335,12 +337,20 @@ export type BuilderCalculateModuleStructureFn = (
 ) => ModulesStructureItemLike[];
 export type BuilderRebuildDrawerMetaFn = () => void;
 export type BuilderVec3Like = { x: number; y: number; z: number };
+export type BuilderDimensionLineScaleSpec =
+  | number
+  | {
+      scale?: number | string;
+      textScale?: number | string;
+      styleKey?: string;
+      labelStyleKey?: string;
+    };
 export type BuilderDimensionLineFn = (
   from: BuilderVec3Like,
   to: BuilderVec3Like,
   textOffset: BuilderVec3Like,
   label: string,
-  scale?: number,
+  scale?: BuilderDimensionLineScaleSpec,
   labelOffset?: BuilderVec3Like
 ) => unknown;
 
@@ -427,10 +437,7 @@ export type BuilderInteriorRodCreator = (
   enableSingleHanger?: boolean,
   manualHeightLimit?: number | null
 ) => unknown;
-export interface BuilderCreateRodConfigLike extends UnknownRecord {
-  intDrawersList?: unknown;
-  intDrawersSlot?: unknown;
-}
+export interface BuilderCreateRodConfigLike extends UnknownRecord {}
 export interface BuilderCreateRodWithContentsArgsLike extends BuilderRenderCommonArgsLike {
   yPos?: number;
   enableHangingClothes?: boolean;
@@ -439,10 +446,11 @@ export interface BuilderCreateRodWithContentsArgsLike extends BuilderRenderCommo
   cfg?: unknown;
   config?: BuilderCreateRodConfigLike | null;
   effectiveBottomY?: number;
+  effectiveTopY?: number;
+  gridDivisions?: number;
   localGridStep?: number;
+  woodThick?: number;
   isInternalDrawersEnabled?: boolean;
-  intDrawersList?: unknown;
-  intDrawersSlot?: unknown;
   innerW?: number;
   internalCenterX?: number;
   internalZ?: number;

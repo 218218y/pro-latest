@@ -14,7 +14,7 @@ import {
   writePendingGrooveLinesCountForPart,
 } from './canvas_picking_door_edit_shared.js';
 import { parseSketchBoxDoorTarget, patchSketchBoxDoor } from './canvas_picking_door_sketch_box_edit.js';
-import { requestDoorAuthoringBurstRefresh } from './canvas_picking_door_authoring_burst.js';
+import { requestDoorAuthoringImmediateRefresh } from './canvas_picking_door_authoring_burst.js';
 import {
   __wp_str,
   __wp_hingeDir,
@@ -161,7 +161,7 @@ export function handleCanvasDoorGrooveClick(args: CanvasDoorGrooveClickArgs): bo
       }
       return undefined;
     });
-    requestDoorAuthoringBurstRefresh(App, 'groove:click');
+    requestDoorAuthoringImmediateRefresh(App, 'groove:click');
   }
   return true;
 }

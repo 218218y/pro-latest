@@ -7,6 +7,7 @@ export type {
   ManualLayoutSketchRodHoverIntent,
   ManualLayoutSketchShelfHoverIntent,
   ManualLayoutSketchStackHoverIntent,
+  ManualLayoutSketchStorageHoverIntent,
   MatchManualLayoutSketchHoverArgs,
   ReadManualLayoutSketchHoverSnapshotArgs,
   RecordMap,
@@ -25,4 +26,5 @@ export {
   readManualLayoutSketchRodHoverIntent,
   readManualLayoutSketchShelfHoverIntent,
   readManualLayoutSketchStackHoverIntent,
+  readManualLayoutSketchStorageHoverIntent,
 } from './canvas_picking_manual_layout_sketch_hover_intent_readers.js';

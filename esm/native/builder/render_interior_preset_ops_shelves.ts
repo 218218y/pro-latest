@@ -8,6 +8,12 @@ import type {
 } from './render_interior_ops_contracts.js';
 import { INTERIOR_FITTINGS_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import {
+  SHELF_GROUP_PART_ID,
+  createModuleShelfPartId,
+  markShelfBoardUserData,
+  resolveShelfPartMaterial,
+} from '../features/shelf_part_identity.js';
+import {
   __isFn,
   asMaterial,
   reportInteriorPresetSoft,
@@ -21,6 +27,10 @@ export function createAddGridShelf(args: {
   createBoard: InteriorOpsCallable;
   addFoldedClothes?: InteriorOpsCallable;
   currentShelfMat: unknown;
+  currentBraceShelfMat?: unknown;
+  moduleKey: string;
+  getPartMaterial?: InteriorOpsCallable;
+  getPartColorValue?: InteriorOpsCallable;
   braceSet: Record<number, true>;
   shelfSet: Record<number, true>;
   effectiveBottomY: number;
@@ -39,8 +49,6 @@ export function createAddGridShelf(args: {
   braceShelfWidth: number;
   leftInnerX: number;
   rightInnerX: number;
-  isInternalDrawersEnabled: boolean;
-  intDrawersSlot: number;
   renderOpsHandleCatch: InteriorPresetHandleCatch;
 }): (gridIndex: number) => void {
   const {
@@ -50,6 +58,10 @@ export function createAddGridShelf(args: {
     createBoard,
     addFoldedClothes,
     currentShelfMat,
+    currentBraceShelfMat,
+    moduleKey,
+    getPartMaterial,
+    getPartColorValue,
     braceSet,
     shelfSet,
     effectiveBottomY,
@@ -68,8 +80,6 @@ export function createAddGridShelf(args: {
     braceShelfWidth,
     leftInnerX,
     rightInnerX,
-    isInternalDrawersEnabled,
-    intDrawersSlot,
     renderOpsHandleCatch,
   } = args;
 
@@ -118,7 +128,8 @@ export function createAddGridShelf(args: {
     shelfZ: number,
     shelfDepth: number,
     shelfH: number,
-    isBrace: boolean
+    isBrace: boolean,
+    shelfPartId: string
   ): void {
     if (isBrace) return;
     if (!(innerW > 0) || !(shelfDepth > 0)) return;
@@ -142,7 +153,8 @@ export function createAddGridShelf(args: {
       if (mesh.rotation) mesh.rotation.z = Math.PI / 2;
       mesh.position?.set?.(x, yPin, z);
       mesh.userData = mesh.userData || {};
-      mesh.userData.partId = 'all_shelves';
+      mesh.userData.partId = shelfPartId;
+      markShelfBoardUserData(mesh.userData, { groupPartId: SHELF_GROUP_PART_ID });
       mesh.userData.__kind = 'shelf_pin';
       const material = asMaterial(mesh.material);
       if (material) material.__keepMaterial = true;
@@ -173,9 +185,6 @@ export function createAddGridShelf(args: {
 
   function addBaseShelfContents(): void {
     if (!shelfSet[1] || !__isFn(addFoldedClothes)) return;
-    const hasDrawerInBottomSpace = isInternalDrawersEnabled && intDrawersSlot === 1;
-    if (hasDrawerInBottomSpace) return;
-
     const isBrace = !!braceSet[1];
     const shelfDepth = isBrace ? internalDepth : regularDepth;
     const shelfZ = isBrace ? internalZ : regularZ;
@@ -221,12 +230,27 @@ export function createAddGridShelf(args: {
     const shelfW = isBrace ? braceShelfWidth : regularShelfWidth;
     const shelfX = isBrace ? braceCenterX : internalCenterX;
 
-    createBoard(shelfW, woodThick, shelfDepth, shelfX, y, shelfZ, currentShelfMat, 'all_shelves');
+    const shelfPartId = createModuleShelfPartId(moduleKey, gridKey);
+    const shelfMat = resolveShelfPartMaterial({
+      partId: shelfPartId,
+      currentShelfMat: isBrace ? currentBraceShelfMat || currentShelfMat : currentShelfMat,
+      getPartColorValue,
+      getPartMaterial,
+    });
+    const shelfMesh = createBoard(shelfW, woodThick, shelfDepth, shelfX, y, shelfZ, shelfMat, shelfPartId);
+    if (shelfMesh && typeof shelfMesh === 'object') {
+      const userData = ((shelfMesh as { userData?: Record<string, unknown> }).userData ||= {});
+      markShelfBoardUserData(userData, {
+        groupPartId: SHELF_GROUP_PART_ID,
+        shelfIndex: gridKey,
+        variant: isBrace ? 'brace' : 'regular',
+        isBrace,
+      });
+    }
     addBraceDarkSeams(y, shelfZ, shelfDepth, isBrace);
-    addShelfPins(y, shelfZ, shelfDepth, woodThick, isBrace);
+    addShelfPins(y, shelfZ, shelfDepth, woodThick, isBrace, shelfPartId);
 
-    const hasDrawerInSpace = isInternalDrawersEnabled && intDrawersSlot === Number(gridIndex || 0) + 1;
-    if (!hasDrawerInSpace && __isFn(addFoldedClothes)) {
+    if (__isFn(addFoldedClothes)) {
       addFoldedClothes(
         internalCenterX,
         y + woodThick / 2,

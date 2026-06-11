@@ -71,7 +71,6 @@ export type MotionFrameState = {
   sketchEditActive: boolean;
   sketchIntDrawersEditActive: boolean;
   sketchExtDrawersEditActive: boolean;
-  intDrawerEditActive: boolean;
   forcedOpenDrawerId: unknown;
   manualTool: unknown;
   delayTime: number;

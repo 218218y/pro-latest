@@ -11,6 +11,16 @@ import type {
 } from './canvas_picking_door_action_hover_preview_contracts.js';
 import type { UnknownRecord } from '../../../types';
 
+function resolveMarkerLocalZ(groupRec: TransformNodeLike | null, fallbackZ: number): number {
+  const userData = __asObject<UnknownRecord>(groupRec?.userData);
+  const frontMaxZ = Number(userData?.__frontMaxZ);
+  if (!Number.isFinite(frontMaxZ) || Math.abs(frontMaxZ) <= 0.000001) return fallbackZ;
+
+  const sign = frontMaxZ >= 0 ? 1 : -1;
+  const nudge = Math.abs(fallbackZ);
+  return frontMaxZ + sign * nudge;
+}
+
 export function __positionDoorMarker(args: {
   groupRec: TransformNodeLike | null;
   wardrobeGroup: UnknownRecord;
@@ -22,7 +32,7 @@ export function __positionDoorMarker(args: {
   zOff: number;
 }): void {
   const { groupRec, wardrobeGroup, doorMarker, local, wq, centerX, centerY, zOff } = args;
-  local.set(centerX, centerY, zOff);
+  local.set(centerX, centerY, resolveMarkerLocalZ(groupRec, zOff));
   groupRec?.localToWorld?.(local);
   __asObject<TransformNodeLike>(wardrobeGroup)?.worldToLocal?.(local);
   doorMarker?.position?.copy?.(local);

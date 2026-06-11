@@ -13,25 +13,19 @@ export function resolveInternalDrawerHoverIntent(args: {
   yCenterAbs: number;
   hoverOp: 'add' | 'remove';
   hoverRemoveId: string | null;
-  hoverRemoveKind: 'sketch' | 'std' | '';
-  hoverRemovePid: string | null;
-  hoverRemoveSlot: number | null;
+  hoverRemoveKind: 'sketch' | '';
 } {
   let yCenterAbs = args.clampCenter(args.hitYClamped);
   let hoverOp: 'add' | 'remove' = 'add';
   let hoverRemoveId: string | null = null;
-  let hoverRemoveKind: 'sketch' | 'std' | '' = '';
-  let hoverRemovePid: string | null = null;
-  let hoverRemoveSlot: number | null = null;
+  let hoverRemoveKind: 'sketch' | '' = '';
 
   const stackHover = args.hoverOk ? readManualLayoutSketchStackHoverIntent(args.hoverRec) : null;
   if (stackHover?.kind === 'drawers') {
     if (stackHover.yCenter != null) yCenterAbs = args.clampCenter(stackHover.yCenter);
     hoverOp = stackHover.op;
     hoverRemoveId = stackHover.removeId;
-    hoverRemoveKind = stackHover.removeKind;
-    hoverRemovePid = stackHover.removePid;
-    hoverRemoveSlot = stackHover.removeSlot;
+    hoverRemoveKind = stackHover.removeKind === 'sketch' ? 'sketch' : '';
   }
 
   return {
@@ -39,8 +33,6 @@ export function resolveInternalDrawerHoverIntent(args: {
     hoverOp,
     hoverRemoveId,
     hoverRemoveKind,
-    hoverRemovePid,
-    hoverRemoveSlot,
   };
 }
 
@@ -50,7 +42,7 @@ export function maybeOverrideExternalDrawerPlacement(args: {
   requestedDrawerCount: CommitSketchModuleExternalDrawerArgs['requestedDrawerCount'];
   drawerHeightM: CommitSketchModuleExternalDrawerArgs['drawerHeightM'];
   placement: {
-    op: 'add' | 'remove';
+    op: 'add' | 'remove' | 'blocked';
     removeId: string | null;
     yCenter: number;
     drawerCount: number;
@@ -58,7 +50,7 @@ export function maybeOverrideExternalDrawerPlacement(args: {
     stackH: number;
   };
 }): {
-  op: 'add' | 'remove';
+  op: 'add' | 'remove' | 'blocked';
   removeId: string | null;
   yCenter: number;
   drawerCount: number;
@@ -67,13 +59,16 @@ export function maybeOverrideExternalDrawerPlacement(args: {
 } {
   const stackHover = args.hoverOk ? readManualLayoutSketchStackHoverIntent(args.hoverRec) : null;
   if (stackHover?.kind !== 'ext_drawers' || stackHover.yCenter == null) return args.placement;
+  if (args.placement.op === 'blocked' && stackHover.op !== 'remove') return args.placement;
 
   const hoverDrawerCount =
-    stackHover.drawerCount != null
+    stackHover.op === 'remove' && stackHover.drawerCount != null
       ? Math.max(1, Math.min(5, Math.floor(stackHover.drawerCount)))
       : args.requestedDrawerCount;
   const drawerH =
-    stackHover.drawerH != null && stackHover.drawerH > 0 ? stackHover.drawerH : args.drawerHeightM;
+    stackHover.op === 'remove' && stackHover.drawerH != null && stackHover.drawerH > 0
+      ? stackHover.drawerH
+      : args.drawerHeightM;
   return {
     op: stackHover.op,
     removeId: stackHover.removeId,

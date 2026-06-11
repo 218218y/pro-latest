@@ -8,6 +8,7 @@ export const UI_RAW_BOOLEAN_KEYS = [
   'stackSplitLowerDepthManual',
   'stackSplitLowerWidthManual',
   'stackSplitLowerDoorsManual',
+  'cellDimsHexMode',
 ];
 export const UI_RAW_NUMERIC_KEYS = [
   'width',
@@ -28,6 +29,8 @@ export const UI_RAW_NUMERIC_KEYS = [
   'cellDimsWidth',
   'cellDimsHeight',
   'cellDimsDepth',
+  'cellDimsHexProtrusion',
+  'cellDimsHexDoorWidth',
 ];
 export const UI_RAW_SCALAR_KEYS = [...UI_RAW_NUMERIC_KEYS, ...UI_RAW_BOOLEAN_KEYS];
 const UI_RAW_SCALAR_KEY_SET = new Set([...UI_RAW_SCALAR_KEYS]);

@@ -6,6 +6,7 @@ import {
   tryHandleDrawerDividerHoverPreview,
   tryHandleExtDrawersHoverPreview,
 } from '../esm/native/services/canvas_picking_hover_preview_modes.ts';
+import { updateRenderLoopDrawerMotions } from '../esm/native/platform/render_loop_motion_drawers.ts';
 
 function createApp(overrides: Record<string, unknown> = {}) {
   const state = {
@@ -98,6 +99,131 @@ test('ext-drawers hover preview uses canonical preview wiring and toggles remove
   assert.equal(previews[0].op, 'remove');
   assert.equal(previews[0].drawers.length, 3);
   assert.equal(previews[0].anchor.id, 'selector-1');
+});
+
+test('ext-drawers hover preview marks impossible regular drawer count as blocked instead of blue add', () => {
+  const previews: any[] = [];
+  const hidden: any[] = [];
+  const App = createApp({
+    renderOps: {
+      setSketchPlacementPreview(args: unknown) {
+        previews.push(args);
+      },
+      hideSketchPlacementPreview(args: unknown) {
+        hidden.push(args);
+      },
+    },
+  });
+
+  const handled = tryHandleExtDrawersHoverPreview({
+    App,
+    ndcX: 0.2,
+    ndcY: -0.1,
+    raycaster: {},
+    mouse: {},
+    isExtDrawerEditMode: true,
+    hideLayoutPreview(args: unknown) {
+      hidden.push(args);
+    },
+    readUi: () => ({ currentExtDrawerType: 'regular', currentExtDrawerCount: 3 }),
+    resolveInteriorHoverTarget: () => ({
+      hitModuleKey: 0,
+      hitSelectorObj: { id: 'selector-no-room' },
+      isBottom: true,
+      hitY: 0.3,
+      info: { startY: 0, woodThick: 0.018, effectiveTopY: 0.582 },
+      bottomY: 0.018,
+      topY: 0.582,
+      spanH: 0.564,
+      woodThick: 0.018,
+      innerW: 0.9,
+      internalCenterX: 0.1,
+      internalDepth: 0.5,
+      internalZ: -0.05,
+      backZ: -0.3,
+      regularDepth: 0.45,
+      intersects: [],
+    }),
+    measureObjectLocalBox: () => ({
+      centerX: 0.1,
+      centerY: 0.3,
+      centerZ: -0.02,
+      width: 0.92,
+      height: 0.6,
+      depth: 0.55,
+    }),
+    readInteriorModuleConfigRef: () => ({ extDrawersCount: 0, hasShoeDrawer: false }),
+  });
+
+  assert.equal(handled, true);
+  assert.equal(previews.length, 1);
+  assert.equal(previews[0].kind, 'ext_drawers');
+  assert.equal(previews[0].op, 'blocked');
+  assert.equal(previews[0].blockedReason, 'no-room');
+  assert.equal(previews[0].drawers.length, 3);
+  assert.equal(previews[0].anchor.id, 'selector-no-room');
+});
+
+test('ext-drawers hover preview marks hex cells as blocked instead of blue add', () => {
+  const previews: any[] = [];
+  const hidden: any[] = [];
+  const App = createApp({
+    renderOps: {
+      setSketchPlacementPreview(args: unknown) {
+        previews.push(args);
+      },
+      hideSketchPlacementPreview(args: unknown) {
+        hidden.push(args);
+      },
+    },
+  });
+
+  const handled = tryHandleExtDrawersHoverPreview({
+    App,
+    ndcX: 0.2,
+    ndcY: -0.1,
+    raycaster: {},
+    mouse: {},
+    isExtDrawerEditMode: true,
+    hideLayoutPreview(args: unknown) {
+      hidden.push(args);
+    },
+    readUi: () => ({ currentExtDrawerType: 'regular', currentExtDrawerCount: 3 }),
+    resolveInteriorHoverTarget: () => ({
+      hitModuleKey: 0,
+      hitSelectorObj: { id: 'selector-hex-cell' },
+      isBottom: false,
+      hitY: 0.5,
+      info: {},
+      bottomY: 0,
+      topY: 2,
+      spanH: 2,
+      woodThick: 0.018,
+      innerW: 0.9,
+      internalCenterX: 0.1,
+      internalDepth: 0.5,
+      internalZ: -0.05,
+      backZ: -0.3,
+      regularDepth: 0.45,
+      intersects: [],
+    }),
+    measureObjectLocalBox: () => ({
+      centerX: 0.1,
+      centerY: 1,
+      centerZ: -0.02,
+      width: 0.92,
+      height: 2,
+      depth: 0.55,
+    }),
+    readInteriorModuleConfigRef: () => ({ hexCell: { enabled: true }, extDrawersCount: 0 }),
+  });
+
+  assert.equal(handled, true);
+  assert.equal(previews.length, 1);
+  assert.equal(previews[0].kind, 'ext_drawers');
+  assert.equal(previews[0].op, 'blocked');
+  assert.equal(previews[0].blockedReason, 'hex-cell');
+  assert.equal(previews[0].anchor.id, 'selector-hex-cell');
 });
 
 test('regular external drawer hover removal previews the entire sketch external drawer stack', () => {
@@ -215,6 +341,219 @@ test('drawer-divider hover preview resolves add/remove directly from canonical c
   assert.equal(previews[0].op, 'remove');
   assert.equal(previews[0].anchor.id, 'drawer-group');
   assert.equal(previews[0].anchorParent.id, 'wardrobe-parent');
+});
+
+test('drawer-divider hover preview keeps closed drawers unchanged and reflects already-open drawer position', () => {
+  const previews: any[] = [];
+  const App = createApp({
+    state: {
+      config: {
+        drawerDividersMap: {},
+      },
+    },
+    renderOps: {
+      setSketchPlacementPreview(args: unknown) {
+        previews.push(args);
+      },
+    },
+  });
+
+  const closedGroup = { id: 'closed-group', position: { x: 0, y: 0, z: 0 } };
+  const openGroup = { id: 'open-group', position: { x: 0, y: 0, z: 0.45 } };
+  const parent = { id: 'wardrobe-parent' };
+  const closedBox = { centerX: 0.2, centerY: 0.7, centerZ: -0.1, width: 0.4, height: 0.3, depth: 0.25 };
+  const openBox = { centerX: 0.2, centerY: 0.7, centerZ: 0.35, width: 0.4, height: 0.3, depth: 0.25 };
+
+  const closedHandled = tryHandleDrawerDividerHoverPreview({
+    App,
+    ndcX: 0,
+    ndcY: 0,
+    raycaster: {},
+    mouse: {},
+    isDividerEditMode: true,
+    resolveDrawerHoverPreviewTarget: () => ({
+      drawer: {
+        id: 'int_closed',
+        group: closedGroup,
+        isOpen: false,
+        closed: { x: 0, y: 0, z: 0 },
+        open: { x: 0, y: 0, z: 0.45 },
+      },
+      parent,
+      box: closedBox,
+    }),
+  });
+
+  const openHandled = tryHandleDrawerDividerHoverPreview({
+    App,
+    ndcX: 0,
+    ndcY: 0,
+    raycaster: {},
+    mouse: {},
+    isDividerEditMode: true,
+    resolveDrawerHoverPreviewTarget: () => ({
+      drawer: {
+        id: 'int_open',
+        group: openGroup,
+        isOpen: true,
+        closed: { x: 0, y: 0, z: 0 },
+        open: { x: 0, y: 0, z: 0.45 },
+      },
+      parent,
+      box: openBox,
+    }),
+  });
+
+  assert.equal(closedHandled, true);
+  assert.equal(openHandled, true);
+  assert.equal(previews.length, 2);
+  assert.equal(previews[0].z, -0.1);
+  assert.equal(previews[0].anchorParent, parent);
+  assert.ok(Math.abs(previews[1].z - 0.35) < 1e-9);
+  assert.equal(previews[1].anchorParent, parent);
+  assert.equal(previews[1].anchor, openGroup);
+});
+
+test('drawer-divider hover preview uses the live forced-open drawer position before animation advances', () => {
+  const previews: any[] = [];
+  const App = createApp({
+    state: {
+      config: {
+        drawerDividersMap: {},
+      },
+    },
+    services: {
+      tools: {
+        getDrawersOpenId() {
+          return 'int_forced';
+        },
+      },
+    },
+    renderOps: {
+      setSketchPlacementPreview(args: unknown) {
+        previews.push(args);
+      },
+    },
+  });
+
+  const handled = tryHandleDrawerDividerHoverPreview({
+    App,
+    ndcX: 0,
+    ndcY: 0,
+    raycaster: {},
+    mouse: {},
+    isDividerEditMode: true,
+    resolveDrawerHoverPreviewTarget: () => ({
+      drawer: {
+        id: 'int_forced',
+        group: { id: 'forced-group', position: { x: 0, y: 0, z: 0.1 } },
+        isOpen: false,
+        closed: { x: 0, y: 0, z: 0 },
+        open: { x: 0, y: 0, z: 0.6 },
+      },
+      parent: { id: 'wardrobe-parent' },
+      box: { centerX: 0.2, centerY: 0.7, centerZ: 0, width: 0.4, height: 0.3, depth: 0.25 },
+    }),
+  });
+
+  assert.equal(handled, true);
+  assert.equal(previews.length, 1);
+  assert.ok(Math.abs(previews[0].z - 0) < 1e-9);
+  assert.equal(previews[0].drawerMotionPreview, true);
+  assert.equal(previews[0].drawerMotionDrawerId, 'int_forced');
+  assert.ok(Math.abs(previews[0].drawerMotionOffsetZ - 0.1) < 1e-9);
+});
+
+test('drawer-divider motion preview follows the live drawer animation frame instead of jumping to the target', () => {
+  const makePos = (x: number, y: number, z: number) => ({
+    x,
+    y,
+    z,
+    set(nx: number, ny: number, nz: number) {
+      this.x = nx;
+      this.y = ny;
+      this.z = nz;
+    },
+  });
+  const drawerPosition = {
+    x: 0,
+    y: 0,
+    z: 0,
+    lerp(target: { x: number; y: number; z: number }, alpha: number) {
+      this.x += (target.x - this.x) * alpha;
+      this.y += (target.y - this.y) * alpha;
+      this.z += (target.z - this.z) * alpha;
+    },
+  };
+  const boxTop = { position: makePos(0.2, 0.7, -0.1) };
+  const shelfA = { position: makePos(0.2, 0.7, -0.1) };
+  const App = createApp({
+    render: {
+      cache: {
+        sketchPlacementPreview: {
+          visible: true,
+          userData: {
+            __boxTop: boxTop,
+            __shelfA: shelfA,
+            __drawerDividerMotionPreview: {
+              drawerId: 'int_forced',
+              closedX: 0,
+              closedY: 0,
+              closedZ: 0,
+              boxBaseX: 0.2,
+              boxBaseY: 0.7,
+              boxBaseZ: -0.1,
+              shelfBaseX: 0.2,
+              shelfBaseY: 0.7,
+              shelfBaseZ: -0.1,
+            },
+          },
+        },
+      },
+      drawersArray: [
+        {
+          id: 'int_forced',
+          isInternal: true,
+          group: { position: drawerPosition },
+          closed: { x: 0, y: 0, z: 0 },
+          open: { x: 0, y: 0, z: 0.6 },
+          isOpen: false,
+        },
+      ],
+    },
+  });
+
+  const active = updateRenderLoopDrawerMotions(
+    App,
+    {
+      hasInternalDrawers: true,
+      doorsShouldBeOpen: false,
+      internalDrawersShouldBeOpen: false,
+      externalDrawersShouldBeOpen: false,
+      isAnimating: true,
+      isActiveState: true,
+      globalClickMode: true,
+      platformDimsFrame: null,
+      doorsOpenFlag: false,
+      sketchEditActive: false,
+      sketchIntDrawersEditActive: false,
+      sketchExtDrawersEditActive: false,
+      forcedOpenDrawerId: 'int_forced',
+      manualTool: null,
+      delayTime: 0,
+      timeSinceToggle: 0,
+      localDoorModules: new Set<string>(),
+      hasAnyLocalOpenDoor: false,
+      visibleOpenInternalDrawerModules: new Set<string>(),
+    },
+    { now: () => 0, debugLog() {} }
+  );
+
+  assert.equal(active, true);
+  assert.ok(drawerPosition.z > 0 && drawerPosition.z < 0.6);
+  assert.ok(Math.abs(boxTop.position.z - (-0.1 + drawerPosition.z)) < 1e-9);
+  assert.ok(Math.abs(shelfA.position.z - (-0.1 + drawerPosition.z)) < 1e-9);
+  assert.ok(boxTop.position.z < 0.5);
 });
 
 test('cell-dims hover preview projects resized selector bounds through the canonical preview seam', () => {

@@ -1,5 +1,6 @@
 import type {
   AppContainer,
+  BuilderDimensionLineScaleSpec,
   BuilderPreviewScalar,
   BuilderSketchBoxDoorLike,
   BuilderSketchBoxLike,
@@ -75,7 +76,7 @@ export type InteriorDimensionLineFn = (
   to: InteriorVector3Like,
   textOffset: InteriorVector3Like,
   label: string,
-  scale?: number,
+  scale?: BuilderDimensionLineScaleSpec,
   labelShift?: InteriorVector3Like
 ) => unknown;
 
@@ -104,6 +105,7 @@ export type RenderInteriorSketchInput = InteriorValueRecord & {
   externalW?: BuilderPreviewScalar;
   externalCenterX?: BuilderPreviewScalar;
   currentShelfMat?: unknown;
+  currentBraceShelfMat?: unknown;
   bodyMat?: unknown;
   getPartMaterial?: InteriorOpsCallable;
   getPartColorValue?: InteriorOpsCallable;

@@ -45,12 +45,21 @@ export function schedulePush(App: AppContainer, action?: ActionMetaLike): void {
   const state = ensureHistoryRuntimeState(App);
   if (!state) return;
 
-  const timers = getBrowserTimers(App);
   try {
     clearHistoryTimer(App, state);
   } catch {}
 
   state.pendingAction = normalizePendingAction(safeAction);
+
+  if (safeAction.immediate === true) {
+    const pending = normalizePendingAction(state.pendingAction) || safeAction;
+    state.pendingAction = null;
+    state.gen += 1;
+    pushNow(App, pending);
+    return;
+  }
+
+  const timers = getBrowserTimers(App);
   const gen = ++state.gen;
   state.timer = timers.setTimeout(() => {
     state.timer = null;

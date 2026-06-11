@@ -87,6 +87,42 @@ test('sketch-box free-placement commit keeps matching/commit/hover mutation poli
   assert.equal(cleared, 0);
 });
 
+test('sketch-box free-placement commit clears and rejects stale add-hover under the wardrobe column', () => {
+  let committedCalls = 0;
+  let cleared = 0;
+  const committed = tryCommitSketchFreePlacementFromHoverWithDeps({} as never, 'sketch_box:60', {
+    pickSketchFreeBoxHost: () => ({ moduleKey: 3, hostBottom: false }) as never,
+    readSketchHover: () => ({ ts: Date.now() }) as never,
+    matchRecentSketchHover: () =>
+      ({
+        kind: 'box',
+        op: 'add',
+        freePlacement: true,
+        xCenter: 0,
+        yCenter: 0.1,
+        heightM: 0.8,
+        hostModuleKey: 3,
+      }) as never,
+    commitSketchFreePlacementHoverRecord: () => {
+      committedCalls += 1;
+      return { committed: true, nextHover: null } as never;
+    },
+    getSketchFreeBoxContentKind: () => 'box' as never,
+    measureWardrobeLocalBox: () => ({ centerX: 0, centerY: 1, width: 2, height: 2 }) as never,
+    writeSketchHover: () => {
+      throw new Error('should not write blocked under-wardrobe hover');
+    },
+    clearSketchHover: () => {
+      cleared += 1;
+    },
+    toModuleKey: key => key as never,
+  });
+
+  assert.equal(committed, false);
+  assert.equal(committedCalls, 0);
+  assert.equal(cleared, 1);
+});
+
 test('sketch-box free-placement commit clears hover when the canonical commit finishes without next hover', () => {
   const writes: unknown[] = [];
   let cleared = 0;

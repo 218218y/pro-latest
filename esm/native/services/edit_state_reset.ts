@@ -3,6 +3,7 @@ import type { AppContainer } from '../../../types';
 import { exitNotesDrawModeViaService } from '../runtime/notes_access.js';
 import { runPlatformRenderFollowThrough } from '../runtime/platform_access.js';
 import {
+  clearDrawerRebuildIntent,
   closeDrawerByIdViaService,
   releaseDoorsEditHoldViaService,
   setDoorsOpenViaService,
@@ -76,7 +77,13 @@ function clearPaintAndInteriorTools(
   }
 }
 
-function clearDrawerSelection(tools: ReturnType<typeof getEditStateTools>): void {
+function clearDrawerSelection(app: AppContainer, tools: ReturnType<typeof getEditStateTools>): void {
+  try {
+    clearDrawerRebuildIntent(app);
+  } catch {
+    // ignore
+  }
+
   try {
     if (typeof tools?.getDrawersOpenId === 'function' && typeof tools?.setDrawersOpenId === 'function') {
       const cur = tools.getDrawersOpenId();
@@ -106,16 +113,13 @@ function resetDoorsRuntime(
     }
 
     const isInteriorEditForDoorClose =
-      prev === modes.LAYOUT ||
-      prev === modes.MANUAL_LAYOUT ||
-      prev === modes.BRACE_SHELVES ||
-      prev === modes.INT_DRAWER;
+      prev === modes.LAYOUT || prev === modes.MANUAL_LAYOUT || prev === modes.BRACE_SHELVES;
 
     const isInteriorEditAny = isInteriorEditForDoorClose || prev === modes.DIVIDER;
 
     if (isInteriorEditAny) {
       if (prev === modes.DIVIDER && prevOpenDrawerId !== null) {
-        closeDrawerByIdViaService(app, prevOpenDrawerId);
+        closeDrawerByIdViaService(app, prevOpenDrawerId, { snap: false });
       }
 
       if (globalClickMode) {
@@ -146,7 +150,7 @@ export function resetAllEditModes(App: AppLike): void {
   resetPrimaryMode(app, noneMode);
   clearEditUiChrome(app);
   clearPaintAndInteriorTools(prev, modes, tools);
-  clearDrawerSelection(tools);
+  clearDrawerSelection(app, tools);
 
   runPlatformRenderFollowThrough(app, { updateShadows: true, ensureRenderLoop: false });
 

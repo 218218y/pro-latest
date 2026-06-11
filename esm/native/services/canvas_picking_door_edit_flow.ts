@@ -4,6 +4,7 @@
 // remove, hinge, groove, and sketch-box mutation policy to focused helpers.
 
 import type { AppContainer, UnknownRecord } from '../../../types';
+import type { MouseVectorLike, RaycasterLike } from './canvas_picking_engine.js';
 
 import { handleCanvasDoorTrimClick } from './canvas_picking_door_trim_click.js';
 import { handleCanvasDoorSplitClick } from './canvas_picking_door_split_click.js';
@@ -20,8 +21,14 @@ export interface CanvasDoorEditClickArgs {
   activeStack: 'top' | 'bottom';
   foundModuleStack: 'top' | 'bottom';
   doorHitY: number | null;
+  ndcX?: number | null;
+  ndcY?: number | null;
+  raycaster?: RaycasterLike | null;
+  mouse?: MouseVectorLike | null;
+  camera?: unknown;
   doorHitPoint: UnknownRecord | null;
   doorHitObject: UnknownRecord | null;
+  doorHitGroup?: UnknownRecord | null;
   isSplitEditMode: boolean;
   isRemoveDoorMode: boolean;
   isHingeEditMode: boolean;
@@ -37,8 +44,14 @@ export function tryHandleCanvasDoorEditClick(args: CanvasDoorEditClickArgs): boo
     activeStack,
     foundModuleStack,
     doorHitY,
+    ndcX,
+    ndcY,
+    raycaster,
+    mouse,
+    camera,
     doorHitPoint,
     doorHitObject,
+    doorHitGroup,
     isSplitEditMode,
     isRemoveDoorMode,
     isHingeEditMode,
@@ -62,6 +75,12 @@ export function tryHandleCanvasDoorEditClick(args: CanvasDoorEditClickArgs): boo
       effectiveDoorId,
       foundModuleStack,
       doorHitY,
+      ndcX,
+      ndcY,
+      raycaster,
+      mouse,
+      camera,
+      doorHitGroup,
     });
   }
 

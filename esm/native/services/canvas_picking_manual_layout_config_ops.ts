@@ -7,16 +7,24 @@ export type {
   ManualLayoutShelfVariant,
   RemoveManualLayoutBaseRodArgs,
   RemoveManualLayoutBaseShelfArgs,
+  RemoveManualLayoutBaseStorageArgs,
   ToggleManualLayoutRodArgs,
   ToggleManualLayoutShelfArgs,
 } from './canvas_picking_manual_layout_config_ops_shared.js';
 
 export {
   fillManualLayoutShelves,
+  isManualLayoutShelfBlockedBySketchDrawers,
   normalizeManualLayoutShelfVariant,
   removeManualLayoutBaseShelf,
+  removeManualLayoutBaseStorage,
+  resolveManualLayoutShelfFillPlan,
   toggleManualLayoutShelf,
   toggleManualLayoutStorage,
+} from './canvas_picking_manual_layout_config_ops_shelf.js';
+export type {
+  ManualLayoutShelfFillPlan,
+  ManualLayoutShelfToggleResult,
 } from './canvas_picking_manual_layout_config_ops_shelf.js';
 export {
   removeManualLayoutBaseRod,

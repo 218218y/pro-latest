@@ -24,22 +24,22 @@ test('notes overlay create rect normalizes reverse drag coordinates', () => {
   });
 });
 
-test('notes overlay create note seeds px-based style defaults and keeps doors-open state', () => {
+test('notes overlay create note seeds a stable id, px-based style defaults and keeps doors-open state', () => {
   const note = createEmptyNoteFromRect({ left: 12, top: 34, width: 150, height: 80 }, true);
-  assert.deepEqual(note, {
-    style: {
-      left: '12px',
-      top: '34px',
-      width: '150px',
-      height: '80px',
-      baseTextColor: '#000000',
-      baseFontSize: '4',
-      textColor: '#000000',
-      fontSize: '4',
-    },
-    text: '',
-    doorsOpen: true,
+  assert.equal(typeof note.id, 'string');
+  assert.match(String(note.id), /^note-/);
+  assert.deepEqual(note.style, {
+    left: '12px',
+    top: '34px',
+    width: '150px',
+    height: '80px',
+    baseTextColor: '#000000',
+    baseFontSize: '4',
+    textColor: '#000000',
+    fontSize: '4',
   });
+  assert.equal(note.text, '');
+  assert.equal(note.doorsOpen, true);
 });
 
 test('notes overlay move interaction clamps note position inside the non-negative workspace', () => {

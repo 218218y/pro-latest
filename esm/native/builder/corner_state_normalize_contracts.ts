@@ -57,7 +57,6 @@ export type CornerConfigRecord = UnknownRecord & {
     rods?: unknown[];
     storage?: boolean;
   };
-  intDrawersList?: unknown[];
   stackSplitLower?: UnknownRecord | null;
 };
 

@@ -3,14 +3,36 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { InteriorLayoutSection } from '../esm/native/ui/react/tabs/interior_tab_sections_layout.js';
+import { InteriorLayoutManualControls } from '../esm/native/ui/react/tabs/interior_layout_manual_controls.js';
+import {
+  InteriorSketchShelfDepthField,
+  InteriorSketchStorageHeightField,
+} from '../esm/native/ui/react/tabs/interior_layout_sketch_shelves_section.js';
+import { InteriorLayoutSketchToolsPanel } from '../esm/native/ui/react/tabs/interior_layout_sketch_controls.js';
 import {
   InteriorExternalDrawersSection,
   InteriorInternalDrawersSection,
   InteriorDividerSection,
 } from '../esm/native/ui/react/tabs/interior_tab_sections_drawers.js';
 import { InteriorHandlesSection } from '../esm/native/ui/react/tabs/interior_tab_sections_handles.js';
+import fs from 'node:fs';
+import path from 'node:path';
 const noop = () => {};
 const setStateNoop = () => undefined;
+function findElementByTestId(node, testId) {
+  if (!node || typeof node !== 'object') return null;
+  if (node.props?.['data-testid'] === testId || node.props?.testId === testId) return node;
+  const children = node.props?.children;
+  if (Array.isArray(children)) {
+    for (const child of children) {
+      const match = findElementByTestId(child, testId);
+      if (match) return match;
+    }
+    return null;
+  }
+  return findElementByTestId(children, testId);
+}
+
 function createLayoutProps(overrides = {}) {
   return {
     layoutActive: true,
@@ -18,6 +40,7 @@ function createLayoutProps(overrides = {}) {
     isManualLayoutMode: false,
     isBraceShelvesMode: false,
     isSketchToolActive: false,
+    isSketchDivisionToolActive: false,
     layoutType: 'shelves',
     manualTool: 'shelf',
     manualToolRaw: '',
@@ -27,6 +50,7 @@ function createLayoutProps(overrides = {}) {
     gridShelfVariant: 'glass',
     showManualRow: true,
     showGridControls: true,
+    showShelfVariantControls: true,
     sketchShelvesOpen: false,
     sketchRowOpen: false,
     sketchBoxHeightCm: 120,
@@ -117,6 +141,7 @@ function createLayoutProps(overrides = {}) {
     exitManual: noop,
     setGridDivisions: noop,
     setGridShelfVariant: noop,
+    enterSketchDivision: noop,
     activateManualToolId: noop,
     activateDoorTrimMode: noop,
     enterSketchShelfTool: noop,
@@ -162,23 +187,187 @@ function createSketchInternalDrawerControls(overrides = {}) {
     ...overrides,
   };
 }
-test('[interior-tab-sections-runtime] layout section renders canonical layout/manual/sketch controls', () => {
+
+test('[interior-tab-sections-runtime] SketchTabView marks the sketch tool card active only from real edit modes', () => {
+  const src = fs.readFileSync(path.resolve('esm/native/ui/react/tabs/SketchTab.view.tsx'), 'utf8');
+  assert.doesNotMatch(src, /wp-tool-card wp-tool-card--layout is-active/);
+  assert.match(src, /state\.isSketchToolActive \|\| state\.isDoorTrimMode/);
+});
+test('[interior-tab-sections-runtime] layout section renders canonical layout/manual controls with the sketch-division toggle', () => {
   const html = renderToStaticMarkup(React.createElement(InteriorLayoutSection, createLayoutProps()));
   assert.match(html, /חלוקות פנים/);
   assert.match(html, /חלוקה ידנית/);
-  assert.match(html, /חלוקה ידנית לפי סקיצה/);
+  assert.doesNotMatch(html, /חלוקה ידנית לפי סקיצה/);
+  assert.match(html, /חלוקה לפי סקיצה/);
   assert.match(html, /מספרי חלוקת תאים בארון/);
   assert.match(html, /מדף/);
   assert.match(html, /מוט/);
   assert.match(html, /אחסון/);
-  assert.match(html, /סוג מדף/);
-  assert.match(html, /גובה מגירה חיצונית/);
-  assert.match(html, /גובה מגירה פנימית/);
-  assert.match(html, /wp-r-sketch-drawer-height-reset-btn/);
-  assert.equal((html.match(/wp-r-sketch-drawer-height-reset-btn/g) || []).length, 2);
-  assert.match(html, /type="number"/);
-  assert.ok((html.match(/type="button"/g) || []).length >= 10);
+  assert.doesNotMatch(html, /גובה מגירה פנימית/);
 });
+
+test('[interior-tab-sections-runtime] manual controls keep tool selection while toggling sketch division mode', () => {
+  const calls = [];
+  const props = createLayoutProps({
+    activeManualToolForUi: 'storage',
+    enterSketchDivision: (...args) => calls.push(['enterSketchDivision', ...args]),
+    enterManual: (...args) => calls.push(['enterManual', ...args]),
+  });
+  const tree = InteriorLayoutManualControls(props);
+  const sketchButton = findElementByTestId(tree, 'interior-manual-layout-sketch-button');
+  assert.ok(sketchButton);
+  sketchButton.props.onClick();
+  assert.deepEqual(calls, [['enterSketchDivision', 'storage', 'glass']]);
+
+  calls.length = 0;
+  const sketchTree = InteriorLayoutManualControls(
+    createLayoutProps({
+      isManualLayoutMode: true,
+      isSketchToolActive: true,
+      isSketchDivisionToolActive: true,
+      manualTool: 'rod',
+      manualToolRaw: 'sketch_rod',
+      activeManualToolForUi: 'rod',
+      showGridControls: false,
+      showShelfVariantControls: false,
+      enterSketchDivision: (...args) => calls.push(['enterSketchDivision', ...args]),
+      enterManual: (...args) => calls.push(['enterManual', ...args]),
+    })
+  );
+  const storageButton = findElementByTestId(sketchTree, 'interior-manual-tool-storage-button');
+  assert.ok(storageButton);
+  storageButton.props.onClick();
+  assert.deepEqual(calls, [['enterSketchDivision', 'storage', 'glass']]);
+});
+
+test('[interior-tab-sections-runtime] sketch tools panel renders the moved sketch controls without the old master toggle', () => {
+  const html = renderToStaticMarkup(React.createElement(InteriorLayoutSketchToolsPanel, createLayoutProps()));
+  assert.doesNotMatch(html, /חלוקה ידנית לפי סקיצה/);
+  assert.match(html, /מדפים ותלייה/);
+  assert.match(html, /מדפים/);
+  assert.match(html, /תלייה/);
+  assert.match(html, /אוגר מצעים/);
+  assert.match(html, /קופסא חופשית/);
+  assert.match(html, /פסי עיטור לדלת/);
+  assert.match(html, /מגירות חיצוניות לפי סקיצה/);
+  assert.match(html, /מגירות פנימיות לפי סקיצה/);
+  assert.match(html, /גובה מגירה פנימית/);
+  assert.match(html, /עומק מדף/);
+  assert.match(html, /גובה אוגר מצעים/);
+  assert.match(html, /fa-box-open/);
+  assert.match(html, /wp-r-sketch-drawer-height-reset-btn/);
+  assert.match(html, /interior-sketch-shelf-depth-reset-button/);
+  assert.match(html, /interior-sketch-storage-height-reset-button/);
+  assert.ok((html.match(/wp-r-sketch-drawer-height-reset-btn/g) || []).length >= 4);
+  assert.ok((html.match(/type="button"/g) || []).length >= 11);
+});
+
+test('[interior-tab-sections-runtime] sketch shelf and storage reset buttons restore canonical defaults', () => {
+  const calls = [];
+  const shelfProps = createLayoutProps({
+    isSketchToolActive: true,
+    manualToolRaw: 'sketch_shelf:glass@28',
+    sketchShelfDepthByVariant: { regular: 30, double: 30, glass: 28, brace: 45 },
+    sketchShelfDepthDraftByVariant: { regular: '30', double: '30', glass: '28', brace: '45' },
+    setSketchShelfDepthByVariant: updater => {
+      calls.push(['setShelfDepth', updater({ regular: 30, double: 30, glass: 28, brace: 45 })]);
+    },
+    setSketchShelfDepthDraftByVariant: updater => {
+      calls.push(['setShelfDepthDraft', updater({ regular: '30', double: '30', glass: '28', brace: '45' })]);
+    },
+    activateManualToolId: toolId => calls.push(['activateManualToolId', toolId]),
+  });
+  const shelfTree = InteriorSketchShelfDepthField(shelfProps);
+  const shelfReset = findElementByTestId(shelfTree, 'interior-sketch-shelf-depth-reset-button');
+  assert.ok(shelfReset);
+  shelfReset.props.onClick();
+  assert.deepEqual(calls, [
+    ['setShelfDepth', { regular: 30, double: 30, glass: '', brace: 45 }],
+    ['setShelfDepthDraft', { regular: '30', double: '30', glass: '', brace: '45' }],
+    ['activateManualToolId', 'sketch_shelf:glass'],
+  ]);
+
+  calls.length = 0;
+  const storageProps = createLayoutProps({
+    isSketchToolActive: true,
+    manualToolRaw: 'sketch_storage:85',
+    sketchStorageHeightCm: 85,
+    sketchStorageHeightDraft: '85',
+    setSketchStorageHeightCm: next => calls.push(['setStorageHeightCm', next]),
+    setSketchStorageHeightDraft: next => calls.push(['setStorageHeightDraft', next]),
+    activateManualToolId: toolId => calls.push(['activateManualToolId', toolId]),
+  });
+  const storageTree = InteriorSketchStorageHeightField(storageProps);
+  const storageReset = findElementByTestId(storageTree, 'interior-sketch-storage-height-reset-button');
+  assert.ok(storageReset);
+  storageReset.props.onClick();
+  assert.deepEqual(calls, [
+    ['setStorageHeightCm', 50],
+    ['setStorageHeightDraft', '50'],
+    ['activateManualToolId', 'sketch_storage:50'],
+  ]);
+});
+
+test('[interior-tab-sections-runtime] sketch shelf depth edits start from 45 in 5 cm steps without creating a focus-only override', () => {
+  const calls = [];
+  let depthByVariant = { regular: '', double: '', glass: '', brace: '' };
+  let draftByVariant = { regular: '', double: '', glass: '', brace: '' };
+  const makeProps = (manualToolRaw = 'sketch_shelf:regular') =>
+    createLayoutProps({
+      isSketchToolActive: true,
+      manualToolRaw,
+      sketchShelfDepthByVariant: depthByVariant,
+      sketchShelfDepthDraftByVariant: draftByVariant,
+      setSketchShelfDepthByVariant: updater => {
+        depthByVariant = updater(depthByVariant);
+        calls.push(['setShelfDepth', depthByVariant]);
+      },
+      setSketchShelfDepthDraftByVariant: updater => {
+        draftByVariant = updater(draftByVariant);
+        calls.push(['setShelfDepthDraft', draftByVariant]);
+      },
+      activateManualToolId: toolId => calls.push(['activateManualToolId', toolId]),
+    });
+
+  let tree = InteriorSketchShelfDepthField(makeProps());
+  let input = findElementByTestId(tree, 'interior-sketch-shelf-depth-input');
+  assert.ok(input);
+  assert.equal(input.props.step, 5);
+  assert.equal(input.props.placeholder, '45');
+
+  input.props.onFocus({ target: { select: () => calls.push(['select']) } });
+  assert.deepEqual(draftByVariant, { regular: '45', double: '', glass: '', brace: '' });
+  assert.deepEqual(depthByVariant, { regular: '', double: '', glass: '', brace: '' });
+  assert.equal(
+    calls.some(call => call[0] === 'activateManualToolId'),
+    false
+  );
+
+  calls.length = 0;
+  tree = InteriorSketchShelfDepthField(makeProps());
+  input = findElementByTestId(tree, 'interior-sketch-shelf-depth-input');
+  input.props.onBlur();
+  assert.deepEqual(draftByVariant, { regular: '', double: '', glass: '', brace: '' });
+  assert.deepEqual(depthByVariant, { regular: '', double: '', glass: '', brace: '' });
+  assert.equal(
+    calls.some(call => call[0] === 'activateManualToolId'),
+    false
+  );
+
+  calls.length = 0;
+  tree = InteriorSketchShelfDepthField(makeProps());
+  input = findElementByTestId(tree, 'interior-sketch-shelf-depth-input');
+  input.props.onChange({ target: { value: '5' } });
+  assert.deepEqual(draftByVariant, { regular: '45', double: '', glass: '', brace: '' });
+  assert.deepEqual(depthByVariant, { regular: 45, double: '', glass: '', brace: '' });
+  assert.ok(calls.some(call => call[0] === 'activateManualToolId' && call[1] === 'sketch_shelf:regular@45'));
+
+  tree = InteriorSketchShelfDepthField(makeProps('sketch_shelf:brace'));
+  input = findElementByTestId(tree, 'interior-sketch-shelf-depth-input');
+  assert.equal(input.props.step, 5);
+  assert.equal(input.props.placeholder, 'מלא');
+});
+
 test('[interior-tab-sections-runtime] drawers and handles sections keep canonical notices and edit controls', () => {
   const externalHtml = renderToStaticMarkup(
     React.createElement(InteriorExternalDrawersSection, {
@@ -218,7 +407,7 @@ test('[interior-tab-sections-runtime] drawers and handles sections keep canonica
   assert.match(internalHtml, /מגירות פנימיות/);
   assert.match(internalHtml, /מיקום מגירות פנימיות/);
   assert.match(internalHtml, /סיום עריכה/);
-  assert.match(internalHtml, /מגירות פנימיות לפי סקיצה/);
+  assert.doesNotMatch(internalHtml, /מגירות פנימיות לפי סקיצה/);
   assert.match(internalHtml, /גובה מגירה פנימית/);
   const dividerHtml = renderToStaticMarkup(
     React.createElement(InteriorDividerSection, { isDividerMode: false, toggleDividerMode: noop })

@@ -69,7 +69,6 @@ export const OrderPdfSketchToolbar = memo(function OrderPdfSketchToolbar(
             ? {
                 top: `${toolbarPlacement.top}px`,
                 right: `${toolbarPlacement.right}px`,
-                maxHeight: `${toolbarPlacement.maxHeight}px`,
               }
             : undefined
         }
@@ -79,9 +78,9 @@ export const OrderPdfSketchToolbar = memo(function OrderPdfSketchToolbar(
             <button
               type="button"
               ref={drawTriggerRef}
-              className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-sketch-tool-btn--combo${freehandActive || drawPaletteOpen ? ' active-state' : ''}`}
+              className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-sketch-tool-btn--combo wp-pdf-ui-hint wp-pdf-ui-hint--side-left${freehandActive || drawPaletteOpen ? ' active-state' : ''}`}
               onClick={onActivateDrawTool}
-              title={`${freehandDefinition.label} / מרקר`}
+              data-tooltip={`${freehandDefinition.label} / מרקר`}
               aria-label={`${freehandDefinition.label} / מרקר`}
               aria-expanded={drawPaletteOpen}
               aria-pressed={freehandActive}
@@ -97,9 +96,9 @@ export const OrderPdfSketchToolbar = memo(function OrderPdfSketchToolbar(
 
           <button
             type="button"
-            className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn${tool === 'eraser' ? ' active-state' : ''}`}
+            className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-left${tool === 'eraser' ? ' active-state' : ''}`}
             onClick={() => onSetTool('eraser')}
-            title="מחק"
+            data-tooltip="מחק"
             aria-label="מחק"
             aria-pressed={tool === 'eraser'}
           >
@@ -110,9 +109,9 @@ export const OrderPdfSketchToolbar = memo(function OrderPdfSketchToolbar(
             <button
               type="button"
               ref={widthTriggerRef}
-              className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-toolbar-trigger${widthPaletteOpen ? ' active-state' : ''}`}
+              className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-toolbar-trigger wp-pdf-ui-hint wp-pdf-ui-hint--side-left${widthPaletteOpen ? ' active-state' : ''}`}
               onClick={onToggleWidthPalette}
-              title={widthTitle}
+              data-tooltip={widthTitle}
               aria-label={widthTitle}
               aria-expanded={widthPaletteOpen}
               disabled={widthControlDisabled}
@@ -125,9 +124,9 @@ export const OrderPdfSketchToolbar = memo(function OrderPdfSketchToolbar(
             <button
               type="button"
               ref={colorTriggerRef}
-              className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-toolbar-trigger${colorPaletteOpen ? ' active-state' : ''}`}
+              className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-toolbar-trigger wp-pdf-ui-hint wp-pdf-ui-hint--side-left${colorPaletteOpen ? ' active-state' : ''}`}
               onClick={onToggleColorPalette}
-              title={colorTitle}
+              data-tooltip={colorTitle}
               aria-label={colorTitle}
               aria-expanded={colorPaletteOpen}
               disabled={colorControlDisabled}
@@ -138,24 +137,12 @@ export const OrderPdfSketchToolbar = memo(function OrderPdfSketchToolbar(
 
           <div className="wp-pdf-sketch-toolbar-divider" />
           <div className="wp-pdf-sketch-toolbar-divider" />
-
           <button
             type="button"
-            className="toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn"
-            onClick={onRefresh}
-            disabled={busy}
-            title={busy ? 'טוען סקיצות…' : 'רענן סקיצות'}
-            aria-label={busy ? 'טוען סקיצות' : 'רענן סקיצות'}
-          >
-            <i className={`fas ${busy ? 'fa-spinner fa-spin' : 'fa-sync'}`} />
-          </button>
-
-          <button
-            type="button"
-            className="toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn"
+            className="toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-left"
             onClick={onUndo}
             disabled={!activeHasStrokes}
-            title="בטל קו אחרון (Ctrl/Cmd+Z)"
+            data-tooltip="בטל קו אחרון (Ctrl/Cmd+Z)"
             aria-label="בטל קו אחרון"
           >
             <i className="fas fa-undo" />
@@ -163,10 +150,10 @@ export const OrderPdfSketchToolbar = memo(function OrderPdfSketchToolbar(
 
           <button
             type="button"
-            className="toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn"
+            className="toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-left"
             onClick={onRedo}
             disabled={!activeHasRedo}
-            title="החזר קו אחרון (Ctrl/Cmd+Y)"
+            data-tooltip="החזר קו אחרון (Ctrl/Cmd+Y)"
             aria-label="החזר קו אחרון"
           >
             <i className="fas fa-redo" />
@@ -174,13 +161,24 @@ export const OrderPdfSketchToolbar = memo(function OrderPdfSketchToolbar(
 
           <button
             type="button"
-            className="toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn close-btn"
+            className="toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn close-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-left"
             onClick={onClear}
             disabled={!activeHasStrokes}
-            title="נקה עמוד"
+            data-tooltip="נקה עמוד"
             aria-label="נקה עמוד"
           >
             <i className="fas fa-trash" />
+          </button>
+
+          <button
+            type="button"
+            className="toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-left"
+            onClick={onRefresh}
+            disabled={busy}
+            data-tooltip={busy ? 'טוען סקיצות…' : 'רענן סקיצות'}
+            aria-label={busy ? 'טוען סקיצות' : 'רענן סקיצות'}
+          >
+            <i className={`fas ${busy ? 'fa-spinner fa-spin' : 'fa-sync'}`} />
           </button>
         </div>
       </div>

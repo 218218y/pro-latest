@@ -188,11 +188,7 @@ test('kernel_state_kernel_config captureConfig rematerializes structure-aware to
       modulesConfiguration: sourceCornerLowerCells,
     },
   };
-  const sourceTopModules = [
-    { layout: 'drawers', doors: 8 },
-    null,
-    { extDrawersCount: '4', intDrawersList: null },
-  ];
+  const sourceTopModules = [{ layout: 'drawers', doors: 8 }, null, { extDrawersCount: '4' }];
   const sourceLowerModules = [{ layout: 'drawers', extDrawersCount: '2' }];
 
   const sourceSavedNotes = [{ id: 'note-1', blocks: [{ text: 'keep' }] }];
@@ -281,7 +277,6 @@ test('kernel_state_kernel_config captureConfig rematerializes structure-aware to
   assert.equal(asRecord(topModules[1]).doors, 2);
   assert.equal(asRecord(topModules[2]).doors, 1);
   assert.equal(asRecord(topModules[2]).extDrawersCount, 4);
-  assert.deepEqual(asRecord(topModules[2]).intDrawersList, []);
   assert.equal(asRecord(lowerModules[0]).extDrawersCount, 2);
   assert.equal(capturedCornerCells.length, 2);
   assert.deepEqual(asRecord(capturedCornerCells[0]), {});

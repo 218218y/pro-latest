@@ -21,6 +21,8 @@ export function resolveSketchFreeBoxHoverPlacement(args: ResolveSketchFreeBoxHov
     hoverArgs: args,
   });
 
+  if (context.blocksFreeAddUnderWardrobe && !removePlacement) return null;
+
   return finalizeSketchFreeBoxHoverPlacement({
     context,
     removePlacement,

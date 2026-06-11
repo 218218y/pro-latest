@@ -50,6 +50,7 @@ export function tryHandleManualLayoutSketchHoverExistingVerticalRemovePreview(
     internalDepth,
     internalZ,
     isBox,
+    isStorage,
     isShelf,
     isRod,
     isDrawers,
@@ -72,7 +73,8 @@ export function tryHandleManualLayoutSketchHoverExistingVerticalRemovePreview(
     __wp_resolveSketchBoxSegments,
   } = ctx;
 
-  const allowExistingVerticalContentRemove = isBox || isShelf || isRod || isDrawers || isExtDrawers;
+  const allowExistingVerticalContentRemove =
+    isBox || isStorage || isShelf || isRod || isDrawers || isExtDrawers;
   if (!allowExistingVerticalContentRemove) return false;
 
   const existingVerticalRemovePreview = resolveSketchModuleSurfacePreview({
@@ -99,6 +101,7 @@ export function tryHandleManualLayoutSketchHoverExistingVerticalRemovePreview(
     isRod: false,
     allowExistingShelfRemove: true,
     allowExistingRodRemove: true,
+    allowExistingStorageRemove: true,
     variant,
     shelfDepthOverrideM,
     boxH,

@@ -13,6 +13,7 @@ import {
   setDrawerMetaEntry,
 } from '../runtime/doors_access.js';
 import { getDrawersArray } from '../runtime/render_access.js';
+import { drawerVisualMatchesId, isExplicitExternalDrawerVisual } from '../runtime/drawer_visual_identity.js';
 import {
   type AppLike,
   type DrawerId,
@@ -20,12 +21,10 @@ import {
   getDoorsLastToggleTime,
   getDoorsOpen,
   getDrawerModuleKey,
-  getGroupUserData,
   getOpenDoorModuleKeys,
   hasAnyOpenDoor,
   hasInternalDrawers,
   isGlobalClickMode,
-  isIntDrawerEditActive,
   isSketchEditActive,
   isSketchExtDrawersEditActive,
   isSketchIntDrawersEditActive,
@@ -106,7 +105,6 @@ export function snapDrawersToTargets(App: AppLike): void {
 
   const sketchEditActive = isSketchEditActive(App);
   const sketchIntDrawersEditActive = isSketchIntDrawersEditActive(App);
-  const intDrawerEditActive = isIntDrawerEditActive(App);
   const sketchExtDrawersEditActive = isSketchExtDrawersEditActive(App);
 
   const tools = getTools(App);
@@ -133,8 +131,7 @@ export function snapDrawersToTargets(App: AppLike): void {
   for (const drawer of getDrawersArray(App)) {
     if (!drawer || !drawer.group || !drawer.open || !drawer.closed) continue;
 
-    const userData = getGroupUserData(drawer.group);
-    const isExtDrawer = !!(userData && userData.__wpType === 'extDrawer');
+    const isExtDrawer = isExplicitExternalDrawerVisual(drawer);
 
     const type = wardrobeType(App);
     let isInternal = !isExtDrawer;
@@ -158,7 +155,7 @@ export function snapDrawersToTargets(App: AppLike): void {
       } catch (_) {
         // ignore
       }
-    } else if (sketchIntDrawersEditActive || intDrawerEditActive) {
+    } else if (sketchIntDrawersEditActive) {
       shouldOpen = false;
       try {
         drawer.isOpen = false;
@@ -186,9 +183,8 @@ export function snapDrawersToTargets(App: AppLike): void {
       !sketchEditActive &&
       !sketchExtDrawersEditActive &&
       !sketchIntDrawersEditActive &&
-      !intDrawerEditActive &&
       openId &&
-      drawer.id === openId
+      drawerVisualMatchesId(drawer, openId)
     ) {
       shouldOpen = true;
     }

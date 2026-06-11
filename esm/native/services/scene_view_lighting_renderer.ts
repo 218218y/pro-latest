@@ -104,7 +104,7 @@ function applyNormalModeRendererLighting(App: AppContainer, rendererSurface: Ren
   }
   if (typeof rendererSurface.useLegacyLights === 'boolean') {
     try {
-      rendererSurface.useLegacyLights = true;
+      rendererSurface.useLegacyLights = false;
     } catch (err) {
       reportSceneViewNonFatal(App, 'sceneView.lighting.applyNormalRendererLighting.useLegacyLights', err);
     }

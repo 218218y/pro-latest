@@ -2,6 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { installSceneViewService } from '../esm/native/services/scene_view.ts';
+import {
+  NORMAL_AMBIENT_DEFAULT,
+  NORMAL_DIR_DEFAULT,
+  SKETCH_AMBIENT_DEFAULT,
+} from '../esm/native/services/scene_view_lighting_shared.ts';
 
 type AnyRecord = Record<string, unknown>;
 
@@ -162,8 +167,8 @@ test('scene view store sync reacts to runtime/ui state without React callers', a
   assert.equal(typeof svc.installStoreSync, 'function');
   assert.equal(svc.installStoreSync?.(), true);
 
-  assert.equal(App.render.ambLightObj.intensity, 0.7);
-  assert.equal(App.render.dirLightObj.intensity, 1.45);
+  assert.equal(App.render.ambLightObj.intensity, NORMAL_AMBIENT_DEFAULT);
+  assert.equal(App.render.dirLightObj.intensity, NORMAL_DIR_DEFAULT);
   assert.equal(App.render.dirLightObj.visible, true);
   assert.equal(App.render.renderer.shadowMap.needsUpdate, true);
   assert.equal(floor.visible, true);
@@ -177,7 +182,7 @@ test('scene view store sync reacts to runtime/ui state without React callers', a
   await flushMicrotasks();
 
   assert.equal(App.render.dirLightObj.visible, false);
-  assert.equal(App.render.ambLightObj.intensity, 0.95);
+  assert.equal(App.render.ambLightObj.intensity, SKETCH_AMBIENT_DEFAULT);
   assert.equal(floor.visible, false);
   assert.equal(smartFloor.visible, false);
   assert.equal(App.render.renderer.shadowMap.needsUpdate, true);

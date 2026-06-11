@@ -136,6 +136,19 @@ export function ensureCornerConfigurationCellForStack(
   return patchCornerConfigurationCellForStack(nextVal, prevVal, stack, index, {}, options);
 }
 
+function stripTopOnlyCornerDimsFromLowerSeed(out: CornerConfigurationLike): void {
+  // A missing lower corner shell is a *new bottom corner*, not a copy of the top corner's
+  // current per-cell/global dimension overrides. Keep persisted non-dimensional hints from the
+  // base record, but never let top special-dims become the lower stack's width/depth/height base.
+  for (const key of ['specialDims', 'connectorSpecialDims']) {
+    try {
+      delete out[key];
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export function cloneCornerConfigurationForLowerSnapshot(nextVal: unknown): CornerConfigurationLike {
   const base = sanitizeCornerConfigurationListsOnly(nextVal, nextVal);
   const out: CornerConfigurationLike = Object.assign({}, base, createDefaultLowerCornerConfiguration(), {
@@ -146,6 +159,7 @@ export function cloneCornerConfigurationForLowerSnapshot(nextVal: unknown): Corn
   } catch {
     // ignore
   }
+  stripTopOnlyCornerDimsFromLowerSeed(out);
   return cloneMutableCornerValue(out);
 }
 

@@ -1,12 +1,7 @@
 import type { TimeoutHandleLike } from '../../../../../types';
 import type { SavedNote } from '../../../../../types';
 import { getBrowserTimers } from '../../../services/api.js';
-import { notesOverlayReportNonFatal } from './notes_overlay_helpers_shared.js';
-import {
-  notesChanged,
-  preserveEquivalentNoteSnapshot,
-  removeNoteAtIndex,
-} from './notes_overlay_editor_state.js';
+import { preserveEquivalentNoteSnapshot, removeNoteAtIndex } from './notes_overlay_editor_state.js';
 
 export type NotesPersistenceAppLike = {
   deps?: {
@@ -44,39 +39,14 @@ export function clearNotesTypingPersist(
 }
 
 export function scheduleNotesTypingPersist(args: NotesTypingPersistScheduleArgs): void {
-  const {
-    App,
-    editMode,
-    activeIndex,
-    typingCommitTimerRef,
-    typingCommitTokenRef,
-    draftNotesRef,
-    captureEditorsIntoNotes,
-    commitNotes,
-    source,
-  } = args;
+  const { App, editMode, activeIndex, typingCommitTimerRef, typingCommitTokenRef } = args;
 
   if (!editMode || activeIndex == null) return;
 
+  // Text editing history is committed only when the editor is left.  This function remains
+  // as the input-event seam so older pending typing timers are cancelled, but it deliberately
+  // does not create a delayed history/save checkpoint while the user is still typing.
   clearNotesTypingPersist(App, typingCommitTimerRef, typingCommitTokenRef);
-
-  const token = typingCommitTokenRef.current;
-  const timers = getBrowserTimers(App);
-  const handle = timers.setTimeout(() => {
-    if (typingCommitTokenRef.current !== token || typingCommitTimerRef.current !== handle) return;
-    typingCommitTimerRef.current = null;
-    try {
-      const base = draftNotesRef.current || [];
-      const captured = preserveEquivalentNoteSnapshot(base, captureEditorsIntoNotes(base));
-      if (!notesChanged(base, captured)) return;
-      commitNotes(captured, source);
-      draftNotesRef.current = captured;
-    } catch (__wpErr) {
-      notesOverlayReportNonFatal('CTRL_typingPersist', __wpErr);
-    }
-  }, 420);
-
-  typingCommitTimerRef.current = handle;
 }
 
 export function prepareDeletedDraftNotes(args: {

@@ -71,6 +71,7 @@ export {
   trackMirrorSurface,
   getMirrorCubeCamera,
   getMirrorHideScratch,
+  refreshTrackedMirrorSurfacesNow,
   invalidateMirrorTracking,
   readAutoHideFloorCache,
   writeAutoHideFloorCache,

@@ -11,6 +11,7 @@ test('[interior-view-state-controller] centralizes sketch and door-trim sync sid
     isExtDrawerMode: true,
     modeExtDrawer: 'ext_drawer',
     isSketchToolActive: true,
+    isSketchDivisionToolActive: true,
     manualToolRaw: 'sketch_shelf:glass@27',
     isDoorTrimMode: true,
     modeOpts: {
@@ -29,6 +30,7 @@ test('[interior-view-state-controller] centralizes sketch and door-trim sync sid
     isExtDrawerMode: false,
     modeExtDrawer: 'ext_drawer',
     isSketchToolActive: true,
+    isSketchDivisionToolActive: false,
     manualToolRaw: 'sketch_box:42@60@55',
     isDoorTrimMode: false,
     modeOpts: {},
@@ -41,6 +43,7 @@ test('[interior-view-state-controller] centralizes sketch and door-trim sync sid
   controller.syncSketchBoxBaseState(true, 'sketch_box_base:legs');
   controller.syncSketchExtDrawersState(true, 'sketch_ext_drawers:3@28');
   controller.syncSketchIntDrawersState(true, 'sketch_int_drawers@24');
+  controller.syncManualUiToolState(true, true, false, 'shelf');
 
   assert.equal(
     JSON.stringify(calls),

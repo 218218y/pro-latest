@@ -276,7 +276,7 @@ test('render loop motion keeps all drawers closed during internal drawer editing
     };
     const app: Record<string, unknown> = {
       store: makeStore({
-        mode: { primary: 'int_drawer', opts: {} },
+        mode: { primary: 'manual_layout', opts: { manualTool: 'sketch_int_drawers' } },
         runtime: { globalClickMode: true },
         ui: {},
         config: {},

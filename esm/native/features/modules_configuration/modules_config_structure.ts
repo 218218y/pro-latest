@@ -105,8 +105,6 @@ export function normalizeTopModuleConfigTyped(
     layout,
     extDrawersCount: toInt(base.extDrawersCount, 0),
     hasShoeDrawer: !!base.hasShoeDrawer,
-    intDrawersSlot: toInt(base.intDrawersSlot, 0),
-    intDrawersList: Array.isArray(base.intDrawersList) ? base.intDrawersList.slice() : [],
     isCustom: !!base.isCustom,
     doors: toIntMin(base.doors, d, 1),
     customData: cloneModuleCustomData(base.customData),

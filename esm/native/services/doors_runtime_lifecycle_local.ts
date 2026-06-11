@@ -3,6 +3,7 @@ import {
   type AppLike,
   type CaptureLocalOpenOptions,
   type DrawerId,
+  type CloseDrawerOptions,
   ensureDoorsRuntimeDefaults,
   isGlobalClickMode,
   reportDoorsRuntimeNonFatal,
@@ -17,42 +18,49 @@ export function closeAllLocal(App: AppLike): void {
   touchDoorsRuntimeRender(App);
 }
 
-export function closeDrawerById(App: AppLike, id: DrawerId): void {
+function drawerMatchesCloseId(App: AppLike, drawer: Record<string, unknown>, sid: string): boolean {
+  let drawerId = '';
+  try {
+    if (drawer.id !== undefined && drawer.id !== null) drawerId = String(drawer.id);
+    else if (drawer.drawerId !== undefined && drawer.drawerId !== null) drawerId = String(drawer.drawerId);
+    else if (drawer.dividerKey !== undefined && drawer.dividerKey !== null)
+      drawerId = String(drawer.dividerKey);
+  } catch (_) {
+    reportDoorsRuntimeNonFatal(App, 'closeDrawerById.readId', _);
+  }
+
+  if (drawerId && drawerId === sid) return true;
+
+  try {
+    const group = drawer.group as { userData?: Record<string, unknown> } | null | undefined;
+    const partId = group && group.userData ? group.userData.partId : null;
+    if (partId !== undefined && partId !== null && String(partId) === sid) return true;
+  } catch (_) {
+    reportDoorsRuntimeNonFatal(App, 'closeDrawerById.readPartId', _);
+  }
+
+  return false;
+}
+
+export function closeDrawerById(App: AppLike, id: DrawerId, opts?: CloseDrawerOptions): void {
   if (!App || typeof App !== 'object') return;
   if (id === null || typeof id === 'undefined') return;
 
   const sid = String(id);
+  const snap = !(opts && typeof opts === 'object' && opts.snap === false);
   const arr = getDrawersArray(App);
 
   for (let i = 0; i < arr.length; i++) {
     const drawer = arr[i];
-    if (!drawer) continue;
+    if (!drawer || !drawerMatchesCloseId(App, drawer as Record<string, unknown>, sid)) continue;
 
-    let drawerId = '';
+    drawer.isOpen = false;
+    if (!snap) continue;
+
     try {
-      if (drawer.id !== undefined && drawer.id !== null) drawerId = String(drawer.id);
-      else if (drawer.drawerId !== undefined && drawer.drawerId !== null) drawerId = String(drawer.drawerId);
+      if (drawer.group?.position && drawer.closed) vecCopy(drawer.group.position, drawer.closed);
     } catch (_) {
-      reportDoorsRuntimeNonFatal(App, 'L529', _);
-    }
-
-    let match = drawerId && drawerId === sid;
-    if (!match) {
-      try {
-        const partId = drawer.group && drawer.group.userData ? drawer.group.userData.partId : null;
-        if (partId !== undefined && partId !== null && String(partId) === sid) match = true;
-      } catch (_) {
-        reportDoorsRuntimeNonFatal(App, 'L537', _);
-      }
-    }
-
-    if (match) {
-      drawer.isOpen = false;
-      try {
-        if (drawer.group?.position && drawer.closed) vecCopy(drawer.group.position, drawer.closed);
-      } catch (_) {
-        reportDoorsRuntimeNonFatal(App, 'L546', _);
-      }
+      reportDoorsRuntimeNonFatal(App, 'closeDrawerById.snapClosed', _);
     }
   }
 

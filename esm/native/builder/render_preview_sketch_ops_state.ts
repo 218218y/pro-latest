@@ -124,6 +124,11 @@ export function hideSketchPlacementPreviewOwner(
     if (group) {
       group.visible = false;
       const userData = owner.shared.readUserData(group.userData);
+      try {
+        delete userData.__drawerDividerMotionPreview;
+      } catch {
+        // ignore stale preview cleanup failures
+      }
       for (const key of owner.shared.sketchMeshKeys) {
         const mesh = owner.shared.asPreviewMesh(userData[key]);
         if (!mesh) continue;

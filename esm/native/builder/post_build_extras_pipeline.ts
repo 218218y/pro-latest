@@ -10,6 +10,7 @@ import {
   applyLocalOpenStateAfterBuild,
   snapDrawersToTargetsViaService,
   syncDoorsVisualsNow,
+  getDrawerRebuildIntent,
 } from '../runtime/doors_access.js';
 import { reportError } from '../runtime/api.js';
 import { readRuntimeScalarOrDefault } from '../runtime/runtime_selectors.js';
@@ -31,6 +32,11 @@ function readAppRecord(value: unknown): Record<string, unknown> | null {
   return isUnknownRecord(value) ? value : null;
 }
 
+function hasPendingDrawerRebuildIntent(App: unknown): boolean {
+  const id = getDrawerRebuildIntent(App);
+  return typeof id === 'string' || typeof id === 'number';
+}
+
 function syncGlobalClickVisualStateAfterBuild(
   App: unknown,
   runtime: unknown,
@@ -39,8 +45,17 @@ function syncGlobalClickVisualStateAfterBuild(
   if (skipDoorVisualSync) return;
 
   const doorsOpen = !!readRuntimeScalarOrDefault(runtime, 'doorsOpen', false);
-  const syncedDoorVisuals = syncDoorsVisualsNow(App, { open: doorsOpen });
+  const deferDrawerMotionToRebuildIntent = hasPendingDrawerRebuildIntent(App);
+  const syncOpts = deferDrawerMotionToRebuildIntent
+    ? { open: doorsOpen, includeDrawers: false }
+    : { open: doorsOpen };
+  const syncedDoorVisuals = syncDoorsVisualsNow(App, syncOpts);
   if (syncedDoorVisuals) return;
+
+  // When a divider edit is about to reopen one drawer after rebuild, the drawer
+  // must stay at its freshly-built closed transform so the render loop can animate
+  // toward the forced-open target instead of snapping during post-build sync.
+  if (deferDrawerMotionToRebuildIntent) return;
 
   // When the global door-visual owner is not installed, drawer snapping is still a
   // valid, narrower post-build operation. Keep it explicit so missing door sync is
@@ -83,6 +98,8 @@ export function applyPostBuildExtras(input: BuildContextLike) {
     cabinetBodyHeight: ctx.dims && ctx.dims.cabinetBodyHeight,
     bodyMat: ctx.materials && ctx.materials.bodyMat,
     globalFrontMat: ctx.materials && ctx.materials.globalFrontMat,
+    defaultShelfMat: ctx.materials && ctx.materials.defaultShelfMat,
+    braceShelfMat: ctx.materials && ctx.materials.braceShelfMat,
     runtime: ctx.runtime,
     globalClickMode: !!(ctx.flags && ctx.flags.globalClickMode),
     hadEditHold: !!(ctx.flags && ctx.flags.hadEditHold),
@@ -110,6 +127,8 @@ export function applyPostBuildExtras(input: BuildContextLike) {
     cabinetBodyHeight,
     bodyMat,
     globalFrontMat,
+    defaultShelfMat,
+    braceShelfMat,
     runtime,
     globalClickMode,
     hadEditHold,
@@ -189,6 +208,8 @@ export function applyPostBuildExtras(input: BuildContextLike) {
         {
           body: bodyMat,
           front: globalFrontMat,
+          defaultShelfMat,
+          braceShelfMat,
         },
         __cornerWingMeta
       );
@@ -202,6 +223,8 @@ export function applyPostBuildExtras(input: BuildContextLike) {
         {
           body: bodyMat,
           front: globalFrontMat,
+          defaultShelfMat,
+          braceShelfMat,
         }
       );
     }

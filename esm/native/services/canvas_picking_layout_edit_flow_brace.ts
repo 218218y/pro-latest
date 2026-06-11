@@ -1,5 +1,9 @@
 import { getInternalGridMap } from '../runtime/cache_access.js';
-import { resolveShelfBoardPick } from './canvas_picking_shelf_hit_targets.js';
+import {
+  resolveShelfBoardPick,
+  resolveShelfPickVerticalToleranceM,
+  resolveShelfSelectorPickToleranceM,
+} from './canvas_picking_shelf_hit_targets.js';
 import { __wp_reportPickingIssue } from './canvas_picking_core_helpers.js';
 import {
   type CanvasLayoutEditClickArgs,
@@ -52,8 +56,8 @@ export function tryHandleCanvasBraceShelvesClick(args: CanvasLayoutEditClickArgs
       bottomY,
       topY,
       divisions,
-      boardToleranceM: Math.min(0.05, Math.max(0.035, safeStep * 0.12)),
-      selectorHitToleranceM: safeStep * 0.3,
+      boardToleranceM: resolveShelfPickVerticalToleranceM(safeStep, 0.18),
+      selectorHitToleranceM: resolveShelfSelectorPickToleranceM(safeStep),
     });
     if (!shelfPick) return;
 

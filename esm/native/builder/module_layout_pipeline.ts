@@ -3,11 +3,9 @@
 // This keeps builder/core.js focused on orchestration and rendering.
 
 import { computeHingedDoorPivotMap, computeModuleLayout } from './pure_api.js';
-import {
-  stripWidthOverridesFromConfig,
-  moduleHasAnyActiveSpecialDims,
-} from '../features/special_dims/index.js';
+import { stripWidthOverridesFromConfig } from '../features/special_dims/index.js';
 import { asRecord } from '../runtime/record.js';
+import { moduleRequiresCustomBoundaryGeometry } from './module_custom_geometry_policy.js';
 
 import type {
   AppContainer,
@@ -280,11 +278,11 @@ export function computeModulesAndLayout(args: ComputeModulesAndLayoutArgs): Comp
   if (wardrobeType === 'hinged') {
     try {
       // Detect which modules actually deviated from their captured base size.
-      // This is used by the pure door pivot map to optionally apply an overlay-style extension
-      // on boundaries where we add special full-depth partitions.
+      // This is used by the pure door pivot map to match boundaries where the module loop
+      // adds custom full-depth partitions.
       const moduleIsCustom: boolean[] = modules.map((_m, i) => {
         const cfgMod = moduleCfgList[i] || {};
-        return moduleHasAnyActiveSpecialDims(cfgMod, 0);
+        return moduleRequiresCustomBoundaryGeometry(cfgMod, 0);
       });
 
       hingedDoorPivotMap = readHingedDoorPivotMap(
@@ -296,6 +294,8 @@ export function computeModulesAndLayout(args: ComputeModulesAndLayoutArgs): Comp
           hingeMap: readHingeMap(cfg.hingeMap),
           moduleInternalWidths,
           moduleIsCustom,
+          moduleConfigs: moduleCfgList,
+          doorMountMode: cfg.doorMountMode,
         })
       );
     } catch (e) {

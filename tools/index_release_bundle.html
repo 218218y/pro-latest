@@ -149,12 +149,12 @@
             const { boot } = await import('./wardrobepro.bundle.js');
 
             // Runtime config module (optional):
-            // ../wp_runtime_config.mjs can export either:
+            // ./wp_runtime_config.mjs can export either:
             //   export default { supabaseCloudSync: { ... } };
             //   export default { config: { ... }, flags: { ... } };
             async function loadRuntimeModule() {
               try {
-                const url = new URL('../wp_runtime_config.mjs', import.meta.url).toString();
+                const url = new URL('./wp_runtime_config.mjs', import.meta.url).toString();
                 const mod = await import(url);
                 const raw = mod && typeof mod === 'object' && 'default' in mod ? mod.default : mod;
                 if (!raw || typeof raw !== 'object') return { config: null, flags: null };

@@ -235,7 +235,6 @@ const threeTargets = {
     read('esm/native/builder/interior_pipeline_custom.ts'),
     read('esm/native/builder/interior_pipeline_preset.ts'),
   ].join('\n'),
-  internalDrawers: read('esm/native/builder/internal_drawers_pipeline.ts'),
   buildWardrobeFlow: [
     read('esm/native/builder/build_wardrobe_flow.ts'),
     read('esm/native/builder/build_wardrobe_flow_runtime.ts'),
@@ -509,7 +508,6 @@ test('[platform-runtime] app start and major callsites prefer canonical boot ent
   assert.match(bootFinalizers, /return \(group: unknown\) => wardrobeClean\((?:App|context\.App), group\);/);
   assert.match(threeTargets.externalDrawers, /reportError\(App, error, meta\)/);
   assert.match(threeTargets.interior, /reportError\(App,/);
-  assert.match(threeTargets.internalDrawers, /reportError\(App,/);
   assert.match(threeTargets.stackSplitPipeline, /cloneViaPlatform\(args\.App, lower0, seed\)/);
   assert.match(threeTargets.buildWardrobeFlow, /reportError\(App, error, \{ where: label, fatal: true \}\)/);
   assert.match(

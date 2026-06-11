@@ -95,12 +95,23 @@ test('[design-tab-view-state-runtime] derives cfg/ui/design feature state throug
     JSON.stringify({
       doorStyle: 'profile',
       colorChoice: '#111111',
+      frontColorShelfInheritanceMode: 'all',
       groovesEnabled: true,
       splitDoors: false,
       removeDoorsEnabled: true,
       hasCornice: true,
       corniceType: 'wave',
     })
+  );
+
+  assert.equal(
+    mod.readDesignTabUiState({ frontColorShelfInheritanceMode: 'brace' }).frontColorShelfInheritanceMode,
+    'brace'
+  );
+
+  assert.equal(
+    mod.readDesignTabUiState({ frontColorShelfInheritanceMode: 'bad-value' }).frontColorShelfInheritanceMode,
+    'all'
   );
 
   assert.equal(
@@ -122,7 +133,6 @@ test('[design-tab-view-state-runtime] derives cfg/ui/design feature state throug
       removeDoorsEnabled: true,
     })
   );
-
   assert.equal(
     JSON.stringify(
       mod.deriveDesignTabDoorFeaturesState({
@@ -205,6 +215,7 @@ test('[design-tab-view-state-runtime] delegates selector and shared readers exac
     JSON.stringify({
       doorStyle: 'tom',
       colorChoice: 'custom',
+      frontColorShelfInheritanceMode: 'all',
       groovesEnabled: false,
       splitDoors: false,
       removeDoorsEnabled: false,

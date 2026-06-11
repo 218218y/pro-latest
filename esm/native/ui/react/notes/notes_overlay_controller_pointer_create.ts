@@ -72,8 +72,8 @@ export function useNotesOverlayCreatePointerWorkflow(args: NotesOverlayCreatePoi
       setInteraction(null);
       setCreatingRect(null);
       if (!result.nextDraft) return;
+      draftNotesRef.current = result.nextDraft;
       setDraftNotes(result.nextDraft);
-      commitNotes(result.nextDraft, 'react:notes:create');
       suppressNextClickRef.current = true;
       setActive(result.nextDraft.length - 1);
     },

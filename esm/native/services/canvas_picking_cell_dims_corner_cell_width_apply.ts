@@ -11,7 +11,7 @@ import {
   cloneRecord,
   readCornerSpecialDims,
   reportCornerDimsIssue,
-  patchCornerConfig,
+  patchCornerConfigForStack,
   syncCornerUi,
   commitCornerHistory,
   refreshCornerStructure,
@@ -45,7 +45,7 @@ export function applyCornerCellWidthSelection(
   distribution: CornerCellWidthDistribution,
   selection: CornerCellWidthSelectionState
 ): boolean {
-  const { App, applyH, applyD, cellIdx, nextCornerCfg, sd } = ctx;
+  const { App, stackKey, isBottomStack, applyH, applyD, cellIdx, nextCornerCfg, sd } = ctx;
   const modsOut = distribution.modsNext;
 
   for (let ci = 0; ci < distribution.cellCount; ci++) {
@@ -116,7 +116,7 @@ export function applyCornerCellWidthSelection(
   }
 
   if (modsOut.length > distribution.cellCount) modsOut.length = distribution.cellCount;
-  sanitizeCornerModulesForPatch(nextCornerCfg, distribution.modsNext, distribution.modsPrev);
+  sanitizeCornerModulesForPatch(nextCornerCfg, distribution.modsNext, distribution.modsPrev, stackKey);
 
   try {
     sd.baseWidthCm = selection.newWingWcm;
@@ -126,18 +126,21 @@ export function applyCornerCellWidthSelection(
   }
   assignSpecialDimsToConfig(nextCornerCfg, sd);
 
-  patchCornerConfig(
+  patchCornerConfigForStack(
     App,
     nextCornerCfg,
     'cellDims.apply.corner.cell.lockOthers',
-    'cellDims.corner.lockOthers.patchConfig'
+    'cellDims.corner.lockOthers.patchConfig',
+    stackKey
   );
-  syncCornerUi(
-    App,
-    { cornerWidth: selection.newWingWcm, raw: { cornerWidth: selection.newWingWcm } },
-    'cellDims.apply.corner.cell.lockOthers',
-    'cellDims.corner.lockOthers.syncUi'
-  );
+  if (!isBottomStack) {
+    syncCornerUi(
+      App,
+      { cornerWidth: selection.newWingWcm, raw: { cornerWidth: selection.newWingWcm } },
+      'cellDims.apply.corner.cell.lockOthers',
+      'cellDims.corner.lockOthers.syncUi'
+    );
+  }
   commitCornerHistory('cellDims.apply.corner.cell.lockOthers', App);
   refreshCornerStructure(App, 'cellDims.apply.corner.cell.lockOthers', 'cellDims.corner.lockOthers.refresh');
 

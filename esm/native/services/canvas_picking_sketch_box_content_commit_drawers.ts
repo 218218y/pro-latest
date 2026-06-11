@@ -6,6 +6,8 @@ import {
 } from './canvas_picking_sketch_box_content_commit_boxes.js';
 import type { CommitSketchModuleBoxContentArgs } from './canvas_picking_sketch_box_content_commit_contracts.js';
 import { buildToggleHoverRecord } from './canvas_picking_sketch_box_content_commit_toggle.js';
+import { inferSketchStackVerticalAnchorFromNormalizedItem } from '../features/sketch_stack_positioning.js';
+import { markSketchInternalDrawersDirty } from '../features/sketch_drawer_sizing.js';
 
 function clampNorm(value: number | null, defaultValue: number): number {
   return value != null ? Math.max(0, Math.min(1, value)) : defaultValue;
@@ -26,11 +28,19 @@ function buildDrawerItem(args: {
   contentXNorm: number | null;
   drawerCount?: number;
   drawerHeightM?: number | null;
+  stackH?: number | null;
 }): SketchModuleBoxContentLike {
+  const yNormC = clampNorm(args.boxYNorm, 0.5);
+  const yNorm = args.boxBaseYNorm != null ? clampNorm(args.boxBaseYNorm, 0.5) : undefined;
   const item: SketchModuleBoxContentLike = {
     id: createRandomId(args.idPrefix),
-    yNormC: clampNorm(args.boxYNorm, 0.5),
-    yNorm: args.boxBaseYNorm != null ? clampNorm(args.boxBaseYNorm, 0.5) : undefined,
+    yNormC,
+    yNorm,
+    yAnchor: inferSketchStackVerticalAnchorFromNormalizedItem({
+      item: { yNormC, yNorm },
+      stackH: args.stackH ?? 0,
+      totalHeight: 1,
+    }),
   };
   if (args.contentXNorm != null) item.xNorm = clampNorm(args.contentXNorm, 0.5);
   if (args.drawerCount != null) item.count = args.drawerCount;
@@ -55,10 +65,13 @@ export function tryCommitSketchBoxDrawerContent(args: {
   const removeId = hoverIntent?.removeId || '';
   const drawerHeightM = hoverIntent?.drawerHeightM ?? hoverIntent?.drawerH ?? null;
   const drawerH = hoverIntent?.drawerH ?? drawerHeightM;
+  const stackH = hoverIntent?.stackH ?? null;
 
   if (commitArgs.contentKind === 'drawers') {
     const list = ensureSketchBoxContentList(commitArgs.box, 'drawers');
-    if (hoverOp === 'remove' && removeBoxContentById(list, removeId)) {
+    if (hoverOp === 'remove') {
+      removeBoxContentById(list, removeId);
+      if (commitArgs.cfg) markSketchInternalDrawersDirty(commitArgs.cfg);
       return {
         handled: true,
         nextHover: buildToggleHoverRecord({
@@ -81,8 +94,10 @@ export function tryCommitSketchBoxDrawerContent(args: {
       boxBaseYNorm,
       contentXNorm,
       drawerHeightM,
+      stackH,
     });
     list.push(item);
+    if (commitArgs.cfg) markSketchInternalDrawersDirty(commitArgs.cfg);
     return {
       handled: true,
       nextHover: buildToggleHoverRecord({
@@ -103,7 +118,8 @@ export function tryCommitSketchBoxDrawerContent(args: {
     const list = ensureSketchBoxContentList(commitArgs.box, 'extDrawers');
     const drawerCountRaw = hoverIntent?.drawerCount ?? null;
     const drawerCount = drawerCountRaw != null ? Math.max(1, Math.min(5, Math.floor(drawerCountRaw))) : 1;
-    if (hoverOp === 'remove' && removeBoxContentById(list, removeId)) {
+    if (hoverOp === 'remove') {
+      removeBoxContentById(list, removeId);
       return {
         handled: true,
         nextHover: buildToggleHoverRecord({
@@ -128,6 +144,7 @@ export function tryCommitSketchBoxDrawerContent(args: {
       contentXNorm,
       drawerCount,
       drawerHeightM,
+      stackH,
     });
     list.push(item);
     return {

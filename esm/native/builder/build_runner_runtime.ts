@@ -6,9 +6,7 @@ import { getRenderer } from '../runtime/render_access.js';
 import { getBuildReactionsServiceMaybe } from '../runtime/build_reactions_access.js';
 import { getPlatformReportError } from '../runtime/platform_access.js';
 
-import type { AppContainer, RendererLike, UnknownCallable } from '../../../types';
-
-type AnyRecord = Record<string, unknown>;
+import type { AppContainer, RendererLike, UnknownCallable, UnknownRecord } from '../../../types';
 
 type BuildRunnerSoftErrorExtra = {
   preserveOriginalBuildError?: boolean;
@@ -54,8 +52,8 @@ export type BuildRunnerShadowAutoUpdateState = {
   prevShadowAuto: boolean;
 };
 
-function readRecord(value: unknown): AnyRecord | null {
-  return asRecord<AnyRecord>(value);
+function readRecord(value: unknown): UnknownRecord | null {
+  return asRecord<UnknownRecord>(value);
 }
 
 function readBuildRunnerSignatureValue(state: unknown): unknown {

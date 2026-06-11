@@ -109,8 +109,11 @@ test('stage 69 render interior sketch external drawers ownership split is anchor
     box,
     /new context\.THREE\.BoxGeometry\(opPlan\.connectorW, opPlan\.connectorH, opPlan\.connectorD\)/
   );
-  assert.match(box, /applySketchModulePickMetaDeep\(drawerBoxObj, opPlan\.partId, context\.moduleKeyStr, \{/);
-  assert.match(box, /applySketchModulePickMeta\(connector, opPlan\.partId, context\.moduleKeyStr, \{/);
+  assert.match(
+    box,
+    /applySketchModulePickMetaDeep\(drawerBoxObj, opPlan\.boxPartId, context\.moduleKeyStr, \{/
+  );
+  assert.match(box, /applySketchModulePickMeta\(connector, opPlan\.boxPartId, context\.moduleKeyStr, \{/);
   assert.doesNotMatch(box, /createDoorVisual|computeExternalDrawersOpsForModule|drawersArray\.push/);
 
   assert.match(motion, /export function registerSketchExternalDrawerMotionEntry\(/);

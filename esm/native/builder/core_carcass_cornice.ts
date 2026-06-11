@@ -4,6 +4,7 @@ import { CARCASS_CORNICE_DIMENSIONS } from '../../shared/wardrobe_dimension_toke
 import type { MutableRecord } from './core_pure_shared.js';
 import { __asNum } from './core_pure_shared.js';
 import { CARCASS_BACK_INSET_Z, type PreparedCarcassInput } from './core_carcass_shared.js';
+import { resolveHexCellGeometry, type HexCellGeometry } from '../features/hex_cell/index.js';
 
 const CORNICE_COMMON = CARCASS_CORNICE_DIMENSIONS.common;
 const CORNICE_WAVE = CARCASS_CORNICE_DIMENSIONS.wave;
@@ -58,13 +59,35 @@ type CorniceSideClosure = {
   internal: boolean;
 };
 
+type CornicePathSegment = {
+  ax: number;
+  az: number;
+  bx: number;
+  bz: number;
+};
+
+type CorniceVector2 = { x: number; z: number };
+
+type CorniceMiterExtension = {
+  aEnd: number;
+  bStart: number;
+};
+
+type ModuleCorniceFootprint = {
+  path: CornicePathSegment[];
+  edgeDepth: number;
+  maxDepth: number;
+};
+
 type CorniceRun = {
   left: number;
   right: number;
   startIndex: number;
   endIndex: number;
   depth: number;
+  maxDepth: number;
   topY: number;
+  frontPath: CornicePathSegment[];
   leftSide: CorniceSideClosure | null;
   rightSide: CorniceSideClosure | null;
 };
@@ -76,17 +99,29 @@ type CorniceSectionParams = {
   depth: number;
   woodThick: number;
   topY: number;
+  frontPath: CornicePathSegment[];
   leftSide: CorniceSideClosure | null;
   rightSide: CorniceSideClosure | null;
 };
 
 function shouldBuildSegmentedCornice(prepared: PreparedCarcassInput): boolean {
   const { moduleWidths, moduleHeightsRaw, moduleDepths, isStepped, isDepthStepped } = prepared;
-  if (!moduleWidths || moduleWidths.length <= 1) return false;
+  if (!moduleWidths || moduleWidths.length < 1) return false;
+  if (hasHexCorniceFootprint(prepared)) return true;
+  if (moduleWidths.length <= 1) return false;
   if (!isStepped && !isDepthStepped) return false;
   if (isStepped && (!moduleHeightsRaw || moduleHeightsRaw.length !== moduleWidths.length)) return false;
   if (isDepthStepped && (!moduleDepths || moduleDepths.length !== moduleWidths.length)) return false;
   return true;
+}
+
+function hasHexCorniceFootprint(prepared: PreparedCarcassInput): boolean {
+  const { moduleWidths, moduleConfigs } = prepared;
+  if (!moduleWidths || !moduleConfigs || moduleWidths.length !== moduleConfigs.length) return false;
+  for (let i = 0; i < moduleWidths.length; i++) {
+    if (resolveHexCellForModule(prepared, i, moduleWidths[i])) return true;
+  }
+  return false;
 }
 
 function buildSegmentedCornice(
@@ -106,6 +141,7 @@ function buildSegmentedCornice(
       depth: run.depth,
       woodThick: prepared.woodThick,
       topY: run.topY,
+      frontPath: run.frontPath,
       leftSide: run.leftSide,
       rightSide: run.rightSide,
     };
@@ -120,7 +156,7 @@ function buildSegmentedCornice(
     (max, run) => Math.max(max, run.topY),
     prepared.startY + prepared.cabinetBodyHeight
   );
-  const maxDepth = runs.reduce((max, run) => Math.max(max, run.depth), prepared.D);
+  const maxDepth = runs.reduce((max, run) => Math.max(max, run.maxDepth), prepared.D);
   const isWave = corniceTypeNorm === 'wave';
   return buildCorniceEnvelope({
     totalW: prepared.totalW,
@@ -145,7 +181,9 @@ function buildCorniceRuns(prepared: PreparedCarcassInput): CorniceRun[] {
     const moduleWidth = moduleWidths[i];
     const left = i === 0 ? -totalW / 2 : internalLeft;
     const right = i === moduleWidths.length - 1 ? totalW / 2 : internalLeft + moduleWidth + woodThick;
-    const depth = Math.max(woodThick, moduleDepths ? __asNum(moduleDepths[i], D) : D);
+    const fallbackDepth = Math.max(woodThick, moduleDepths ? __asNum(moduleDepths[i], D) : D);
+    const footprint = buildModuleCorniceFootprint(prepared, i, left, right, fallbackDepth);
+    const depth = footprint.edgeDepth;
     const rawHeight = moduleHeightsRaw ? moduleHeightsRaw[i] : H;
     const totalHeight = __asNum(rawHeight, H);
     const bodyHeight = Math.min(cabinetBodyHeight, Math.max(woodThick * 2, totalHeight - startY));
@@ -155,6 +193,8 @@ function buildCorniceRuns(prepared: PreparedCarcassInput): CorniceRun[] {
     if (prev && sameCornicePlane(prev, { depth, topY })) {
       prev.right = right;
       prev.endIndex = i;
+      prev.maxDepth = Math.max(prev.maxDepth, footprint.maxDepth);
+      prev.frontPath.push(...footprint.path);
     } else {
       runs.push({
         left,
@@ -162,7 +202,9 @@ function buildCorniceRuns(prepared: PreparedCarcassInput): CorniceRun[] {
         startIndex: i,
         endIndex: i,
         depth,
+        maxDepth: footprint.maxDepth,
         topY,
+        frontPath: footprint.path,
         leftSide: null,
         rightSide: null,
       });
@@ -211,6 +253,330 @@ function resolveRunSideClosure(run: CorniceRun, neighbor: CorniceRun | undefined
   return null;
 }
 
+function resolveHexCellForModule(
+  prepared: PreparedCarcassInput,
+  index: number,
+  moduleWidth: number
+): HexCellGeometry | null {
+  const cfgMod = prepared.moduleConfigs?.[index];
+  if (!cfgMod) return null;
+  return resolveHexCellGeometry({
+    cfgMod,
+    moduleWidthM: Math.max(prepared.woodThick * 2, moduleWidth),
+    defaultDepthM: prepared.D,
+    woodThickM: prepared.woodThick,
+  });
+}
+
+function buildModuleCorniceFootprint(
+  prepared: PreparedCarcassInput,
+  index: number,
+  left: number,
+  right: number,
+  fallbackDepth: number
+): ModuleCorniceFootprint {
+  const backZ = -prepared.D / 2;
+  const edgeDepth = Math.max(prepared.woodThick, fallbackDepth);
+  const fallbackZ = backZ + edgeDepth;
+  const hex = resolveHexCellForModule(prepared, index, Math.max(0, right - left));
+  if (!hex) {
+    return {
+      edgeDepth,
+      maxDepth: edgeDepth,
+      path: [{ ax: left, az: fallbackZ, bx: right, bz: fallbackZ }],
+    };
+  }
+
+  const sideDepth = Math.max(prepared.woodThick, hex.sideDepthM);
+  const doorDepth = Math.max(sideDepth, hex.doorDepthM);
+  const sideFrontZ = backZ + sideDepth;
+  const doorZ = backZ + doorDepth;
+  const centerX = (left + right) / 2;
+  const halfDoorW = Math.max(prepared.woodThick, hex.doorWidthM) / 2;
+  const doorLeftX = Math.max(left + prepared.woodThick, centerX - halfDoorW);
+  const doorRightX = Math.min(right - prepared.woodThick, centerX + halfDoorW);
+  const path = filterCornicePath([
+    { ax: left, az: sideFrontZ, bx: doorLeftX, bz: doorZ },
+    { ax: doorLeftX, az: doorZ, bx: doorRightX, bz: doorZ },
+    { ax: doorRightX, az: doorZ, bx: right, bz: sideFrontZ },
+  ]);
+
+  return {
+    edgeDepth: sideDepth,
+    maxDepth: doorDepth,
+    path: path.length ? path : [{ ax: left, az: fallbackZ, bx: right, bz: fallbackZ }],
+  };
+}
+
+function cornicePathSegmentLength(seg: CornicePathSegment): number {
+  const dx = seg.bx - seg.ax;
+  const dz = seg.bz - seg.az;
+  const len = Math.sqrt(dx * dx + dz * dz);
+  return Number.isFinite(len) ? len : 0;
+}
+
+function filterCornicePath(path: CornicePathSegment[]): CornicePathSegment[] {
+  return path.filter(seg => cornicePathSegmentLength(seg) > CORNICE_EPS);
+}
+
+function shiftPathStart(seg: CornicePathSegment, amount: number): CornicePathSegment {
+  const len = cornicePathSegmentLength(seg);
+  if (len <= CORNICE_EPS || amount <= 0) return seg;
+  const t = Math.min(1, amount / len);
+  return {
+    ...seg,
+    ax: seg.ax + (seg.bx - seg.ax) * t,
+    az: seg.az + (seg.bz - seg.az) * t,
+  };
+}
+
+function shiftPathEnd(seg: CornicePathSegment, amount: number): CornicePathSegment {
+  const len = cornicePathSegmentLength(seg);
+  if (len <= CORNICE_EPS || amount <= 0) return seg;
+  const t = Math.min(1, amount / len);
+  return {
+    ...seg,
+    bx: seg.bx - (seg.bx - seg.ax) * t,
+    bz: seg.bz - (seg.bz - seg.az) * t,
+  };
+}
+
+function trimPathStart(path: CornicePathSegment[], amount: number): CornicePathSegment[] {
+  if (amount <= 0 || !path.length) return path;
+  const out = path.map(seg => ({ ...seg }));
+  let remaining = amount;
+  while (out.length && remaining > CORNICE_EPS) {
+    const len = cornicePathSegmentLength(out[0]);
+    if (len <= remaining + CORNICE_EPS) {
+      remaining -= len;
+      out.shift();
+    } else {
+      out[0] = shiftPathStart(out[0], remaining);
+      remaining = 0;
+    }
+  }
+  return filterCornicePath(out);
+}
+
+function trimPathEnd(path: CornicePathSegment[], amount: number): CornicePathSegment[] {
+  if (amount <= 0 || !path.length) return path;
+  const out = path.map(seg => ({ ...seg }));
+  let remaining = amount;
+  while (out.length && remaining > CORNICE_EPS) {
+    const lastIndex = out.length - 1;
+    const len = cornicePathSegmentLength(out[lastIndex]);
+    if (len <= remaining + CORNICE_EPS) {
+      remaining -= len;
+      out.pop();
+    } else {
+      out[lastIndex] = shiftPathEnd(out[lastIndex], remaining);
+      remaining = 0;
+    }
+  }
+  return filterCornicePath(out);
+}
+
+function trimCornicePath(
+  path: CornicePathSegment[],
+  startTrim: number,
+  endTrim: number
+): CornicePathSegment[] {
+  return trimPathEnd(trimPathStart(path, Math.max(0, startTrim)), Math.max(0, endTrim));
+}
+
+function extendPathStart(seg: CornicePathSegment, amount: number): CornicePathSegment {
+  const len = cornicePathSegmentLength(seg);
+  if (len <= CORNICE_EPS || amount <= 0) return seg;
+  const ux = (seg.bx - seg.ax) / len;
+  const uz = (seg.bz - seg.az) / len;
+  return { ...seg, ax: seg.ax - ux * amount, az: seg.az - uz * amount };
+}
+
+function extendPathEnd(seg: CornicePathSegment, amount: number): CornicePathSegment {
+  const len = cornicePathSegmentLength(seg);
+  if (len <= CORNICE_EPS || amount <= 0) return seg;
+  const ux = (seg.bx - seg.ax) / len;
+  const uz = (seg.bz - seg.az) / len;
+  return { ...seg, bx: seg.bx + ux * amount, bz: seg.bz + uz * amount };
+}
+
+function extendCornicePath(
+  path: CornicePathSegment[],
+  startExtension: number,
+  endExtension: number
+): CornicePathSegment[] {
+  const out = filterCornicePath(path.map(seg => ({ ...seg })));
+  if (!out.length) return out;
+  out[0] = extendPathStart(out[0], Math.max(0, startExtension));
+  const lastIndex = out.length - 1;
+  out[lastIndex] = extendPathEnd(out[lastIndex], Math.max(0, endExtension));
+  return filterCornicePath(out);
+}
+
+function waveRotationForPathSegment(seg: CornicePathSegment): number {
+  return Math.atan2(-(seg.bz - seg.az), seg.bx - seg.ax);
+}
+
+function outwardNormalForPathSegment(seg: CornicePathSegment): { x: number; z: number } {
+  const len = cornicePathSegmentLength(seg);
+  if (len <= CORNICE_EPS) return { x: 0, z: 1 };
+  return {
+    x: -(seg.bz - seg.az) / len,
+    z: (seg.bx - seg.ax) / len,
+  };
+}
+
+function inwardWaveCenterForPathSegment(seg: CornicePathSegment, inset: number): { x: number; z: number } {
+  const midX = (seg.ax + seg.bx) / 2;
+  const midZ = (seg.az + seg.bz) / 2;
+  if (inset <= 0) return { x: midX, z: midZ };
+  const outward = outwardNormalForPathSegment(seg);
+  return { x: midX - outward.x * inset, z: midZ - outward.z * inset };
+}
+
+function profileRotationForPathSegment(seg: CornicePathSegment): number {
+  return Math.atan2(-(seg.bx - seg.ax), -(seg.bz - seg.az));
+}
+
+function isStraightFrontPathSegment(seg: CornicePathSegment): boolean {
+  return Math.abs(seg.bz - seg.az) <= CORNICE_EPS;
+}
+
+function pathTurnAngle(a: CornicePathSegment, b: CornicePathSegment): number {
+  const lenA = cornicePathSegmentLength(a);
+  const lenB = cornicePathSegmentLength(b);
+  if (lenA <= CORNICE_EPS || lenB <= CORNICE_EPS) return 0;
+  const uxA = (a.bx - a.ax) / lenA;
+  const uzA = (a.bz - a.az) / lenA;
+  const uxB = (b.bx - b.ax) / lenB;
+  const uzB = (b.bz - b.az) / lenB;
+  const dot = Math.max(-1, Math.min(1, uxA * uxB + uzA * uzB));
+  const angle = Math.acos(dot);
+  return Number.isFinite(angle) ? angle : 0;
+}
+
+function pathDirection(seg: CornicePathSegment): CorniceVector2 | null {
+  const len = cornicePathSegmentLength(seg);
+  if (len <= CORNICE_EPS) return null;
+  return { x: (seg.bx - seg.ax) / len, z: (seg.bz - seg.az) / len };
+}
+
+function positiveFiniteOrZero(value: number): number {
+  return Number.isFinite(value) && value > CORNICE_EPS ? value : 0;
+}
+
+function miterExtensionForPathJoint(
+  a: CornicePathSegment,
+  b: CornicePathSegment,
+  aOverhang: number,
+  bOverhang: number,
+  aNormalOverride?: CorniceVector2 | null,
+  bNormalOverride?: CorniceVector2 | null
+): CorniceMiterExtension {
+  const aDir = pathDirection(a);
+  const bDir = pathDirection(b);
+  if (!aDir || !bDir) return { aEnd: 0, bStart: 0 };
+
+  const aNormal = aNormalOverride || outwardNormalForPathSegment(a);
+  const bNormal = bNormalOverride || outwardNormalForPathSegment(b);
+  const rhsX = bNormal.x * Math.max(0, bOverhang) - aNormal.x * Math.max(0, aOverhang);
+  const rhsZ = bNormal.z * Math.max(0, bOverhang) - aNormal.z * Math.max(0, aOverhang);
+
+  // Solve: aOuterJoint + s*aDir == bOuterJoint + t*bDir.
+  // s > 0 extends A beyond its end. t < 0 means B must extend backwards before its start.
+  const bCoeffX = -bDir.x;
+  const bCoeffZ = -bDir.z;
+  const det = aDir.x * bCoeffZ - aDir.z * bCoeffX;
+  if (!Number.isFinite(det) || Math.abs(det) <= CORNICE_COMMON.thetaClampM * CORNICE_COMMON.thetaClampM) {
+    const mutualTrim = mutualPathJointMiterTrim(a, b, Math.min(aOverhang, bOverhang));
+    return { aEnd: mutualTrim, bStart: mutualTrim };
+  }
+
+  const s = (rhsX * bCoeffZ - rhsZ * bCoeffX) / det;
+  const t = (aDir.x * rhsZ - aDir.z * rhsX) / det;
+  return { aEnd: positiveFiniteOrZero(s), bStart: positiveFiniteOrZero(-t) };
+}
+
+function exteriorSideNormal(side: 'left' | 'right'): CorniceVector2 {
+  return side === 'left' ? { x: -1, z: 0 } : { x: 1, z: 0 };
+}
+
+function miterTrimForPathJoint(
+  a: CornicePathSegment,
+  b: CornicePathSegment,
+  profileOverhang: number
+): number {
+  const angle = pathTurnAngle(a, b);
+  if (angle <= CORNICE_COMMON.thetaClampM) return 0;
+  const trim =
+    Math.max(0, profileOverhang) * Math.tan(Math.min(Math.PI - CORNICE_COMMON.thetaClampM, angle) / 2);
+  return Number.isFinite(trim) ? trim + PROFILE_SEAM_EPS : 0;
+}
+
+function mutualPathJointMiterTrim(
+  a: CornicePathSegment,
+  b: CornicePathSegment,
+  profileOverhang: number
+): number {
+  const trim = miterTrimForPathJoint(a, b, profileOverhang);
+  if (!(Number.isFinite(trim) && trim > 0)) return 0;
+  return trim;
+}
+
+function clampMiterTrimForSegment(trim: number, segLen: number): number {
+  if (!Number.isFinite(trim) || trim <= 0 || !Number.isFinite(segLen) || segLen <= CORNICE_EPS) return 0;
+  return Math.min(trim, Math.max(0, segLen * 0.45));
+}
+
+function leftSideConnectionPath(seg: CornicePathSegment): CornicePathSegment {
+  return { ax: seg.ax, az: seg.az - 1, bx: seg.ax, bz: seg.az };
+}
+
+function rightSideConnectionPath(seg: CornicePathSegment): CornicePathSegment {
+  return { ax: seg.bx, az: seg.bz, bx: seg.bx, bz: seg.bz - 1 };
+}
+
+function leftExteriorMiterTrim(seg: CornicePathSegment, profileOverhang: number): number {
+  return miterTrimForPathJoint(leftSideConnectionPath(seg), seg, profileOverhang);
+}
+
+function rightExteriorMiterTrim(seg: CornicePathSegment, profileOverhang: number): number {
+  return miterTrimForPathJoint(seg, rightSideConnectionPath(seg), profileOverhang);
+}
+
+function shouldExtendExteriorProfilePath(seg: CornicePathSegment | undefined): boolean {
+  return !!seg && isStraightFrontPathSegment(seg);
+}
+
+function shouldUseOuterMiterForPath(renderPath: CornicePathSegment[]): boolean {
+  return renderPath.length > 1;
+}
+
+function profileOuterEndZ(
+  seg: CornicePathSegment | undefined,
+  end: 'start' | 'end',
+  fallbackZ: number
+): number {
+  if (!seg) return fallbackZ;
+  const baseZ = end === 'start' ? seg.az : seg.bz;
+  const outward = outwardNormalForPathSegment(seg);
+  const z = baseZ + Math.max(0, PROFILE_OVERHANG_Z) * Math.max(0, outward.z);
+  return Number.isFinite(z) ? z : fallbackZ;
+}
+
+function resolveProfileSideEndZ(args: {
+  pathSeg: CornicePathSegment | undefined;
+  end: 'start' | 'end';
+  defaultEndZ: number;
+  useOuterMiter?: boolean;
+}): number {
+  if (args.useOuterMiter && args.pathSeg && !isStraightFrontPathSegment(args.pathSeg)) {
+    return args.end === 'start' ? args.pathSeg.az : args.pathSeg.bz;
+  }
+  const z = profileOuterEndZ(args.pathSeg, args.end, args.defaultEndZ);
+  return Math.max(args.defaultEndZ - PROFILE_OVERHANG_Z, z);
+}
+
 function buildWaveCornice(params: CorniceParams): MutableRecord {
   const { totalW, D, woodThick, topY } = params;
   const segments = buildWaveCorniceSection({
@@ -220,6 +586,7 @@ function buildWaveCornice(params: CorniceParams): MutableRecord {
     depth: D,
     woodThick,
     topY,
+    frontPath: [{ ax: -totalW / 2, az: D / 2, bx: totalW / 2, bz: D / 2 }],
     leftSide: { startDepth: CARCASS_BACK_INSET_Z, internal: false },
     rightSide: { startDepth: CARCASS_BACK_INSET_Z, internal: false },
   });
@@ -235,8 +602,12 @@ function buildWaveCornice(params: CorniceParams): MutableRecord {
   });
 }
 
+function waveSidePaintPart(side: CorniceSideClosure, exteriorPartId: string): string {
+  return side.internal ? 'cornice_wave_front' : exteriorPartId;
+}
+
 function buildWaveCorniceSection(params: CorniceSectionParams): MutableRecord[] {
-  const { left, right, globalD, depth, woodThick, topY, leftSide, rightSide } = params;
+  const { left, right, globalD, depth, woodThick, topY, frontPath, leftSide, rightSide } = params;
   const sectionW = Math.max(CORNICE_COMMON.minBoxDimensionM, right - left);
   const yPlace = topY + CORNICE_Y_EPS;
   const frameT = Math.max(
@@ -249,25 +620,44 @@ function buildWaveCorniceSection(params: CorniceSectionParams): MutableRecord[] 
   );
   const leftInset = leftSide == null ? 0 : frameT;
   const rightInset = rightSide == null ? 0 : frameT;
-  const frontW = Math.max(CORNICE_COMMON.minSegmentLengthM, sectionW - leftInset - rightInset);
-  const frontLeft = left + leftInset;
-  const frontRight = right - rightInset;
-  const frontZ = -globalD / 2 + depth - frameT;
+  const renderPath = trimCornicePath(frontPath, leftInset, rightInset);
 
-  const segments: MutableRecord[] = [
-    {
-      kind: 'cornice_wave_front',
-      width: frontW,
-      depth: frameT,
-      heightMax: WAVE_MAX_HEIGHT,
-      waveAmp,
-      waveCycles: WAVE_CYCLES,
-      x: (frontLeft + frontRight) / 2,
+  const segments: MutableRecord[] = [];
+  for (let i = 0; i < renderPath.length; i++) {
+    const pathSeg = renderPath[i];
+    const len = cornicePathSegmentLength(pathSeg);
+    if (len <= CORNICE_COMMON.minSegmentLengthM) continue;
+    if (isStraightFrontPathSegment(pathSeg)) {
+      const center = inwardWaveCenterForPathSegment(pathSeg, frameT);
+      segments.push({
+        kind: 'cornice_wave_front',
+        width: len,
+        depth: frameT,
+        heightMax: WAVE_MAX_HEIGHT,
+        waveAmp,
+        waveCycles: WAVE_CYCLES,
+        rotationY: waveRotationForPathSegment(pathSeg),
+        x: center.x,
+        y: yPlace + WAVE_MAX_HEIGHT / 2,
+        z: center.z,
+        partId: 'cornice_wave_front',
+      });
+      continue;
+    }
+
+    const center = inwardWaveCenterForPathSegment(pathSeg, frameT / 2);
+    segments.push({
+      kind: 'cornice_wave_side',
+      width: frameT,
+      height: WAVE_MAX_HEIGHT,
+      depth: len,
+      rotationY: profileRotationForPathSegment(pathSeg),
+      x: center.x,
       y: yPlace + WAVE_MAX_HEIGHT / 2,
-      z: frontZ,
+      z: center.z,
       partId: 'cornice_wave_front',
-    },
-  ];
+    });
+  }
 
   if (leftSide != null) {
     const sideDepth = Math.max(CORNICE_COMMON.minSegmentLengthM, depth - leftSide.startDepth);
@@ -280,7 +670,7 @@ function buildWaveCorniceSection(params: CorniceSectionParams): MutableRecord[] 
       x: left + frameT / 2,
       y: yPlace + WAVE_MAX_HEIGHT / 2,
       z: sideZ,
-      partId: 'cornice_wave_side_left',
+      partId: waveSidePaintPart(leftSide, 'cornice_wave_side_left'),
     });
   }
 
@@ -295,7 +685,7 @@ function buildWaveCorniceSection(params: CorniceSectionParams): MutableRecord[] 
       x: right - frameT / 2,
       y: yPlace + WAVE_MAX_HEIGHT / 2,
       z: sideZ,
-      partId: 'cornice_wave_side_right',
+      partId: waveSidePaintPart(rightSide, 'cornice_wave_side_right'),
     });
   }
 
@@ -311,6 +701,7 @@ function buildProfileCornice(params: CorniceParams): MutableRecord {
     depth: D,
     woodThick,
     topY,
+    frontPath: [{ ax: -totalW / 2, az: D / 2, bx: totalW / 2, bz: D / 2 }],
     leftSide: { startDepth: CARCASS_BACK_INSET_Z, internal: false },
     rightSide: { startDepth: CARCASS_BACK_INSET_Z, internal: false },
   });
@@ -327,42 +718,124 @@ function buildProfileCornice(params: CorniceParams): MutableRecord {
 }
 
 function buildProfileCorniceSection(params: CorniceSectionParams): MutableRecord[] {
-  const { left, right, globalD, depth, topY, leftSide, rightSide } = params;
+  const { left, right, globalD, depth, topY, frontPath, leftSide, rightSide } = params;
   const yPlace = topY + CORNICE_Y_EPS;
-  const sectionW = Math.max(CORNICE_COMMON.minBoxDimensionM, right - left);
   const leftOverhang = leftSide != null && !leftSide.internal ? PROFILE_OVERHANG_X : 0;
   const rightOverhang = rightSide != null && !rightSide.internal ? PROFILE_OVERHANG_X : 0;
   const profileFront = makeCorniceProfile(PROFILE_OVERHANG_Z);
   const profileSide = makeCorniceProfile(PROFILE_OVERHANG_X);
   const profileSideInternal = makeInternalBoundaryCorniceProfile(PROFILE_OVERHANG_X);
-  const sideEndZ = -globalD / 2 + depth + PROFILE_OVERHANG_Z;
+  const defaultSideEndZ = -globalD / 2 + depth + PROFILE_OVERHANG_Z;
+  const sourcePath = filterCornicePath(frontPath.map(seg => ({ ...seg })));
+  const startExtension = shouldExtendExteriorProfilePath(sourcePath[0]) ? leftOverhang : 0;
+  const endExtension = shouldExtendExteriorProfilePath(sourcePath[sourcePath.length - 1]) ? rightOverhang : 0;
 
-  const segments: MutableRecord[] = [
-    {
+  const renderPath = extendCornicePath(sourcePath, startExtension, endExtension);
+  const useOuterMiter = shouldUseOuterMiterForPath(renderPath);
+  const segments: MutableRecord[] = [];
+  for (let i = 0; i < renderPath.length; i++) {
+    const pathSeg = renderPath[i];
+    const len = cornicePathSegmentLength(pathSeg);
+    if (len <= CORNICE_COMMON.minSegmentLengthM) continue;
+
+    const startJointTrim =
+      i > 0
+        ? useOuterMiter
+          ? miterExtensionForPathJoint(renderPath[i - 1], pathSeg, PROFILE_OVERHANG_Z, PROFILE_OVERHANG_Z)
+              .bStart
+          : mutualPathJointMiterTrim(renderPath[i - 1], pathSeg, PROFILE_OVERHANG_Z)
+        : 0;
+    const endJointTrim =
+      i < renderPath.length - 1
+        ? useOuterMiter
+          ? miterExtensionForPathJoint(pathSeg, renderPath[i + 1], PROFILE_OVERHANG_Z, PROFILE_OVERHANG_Z)
+              .aEnd
+          : mutualPathJointMiterTrim(pathSeg, renderPath[i + 1], PROFILE_OVERHANG_Z)
+        : 0;
+    const leftExteriorTrim =
+      leftSide != null && !leftSide.internal
+        ? useOuterMiter
+          ? miterExtensionForPathJoint(
+              leftSideConnectionPath(pathSeg),
+              pathSeg,
+              PROFILE_OVERHANG_X,
+              PROFILE_OVERHANG_Z,
+              exteriorSideNormal('left')
+            ).bStart
+          : leftExteriorMiterTrim(pathSeg, PROFILE_OVERHANG_X)
+        : 0;
+    const rightExteriorTrim =
+      rightSide != null && !rightSide.internal
+        ? useOuterMiter
+          ? miterExtensionForPathJoint(
+              pathSeg,
+              rightSideConnectionPath(pathSeg),
+              PROFILE_OVERHANG_Z,
+              PROFILE_OVERHANG_X,
+              null,
+              exteriorSideNormal('right')
+            ).aEnd
+          : rightExteriorMiterTrim(pathSeg, PROFILE_OVERHANG_X)
+        : 0;
+
+    segments.push({
       kind: 'cornice_profile_seg',
-      length: Math.max(CORNICE_COMMON.minBoxDimensionM, sectionW + leftOverhang + rightOverhang),
+      length: Math.max(CORNICE_COMMON.minBoxDimensionM, len),
       profile: profileFront,
-      rotationY: -Math.PI / 2,
+      rotationY: profileRotationForPathSegment(pathSeg),
       flipX: false,
-      miterStartTrim: rightSide != null && !rightSide.internal ? PROFILE_OVERHANG_X + PROFILE_SEAM_EPS : 0,
-      miterEndTrim: leftSide != null && !leftSide.internal ? PROFILE_OVERHANG_X + PROFILE_SEAM_EPS : 0,
-      x: (left - leftOverhang + right + rightOverhang) / 2,
+      miterStartTrim:
+        i < renderPath.length - 1
+          ? clampMiterTrimForSegment(endJointTrim, len)
+          : rightSide != null && !rightSide.internal
+            ? clampMiterTrimForSegment(rightExteriorTrim, len)
+            : 0,
+      miterEndTrim:
+        i > 0
+          ? clampMiterTrimForSegment(startJointTrim, len)
+          : leftSide != null && !leftSide.internal
+            ? clampMiterTrimForSegment(leftExteriorTrim, len)
+            : 0,
+      ...(useOuterMiter ? { miterMode: 'outer_extend' } : null),
+      x: (pathSeg.ax + pathSeg.bx) / 2,
       y: yPlace,
-      z: -globalD / 2 + depth,
-    },
-  ];
+      z: (pathSeg.az + pathSeg.bz) / 2,
+    });
+  }
 
   if (leftSide != null) {
     const sideStartZ = -globalD / 2 + leftSide.startDepth;
+    const sideEndZ = resolveProfileSideEndZ({
+      pathSeg: renderPath[0],
+      end: 'start',
+      defaultEndZ: defaultSideEndZ,
+      useOuterMiter,
+    });
     const sideLen = Math.max(CORNICE_COMMON.minBoxDimensionM, sideEndZ - sideStartZ);
     const sideCenterZ = (sideStartZ + sideEndZ) / 2;
+    const sideMiterTrim =
+      !leftSide.internal && renderPath.length
+        ? clampMiterTrimForSegment(
+            useOuterMiter
+              ? miterExtensionForPathJoint(
+                  leftSideConnectionPath(renderPath[0]),
+                  renderPath[0],
+                  PROFILE_OVERHANG_X,
+                  PROFILE_OVERHANG_Z,
+                  exteriorSideNormal('left')
+                ).aEnd
+              : leftExteriorMiterTrim(renderPath[0], PROFILE_OVERHANG_Z),
+            sideLen
+          )
+        : PROFILE_OVERHANG_Z + PROFILE_SEAM_EPS;
     segments.push({
       kind: 'cornice_profile_seg',
       length: sideLen,
       profile: leftSide.internal ? profileSideInternal : profileSide,
       rotationY: 0,
       flipX: !leftSide.internal,
-      miterEndTrim: PROFILE_OVERHANG_Z + PROFILE_SEAM_EPS,
+      miterEndTrim: sideMiterTrim,
+      ...(useOuterMiter ? { miterMode: 'outer_extend' } : null),
       x: left,
       y: yPlace,
       z: sideCenterZ,
@@ -371,15 +844,38 @@ function buildProfileCorniceSection(params: CorniceSectionParams): MutableRecord
 
   if (rightSide != null) {
     const sideStartZ = -globalD / 2 + rightSide.startDepth;
+    const sideEndZ = resolveProfileSideEndZ({
+      pathSeg: renderPath[renderPath.length - 1],
+      end: 'end',
+      defaultEndZ: defaultSideEndZ,
+      useOuterMiter,
+    });
     const sideLen = Math.max(CORNICE_COMMON.minBoxDimensionM, sideEndZ - sideStartZ);
     const sideCenterZ = (sideStartZ + sideEndZ) / 2;
+    const sideMiterTrim =
+      !rightSide.internal && renderPath.length
+        ? clampMiterTrimForSegment(
+            useOuterMiter
+              ? miterExtensionForPathJoint(
+                  renderPath[renderPath.length - 1],
+                  rightSideConnectionPath(renderPath[renderPath.length - 1]),
+                  PROFILE_OVERHANG_Z,
+                  PROFILE_OVERHANG_X,
+                  null,
+                  exteriorSideNormal('right')
+                ).bStart
+              : rightExteriorMiterTrim(renderPath[renderPath.length - 1], PROFILE_OVERHANG_Z),
+            sideLen
+          )
+        : PROFILE_OVERHANG_Z + PROFILE_SEAM_EPS;
     segments.push({
       kind: 'cornice_profile_seg',
       length: sideLen,
       profile: rightSide.internal ? profileSideInternal : profileSide,
       rotationY: 0,
       flipX: rightSide.internal,
-      miterEndTrim: PROFILE_OVERHANG_Z + PROFILE_SEAM_EPS,
+      miterEndTrim: sideMiterTrim,
+      ...(useOuterMiter ? { miterMode: 'outer_extend' } : null),
       x: right,
       y: yPlace,
       z: sideCenterZ,

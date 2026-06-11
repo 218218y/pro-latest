@@ -65,6 +65,7 @@ export type InteriorSketchExtrasInput = {
   modulesLength: number;
   moduleKeyStr: string;
   currentShelfMat: unknown;
+  currentBraceShelfMat: unknown;
   bodyMat: unknown;
   getPartMaterial?: InteriorOpsCallable;
   getPartColorValue?: InteriorOpsCallable;

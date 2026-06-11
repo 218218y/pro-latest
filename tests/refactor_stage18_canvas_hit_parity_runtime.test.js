@@ -30,8 +30,10 @@ function __wp_isDrawerLikePartId(partId) {
   const pid = typeof partId === 'string' ? partId : String(partId ?? '');
   if (!pid) return false;
   if (/^(?:lower_)?d\\d+_draw_/.test(pid)) return true;
+  if (/^chest_drawer_\\d+$/.test(pid)) return true;
+  if (pid === 'internal_drawer_accent_line') return false;
   if (pid.includes('_draw_')) return true;
-  if (pid.includes('drawer') || pid.includes('draw') || pid.includes('chest')) return true;
+  if (pid.includes('drawer') || pid.includes('draw')) return true;
   return false;
 }
 `;

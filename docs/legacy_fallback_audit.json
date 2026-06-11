@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-05-11T04:28:41.597Z",
+  "generatedAt": "2026-06-02T08:59:37.127Z",
   "sourceRoot": "esm",
   "summary": {
-    "totalOccurrences": 515,
-    "totalFiles": 167,
+    "totalOccurrences": 513,
+    "totalFiles": 165,
     "byCategory": {
       "runtime-default": 0,
-      "domain-default": 184,
+      "domain-default": 190,
       "error-message-default": 29,
       "framework-default": 2,
       "browser-adapter": 40,
       "project-migration": 49,
       "external-api-compat": 12,
-      "compat-boundary": 193,
+      "compat-boundary": 185,
       "test-fixture": 6,
       "legacy-runtime-risk": 0,
       "unknown": 0
@@ -70,6 +70,12 @@
         "total": 1,
         "categories": {
           "domain-default": 1
+        }
+      },
+      "esm/native/builder/corner_materials.ts": {
+        "total": 2,
+        "categories": {
+          "domain-default": 2
         }
       },
       "esm/native/builder/corner_wing_cornice_profile.ts": {
@@ -556,6 +562,12 @@
           "domain-default": 2
         }
       },
+      "esm/native/services/canvas_picking_cell_dims_linear_context_modules.ts": {
+        "total": 4,
+        "categories": {
+          "domain-default": 4
+        }
+      },
       "esm/native/services/canvas_picking_click_hit_flow_shared.ts": {
         "total": 1,
         "categories": {
@@ -572,12 +584,6 @@
         "total": 1,
         "categories": {
           "domain-default": 1
-        }
-      },
-      "esm/native/services/canvas_picking_door_split_hover_flow.ts": {
-        "total": 1,
-        "categories": {
-          "compat-boundary": 1
         }
       },
       "esm/native/services/canvas_picking_generic_paint_hover_preview_bounds.ts": {
@@ -616,12 +622,6 @@
           "domain-default": 4
         }
       },
-      "esm/native/services/canvas_picking_interior_hover_int_drawer.ts": {
-        "total": 2,
-        "categories": {
-          "compat-boundary": 2
-        }
-      },
       "esm/native/services/canvas_picking_manual_layout_sketch_click_box_metrics.ts": {
         "total": 1,
         "categories": {
@@ -650,18 +650,6 @@
         "total": 1,
         "categories": {
           "domain-default": 1
-        }
-      },
-      "esm/native/services/canvas_picking_sketch_module_stack_preview_drawers.ts": {
-        "total": 2,
-        "categories": {
-          "compat-boundary": 2
-        }
-      },
-      "esm/native/services/canvas_picking_sketch_neighbor_measurements.ts": {
-        "total": 2,
-        "categories": {
-          "compat-boundary": 2
         }
       },
       "esm/native/services/cloud_sync_delete_temp_runtime.ts": {
@@ -993,7 +981,7 @@
           "domain-default": 1
         }
       },
-      "esm/native/ui/react/tabs/render_tab_shared_room.ts": {
+      "esm/native/ui/react/tabs/settings_visual_shared_room.ts": {
         "total": 6,
         "categories": {
           "domain-default": 6
@@ -1013,9 +1001,9 @@
         }
       },
       "esm/shared/wardrobe_dimension_tokens_shared.ts": {
-        "total": 6,
+        "total": 5,
         "categories": {
-          "compat-boundary": 3,
+          "compat-boundary": 2,
           "domain-default": 3
         }
       },
@@ -1174,18 +1162,10 @@
         }
       },
       {
-        "file": "esm/native/ui/react/tabs/render_tab_shared_room.ts",
+        "file": "esm/native/ui/react/tabs/settings_visual_shared_room.ts",
         "total": 6,
         "categories": {
           "domain-default": 6
-        }
-      },
-      {
-        "file": "esm/shared/wardrobe_dimension_tokens_shared.ts",
-        "total": 6,
-        "categories": {
-          "compat-boundary": 3,
-          "domain-default": 3
         }
       },
       {
@@ -1228,6 +1208,14 @@
         "total": 5,
         "categories": {
           "compat-boundary": 5
+        }
+      },
+      {
+        "file": "esm/shared/wardrobe_dimension_tokens_shared.ts",
+        "total": 5,
+        "categories": {
+          "compat-boundary": 2,
+          "domain-default": 3
         }
       },
       {
@@ -1544,7 +1532,7 @@
     },
     {
       "file": "esm/native/builder/core_carcass_cornice.ts",
-      "line": 409,
+      "line": 905,
       "term": "xMaxFallbackM",
       "category": "domain-default",
       "text": "xMaxBase = CORNICE_PROFILE.xMaxFallbackM;"
@@ -1557,8 +1545,22 @@
       "text": "xMaxBase = corniceProfile.xMaxFallbackM;"
     },
     {
+      "file": "esm/native/builder/corner_materials.ts",
+      "line": 210,
+      "term": "groupFallback",
+      "category": "domain-default",
+      "text": "const groupFallback = getCornerMat("
+    },
+    {
+      "file": "esm/native/builder/corner_materials.ts",
+      "line": 214,
+      "term": "groupFallback",
+      "category": "domain-default",
+      "text": "return getCornerMat(partId, groupFallback);"
+    },
+    {
       "file": "esm/native/builder/corner_wing_cornice_profile.ts",
-      "line": 91,
+      "line": 110,
       "term": "xMaxFallbackM",
       "category": "domain-default",
       "text": "xMaxBase = corniceProfile.xMaxFallbackM;"
@@ -3007,77 +3009,77 @@
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 96,
+      "line": 103,
       "term": "__wpRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "if (!asRecord(renderBag.__wpRendererCompatDefaults)) renderBag.__wpRendererCompatDefaults = null;"
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 243,
+      "line": 383,
       "term": "readRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "export function readRendererCompatDefaults(App: unknown): RendererCompatDefaultsLike | null {"
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 243,
+      "line": 383,
       "term": "RendererCompatDefaultsLike",
       "category": "compat-boundary",
       "text": "export function readRendererCompatDefaults(App: unknown): RendererCompatDefaultsLike | null {"
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 244,
+      "line": 384,
       "term": "RendererCompatDefaultsLike",
       "category": "compat-boundary",
       "text": "return readValue<RendererCompatDefaultsLike>(ensureRenderRuntimeState(App).__wpRendererCompatDefaults);"
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 244,
+      "line": 384,
       "term": "__wpRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "return readValue<RendererCompatDefaultsLike>(ensureRenderRuntimeState(App).__wpRendererCompatDefaults);"
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 247,
+      "line": 387,
       "term": "writeRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "export function writeRendererCompatDefaults("
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 249,
+      "line": 389,
       "term": "RendererCompatDefaultsLike",
       "category": "compat-boundary",
       "text": "value: RendererCompatDefaultsLike | null"
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 250,
+      "line": 390,
       "term": "RendererCompatDefaultsLike",
       "category": "compat-boundary",
       "text": "): RendererCompatDefaultsLike | null {"
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 253,
+      "line": 393,
       "term": "__wpRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "renderBag.__wpRendererCompatDefaults = value || null;"
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 257,
+      "line": 397,
       "term": "RendererCompatDefaultsLike",
       "category": "compat-boundary",
       "text": "return readValue<RendererCompatDefaultsLike>(renderBag.__wpRendererCompatDefaults);"
     },
     {
       "file": "esm/native/runtime/render_access_state_runtime.ts",
-      "line": 257,
+      "line": 397,
       "term": "__wpRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "return readValue<RendererCompatDefaultsLike>(renderBag.__wpRendererCompatDefaults);"
@@ -3091,14 +3093,14 @@
     },
     {
       "file": "esm/native/runtime/render_access_state.ts",
-      "line": 41,
+      "line": 42,
       "term": "readRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "readRendererCompatDefaults,"
     },
     {
       "file": "esm/native/runtime/render_access_state.ts",
-      "line": 42,
+      "line": 43,
       "term": "writeRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "writeRendererCompatDefaults,"
@@ -3112,14 +3114,14 @@
     },
     {
       "file": "esm/native/runtime/render_access.ts",
-      "line": 77,
+      "line": 78,
       "term": "readRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "readRendererCompatDefaults,"
     },
     {
       "file": "esm/native/runtime/render_access.ts",
-      "line": 78,
+      "line": 79,
       "term": "writeRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "writeRendererCompatDefaults,"
@@ -3286,6 +3288,34 @@
       "text": "export type RafLike = (cb: (t?: number) => void) => number | TimeoutFallbackHandle;"
     },
     {
+      "file": "esm/native/services/canvas_picking_cell_dims_linear_context_modules.ts",
+      "line": 24,
+      "term": "fallback",
+      "category": "domain-default",
+      "text": "function readPositiveNumber(value: unknown, fallback: number): number {"
+    },
+    {
+      "file": "esm/native/services/canvas_picking_cell_dims_linear_context_modules.ts",
+      "line": 26,
+      "term": "fallback",
+      "category": "domain-default",
+      "text": "return Number.isFinite(n) && n > 0 ? n : fallback;"
+    },
+    {
+      "file": "esm/native/services/canvas_picking_cell_dims_linear_context_modules.ts",
+      "line": 33,
+      "term": "fallback",
+      "category": "domain-default",
+      "text": "fallback: number"
+    },
+    {
+      "file": "esm/native/services/canvas_picking_cell_dims_linear_context_modules.ts",
+      "line": 35,
+      "term": "fallback",
+      "category": "domain-default",
+      "text": "return raw[manualKey] ? readPositiveNumber(raw[valueKey], fallback) : fallback;"
+    },
+    {
       "file": "esm/native/services/canvas_picking_click_hit_flow_shared.ts",
       "line": 12,
       "term": "readFallbackPrimaryHitY",
@@ -3314,57 +3344,50 @@
       "text": "export function readFallbackPrimaryHitY("
     },
     {
-      "file": "esm/native/services/canvas_picking_door_split_hover_flow.ts",
-      "line": 84,
-      "term": "hoverFallbackDoorWidthM",
-      "category": "compat-boundary",
-      "text": ": splitHoverDims.hoverFallbackDoorWidthM;"
-    },
-    {
       "file": "esm/native/services/canvas_picking_generic_paint_hover_preview_bounds.ts",
-      "line": 13,
+      "line": 14,
       "term": "resolvePaintPreviewGroupBoxFromFallback",
       "category": "domain-default",
       "text": "export function resolvePaintPreviewGroupBoxFromFallback(args: {"
     },
     {
       "file": "esm/native/services/canvas_picking_generic_paint_hover_preview_objects.ts",
-      "line": 43,
+      "line": 110,
       "term": "appendFallbackPartObjectsFromScene",
       "category": "domain-default",
       "text": "export function appendFallbackPartObjectsFromScene("
     },
     {
       "file": "esm/native/services/canvas_picking_generic_paint_hover_preview_objects.ts",
-      "line": 77,
+      "line": 144,
       "term": "appendFallbackPartObjectsFromScene",
       "category": "domain-default",
       "text": "appendFallbackPartObjectsFromScene(objects, wardrobeGroup, partKeys);"
     },
     {
       "file": "esm/native/services/canvas_picking_generic_paint_hover_preview.ts",
-      "line": 10,
+      "line": 12,
       "term": "resolvePaintPreviewGroupBoxFromFallback",
       "category": "domain-default",
       "text": "resolvePaintPreviewGroupBoxFromFallback,"
     },
     {
       "file": "esm/native/services/canvas_picking_generic_paint_hover_preview.ts",
-      "line": 46,
+      "line": 83,
       "term": "resolvePaintPreviewGroupBoxFromFallback",
       "category": "domain-default",
       "text": "return resolvePaintPreviewGroupBoxFromFallback({"
     },
     {
       "file": "esm/native/services/canvas_picking_generic_paint_hover_shared.ts",
-      "line": 139,
+      "line": 168,
       "term": "segmentOverridesCompatible",
       "category": "compat-boundary",
       "text": "const segmentOverridesCompatible = effectiveKeys.every(partKey => {"
     },
     {
       "file": "esm/native/services/canvas_picking_generic_paint_hover_shared.ts",
-      "line": 144,
+      "line": 173,
       "term": "segmentOverridesCompatible",
       "category": "compat-boundary",
       "text": "return baseColor === selection && segmentOverridesCompatible ? 'remove' : 'add';"
@@ -3385,21 +3408,21 @@
     },
     {
       "file": "esm/native/services/canvas_picking_hover_targets_interior_scan.ts",
-      "line": 66,
+      "line": 65,
       "term": "hitFallbackObj",
       "category": "domain-default",
       "text": "hitFallbackObj = hitSelectorObj;"
     },
     {
       "file": "esm/native/services/canvas_picking_hover_targets_interior_scan.ts",
-      "line": 93,
+      "line": 91,
       "term": "hitFallbackObj",
       "category": "domain-default",
       "text": "hitFallbackObj = candidate.object;"
     },
     {
       "file": "esm/native/services/canvas_picking_hover_targets_interior_scan.ts",
-      "line": 112,
+      "line": 110,
       "term": "hitFallbackObj",
       "category": "domain-default",
       "text": "hitFallbackObj,"
@@ -3431,20 +3454,6 @@
       "term": "applySelectorVerticalBoundsFallback",
       "category": "domain-default",
       "text": "({ bottomY, topY } = applySelectorVerticalBoundsFallback({"
-    },
-    {
-      "file": "esm/native/services/canvas_picking_interior_hover_int_drawer.ts",
-      "line": 125,
-      "term": "internalPreviewGridDivisionsFallback",
-      "category": "compat-boundary",
-      "text": "const localGridStep = divs > 0 ? spanH / divs : spanH / drawerDims.internalPreviewGridDivisionsFallback;"
-    },
-    {
-      "file": "esm/native/services/canvas_picking_interior_hover_int_drawer.ts",
-      "line": 153,
-      "term": "internalPreviewGridDivisionsFallback",
-      "category": "compat-boundary",
-      "text": "const drawerSizingGridStep = spanH / drawerDims.internalPreviewGridDivisionsFallback;"
     },
     {
       "file": "esm/native/services/canvas_picking_manual_layout_sketch_click_box_metrics.ts",
@@ -3522,34 +3531,6 @@
       "term": "placementGapFallbackM",
       "category": "domain-default",
       "text": "if (!Number.isFinite(minSpan) || !(minSpan > 0)) return dims.placementGapFallbackM;"
-    },
-    {
-      "file": "esm/native/services/canvas_picking_sketch_module_stack_preview_drawers.ts",
-      "line": 46,
-      "term": "internalPreviewGridDivisionsFallback",
-      "category": "compat-boundary",
-      "text": ": DRAWER_DIMENSIONS.sketch.internalPreviewGridDivisionsFallback;"
-    },
-    {
-      "file": "esm/native/services/canvas_picking_sketch_module_stack_preview_drawers.ts",
-      "line": 50,
-      "term": "internalPreviewGridDivisionsFallback",
-      "category": "compat-boundary",
-      "text": ": totalHeight / DRAWER_DIMENSIONS.sketch.internalPreviewGridDivisionsFallback;"
-    },
-    {
-      "file": "esm/native/services/canvas_picking_sketch_neighbor_measurements.ts",
-      "line": 199,
-      "term": "internalPreviewGridDivisionsFallback",
-      "category": "compat-boundary",
-      "text": "readRecordNumber(args.cfgRef, 'gridDivisions') ?? drawerDims.internalPreviewGridDivisionsFallback;"
-    },
-    {
-      "file": "esm/native/services/canvas_picking_sketch_neighbor_measurements.ts",
-      "line": 205,
-      "term": "internalPreviewGridDivisionsFallback",
-      "category": "compat-boundary",
-      "text": ": drawerDims.internalPreviewGridDivisionsFallback;"
     },
     {
       "file": "esm/native/services/cloud_sync_delete_temp_runtime.ts",
@@ -4043,105 +4024,105 @@
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 24,
+      "line": 21,
       "term": "asCompatDefaults",
       "category": "compat-boundary",
       "text": "const defaults = asCompatDefaults(readRendererCompatDefaults(App));"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 24,
+      "line": 21,
       "term": "readRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "const defaults = asCompatDefaults(readRendererCompatDefaults(App));"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 48,
+      "line": 53,
       "term": "useLegacyLights",
       "category": "external-api-compat",
       "text": "if (typeof defaults.useLegacyLights === 'boolean' && typeof rendererSurface.useLegacyLights === 'boolean') {"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 50,
+      "line": 55,
       "term": "useLegacyLights",
       "category": "external-api-compat",
       "text": "rendererSurface.useLegacyLights = defaults.useLegacyLights;"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 52,
+      "line": 57,
       "term": "useLegacyLights",
       "category": "external-api-compat",
       "text": "reportSceneViewNonFatal(App, 'sceneView.lighting.restoreRendererLightingDefaults.useLegacyLights', err);"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 60,
+      "line": 65,
       "term": "SceneViewCompatDefaults",
       "category": "compat-boundary",
       "text": "): SceneViewCompatDefaults | undefined {"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 62,
+      "line": 67,
       "term": "readRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "let rendererDefaults = readRendererCompatDefaults(App);"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 68,
+      "line": 73,
       "term": "useLegacyLights",
       "category": "external-api-compat",
       "text": "useLegacyLights:"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 69,
+      "line": 74,
       "term": "useLegacyLights",
       "category": "external-api-compat",
       "text": "typeof rendererSurface.useLegacyLights === 'boolean' ? rendererSurface.useLegacyLights : undefined,"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 70,
+      "line": 75,
       "term": "SceneViewCompatDefaults",
       "category": "compat-boundary",
       "text": "} satisfies SceneViewCompatDefaults;"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 71,
+      "line": 76,
       "term": "writeRendererCompatDefaults",
       "category": "compat-boundary",
       "text": "writeRendererCompatDefaults(App, rendererDefaults);"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 103,
+      "line": 105,
       "term": "useLegacyLights",
       "category": "external-api-compat",
       "text": "if (typeof rendererSurface.useLegacyLights === 'boolean') {"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 105,
+      "line": 107,
       "term": "useLegacyLights",
       "category": "external-api-compat",
       "text": "rendererSurface.useLegacyLights = true;"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 107,
+      "line": 109,
       "term": "useLegacyLights",
       "category": "external-api-compat",
       "text": "reportSceneViewNonFatal(App, 'sceneView.lighting.applyNormalRendererLighting.useLegacyLights', err);"
     },
     {
       "file": "esm/native/services/scene_view_lighting_renderer.ts",
-      "line": 114,
+      "line": 116,
       "term": "asSceneRendererCompat",
       "category": "compat-boundary",
       "text": "const rendererSurface = asSceneRendererCompat(getRenderer(App));"
@@ -4302,28 +4283,28 @@
     },
     {
       "file": "esm/native/ui/export/export_order_pdf_capture_open_closed.ts",
-      "line": 12,
+      "line": 16,
       "term": "captureCompositeWithLogoFallback",
       "category": "domain-default",
       "text": "captureCompositeWithLogoFallback,"
     },
     {
       "file": "esm/native/ui/export/export_order_pdf_capture_open_closed.ts",
-      "line": 76,
+      "line": 87,
       "term": "captureCompositeWithLogoFallback",
       "category": "domain-default",
       "text": "return await captureCompositeWithLogoFallback("
     },
     {
       "file": "esm/native/ui/export/export_order_pdf_capture_render_sketch.ts",
-      "line": 6,
+      "line": 10,
       "term": "captureCompositeWithLogoFallback",
       "category": "domain-default",
       "text": "captureCompositeWithLogoFallback,"
     },
     {
       "file": "esm/native/ui/export/export_order_pdf_capture_render_sketch.ts",
-      "line": 93,
+      "line": 100,
       "term": "captureCompositeWithLogoFallback",
       "category": "domain-default",
       "text": "return await captureCompositeWithLogoFallback("
@@ -4400,7 +4381,7 @@
     },
     {
       "file": "esm/native/ui/modes_transition_policy.ts",
-      "line": 339,
+      "line": 352,
       "term": "defaultCloseDoorsFallback",
       "category": "domain-default",
       "text": "modesReportNonFatal(App, 'esm/native/ui/modes_transition_policy.ts:defaultCloseDoorsFallback', err);"
@@ -4554,7 +4535,7 @@
     },
     {
       "file": "esm/native/ui/react/sidebar_app.tsx",
-      "line": 87,
+      "line": 88,
       "term": "fallback",
       "category": "framework-default",
       "text": "fallback={"
@@ -4679,42 +4660,42 @@
       "text": "{ consoleFallback: false }"
     },
     {
-      "file": "esm/native/ui/react/tabs/render_tab_shared_room.ts",
+      "file": "esm/native/ui/react/tabs/settings_visual_shared_room.ts",
       "line": 6,
-      "term": "render_tab_shared_room_fallbacks",
+      "term": "settings_visual_shared_room_fallbacks",
       "category": "domain-default",
-      "text": "import { FALLBACK_FLOOR_STYLES, FALLBACK_WALL_COLORS } from './render_tab_shared_room_fallbacks.js';"
+      "text": "import { FALLBACK_FLOOR_STYLES, FALLBACK_WALL_COLORS } from './settings_visual_shared_room_fallbacks.js';"
     },
     {
-      "file": "esm/native/ui/react/tabs/render_tab_shared_room.ts",
+      "file": "esm/native/ui/react/tabs/settings_visual_shared_room.ts",
       "line": 22,
-      "term": "render_tab_shared_room_fallbacks",
+      "term": "settings_visual_shared_room_fallbacks",
       "category": "domain-default",
-      "text": "export { FALLBACK_WALL_COLORS, FALLBACK_FLOOR_STYLES } from './render_tab_shared_room_fallbacks.js';"
+      "text": "export { FALLBACK_WALL_COLORS, FALLBACK_FLOOR_STYLES } from './settings_visual_shared_room_fallbacks.js';"
     },
     {
-      "file": "esm/native/ui/react/tabs/render_tab_shared_room.ts",
+      "file": "esm/native/ui/react/tabs/settings_visual_shared_room.ts",
       "line": 49,
       "term": "buildFallbackFloorStyles",
       "category": "domain-default",
-      "text": "function buildFallbackFloorStyles(): Record<RenderTabFloorType, FloorStyle[]> {"
+      "text": "function buildFallbackFloorStyles(): Record<SettingsVisualFloorType, FloorStyle[]> {"
     },
     {
-      "file": "esm/native/ui/react/tabs/render_tab_shared_room.ts",
+      "file": "esm/native/ui/react/tabs/settings_visual_shared_room.ts",
       "line": 57,
       "term": "buildFallbackWallColors",
       "category": "domain-default",
       "text": "function buildFallbackWallColors(): WallColor[] {"
     },
     {
-      "file": "esm/native/ui/react/tabs/render_tab_shared_room.ts",
+      "file": "esm/native/ui/react/tabs/settings_visual_shared_room.ts",
       "line": 63,
       "term": "buildFallbackFloorStyles",
       "category": "domain-default",
-      "text": "const floorStylesOut: Record<RenderTabFloorType, FloorStyle[]> = buildFallbackFloorStyles();"
+      "text": "const floorStylesOut: Record<SettingsVisualFloorType, FloorStyle[]> = buildFallbackFloorStyles();"
     },
     {
-      "file": "esm/native/ui/react/tabs/render_tab_shared_room.ts",
+      "file": "esm/native/ui/react/tabs/settings_visual_shared_room.ts",
       "line": 64,
       "term": "buildFallbackWallColors",
       "category": "domain-default",
@@ -4785,35 +4766,28 @@
     },
     {
       "file": "esm/shared/wardrobe_dimension_tokens_shared.ts",
-      "line": 377,
+      "line": 379,
       "term": "xMaxFallbackM",
       "category": "domain-default",
       "text": "xMaxFallbackM: 1,"
     },
     {
       "file": "esm/shared/wardrobe_dimension_tokens_shared.ts",
-      "line": 412,
-      "term": "hoverFallbackDoorWidthM",
-      "category": "compat-boundary",
-      "text": "hoverFallbackDoorWidthM: 0.45,"
-    },
-    {
-      "file": "esm/shared/wardrobe_dimension_tokens_shared.ts",
-      "line": 832,
+      "line": 869,
       "term": "previewExternalFallbackHeightM",
       "category": "domain-default",
       "text": "previewExternalFallbackHeightM: 0.08,"
     },
     {
       "file": "esm/shared/wardrobe_dimension_tokens_shared.ts",
-      "line": 860,
+      "line": 897,
       "term": "internalPreviewGridDivisionsFallback",
       "category": "compat-boundary",
       "text": "internalPreviewGridDivisionsFallback: INTERIOR_FITTINGS_DIMENSIONS.storage.gridDivisionsDefault,"
     },
     {
       "file": "esm/shared/wardrobe_dimension_tokens_shared.ts",
-      "line": 1193,
+      "line": 1237,
       "term": "placementGapFallbackM",
       "category": "domain-default",
       "text": "placementGapFallbackM: 0.002,"

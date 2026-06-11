@@ -32,6 +32,17 @@ export interface InstallDomainApiModulesCornerSelectorsArgs {
   sanitizeCorner: (value: unknown) => NormalizedCornerConfigurationLike;
 }
 
+function hasSketchInternalDrawerData(value: unknown): boolean {
+  const rec = asRecord(value);
+  const sketchExtras = asRecord(rec?.sketchExtras);
+  return Array.isArray(sketchExtras?.drawers) && sketchExtras.drawers.length > 0;
+}
+
+function hasSketchInternalDrawerDataInList(value: unknown): boolean {
+  if (!Array.isArray(value)) return false;
+  return value.some(hasSketchInternalDrawerData);
+}
+
 export function installDomainApiModulesCornerSelectors({
   select,
   modulesActions,
@@ -90,15 +101,7 @@ export function installDomainApiModulesCornerSelectors({
   select.modules.hasInternalDrawers =
     select.modules.hasInternalDrawers ||
     function () {
-      const list = readModulesList(select);
-      for (let i = 0; i < list.length; i++) {
-        const moduleCfg = list[i] || {};
-        if (moduleCfg && typeof moduleCfg === 'object') {
-          if (Array.isArray(moduleCfg.intDrawersList) && moduleCfg.intDrawersList.length > 0) return true;
-          if (typeof moduleCfg.intDrawersSlot === 'number' && moduleCfg.intDrawersSlot > 0) return true;
-        }
-      }
-      return false;
+      return hasSketchInternalDrawerDataInList(readModulesList(select));
     };
 
   select.corner.config =
@@ -112,7 +115,10 @@ export function installDomainApiModulesCornerSelectors({
     select.corner.hasInternalDrawers ||
     function () {
       const cornerCfg = readCornerConfig(select);
-      return !!(cornerCfg && Array.isArray(cornerCfg.intDrawersList) && cornerCfg.intDrawersList.length > 0);
+      return (
+        hasSketchInternalDrawerData(cornerCfg) ||
+        hasSketchInternalDrawerDataInList(asRecord(cornerCfg)?.modulesConfiguration)
+      );
     };
 
   cornerActions.ensureConfig =

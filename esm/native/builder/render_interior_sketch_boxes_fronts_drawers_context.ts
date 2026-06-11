@@ -1,4 +1,5 @@
 import { DRAWER_DIMENSIONS, SKETCH_BOX_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { resolveDrawerBoxPaintMaterial } from '../features/drawer_box_identity.js';
 import { getDrawersArray } from '../runtime/render_access.js';
 import { resolveBuilderMirrorMaterial } from '../runtime/builder_service_access.js';
 
@@ -8,7 +9,7 @@ import type {
   SketchBoxExternalDrawersContext,
 } from './render_interior_sketch_boxes_fronts_drawers_types.js';
 
-import { asRecordArray } from './render_interior_sketch_shared.js';
+import { asRecordArray, readObject } from './render_interior_sketch_shared.js';
 
 export function createSketchBoxExternalDrawersContext(
   args: RenderSketchBoxExternalDrawersArgs
@@ -28,6 +29,39 @@ export function createSketchBoxExternalDrawersContext(
   const frontZ = boxGeo.centerZ + boxGeo.outerD / 2;
   const drawersArray = getDrawersArray(App);
   const createInternalDrawerBox = input.createInternalDrawerBox;
+  const inputRec = readObject<InteriorValueRecord>(input) || {};
+
+  let didResolveDrawerBoxBaseMaterial = false;
+  let cachedDrawerBoxBaseMaterial: unknown = null;
+  const resolveDrawerBoxBaseMaterial = () => {
+    if (didResolveDrawerBoxBaseMaterial) return cachedDrawerBoxBaseMaterial || shell.boxMat;
+    didResolveDrawerBoxBaseMaterial = true;
+    const explicitBase = inputRec.drawerBoxBaseMat || inputRec.drawerBoxMat || inputRec.whiteMat;
+    if (explicitBase) {
+      cachedDrawerBoxBaseMaterial = explicitBase;
+      return cachedDrawerBoxBaseMaterial;
+    }
+    try {
+      const services = readObject<InteriorValueRecord>(App.services);
+      const builder = readObject<InteriorValueRecord>(services?.builder);
+      const materials = readObject<InteriorValueRecord>(builder?.materials);
+      const getMaterial = materials?.getMaterial;
+      if (isFn(getMaterial)) cachedDrawerBoxBaseMaterial = getMaterial('#ffffff', 'body', false);
+    } catch {
+      cachedDrawerBoxBaseMaterial = null;
+    }
+    return cachedDrawerBoxBaseMaterial || shell.boxMat;
+  };
+
+  const resolveDrawerBoxMaterial = (drawerBoxPartId: string): unknown => {
+    const fallbackMaterial = resolveDrawerBoxBaseMaterial();
+    return resolveDrawerBoxPaintMaterial({
+      drawerBoxPartId,
+      fallbackMaterial,
+      getPartColorValue: isFn(frontsArgs.args.getPartColorValue) ? frontsArgs.args.getPartColorValue : null,
+      getPartMaterial: partId => args.resolvePartMaterial(partId, fallbackMaterial),
+    });
+  };
 
   let didResolveMirrorMaterial = false;
   let cachedMirrorMaterial: unknown = null;
@@ -74,5 +108,6 @@ export function createSketchBoxExternalDrawersContext(
     drawersArray,
     resolveCachedMirrorMaterial,
     clampDrawerCenterY,
+    resolveDrawerBoxMaterial,
   };
 }

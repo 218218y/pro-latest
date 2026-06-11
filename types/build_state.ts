@@ -4,7 +4,7 @@
 import type { UnknownRecord } from './common';
 import type { ThreeLike } from './three';
 import type { AppContainer } from './app';
-import type { BoardMaterial, HandleType, WardrobeType } from './domain';
+import type { BoardMaterial, DoorMountMode, HandleType, WardrobeType } from './domain';
 import type { UiRawInputsLike } from './ui_raw';
 import type { UiState } from './ui_state';
 import type {
@@ -12,7 +12,6 @@ import type {
   CornerCustomDataLike,
   ModuleConfigLike,
   ModuleCustomDataLike,
-  ModuleInternalDrawerSlotLike,
   ModuleSavedDimsLike,
   ModuleSpecialDimsLike,
   ModulesConfigurationLike,
@@ -175,6 +174,7 @@ export interface UiStateLike extends UiState {
   showDimensions?: boolean;
   globalClickMode?: boolean;
   sketchMode?: boolean;
+  darkMode?: boolean;
   lightingControl?: boolean;
 
   // Mode toggles
@@ -240,7 +240,6 @@ export interface BuildModuleSpecialDimsSummaryLike extends UnknownRecord {
 export interface BuildModuleSnapshotLike extends ModuleConfigLike {
   doors?: number;
   customData?: ModuleCustomDataLike;
-  intDrawersList?: ModuleInternalDrawerSlotLike[];
   specialDims?: ModuleSpecialDimsLike;
   savedDims?: ModuleSavedDimsLike;
 }
@@ -307,6 +306,7 @@ export interface ConfigStateLike extends UnknownRecord {
   showDimensions?: boolean;
   isManualWidth?: boolean;
   boardMaterial?: BoardMaterial | '';
+  doorMountMode?: DoorMountMode | '';
 
   // Uploaded assets
   customUploadedDataURL?: string | null;
@@ -446,6 +446,8 @@ export interface BuildCtxMaterialsLike extends UnknownRecord {
   whiteMat?: unknown;
   shadowMat?: unknown;
   legMat?: unknown;
+  defaultShelfMat?: unknown;
+  braceShelfMat?: unknown;
 
   [k: string]: unknown;
 }

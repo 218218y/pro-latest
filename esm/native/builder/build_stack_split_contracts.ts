@@ -46,6 +46,7 @@ export type BuildStackSplitLowerUnitArgs = {
   doorStyle: string;
   stackSplitEnabled: boolean;
   stackSplitDecorativeSeparatorEnabled: boolean;
+  stackSplitUnifiedFrame?: boolean;
   handleControlEnabled: boolean;
   showHangerEnabled: boolean;
   showContentsEnabled: boolean;
@@ -68,6 +69,8 @@ export type BuildStackSplitLowerUnitArgs = {
   whiteMat: unknown;
   shadowMat: unknown;
   legMat: unknown;
+  defaultShelfMat: unknown;
+  braceShelfMat: unknown;
 
   createBoard: unknown;
   createDoorVisual: unknown;
@@ -127,6 +130,7 @@ export type PreparedStackSplitLowerSetup = {
   bottomDoorsCount: number;
   bottomTotalW: number;
   bottomD: number;
+  bottomDefaultD: number;
   bottomH: number;
   uiBottom: UiStateLike;
   bottomModules: unknown[];

@@ -21,11 +21,11 @@ import {
 } from '../../../services/api.js';
 import { readModulesConfigurationListFromConfigSnapshot } from '../../../features/modules_configuration/modules_config_api.js';
 import { moduleHasAnyActiveSpecialDims } from '../../../features/special_dims/special_dims.js';
+import { moduleHasHexCell } from '../../../features/hex_cell/index.js';
+import { hasSketchInternalDrawersDirtyOrData } from '../../../features/sketch_drawer_sizing.js';
 
 type CornerDrawersLike = {
-  intDrawersSlot?: unknown;
-  intDrawersList?: unknown[];
-  internalDrawers?: unknown[];
+  sketchExtras?: { drawers?: unknown[] } | null;
 } & UnknownRecord;
 
 type ModuleConfigReadLike = ModuleConfigLike & CornerDrawersLike;
@@ -72,6 +72,11 @@ export function selectWardrobeType(cfg: ConfigStateLike): 'hinged' | 'sliding' {
 export function selectBoardMaterial(cfg: ConfigStateLike): 'sandwich' | 'melamine' {
   const v = readConfigScalarOrDefault(cfg, 'boardMaterial');
   return v === 'melamine' ? 'melamine' : 'sandwich';
+}
+
+export function selectDoorMountMode(cfg: ConfigStateLike): 'overlay' | 'inset' {
+  const v = readConfigScalarOrDefault(cfg, 'doorMountMode');
+  return v === 'inset' ? 'inset' : 'overlay';
 }
 
 export function selectIsManualWidth(cfg: ConfigStateLike): boolean {
@@ -158,7 +163,7 @@ export function selectHasAnyCellDimsOverrides(cfg: ConfigStateLike): boolean {
     const modules = readModulesConfigurationListFromConfigSnapshot(cfg, 'modulesConfiguration');
     for (const item of modules) {
       if (!isModuleConfigReadLike(item)) continue;
-      if (moduleHasAnyActiveSpecialDims(item, 0)) return true;
+      if (moduleHasAnyActiveSpecialDims(item, 0) || moduleHasHexCell(item)) return true;
     }
   } catch {
     return false;
@@ -167,13 +172,7 @@ export function selectHasAnyCellDimsOverrides(cfg: ConfigStateLike): boolean {
 }
 
 function hasInternalDrawersData(value: CornerDrawersLike | null): boolean {
-  if (!value) return false;
-  if (typeof value.intDrawersSlot !== 'undefined') {
-    const slot = String(value.intDrawersSlot);
-    if (slot !== '0' && slot !== '') return true;
-  }
-  if (Array.isArray(value.intDrawersList) && value.intDrawersList.length) return true;
-  return Array.isArray(value.internalDrawers) && value.internalDrawers.length > 0;
+  return hasSketchInternalDrawersDirtyOrData(value);
 }
 
 function readCornerDrawersFromConfig(cfg: ConfigStateLike): CornerDrawersLike | null {

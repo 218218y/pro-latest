@@ -1,5 +1,4 @@
 import {
-  DRAWER_DIMENSIONS,
   INTERIOR_FITTINGS_DIMENSIONS,
   MATERIAL_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
@@ -190,59 +189,6 @@ function buildModuleDrawerRanges(
   return ranges;
 }
 
-function buildStandardDrawerRanges(
-  args: RangeBuildContext & { cfgRef: RecordMap | null }
-): VerticalClearanceNeighborRange[] {
-  if (!args.cfgRef) return [];
-  const drawerDims = DRAWER_DIMENSIONS.sketch;
-  const divsRaw =
-    readRecordNumber(args.cfgRef, 'gridDivisions') ?? drawerDims.internalPreviewGridDivisionsFallback;
-  const divisions =
-    Number.isFinite(divsRaw) &&
-    divsRaw >= drawerDims.internalPreviewGridDivisionsMin &&
-    divsRaw <= drawerDims.internalPreviewGridDivisionsMax
-      ? Math.floor(divsRaw)
-      : drawerDims.internalPreviewGridDivisionsFallback;
-  const gridStep = args.totalHeight / divisions;
-  const targetSingleDrawerH =
-    (Math.min(
-      DRAWER_DIMENSIONS.internal.maxSingleDrawerHeightM,
-      gridStep - drawerDims.internalPreviewSingleDrawerGapM
-    ) -
-      drawerDims.internalPreviewSingleDrawerGapM) /
-    drawerDims.internalStackCount;
-  const drawerH =
-    Number.isFinite(targetSingleDrawerH) && targetSingleDrawerH > 0
-      ? targetSingleDrawerH
-      : drawerDims.internalPreviewDefaultSingleHeightM;
-  const stackH = drawerH * drawerDims.internalStackCount + drawerDims.internalPreviewSingleDrawerGapM;
-  const slots: number[] = [];
-  const list = readValue(args.cfgRef, 'intDrawersList');
-  if (Array.isArray(list)) {
-    for (const value of list) {
-      const n = Number(value);
-      if (Number.isFinite(n)) slots.push(Math.floor(n));
-    }
-  }
-  const singleSlot = readRecordNumber(args.cfgRef, 'intDrawersSlot');
-  if (singleSlot != null) slots.push(Math.floor(singleSlot));
-  const ranges: VerticalClearanceNeighborRange[] = [];
-  const seen = new Set<number>();
-  for (const slot of slots) {
-    if (!Number.isFinite(slot) || slot < 1 || seen.has(slot)) continue;
-    seen.add(slot);
-    const baseGridY = args.bottomY + (slot - 1) * gridStep;
-    const lo = args.bottomY + args.pad + stackH / 2;
-    const hi = args.topY - args.pad - stackH / 2;
-    const centerY =
-      hi > lo
-        ? Math.max(lo, Math.min(hi, baseGridY + drawerH + drawerDims.internalPreviewSingleDrawerGapM))
-        : baseGridY + drawerH + drawerDims.internalPreviewSingleDrawerGapM;
-    pushRange(ranges, centerY - stackH / 2, centerY + stackH / 2, 'drawer');
-  }
-  return ranges;
-}
-
 function buildModuleNeighborRanges(
   args: RangeBuildContext & {
     cfgRef?: RecordMap | null;
@@ -256,7 +202,6 @@ function buildModuleNeighborRanges(
     ...buildModuleBaseShelfRanges({ ...args, cfgRef: args.cfgRef ?? null, info: args.info ?? null }),
     ...buildSketchShelfRanges(args),
     ...buildModuleDrawerRanges(args),
-    ...buildStandardDrawerRanges({ ...args, cfgRef: args.cfgRef ?? null }),
   ];
 }
 

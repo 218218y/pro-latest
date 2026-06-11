@@ -1,4 +1,5 @@
 import { INTERIOR_FITTINGS_DIMENSIONS, MM_PER_METER } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { SHELF_GROUP_PART_ID, markShelfBoardUserData } from '../features/shelf_part_identity.js';
 import type {
   InteriorGroupLike,
   InteriorMaterialLike,
@@ -48,7 +49,16 @@ export function createBraceDarkSeamAdder(args: {
     return { geo: braceSeamGeoCache[key], mat: braceSeamMat };
   };
 
-  return (shelfY, shelfZ, shelfDepth, isBrace, threeSurface, leftFaceXOverride, rightFaceXOverride) => {
+  return (
+    shelfY,
+    shelfZ,
+    shelfDepth,
+    isBrace,
+    threeSurface,
+    leftFaceXOverride,
+    rightFaceXOverride,
+    shelfPartId
+  ) => {
     if (!isBrace) return;
     const res = ensureBraceSeamResources(shelfDepth, threeSurface);
     if (!res) return;
@@ -77,7 +87,8 @@ export function createBraceDarkSeamAdder(args: {
       mesh.castShadow = false;
       mesh.receiveShadow = false;
       mesh.userData = mesh.userData || {};
-      mesh.userData.partId = 'all_shelves';
+      mesh.userData.partId = shelfPartId || SHELF_GROUP_PART_ID;
+      markShelfBoardUserData(mesh.userData, { groupPartId: SHELF_GROUP_PART_ID });
       mesh.userData.__kind = 'brace_seam';
       group.add?.(mesh);
     };

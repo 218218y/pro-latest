@@ -69,7 +69,6 @@ export function ensureCornerConfigRecord(src: unknown): CornerConfigRecord {
   if (!Array.isArray(customData.rods)) customData.rods = [];
   if (typeof customData.storage !== 'boolean') customData.storage = false;
   rec.customData = customData;
-  if (!Array.isArray(rec.intDrawersList)) rec.intDrawersList = [];
   return rec;
 }
 

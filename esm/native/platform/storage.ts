@@ -7,6 +7,7 @@
 // - All code must read storage through `App.services.storage` only.
 
 import { ensureServiceSlot } from '../runtime/services_root_access.js';
+import { getDepsNamespaceMaybe } from '../runtime/deps_access.js';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -14,6 +15,7 @@ export type StorageKeys = {
   SAVED_COLORS: string;
   SAVED_MODELS: string;
   AUTOSAVE_LATEST: string;
+  PRIVATE_ROOM: string;
 };
 
 export type StorageApi = {
@@ -41,7 +43,39 @@ const STORAGE_KEYS: StorageKeys = Object.freeze({
   SAVED_COLORS: 'wardrobeSavedColors',
   SAVED_MODELS: 'wardrobeSavedModels',
   AUTOSAVE_LATEST: 'wardrobe_autosave_latest',
+  PRIVATE_ROOM: 'wp_private_room',
 });
+
+function readStorageNamespace(app: unknown): string {
+  try {
+    const cfg = getDepsNamespaceMaybe(app, 'config') as UnknownRecord | null;
+    const raw = cfg && typeof cfg.storageNamespace === 'string' ? cfg.storageNamespace.trim() : '';
+    if (!raw) return '';
+
+    // Keep keys readable and safe for localStorage/debug exports.
+    return raw
+      .replace(/[^a-zA-Z0-9_-]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 64);
+  } catch (_) {
+    return '';
+  }
+}
+
+function applyNamespaceToKey(namespace: string, key: string): string {
+  return namespace ? `${namespace}:${key}` : key;
+}
+
+function createStorageKeys(app: unknown): StorageKeys {
+  const ns = readStorageNamespace(app);
+  if (!ns) return STORAGE_KEYS;
+  return Object.freeze({
+    SAVED_COLORS: applyNamespaceToKey(ns, STORAGE_KEYS.SAVED_COLORS),
+    SAVED_MODELS: applyNamespaceToKey(ns, STORAGE_KEYS.SAVED_MODELS),
+    AUTOSAVE_LATEST: applyNamespaceToKey(ns, STORAGE_KEYS.AUTOSAVE_LATEST),
+    PRIVATE_ROOM: applyNamespaceToKey(ns, STORAGE_KEYS.PRIVATE_ROOM),
+  });
+}
 
 function hasLS(): boolean {
   try {
@@ -98,9 +132,9 @@ function setJSON(key: unknown, obj: unknown): boolean {
   }
 }
 
-function createStorageApi(): StorageApi {
+function createStorageApi(app: unknown): StorageApi {
   return {
-    KEYS: STORAGE_KEYS,
+    KEYS: createStorageKeys(app),
     getString,
     setString,
     remove,
@@ -113,9 +147,9 @@ export function installStorage(app: unknown): void {
   assertApp(app);
 
   const storage = ensureServiceSlot<StorageApi>(app, 'storage');
-  const api = createStorageApi();
+  const api = createStorageApi(app);
 
-  if (storage.KEYS !== STORAGE_KEYS) storage.KEYS = STORAGE_KEYS;
+  storage.KEYS = api.KEYS;
   if (storage.getString !== api.getString) storage.getString = api.getString;
   if (storage.setString !== api.setString) storage.setString = api.setString;
   if (storage.remove !== api.remove) storage.remove = api.remove;

@@ -8,6 +8,10 @@ import {
 } from '../../services/api.js';
 import { readNotesTransform } from './export_order_pdf_shared.js';
 import {
+  createLiveViewportNotesTransform,
+  shouldPreserveLiveViewportForSketchImageExport,
+} from './export_canvas_workflow_viewport_policy.js';
+import {
   buildOrderPdfNotesTransform,
   captureCompositeWithLogoFallback,
   createOrderPdfCompositeCanvas,
@@ -31,8 +35,9 @@ export function createOrderPdfCaptureOpenClosedOp(
     const doorsSetOpen = (v: boolean) => deps.setDoorsOpen(App, v, { source: 'export:pdf' });
     const originalOpenState = doorsGetOpen();
     const restoreExportWall = deps._applyExportWallColorOverride(App);
+    const preserveLiveViewport = shouldPreserveLiveViewportForSketchImageExport(App);
 
-    setNotesExportTransform(App, buildOrderPdfNotesTransform(App, deps, base));
+    setNotesExportTransform(App, preserveLiveViewport ? null : buildOrderPdfNotesTransform(App, deps, base));
 
     const createComposite = async (includeLogo: boolean): Promise<HTMLCanvasElement> => {
       const compositeCanvas = createOrderPdfCompositeCanvas(App, deps, base, includeLogo);
@@ -42,7 +47,8 @@ export function createOrderPdfCaptureOpenClosedOp(
       deps._setDoorsOpenForExport(App, false);
       deps._setBodyDoorStatusForNotes(App, false);
       deps._renderSceneForExport(App, base.renderer, base.scene, base.camera);
-      ctx.drawImage(deps._getRendererCanvasSource(base.rendererSurface), 0, base.titleHeight);
+      const closedRendererSource = deps._getRendererCanvasSource(base.rendererSurface);
+      ctx.drawImage(closedRendererSource, 0, base.titleHeight);
       if (base.notesEnabled) {
         await deps._renderAllNotesToCanvas(
           App,
@@ -50,7 +56,9 @@ export function createOrderPdfCaptureOpenClosedOp(
           base.originalWidth,
           base.originalHeight,
           base.titleHeight,
-          readNotesTransform(getNotesExportTransform(App))
+          preserveLiveViewport
+            ? createLiveViewportNotesTransform(closedRendererSource)
+            : readNotesTransform(getNotesExportTransform(App))
         );
       }
 
@@ -58,7 +66,8 @@ export function createOrderPdfCaptureOpenClosedOp(
       deps._setBodyDoorStatusForNotes(App, true);
       deps._renderSceneForExport(App, base.renderer, base.scene, base.camera);
       const secondImageY = base.titleHeight + base.originalHeight + base.gap;
-      ctx.drawImage(deps._getRendererCanvasSource(base.rendererSurface), 0, secondImageY);
+      const openRendererSource = deps._getRendererCanvasSource(base.rendererSurface);
+      ctx.drawImage(openRendererSource, 0, secondImageY);
       if (base.notesEnabled) {
         await deps._renderAllNotesToCanvas(
           App,
@@ -66,7 +75,9 @@ export function createOrderPdfCaptureOpenClosedOp(
           base.originalWidth,
           base.originalHeight,
           secondImageY,
-          readNotesTransform(getNotesExportTransform(App))
+          preserveLiveViewport
+            ? createLiveViewportNotesTransform(openRendererSource)
+            : readNotesTransform(getNotesExportTransform(App))
         );
       }
       return compositeCanvas;

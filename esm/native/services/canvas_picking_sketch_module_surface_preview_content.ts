@@ -4,6 +4,11 @@ import {
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { buildSketchModuleStackAwareMeasurementEntries } from './canvas_picking_sketch_neighbor_measurements.js';
 import {
+  doesSketchModuleVerticalRangeCollideWithDrawers,
+  resolveSketchModuleRodCollisionHeight,
+  resolveSketchModuleVerticalRangePlacementAgainstDrawers,
+} from './canvas_picking_sketch_module_vertical_content_collision.js';
+import {
   createSketchModuleShelfPreviewGeometry,
   findNearestSketchModuleRod,
   findNearestSketchModuleStorageBarrier,
@@ -70,7 +75,7 @@ export function resolveSketchModuleContentPreview(args: {
   let variantPreview = args.variantPreview;
   let shelfDepthOverrideM = args.shelfDepthOverrideM;
   let storageHPreview = args.storageHPreview;
-  let op: 'add' | 'remove' = args.contentOp;
+  let op: 'add' | 'remove' | 'blocked' = args.contentOp;
 
   if (isStorage && storageBarriers.length) {
     const storageMatch = findNearestSketchModuleStorageBarrier({
@@ -100,6 +105,20 @@ export function resolveSketchModuleContentPreview(args: {
     }
   }
 
+  const isAddBlockedBySketchDrawers = (heightM: number, centerY: number = yClamped): boolean =>
+    op === 'add' &&
+    doesSketchModuleVerticalRangeCollideWithDrawers({
+      cfgRef: source.cfgRef,
+      drawers: source.drawers,
+      extDrawers: source.extDrawers,
+      bottomY,
+      topY,
+      totalHeight: spanH,
+      pad,
+      centerY,
+      heightM,
+    });
+
   const boxShelfSpan = findSketchBoxInnerShelfSpan({
     boxes,
     bottomY,
@@ -115,6 +134,33 @@ export function resolveSketchModuleContentPreview(args: {
   const previewX = boxShelfSpan.centerX != null ? boxShelfSpan.centerX : internalCenterX;
 
   if (isStorage) {
+    const storagePlacement =
+      op === 'add'
+        ? resolveSketchModuleVerticalRangePlacementAgainstDrawers({
+            cfgRef: source.cfgRef,
+            drawers: source.drawers,
+            extDrawers: source.extDrawers,
+            bottomY,
+            topY,
+            totalHeight: spanH,
+            pad,
+            desiredCenterY: yClamped,
+            heightM: storageHPreview,
+          })
+        : null;
+    const storagePreviewY =
+      op === 'add'
+        ? (storagePlacement?.centerY ??
+          clampSketchModuleStorageCenterY({
+            bottomY,
+            topY,
+            pad,
+            heightM: storageHPreview,
+            pointerY: yClamped,
+          }))
+        : yClamped;
+    const blockedBySketchDrawers = storagePlacement?.blocked === true;
+    if (blockedBySketchDrawers) op = 'blocked';
     const depth0 = Number.isFinite(internalDepth) ? internalDepth : 0;
     const zFront = internalZ + depth0 / 2;
     return {
@@ -122,18 +168,21 @@ export function resolveSketchModuleContentPreview(args: {
       preview: {
         kind: 'storage',
         x: internalCenterX,
-        y: yClamped,
+        y: storagePreviewY,
         z: zFront + storageDims.barrierFrontZOffsetM,
         w: Math.max(storageDims.barrierWidthMinM, innerW - storageDims.barrierWidthClearanceM),
         h: storageHPreview,
         d: Math.max(storageDims.previewThicknessMinM, woodThick),
         woodThick,
         op,
+        blockedReason: blockedBySketchDrawers ? 'collision' : undefined,
       },
     };
   }
 
   if (isRod) {
+    const blockedBySketchDrawers = isAddBlockedBySketchDrawers(resolveSketchModuleRodCollisionHeight());
+    if (blockedBySketchDrawers) op = 'blocked';
     return {
       handled: true,
       preview: {
@@ -146,6 +195,7 @@ export function resolveSketchModuleContentPreview(args: {
         d: previewDims.rodPreviewDepthM,
         woodThick,
         op,
+        blockedReason: blockedBySketchDrawers ? 'collision' : undefined,
       },
     };
   }
@@ -162,6 +212,9 @@ export function resolveSketchModuleContentPreview(args: {
     variant: variantPreview,
     shelfDepthOverrideM,
   });
+  const blockedBySketchDrawers = isAddBlockedBySketchDrawers(shelfPreview.h);
+  if (blockedBySketchDrawers) op = 'blocked';
+
   const clearanceMeasurements = buildSketchModuleStackAwareMeasurementEntries({
     bottomY,
     topY,
@@ -197,6 +250,7 @@ export function resolveSketchModuleContentPreview(args: {
       d: shelfPreview.d,
       woodThick,
       op,
+      blockedReason: blockedBySketchDrawers ? 'collision' : undefined,
       clearanceMeasurements,
     },
   };

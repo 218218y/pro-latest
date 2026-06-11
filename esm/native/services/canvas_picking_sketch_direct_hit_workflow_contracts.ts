@@ -38,8 +38,6 @@ export type CustomDataLike = UnknownRecord & {
 
 export type SketchConfigLike = UnknownRecord & {
   sketchExtras?: SketchExtrasLike;
-  intDrawersList?: unknown[];
-  intDrawersSlot?: unknown;
   layout?: unknown;
   customData?: CustomDataLike;
   braceShelves?: unknown[];

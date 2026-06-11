@@ -1,6 +1,15 @@
 import type { SavedNote, SavedNoteStyle } from '../../../../../types';
 import { MIN_SIZE, clamp, parsePx, px, type Interaction, type Rect } from './notes_overlay_helpers_shared.js';
 
+let nextGeneratedNoteId = 1;
+
+export function createNotesOverlayNoteId(): string {
+  const now = Date.now().toString(36);
+  const seq = (nextGeneratedNoteId++).toString(36);
+  const random = Math.random().toString(36).slice(2, 8);
+  return `note-${now}-${seq}${random ? `-${random}` : ''}`;
+}
+
 export type ReadPaletteAnchorElement = (el: HTMLElement) => HTMLElement;
 
 export type SavedNoteBounds = { left: number; top: number; width: number; height: number };
@@ -174,11 +183,13 @@ export function createEmptyNoteFromRect(rect: Rect, doorsOpen?: boolean): SavedN
     fontSize: '4',
   };
 
-  return {
+  const note: SavedNote = {
+    id: createNotesOverlayNoteId(),
     style,
     text: '',
-    doorsOpen: typeof doorsOpen === 'boolean' ? doorsOpen : undefined,
   };
+  if (typeof doorsOpen === 'boolean') note.doorsOpen = doorsOpen;
+  return note;
 }
 
 export function applyInteractionToDraftNotes(

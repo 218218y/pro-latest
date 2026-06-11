@@ -46,8 +46,8 @@ const SITE2_ALLOWED_TAB_IDS = [
   'structure',
   'design',
   'interior',
-  'render',
-  'export',
+  'sketch',
+  'settings',
 ] satisfies readonly WardrobeProTabId[];
 const SITE2_ALLOWED_TABS = new Set<string>(SITE2_ALLOWED_TAB_IDS);
 

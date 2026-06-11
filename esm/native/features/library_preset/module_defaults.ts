@@ -32,8 +32,6 @@ function createLibraryModuleConfig(
     layout: 'shelves',
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersSlot: 0,
-    intDrawersList: [],
     isCustom: true,
     gridDivisions,
     customData: {
@@ -55,8 +53,6 @@ export function createLibraryTopModuleConfig(doors: number): NormalizedTopModule
     layout: typeof base.layout === 'string' ? base.layout : 'shelves',
     extDrawersCount: typeof base.extDrawersCount === 'number' ? base.extDrawersCount : 0,
     hasShoeDrawer: !!base.hasShoeDrawer,
-    intDrawersSlot: typeof base.intDrawersSlot === 'number' ? base.intDrawersSlot : 0,
-    intDrawersList: Array.isArray(base.intDrawersList) ? base.intDrawersList.slice() : [],
     isCustom: !!base.isCustom,
     customData: base.customData || {
       shelves: [true, true, true, true, false],

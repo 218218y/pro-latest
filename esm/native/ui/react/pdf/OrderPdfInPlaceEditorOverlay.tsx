@@ -76,7 +76,6 @@ export function OrderPdfInPlaceEditorOverlay(): ReactElement | null {
           onExportImagePdf={controller.exportImagePdf}
           imagePdfBusy={ui.imagePdfBusy}
           onExportInteractiveToGmail={controller.exportInteractiveToGmail}
-          onExportInteractiveDownloadAndGmail={controller.exportInteractiveDownloadAndGmail}
           gmailBusy={ui.gmailBusy}
           hasImportedPdfImages={layout.importedPdfFlags.hasImportedPdfImages}
           hasImportedPdfRenderImage={layout.importedPdfFlags.hasImportedPdfRenderImage}
@@ -114,7 +113,9 @@ export function OrderPdfInPlaceEditorOverlay(): ReactElement | null {
       sketchPreviewBusy={sketchPreview.sketchPreviewBusy}
       sketchPreviewError={sketchPreview.sketchPreviewError}
       sketchPreviewEntries={sketchPreview.sketchPreviewEntries}
+      sketchPreviewReady={sketchPreview.sketchPreviewReady}
       onToggleSketchPreview={sketchPreview.toggleSketchPreview}
+      onCloseSketchPreview={sketchPreview.closeSketchPreview}
       onRefreshSketchPreview={() => void sketchPreview.refreshSketchPreview()}
       onAppendSketchStroke={controller.appendSketchStroke}
       onUpsertSketchTextBox={controller.upsertSketchTextBox}

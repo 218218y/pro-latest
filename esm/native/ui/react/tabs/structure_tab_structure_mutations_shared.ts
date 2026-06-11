@@ -12,6 +12,8 @@ export type StructureTabNumericKey =
   | 'cellDimsWidth'
   | 'cellDimsHeight'
   | 'cellDimsDepth'
+  | 'cellDimsHexProtrusion'
+  | 'cellDimsHexDoorWidth'
   | 'chestCommodeMirrorHeightCm'
   | 'chestCommodeMirrorWidthCm'
   | 'stackSplitLowerHeight'

@@ -26,6 +26,7 @@ export function ModeToggleButton(props: ModeToggleButtonProps) {
     <button
       {...rest}
       type="button"
+      aria-pressed={active}
       className={cx(
         'type-option',
         'type-option--compact',

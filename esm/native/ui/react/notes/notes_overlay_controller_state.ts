@@ -51,6 +51,7 @@ export function useNotesOverlayControllerState(args: {
     Array<import('./notes_overlay_editor_state.js').SelectionOffsets | null>
   >([]);
   const preExitDrawModeCommitRef = useRef<(() => void) | null>(null);
+  const skipNextExitCleanupRef = useRef<boolean>(false);
   const suppressNextClickRef = useRef<boolean>(false);
   const ignoreOutsideClickUntilRef = useRef<number>(0);
   const createLastPointRef = useRef<{ x: number; y: number } | null>(null);
@@ -123,6 +124,7 @@ export function useNotesOverlayControllerState(args: {
     typingCommitTokenRef,
     selectionOffsetsRef,
     preExitDrawModeCommitRef,
+    skipNextExitCleanupRef,
     suppressNextClickRef,
     ignoreOutsideClickUntilRef,
     createLastPointRef,

@@ -7,13 +7,11 @@ export function CloudSyncPanel(): ReactElement {
   const {
     status,
     isPublic,
-    floatingSync,
     handleToggleRoomMode,
     handleCopy,
     handleSyncSketch,
     handleDeleteModels,
     handleDeleteColors,
-    handleFloatingSyncChange,
   } = useCloudSyncPanelActions();
 
   return (
@@ -71,20 +69,6 @@ export function CloudSyncPanel(): ReactElement {
         >
           <i className="fas fa-trash" /> מחק צבעים זמניים
         </button>
-      </div>
-
-      <div className="wp-r-toggle-row">
-        <label>
-          <input
-            type="checkbox"
-            data-testid="cloud-sync-floating-pin-toggle"
-            checked={!!floatingSync}
-            onChange={async (e: import('react').ChangeEvent<HTMLInputElement>) => {
-              await handleFloatingSyncChange(!!e.target.checked);
-            }}
-          />
-          סנכרון סקיצה "צף" (רקע)
-        </label>
       </div>
 
       <InlineNotice>

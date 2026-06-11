@@ -18,7 +18,12 @@ export type PatchConfigForKeyFn = (
   meta: UnknownRecord
 ) => unknown;
 
-export type GridInfoLike = { effectiveTopY?: unknown; effectiveBottomY?: unknown; gridDivisions?: unknown };
+export type GridInfoLike = {
+  effectiveTopY?: unknown;
+  effectiveBottomY?: unknown;
+  gridDivisions?: unknown;
+  woodThick?: unknown;
+};
 export type SavedDimsLike = ModuleSavedDimsLike & { top?: unknown; bottom?: unknown };
 export type SelectorUserDataLike = UnknownRecord & { __kind?: unknown; partId?: unknown };
 export type LayoutConfigCustomDataLike = UnknownRecord & {
@@ -108,6 +113,7 @@ export function readGridInfo(gridMap: unknown, mapKey: ModuleKey | 'corner'): Gr
         effectiveTopY: rec.effectiveTopY,
         effectiveBottomY: rec.effectiveBottomY,
         gridDivisions: rec.gridDivisions,
+        woodThick: rec.woodThick,
       }
     : null;
 }

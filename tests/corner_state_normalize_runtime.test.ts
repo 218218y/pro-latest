@@ -54,7 +54,6 @@ test('normalizeCornerWingState seeds lower split config and scopes bottom remova
       corner: {
         layout: 'storage',
         customData: { shelves: [true], rods: [true], storage: true },
-        intDrawersList: [{ id: 1 }],
       },
     },
   });
@@ -76,8 +75,48 @@ test('normalizeCornerWingState seeds lower split config and scopes bottom remova
   assert.equal(state.__stackScopePartKey('corner_pent_door_2'), 'lower_corner_pent_door_2');
   assert.equal(state.__isDoorRemoved('corner_pent_door_2'), true);
   assert.equal(state.__isDoorRemoved('corner_pent_door_1'), false);
-  assert.deepEqual(state.config.intDrawersList, []);
   assert.equal(state.config.customData?.storage, false);
+});
+
+test('normalizeCornerWingState does not let top corner special width seed a missing lower split shell', () => {
+  const App = createApp({
+    buildUi: {
+      cornerWidth: 140,
+      cornerHeight: 220,
+      cornerDepth: 65,
+      cornerDoors: 3,
+      cornerConnectorEnabled: true,
+      raw: {
+        cornerDoors: 3,
+        stackSplitLowerDepth: 55,
+        stackSplitLowerWidth: 160,
+      },
+    },
+    config: {
+      cornerConfiguration: {
+        layout: 'shelves',
+        specialDims: { baseWidthCm: 140, widthCm: 140, depthCm: 70 },
+        connectorSpecialDims: { widthCm: 115 },
+        modulesConfiguration: [{ specialDims: { baseWidthCm: 80, widthCm: 80 } }],
+      },
+    },
+  });
+
+  const state = normalizeCornerWingState({
+    App,
+    mainW: 1.6,
+    mainH: 0.8,
+    mainD: 0.55,
+    woodThick: 0.017,
+    startY: 0,
+    meta: { stackKey: 'bottom', stackSplitEnabled: true },
+  });
+
+  assert.equal(state.wingLengthCM, 120);
+  assert.equal(state.wingW, 1.2);
+  assert.equal(state.wingD, 0.55);
+  assert.equal((state.config as Record<string, unknown>).specialDims, undefined);
+  assert.equal((state.config as Record<string, unknown>).connectorSpecialDims, undefined);
 });
 
 test('normalizeCornerWingState forces top split stack to drop the base and honor remove-door mode', () => {

@@ -2,41 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { resolveSketchModuleStackPreview } from '../esm/native/services/canvas_picking_sketch_module_stack_preview.ts';
+import { commitSketchModuleInternalDrawerStack } from '../esm/native/services/canvas_picking_sketch_module_stack_commit.ts';
 
 const host = { tool: 'sketch_int_drawers', moduleKey: 2, isBottom: false, ts: 1 } as const;
-
-test('module stack preview resolves standard drawer removal from grid slots', () => {
-  const result = resolveSketchModuleStackPreview({
-    host,
-    contentKind: 'drawers',
-    moduleKey: 2,
-    cfgRef: { gridDivisions: 6, intDrawersList: [2] },
-    bottomY: 0,
-    topY: 2.4,
-    totalHeight: 2.4,
-    pad: 0.018,
-    desiredCenterY: 0.62,
-    innerW: 0.9,
-    internalCenterX: 0,
-    internalDepth: 0.55,
-    internalZ: 0,
-    drawers: [],
-    extDrawers: [],
-    woodThick: 0.018,
-    isCornerKey: () => false,
-  });
-
-  assert.equal(result.hoverRecord.kind, 'drawers');
-  assert.equal(result.hoverRecord.op, 'remove');
-  assert.equal(result.hoverRecord.removeKind, 'std');
-  assert.equal(result.hoverRecord.removeSlot, 2);
-  assert.equal(result.hoverRecord.removePid, 'div_int_2_slot_2');
-  assert.equal(result.preview.kind, 'drawers');
-  assert.deepEqual(
-    (result.preview.clearanceMeasurements as { label: string }[]).map(entry => entry.label),
-    ['164 ס"מ', '41 ס"מ']
-  );
-});
 
 test('module stack preview reuses existing ext-drawer count on remove hover', () => {
   const result = resolveSketchModuleStackPreview({
@@ -158,4 +126,89 @@ test('module drawer preview adds nearest shelf spacing without colliding with ce
   assert.ok(belowNeighbor && Math.abs((belowNeighbor.labelY ?? 0) - 0.489) < 1e-9);
   assert.equal(aboveNeighbor?.styleKey, 'neighbor');
   assert.equal(belowNeighbor?.styleKey, 'neighbor');
+});
+
+test('module internal drawer preview blocks against existing module boxes using the full stack height', () => {
+  const result = resolveSketchModuleStackPreview({
+    host,
+    contentKind: 'drawers',
+    moduleKey: 2,
+    cfgRef: null,
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.018,
+    desiredCenterY: 0.2,
+    innerW: 0.9,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    drawers: [],
+    extDrawers: [],
+    boxes: [{ id: 'box-low', yNorm: 0.23, heightM: 0.6 }],
+    woodThick: 0.018,
+    isCornerKey: () => false,
+  });
+
+  assert.equal(result.hoverRecord.kind, 'drawers');
+  assert.equal(result.hoverRecord.__wpBlockedReason, 'collision');
+  assert.equal(result.preview.op, 'blocked');
+});
+
+test('module external drawer preview clamps below existing boxes instead of overlapping their top half', () => {
+  const result = resolveSketchModuleStackPreview({
+    host: { tool: 'sketch_ext_drawers:2', moduleKey: 2, isBottom: false, ts: 4 },
+    contentKind: 'ext_drawers',
+    moduleKey: 2,
+    cfgRef: null,
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.018,
+    desiredCenterY: 0.98,
+    innerW: 0.9,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    drawers: [],
+    extDrawers: [],
+    boxes: [{ id: 'box-mid', yNorm: 0.58, heightM: 0.42 }],
+    selectedDrawerCount: 2,
+    woodThick: 0.018,
+    selectorFrontEnvelope: { centerX: 0, centerZ: 0.3, outerW: 1.0, outerD: 0.6 },
+    isCornerKey: () => false,
+  });
+
+  assert.equal(result.hoverRecord.kind, 'ext_drawers');
+  assert.equal(result.hoverRecord.op, 'add');
+  assert.notEqual(result.hoverRecord.blockedReason, 'collision');
+  const stackTopY = result.hoverRecord.yCenter + result.hoverRecord.stackH / 2;
+  const boxMinY = 2.4 * 0.58 - 0.42 / 2;
+  assert.ok(stackTopY <= boxMinY - 0.007);
+});
+
+test('module internal drawer commit rejects placement that would overlap an existing module box', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      boxes: [{ id: 'box-low', yNorm: 0.23, heightM: 0.6 }],
+      drawers: [],
+    },
+  };
+
+  const result = commitSketchModuleInternalDrawerStack({
+    cfg,
+    hoverRec: {},
+    hoverOk: false,
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.018,
+    woodThick: 0.018,
+    drawerHeightM: 0.165,
+    hitYClamped: 0.2,
+    hoverHost: host,
+  });
+
+  assert.equal(result, null);
+  assert.deepEqual((cfg.sketchExtras as { drawers: unknown[] }).drawers, []);
 });

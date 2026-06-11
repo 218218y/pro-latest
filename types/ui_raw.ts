@@ -38,6 +38,9 @@ export interface UiRawInputsLike extends UnknownRecord {
   cellDimsWidth?: number | null;
   cellDimsHeight?: number | null;
   cellDimsDepth?: number | null;
+  cellDimsHexMode?: boolean;
+  cellDimsHexProtrusion?: number | null;
+  cellDimsHexDoorWidth?: number | null;
 
   // Allow legacy/experimental keys without churn.
   [k: string]: unknown;
@@ -49,7 +52,8 @@ export type UiRawBooleanKey =
   | 'chestCommodeMirrorWidthManual'
   | 'stackSplitLowerDepthManual'
   | 'stackSplitLowerWidthManual'
-  | 'stackSplitLowerDoorsManual';
+  | 'stackSplitLowerDoorsManual'
+  | 'cellDimsHexMode';
 
 export type UiRawNumericKey =
   | 'width'
@@ -69,7 +73,9 @@ export type UiRawNumericKey =
   | 'cornerDoors'
   | 'cellDimsWidth'
   | 'cellDimsHeight'
-  | 'cellDimsDepth';
+  | 'cellDimsDepth'
+  | 'cellDimsHexProtrusion'
+  | 'cellDimsHexDoorWidth';
 
 export type UiRawScalarKey = UiRawNumericKey | UiRawBooleanKey;
 
@@ -99,6 +105,9 @@ export type UiRawScalarValueMap = {
   cellDimsWidth: number | null;
   cellDimsHeight: number | null;
   cellDimsDepth: number | null;
+  cellDimsHexMode: boolean;
+  cellDimsHexProtrusion: number | null;
+  cellDimsHexDoorWidth: number | null;
 };
 
 export const UI_RAW_BOOLEAN_KEYS: readonly UiRawBooleanKey[] = [
@@ -106,6 +115,7 @@ export const UI_RAW_BOOLEAN_KEYS: readonly UiRawBooleanKey[] = [
   'stackSplitLowerDepthManual',
   'stackSplitLowerWidthManual',
   'stackSplitLowerDoorsManual',
+  'cellDimsHexMode',
 ];
 
 export const UI_RAW_NUMERIC_KEYS: readonly UiRawNumericKey[] = [
@@ -127,6 +137,8 @@ export const UI_RAW_NUMERIC_KEYS: readonly UiRawNumericKey[] = [
   'cellDimsWidth',
   'cellDimsHeight',
   'cellDimsDepth',
+  'cellDimsHexProtrusion',
+  'cellDimsHexDoorWidth',
 ];
 
 export const UI_RAW_SCALAR_KEYS: readonly UiRawScalarKey[] = [...UI_RAW_NUMERIC_KEYS, ...UI_RAW_BOOLEAN_KEYS];

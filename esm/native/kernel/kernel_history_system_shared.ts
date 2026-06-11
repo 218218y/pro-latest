@@ -170,6 +170,7 @@ export function createKernelHistorySystemShell(existing: unknown): KernelHistory
     _lastCoalesceKey: typeof seed._lastCoalesceKey === 'string' ? seed._lastCoalesceKey : '',
     _lastCoalesceAt: typeof seed._lastCoalesceAt === 'number' ? seed._lastCoalesceAt : 0,
     __didInit: seed.__didInit === true,
+    __isApplyingState: seed.__isApplyingState === true,
     pause: () => {},
     resume: () => {},
     flushPendingPush: () => {},

@@ -101,28 +101,20 @@ function normalizeDoorTrimEntries(value) {
 function normalizeModulesConfiguration(value) {
   return ensureModuleArray(value)
     .map((module, index) => {
-      const intDrawersList = Array.isArray(module.intDrawersList)
-        ? module.intDrawersList
-            .map(entry => Number(entry))
-            .filter(Number.isFinite)
-            .map(entry => Math.max(0, Math.floor(entry)))
-        : [];
-      const intDrawersSlot = Number.isFinite(Number(module.intDrawersSlot))
-        ? Math.max(0, Math.floor(Number(module.intDrawersSlot)))
-        : null;
       const extDrawersCount = Number.isFinite(Number(module.extDrawersCount))
         ? Math.max(0, Math.floor(Number(module.extDrawersCount)))
         : 0;
+      const sketchExtras = asRecord(module.sketchExtras);
+      const internalDrawerPlacementCount = Array.isArray(sketchExtras.drawers)
+        ? sketchExtras.drawers.length
+        : 0;
       return {
         index,
-        intDrawersList,
-        intDrawersSlot,
         extDrawersCount,
+        internalDrawerPlacementCount,
       };
     })
-    .filter(
-      entry => entry.intDrawersList.length > 0 || entry.intDrawersSlot != null || entry.extDrawersCount > 0
-    );
+    .filter(entry => entry.extDrawersCount > 0 || entry.internalDrawerPlacementCount > 0);
 }
 
 export function readCabinetDoorDrawerLayoutProjectSubset(sourceProject) {
@@ -217,6 +209,26 @@ function applyModules(project, config) {
   project.stackSplitLowerModulesConfiguration = stackSplitLowerModulesConfiguration;
 }
 
+function createSketchInternalDrawers(prefix, count) {
+  const total = Math.max(0, Math.floor(Number(count) || 0));
+  return Array.from({ length: total }, (_, index) => {
+    const yNormC = total <= 1 ? 0.5 : (index + 1) / (total + 1);
+    return {
+      id: `${prefix}_${index + 1}`,
+      yNormC: Number(yNormC.toFixed(4)),
+      drawerHeightM: 0.24,
+    };
+  });
+}
+
+function withSketchInternalDrawers(patch, prefix, count) {
+  const next = { ...asRecord(patch) };
+  const sketchExtras = { ...asRecord(next.sketchExtras) };
+  sketchExtras.drawers = createSketchInternalDrawers(prefix, count);
+  next.sketchExtras = sketchExtras;
+  return next;
+}
+
 const SCENARIO_BUILDERS = {
   'mixed-layout': project => {
     project.settings.wardrobeType = 'hinged';
@@ -257,11 +269,11 @@ const SCENARIO_BUILDERS = {
     };
     applyModules(project, {
       modulesConfiguration: {
-        0: { intDrawersList: [2, 4], intDrawersSlot: 0, extDrawersCount: 3 },
-        1: { intDrawersList: [], intDrawersSlot: 3, extDrawersCount: 0 },
+        0: withSketchInternalDrawers({ extDrawersCount: 3 }, 'mixed_top_0_int', 3),
+        1: { extDrawersCount: 0 },
       },
       stackSplitLowerModulesConfiguration: {
-        0: { intDrawersList: [1], intDrawersSlot: 0, extDrawersCount: 1 },
+        0: withSketchInternalDrawers({ extDrawersCount: 1 }, 'mixed_lower_0_int', 1),
       },
     });
     return createFingerprint({
@@ -324,11 +336,11 @@ const SCENARIO_BUILDERS = {
     };
     applyModules(project, {
       modulesConfiguration: {
-        0: { intDrawersList: [1], intDrawersSlot: 2, extDrawersCount: 1 },
-        1: { intDrawersList: [], intDrawersSlot: 0, extDrawersCount: 0 },
+        0: withSketchInternalDrawers({ extDrawersCount: 1 }, 'split_top_0_int', 3),
+        1: { extDrawersCount: 0 },
       },
       stackSplitLowerModulesConfiguration: {
-        0: { intDrawersList: [1], intDrawersSlot: 0, extDrawersCount: 0 },
+        0: { extDrawersCount: 0 },
       },
     });
     return createFingerprint({
@@ -370,8 +382,8 @@ const SCENARIO_BUILDERS = {
     };
     applyModules(project, {
       modulesConfiguration: {
-        0: { intDrawersList: [], intDrawersSlot: 0, extDrawersCount: 2 },
-        1: { intDrawersList: [], intDrawersSlot: 0, extDrawersCount: 1 },
+        0: { extDrawersCount: 2 },
+        1: { extDrawersCount: 1 },
       },
     });
     return createFingerprint({
@@ -413,11 +425,11 @@ const SCENARIO_BUILDERS = {
     };
     applyModules(project, {
       modulesConfiguration: {
-        0: { intDrawersList: [1, 2, 3], intDrawersSlot: 4, extDrawersCount: 2 },
-        1: { intDrawersList: [1, 3], intDrawersSlot: 2, extDrawersCount: 2 },
+        0: withSketchInternalDrawers({ extDrawersCount: 2 }, 'heavy_top_0_int', 2),
+        1: withSketchInternalDrawers({ extDrawersCount: 2 }, 'heavy_top_1_int', 3),
       },
       stackSplitLowerModulesConfiguration: {
-        0: { intDrawersList: [2], intDrawersSlot: 1, extDrawersCount: 1 },
+        0: withSketchInternalDrawers({ extDrawersCount: 1 }, 'heavy_lower_0_int', 4),
       },
     });
     return createFingerprint({

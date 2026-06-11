@@ -1,4 +1,5 @@
 import { CORNER_WING_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { getCornerHexDoorDepth } from './corner_wing_hex_cell_geometry.js';
 
 // Corner wing door state derivation.
 //
@@ -29,7 +30,8 @@ export function createCornerWingDoorState(ctx: CornerWingDoorContext, doorIdx: n
     cell && Number.isFinite(ctx.asRecord(cell).depth)
       ? Math.max(CORNER_WING_DIMENSIONS.wing.minDepthM, Number(ctx.asRecord(cell).depth))
       : ctx.wingD;
-  const doorZShift = cellD - ctx.wingD;
+  const doorDepth = cell ? getCornerHexDoorDepth(cell, cellD) : cellD;
+  const doorZShift = doorDepth - ctx.wingD;
   const effectiveTopLimit = getEffectiveTopLimitForDoor(ctx, doorIdx);
   const splitLineY =
     ctx.startY +
@@ -123,11 +125,19 @@ function getDoorGeom(ctx: CornerWingDoorContext, doorIdx: number): DoorGeomLike 
   const cell = getCellForDoor(ctx, doorIdx);
   if (cell && Number.isFinite(ctx.asRecord(cell).startX) && Number.isFinite(ctx.asRecord(cell).width)) {
     const doorsInCell = Math.max(1, Number(ctx.asRecord(cell).doorsInCell) || 1);
-    const doorW = Number(ctx.asRecord(cell).width) / doorsInCell;
     const doorStart = Number(ctx.asRecord(cell).doorStart);
     const within = Number.isFinite(doorStart)
       ? doorIdx - doorStart
       : doorIdx % CORNER_WING_DIMENSIONS.cells.doorsPerCell;
+    const hexGeometry = cell.__hexCellGeometry;
+    if (hexGeometry) {
+      const doorSpanW = Math.max(ctx.woodThick, hexGeometry.doorWidthM);
+      const doorW = doorSpanW / doorsInCell;
+      const doorLeftX = Number(ctx.asRecord(cell).centerX) - doorSpanW / 2;
+      const dX = doorLeftX + within * doorW + doorW / 2;
+      return { cell, doorW, dX };
+    }
+    const doorW = Number(ctx.asRecord(cell).width) / doorsInCell;
     const dX = Number(ctx.asRecord(cell).startX) + within * doorW + doorW / 2;
     return { cell, doorW, dX };
   }

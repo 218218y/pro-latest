@@ -75,6 +75,7 @@ export function installKernelStateKernelConfigApplySurface(
       if (cfg.isLibraryMode !== undefined) setBool('isLibraryMode', cfg.isLibraryMode);
       if (cfg.wardrobeType !== undefined) setStr('wardrobeType', cfg.wardrobeType, false);
       if (cfg.boardMaterial !== undefined) setStr('boardMaterial', cfg.boardMaterial, false);
+      if (cfg.doorMountMode !== undefined) setStr('doorMountMode', cfg.doorMountMode, false);
       if (cfg.globalHandleType !== undefined) setStr('globalHandleType', cfg.globalHandleType, false);
       if (cfg.isMultiColorMode !== undefined) setBool('isMultiColorMode', cfg.isMultiColorMode);
       if (cfg.showDimensions !== undefined) setBool('showDimensions', cfg.showDimensions);

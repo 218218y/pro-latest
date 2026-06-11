@@ -15,10 +15,28 @@ import {
   InteriorSketchShelvesSection,
 } from './interior_layout_sketch_sections.js';
 
-export function InteriorLayoutSketchControls(props: InteriorLayoutSectionProps): ReactElement {
+export function InteriorLayoutSketchToolsPanel(props: InteriorLayoutSectionProps): ReactElement {
   const isSketchBoxToolActive = props.isSketchToolActive && isSketchBoxTool(props.manualToolRaw);
   const isSketchBoxControlsOpen = props.sketchBoxPanelOpen || isSketchBoxToolActive;
   const isDoorTrimControlsOpen = props.doorTrimPanelOpen || props.isDoorTrimMode;
+  const isSketchExtDrawersToolActive =
+    props.isSketchToolActive && props.manualToolRaw.startsWith(SKETCH_TOOL_EXT_DRAWERS_PREFIX);
+  const isSketchExtDrawersControlsOpen = props.sketchExtDrawersPanelOpen || isSketchExtDrawersToolActive;
+
+  return (
+    <>
+      <InteriorSketchShelvesSection {...props} />
+      <InteriorSketchBoxControlsSection {...props} isSketchBoxControlsOpen={isSketchBoxControlsOpen} />
+      <InteriorDoorTrimSection {...props} isDoorTrimControlsOpen={isDoorTrimControlsOpen} />
+      <InteriorSketchDrawersSection
+        {...props}
+        isSketchExtDrawersControlsOpen={isSketchExtDrawersControlsOpen}
+      />
+    </>
+  );
+}
+
+export function InteriorLayoutSketchControls(props: InteriorLayoutSectionProps): ReactElement {
   const isSketchExtDrawersToolActive =
     props.isSketchToolActive && props.manualToolRaw.startsWith(SKETCH_TOOL_EXT_DRAWERS_PREFIX);
   const isSketchIntDrawersToolActive =
@@ -26,7 +44,6 @@ export function InteriorLayoutSketchControls(props: InteriorLayoutSectionProps):
   const isEmbeddedSketchDrawersToolActive = isSketchExtDrawersToolActive || isSketchIntDrawersToolActive;
   const shouldShowSketchRow =
     props.sketchRowOpen || (props.isSketchToolActive && !isEmbeddedSketchDrawersToolActive);
-  const isSketchExtDrawersControlsOpen = props.sketchExtDrawersPanelOpen || isSketchExtDrawersToolActive;
 
   return (
     <>
@@ -52,13 +69,7 @@ export function InteriorLayoutSketchControls(props: InteriorLayoutSectionProps):
       </OptionBtn>
 
       <div className={cx('wp-sketch-row', shouldShowSketchRow ? '' : 'hidden')}>
-        <InteriorSketchShelvesSection {...props} />
-        <InteriorSketchBoxControlsSection {...props} isSketchBoxControlsOpen={isSketchBoxControlsOpen} />
-        <InteriorDoorTrimSection {...props} isDoorTrimControlsOpen={isDoorTrimControlsOpen} />
-        <InteriorSketchDrawersSection
-          {...props}
-          isSketchExtDrawersControlsOpen={isSketchExtDrawersControlsOpen}
-        />
+        <InteriorLayoutSketchToolsPanel {...props} />
       </div>
     </>
   );

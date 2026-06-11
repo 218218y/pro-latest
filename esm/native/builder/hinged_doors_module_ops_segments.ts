@@ -32,7 +32,7 @@ export function pushHingedDoorSegment(
     moduleIndex: ctx.index,
     pivotX: state.pivotX,
     y: args.segY,
-    z: ctx.doorFrontZ + DOOR_SYSTEM_DIMENSIONS.hinged.opFrontZOffsetM,
+    z: ctx.doorOpZ,
     width: state.doorWidth,
     height: args.segH,
     meshOffsetX: state.meshOffsetX,

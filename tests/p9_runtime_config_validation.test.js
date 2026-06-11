@@ -24,7 +24,7 @@ test('P9: validateRuntimeConfig normalizes numbers/bools, siteVariant, and site2
     cacheMaxItems: '3000',
     debugBootTimings: 'true',
     siteVariant: 'SITE2',
-    site2EnabledTabs: 'export,render,invalid,EXPORT',
+    site2EnabledTabs: 'settings,sketch,invalid,SETTINGS',
     supabaseCloudSync: {
       url: ' ',
       anonKey: 123,
@@ -41,7 +41,7 @@ test('P9: validateRuntimeConfig normalizes numbers/bools, siteVariant, and site2
   assert.equal(config.cacheMaxItems, 3000);
   assert.equal(config.debugBootTimings, true);
   assert.equal(config.siteVariant, 'site2');
-  assert.deepEqual(config.site2EnabledTabs, ['export', 'render']);
+  assert.deepEqual(config.site2EnabledTabs, ['settings', 'sketch']);
 
   // Invalid supabase config is dropped (non-strict) to avoid runtime crashes.
   assert.equal(config.supabaseCloudSync, undefined);

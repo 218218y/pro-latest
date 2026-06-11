@@ -41,7 +41,12 @@ export function createInteriorTabViewStateController(
       sketchController.syncSketchExtDrawersState(input.isSketchToolActive, input.manualToolRaw);
       sketchController.syncSketchIntDrawersState(input.isSketchToolActive, input.manualToolRaw);
       sketchController.syncSketchShelfDepthState(input.isSketchToolActive, input.manualToolRaw);
-      sketchController.syncManualUiToolState(input.isManualLayoutMode, input.manualTool);
+      sketchController.syncManualUiToolState(
+        input.isManualLayoutMode,
+        input.isSketchToolActive,
+        input.isSketchDivisionToolActive,
+        input.manualTool
+      );
     },
     ...sketchController,
     ...doorTrimController,

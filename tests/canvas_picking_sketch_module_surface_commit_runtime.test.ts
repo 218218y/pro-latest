@@ -36,6 +36,18 @@ function resolveSketchBoxGeometry(args: {
   };
 }
 
+function makeToastApp(toasts: Array<[string, string | undefined]>) {
+  return {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+}
+
 function makeArgs(overrides: Record<string, unknown> = {}) {
   return {
     cfg: {},
@@ -162,4 +174,181 @@ test('tryCommitSketchModuleSurfaceTool ignores unrelated tools once the canonica
 
   assert.equal(handled, false);
   assert.deepEqual(cfg, {});
+});
+
+test('tryCommitSketchModuleSurfaceTool blocks sketch shelves over internal drawer stacks', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      drawers: [{ id: 'drawers-1', yNormC: 0.6, drawerHeightM: 0.18 }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const handled = tryCommitSketchModuleSurfaceTool(
+    makeArgs({
+      App: makeToastApp(toasts),
+      cfg,
+      tool: 'sketch_shelf:glass@33',
+      hitY0: 0.2,
+      hitYClamped: 0.2,
+      yNorm: 0.6,
+    }) as never
+  );
+
+  assert.equal(handled, true);
+  assert.equal(
+    ((cfg.sketchExtras as Record<string, unknown>).shelves as unknown[] | undefined)?.length ?? 0,
+    0
+  );
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /לא ניתן לבנות מדף לפי סקיצה/);
+  assert.match(toasts[0]![0], /מתנגש במגירות לפי סקיצה קיימות/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('tryCommitSketchModuleSurfaceTool blocks sketch rods over external drawer stacks', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      extDrawers: [{ id: 'ext-drawers-1', yNormC: 0.6, count: 2, drawerHeightM: 0.18 }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const handled = tryCommitSketchModuleSurfaceTool(
+    makeArgs({
+      App: makeToastApp(toasts),
+      cfg,
+      tool: 'sketch_rod',
+      hitY0: 0.2,
+      hitYClamped: 0.2,
+      yNorm: 0.6,
+    }) as never
+  );
+
+  assert.equal(handled, true);
+  assert.equal(((cfg.sketchExtras as Record<string, unknown>).rods as unknown[] | undefined)?.length ?? 0, 0);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /לא ניתן לבנות מוט תלייה לפי סקיצה/);
+  assert.match(toasts[0]![0], /מתנגש במגירות לפי סקיצה קיימות/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('tryCommitSketchModuleSurfaceTool snaps storage barriers to first free slot above internal drawer stacks', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      drawers: [{ id: 'drawers-1', yNormC: 0.5, drawerHeightM: 0.18 }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const handled = tryCommitSketchModuleSurfaceTool(
+    makeArgs({
+      App: makeToastApp(toasts),
+      cfg,
+      tool: 'sketch_storage:50',
+      bottomY: 0,
+      topY: 2,
+      totalHeight: 2,
+      hitY0: 1.21,
+      hitYClamped: 1.21,
+      yNorm: 0.605,
+      pad: 0.02,
+    }) as never
+  );
+
+  assert.equal(handled, true);
+  assert.equal(toasts.length, 0);
+  const barriers =
+    ((cfg.sketchExtras as Record<string, unknown>).storageBarriers as Array<Record<string, unknown>>) ?? [];
+  assert.equal(barriers.length, 1);
+  assert.ok(Number(barriers[0]?.yNorm) > 0.72);
+  assert.ok(Number(barriers[0]?.yNorm) < 0.74);
+});
+
+test('tryCommitSketchModuleSurfaceTool snaps storage barriers to first free slot above external drawer stacks', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      extDrawers: [{ id: 'ext-drawers-1', yNormC: 0.5, count: 2, drawerHeightM: 0.18 }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const handled = tryCommitSketchModuleSurfaceTool(
+    makeArgs({
+      App: makeToastApp(toasts),
+      cfg,
+      tool: 'sketch_storage:50',
+      bottomY: 0,
+      topY: 2,
+      totalHeight: 2,
+      hitY0: 1.19,
+      hitYClamped: 1.19,
+      yNorm: 0.595,
+      pad: 0.02,
+    }) as never
+  );
+
+  assert.equal(handled, true);
+  assert.equal(toasts.length, 0);
+  const barriers =
+    ((cfg.sketchExtras as Record<string, unknown>).storageBarriers as Array<Record<string, unknown>>) ?? [];
+  assert.equal(barriers.length, 1);
+  assert.ok(Number(barriers[0]?.yNorm) > 0.71);
+  assert.ok(Number(barriers[0]?.yNorm) < 0.73);
+});
+
+test('tryCommitSketchModuleSurfaceTool blocks storage barriers over internal drawer stacks', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      drawers: [{ id: 'drawers-1', yNormC: 0.6, drawerHeightM: 0.18 }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const handled = tryCommitSketchModuleSurfaceTool(
+    makeArgs({
+      App: makeToastApp(toasts),
+      cfg,
+      tool: 'sketch_storage:50',
+      hitY0: 0.2,
+      hitYClamped: 0.2,
+      yNorm: 0.6,
+    }) as never
+  );
+
+  assert.equal(handled, true);
+  assert.equal(
+    ((cfg.sketchExtras as Record<string, unknown>).storageBarriers as unknown[] | undefined)?.length ?? 0,
+    0
+  );
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /לא ניתן לבנות אוגר מצעים לפי סקיצה/);
+  assert.match(toasts[0]![0], /מתנגש במגירות לפי סקיצה קיימות/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('tryCommitSketchModuleSurfaceTool blocks module boxes when vertical content leaves no valid slot', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      storageBarriers: [
+        { id: 'storage-bottom', yNorm: 0.2, heightM: 0.7 },
+        { id: 'storage-middle', yNorm: 0.5, heightM: 0.7 },
+        { id: 'storage-top', yNorm: 0.8, heightM: 0.7 },
+      ],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const handled = tryCommitSketchModuleSurfaceTool(
+    makeArgs({
+      App: makeToastApp(toasts),
+      cfg,
+      hitYClamped: 0,
+      yNorm: 0.5,
+    }) as never
+  );
+
+  assert.equal(handled, true);
+  assert.equal(
+    ((cfg.sketchExtras as Record<string, unknown>).boxes as unknown[] | undefined)?.length ?? 0,
+    0
+  );
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /לא ניתן לבנות קופסא/);
+  assert.match(toasts[0]![0], /מתנגשת/);
+  assert.equal(toasts[0]![1], 'error');
 });

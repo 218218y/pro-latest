@@ -7,12 +7,7 @@ import {
 import { readModulesConfigurationListFromConfigSnapshot } from '../features/modules_configuration/modules_config_api.js';
 import type { CellDimsPreviewSpecialDims } from './canvas_picking_hover_preview_modes_cell_dims_contracts.js';
 import type { InteriorHoverTarget } from './canvas_picking_hover_preview_modes_shared.js';
-import {
-  __asNum,
-  __hasOwnFiniteValue,
-  __readArray,
-  __readRecord,
-} from './canvas_picking_hover_preview_modes_shared.js';
+import { __asNum, __hasOwnFiniteValue, __readRecord } from './canvas_picking_hover_preview_modes_shared.js';
 
 export type ResolvedCellDimsPreviewState = {
   currentWcm: number;
@@ -52,12 +47,24 @@ export function readCellDimsSpecialDims(
         readCornerConfigurationCellForStack(cfg, target.isBottom ? 'bottom' : 'top', idx)
       );
       const cellSd = __readRecord(mod?.specialDims);
-      return { widthSd: cellSd || sharedSd, heightDepthSd: cellSd || sharedSd };
+      const widthSd = hasCompleteCellDimsOverride(cellSd, ['baseWidthCm']) ? cellSd : sharedSd;
+      const heightDepthSd = hasCompleteCellDimsOverride(cellSd, ['baseHeightCm', 'baseDepthCm'])
+        ? cellSd
+        : sharedSd;
+      return { widthSd, heightDepthSd };
     }
   } catch {
     // ignore
   }
   return { widthSd: null, heightDepthSd: null };
+}
+
+function hasCompleteCellDimsOverride(specialDims: UnknownRecord | null, baseKeys: string[]): boolean {
+  if (!specialDims) return false;
+  for (let i = 0; i < baseKeys.length; i += 1) {
+    if (__hasOwnFiniteValue(specialDims, baseKeys[i])) return true;
+  }
+  return false;
 }
 
 function readPreviewBaseValueCm(

@@ -15,3 +15,6 @@ export type HandleType = 'standard' | 'edge' | 'none';
 
 /** Board material selection used by React Structure tab. */
 export type BoardMaterial = 'sandwich' | 'melamine';
+
+/** Hinged-door mounting mode: regular overlay vs inset/flush inside the side frame. */
+export type DoorMountMode = 'overlay' | 'inset';

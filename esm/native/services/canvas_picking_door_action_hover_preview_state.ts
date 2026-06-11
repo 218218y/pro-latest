@@ -1,4 +1,5 @@
 import type { AppContainer, UnknownRecord } from '../../../types';
+import { isHexCellDiagonalPanelPartId } from '../features/hex_cell/index.js';
 import {
   normalizeDoorTrimAxis,
   normalizeDoorTrimColor,
@@ -46,8 +47,9 @@ export function __hasMirrorSizedDraft(readUi: ReadUiFn, App: AppContainer): bool
 
 export function __readCurtainChoice(readUi: ReadUiFn, App: AppContainer): string {
   const ui = readUi(App);
-  const direct = __readUiString(ui, 'curtainChoice');
-  return direct || 'none';
+  const current = __readUiString(ui, 'currentCurtainChoice');
+  const savedChoice = __readUiString(ui, 'curtainChoice');
+  return current || savedChoice || 'none';
 }
 
 export function __readMapRecord(App: AppContainer, key: string): UnknownRecord {
@@ -88,6 +90,7 @@ export function __resolveMirrorFaceSignFromLocalPoint(localPoint: { z: number } 
 
 export function __isSpecialPaintTarget(partId: string): boolean {
   if (!partId) return false;
+  if (isHexCellDiagonalPanelPartId(partId)) return true;
   if (/^d\d+_/.test(partId)) return true;
   if (partId.startsWith('lower_d') && partId.indexOf('_') !== -1) return true;
   if (partId.startsWith('sliding') || partId.startsWith('slide')) return true;

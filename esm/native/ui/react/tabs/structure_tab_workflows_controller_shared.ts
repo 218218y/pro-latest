@@ -7,6 +7,7 @@ import {
   clearOverrideKeys,
   cloneSpecialDims,
 } from '../../../features/special_dims/special_dims.js';
+import { clearHexCellFromConfig } from '../../../features/hex_cell/index.js';
 import { resolveAutoWidthForDoors } from '../../../services/api.js';
 import type {
   CreateStructureTabWorkflowControllerArgs,
@@ -52,6 +53,7 @@ export function clearStructureCellDimsOverrides(list: ModuleConfigLike[]): Modul
     if (!moduleConfig || typeof moduleConfig !== 'object') return moduleConfig;
     const nextConfig: ModuleConfigLike = Object.assign({}, moduleConfig);
     const specialDims = readModuleSpecialDims(nextConfig);
+    clearHexCellFromConfig(nextConfig);
     if (specialDims) {
       const nextSpecialDims = cloneSpecialDims(specialDims);
       clearOverrideKeys(nextSpecialDims, [

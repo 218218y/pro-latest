@@ -15,6 +15,7 @@ import {
 import { readCornerConfigurationSnapshotForStack } from '../features/modules_configuration/corner_cells_api.js';
 import { readModulesConfigurationListFromConfigSnapshot } from '../features/modules_configuration/modules_config_api.js';
 import { getActiveOverrideCm, isOverrideActive } from '../features/special_dims/index.js';
+import { hasHexCellDraftConfigChange, moduleHasHexCell } from '../features/hex_cell/index.js';
 
 function readRecordProp(value: unknown, key: string): unknown {
   return value && typeof value === 'object' && !Array.isArray(value) ? Reflect.get(value, key) : undefined;
@@ -24,6 +25,9 @@ export function __wp_readCellDimsDraft(App: AppContainer): {
   applyW: number | null;
   applyH: number | null;
   applyD: number | null;
+  hexCellMode?: boolean;
+  hexCellProtrusionCm?: number | null;
+  hexCellDoorWidthCm?: number | null;
 } {
   try {
     const ui = __wp_ui(App);
@@ -31,13 +35,36 @@ export function __wp_readCellDimsDraft(App: AppContainer): {
     const draftW = readRawNumber(raw, 'cellDimsWidth', NaN);
     const draftH = readRawNumber(raw, 'cellDimsHeight', NaN);
     const draftD = readRawNumber(raw, 'cellDimsDepth', NaN);
-    return {
+    const draftHexProtrusion = readRawNumber(raw, 'cellDimsHexProtrusion', NaN);
+    const draftHexDoorWidth = readRawNumber(raw, 'cellDimsHexDoorWidth', NaN);
+    const hexCellMode =
+      raw.cellDimsHexMode === true || raw.cellDimsHexMode === 'true' || raw.cellDimsHexMode === 1;
+    const result: {
+      applyW: number | null;
+      applyH: number | null;
+      applyD: number | null;
+      hexCellMode?: boolean;
+      hexCellProtrusionCm?: number | null;
+      hexCellDoorWidthCm?: number | null;
+    } = {
       applyW: Number.isFinite(draftW) && draftW > 0 ? draftW : null,
       applyH: Number.isFinite(draftH) && draftH > 0 ? draftH : null,
       applyD: Number.isFinite(draftD) && draftD > 0 ? draftD : null,
     };
+    if (hexCellMode) result.hexCellMode = true;
+    if (Number.isFinite(draftHexProtrusion) && draftHexProtrusion >= 0) {
+      result.hexCellProtrusionCm = draftHexProtrusion;
+    }
+    if (Number.isFinite(draftHexDoorWidth) && draftHexDoorWidth > 0) {
+      result.hexCellDoorWidthCm = draftHexDoorWidth;
+    }
+    return result;
   } catch {
-    return { applyW: null, applyH: null, applyD: null };
+    return {
+      applyW: null,
+      applyH: null,
+      applyD: null,
+    };
   }
 }
 
@@ -84,8 +111,10 @@ export function __wp_getCellDimsHoverOp(
   }
 ): 'add' | 'remove' {
   try {
-    const { applyW, applyH, applyD } = __wp_readCellDimsDraft(App);
-    if (applyW == null && applyH == null && applyD == null) return 'add';
+    const { applyW, applyH, applyD, hexCellMode, hexCellProtrusionCm, hexCellDoorWidthCm } =
+      __wp_readCellDimsDraft(App);
+    const effectiveApplyH = target.isBottom ? null : applyH;
+    if (!hexCellMode && applyW == null && effectiveApplyH == null && applyD == null) return 'add';
 
     const cfg = __wp_cfg(App);
     const ui = __wp_ui(App);
@@ -94,14 +123,20 @@ export function __wp_getCellDimsHoverOp(
 
     let curW = __wp_readLinearSelectorWidthInputCm(App, target, selectorBox);
     let curH = readRawNumber(raw, 'height', Math.max(0, Number(selectorBox.height) * 100));
-    let curD = readRawNumber(raw, 'depth', WARDROBE_DEFAULTS.byType.hinged.depthCm);
+    const topDepthDefault = readRawNumber(raw, 'depth', WARDROBE_DEFAULTS.byType.hinged.depthCm);
+    const lowerDepthDefault = raw.stackSplitLowerDepthManual
+      ? readRawNumber(raw, 'stackSplitLowerDepth', topDepthDefault)
+      : topDepthDefault;
+    let curD = target.isBottom ? lowerDepthDefault : topDepthDefault;
 
     let isCustomW = false;
     let isCustomH = false;
     let isCustomD = false;
+    let selectedCfgRef: unknown = null;
 
     if (__wp_isCornerKey(target.hitModuleKey)) {
-      const cornerCfg = readCornerConfigurationSnapshotForStack(cfg, 'top') ?? {};
+      const cornerCfg =
+        readCornerConfigurationSnapshotForStack(cfg, target.isBottom ? 'bottom' : 'top') ?? {};
       const cornerSd = readSpecialDimsRecord(cornerCfg);
       const connSd = readRecordProp(cornerCfg, 'connectorSpecialDims');
 
@@ -121,8 +156,10 @@ export function __wp_getCellDimsHoverOp(
         isCustomW = isOverrideActive(connSd, 'widthCm', 'baseWidthCm');
         isCustomH = isOverrideActive(cornerSd, 'heightCm', 'baseHeightCm');
         isCustomD = isOverrideActive(cornerSd, 'depthCm', 'baseDepthCm');
+        selectedCfgRef = cornerCfg;
       } else {
         const cfgRef = __wp_readInteriorModuleConfigRef(App, target.hitModuleKey, target.isBottom);
+        selectedCfgRef = cfgRef;
         const sd = readSpecialDimsRecord(cfgRef);
         curW = getActiveOverrideCm(sd, 'widthCm', 'baseWidthCm') ?? curW;
         curH = getActiveOverrideCm(sd, 'heightCm', 'baseHeightCm') ?? globalCornerH;
@@ -133,6 +170,7 @@ export function __wp_getCellDimsHoverOp(
       }
     } else {
       const cfgRef = __wp_readInteriorModuleConfigRef(App, target.hitModuleKey, target.isBottom);
+      selectedCfgRef = cfgRef;
       const sd = readSpecialDimsRecord(cfgRef);
       curW = getActiveOverrideCm(sd, 'widthCm', 'baseWidthCm') ?? curW;
       curH = getActiveOverrideCm(sd, 'heightCm', 'baseHeightCm') ?? readRawNumber(raw, 'height', curH);
@@ -143,16 +181,30 @@ export function __wp_getCellDimsHoverOp(
     }
 
     const matchesTargetW = applyW == null ? true : Math.abs(curW - applyW) <= EPS_CM;
-    const matchesTargetH = applyH == null ? true : Math.abs(curH - applyH) <= EPS_CM;
+    const matchesTargetH = effectiveApplyH == null ? true : Math.abs(curH - effectiveApplyH) <= EPS_CM;
     const matchesTargetD = applyD == null ? true : Math.abs(curD - applyD) <= EPS_CM;
 
     const willChangeW = applyW != null && !matchesTargetW;
-    const willChangeH = applyH != null && !matchesTargetH;
+    const willChangeH = effectiveApplyH != null && !matchesTargetH;
     const willChangeD = applyD != null && !matchesTargetD;
+
+    if (hexCellMode) {
+      if (!moduleHasHexCell(selectedCfgRef)) return 'add';
+      const moduleWidthCm = applyW != null && Number.isFinite(applyW) ? applyW : curW;
+      const willChangeHexConfig = hasHexCellDraftConfigChange({
+        cfgMod: selectedCfgRef,
+        protrusionCm: hexCellProtrusionCm,
+        doorWidthCm: hexCellDoorWidthCm,
+        moduleWidthCm,
+        toleranceCm: EPS_CM,
+      });
+      return willChangeW || willChangeH || willChangeD || willChangeHexConfig ? 'add' : 'remove';
+    }
+
     if (willChangeW || willChangeH || willChangeD) return 'add';
 
     const toggledBackW = applyW != null && isCustomW && matchesTargetW;
-    const toggledBackH = applyH != null && isCustomH && matchesTargetH;
+    const toggledBackH = effectiveApplyH != null && isCustomH && matchesTargetH;
     const toggledBackD = applyD != null && isCustomD && matchesTargetD;
     return toggledBackW || toggledBackH || toggledBackD ? 'remove' : 'add';
   } catch {

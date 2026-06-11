@@ -52,6 +52,7 @@ test('finalizeCreatePointerInteraction appends a new note for valid create drags
   refs.createLastPointRef.current = { x: 150, y: 120 };
   const base = [{ text: 'keep', style: { left: '1px', top: '2px' } }] as any[];
   const app = { services: { doors: { getOpen: () => true } } } as any;
+  let captureCalls = 0;
 
   const result = finalizeCreatePointerInteraction({
     App: app,
@@ -59,28 +60,37 @@ test('finalizeCreatePointerInteraction appends a new note for valid create drags
     endPoint: null,
     draftNotes: base as any,
     draftNotesRef: { current: base as any },
-    captureEditorsIntoNotes: notes => notes,
+    captureEditorsIntoNotes: notes => {
+      captureCalls += 1;
+      return notes;
+    },
     refs,
   });
 
   assert.equal(result.shouldExitDrawMode, false);
   assert.deepEqual(result.rect, { left: 10, top: 20, width: 140, height: 100 });
+  assert.equal(captureCalls, 0);
   assert.equal(result.nextDraft?.length, 2);
   assert.equal(result.nextDraft?.[0], base[0]);
-  assert.deepEqual(result.nextDraft?.[1], {
-    style: {
-      left: '10px',
-      top: '20px',
-      width: '140px',
-      height: '100px',
-      baseTextColor: '#000000',
-      baseFontSize: '4',
-      textColor: '#000000',
-      fontSize: '4',
-    },
-    text: '',
-    doorsOpen: true,
-  });
+  assert.match(String(result.nextDraft?.[1]?.id || ''), /^note-/);
+  assert.deepEqual(
+    { ...result.nextDraft?.[1], id: undefined },
+    {
+      id: undefined,
+      style: {
+        left: '10px',
+        top: '20px',
+        width: '140px',
+        height: '100px',
+        baseTextColor: '#000000',
+        baseFontSize: '4',
+        textColor: '#000000',
+        fontSize: '4',
+      },
+      text: '',
+      doorsOpen: true,
+    }
+  );
   assert.equal(refs.createLastPointRef.current, null);
   assert.equal(refs.interactionBaseNotesRef.current, null);
   assert.equal(refs.interactionStartNotesRef.current, null);

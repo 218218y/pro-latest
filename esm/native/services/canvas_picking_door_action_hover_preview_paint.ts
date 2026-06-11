@@ -29,6 +29,7 @@ import {
   resolveDoorStyleOverrideValue,
   resolveGlassFrameStylePaintSelection,
 } from '../features/door_style_overrides.js';
+import { isHexCellDiagonalPanelPartId } from '../features/hex_cell/index.js';
 import {
   buildRectClearanceMeasurementEntries,
   markCenteredRectClearanceMeasurements,
@@ -77,7 +78,7 @@ export function tryHandleDoorPaintHoverPreview(args: DoorPaintHoverPreviewArgs):
     doorSpecialMap[partKey] === 'mirror' || doorSpecialMap[partKey] === 'glass'
       ? String(doorSpecialMap[partKey])
       : null;
-  const existingCurtain = typeof curtainMap[partKey] === 'string' ? String(curtainMap[partKey]) : undefined;
+  const existingCurtain = typeof curtainMap[partKey] === 'string' ? String(curtainMap[partKey]).trim() : '';
   const existingColor =
     typeof individualColors[partKey] === 'string' ? String(individualColors[partKey]) : undefined;
 
@@ -97,7 +98,7 @@ export function tryHandleDoorPaintHoverPreview(args: DoorPaintHoverPreviewArgs):
       ? markerUd.__matRemove || markerUd.__matGroove || baseMarkerMaterial
       : markerUd.__matAdd || markerUd.__matGroove || baseMarkerMaterial;
   } else if (normalizedPaintSelection === 'mirror') {
-    if (!__isSpecialPaintTarget(partKey)) {
+    if (!__isSpecialPaintTarget(partKey) || isHexCellDiagonalPanelPartId(partKey)) {
       if (doorMarker) doorMarker.visible = false;
       return false;
     }
@@ -124,6 +125,8 @@ export function tryHandleDoorPaintHoverPreview(args: DoorPaintHoverPreviewArgs):
     mirrorOwnerGroup?.worldToLocal?.(localHit);
     const hitFaceSign = __resolveMirrorFaceSignFromLocalPoint(localHit);
     const existingMirrorLayouts = readMirrorLayoutList(mirrorLayoutMap[partKey]);
+    const mirrorDraft = __readMirrorDraft(readUi, App);
+    const hasSizedDraft = __hasMirrorSizedDraft(readUi, App);
     const removeMatch =
       existingSpecial === 'mirror'
         ? findMirrorLayoutMatchInRect({
@@ -134,13 +137,14 @@ export function tryHandleDoorPaintHoverPreview(args: DoorPaintHoverPreviewArgs):
             faceSign: hitFaceSign,
           })
         : null;
+    const isCanonicalFullMirrorRemoveHover =
+      existingSpecial === 'mirror' && !hasSizedDraft && !existingMirrorLayouts.length && hitFaceSign === 1;
+    const willRemoveMirror = !!removeMatch || isCanonicalFullMirrorRemoveHover;
     const center = buildSnappedMirrorCenterFromHit({
       rect: mirrorRect,
       hitX: localHit.x,
       hitY: localHit.y,
     });
-    const mirrorDraft = __readMirrorDraft(readUi, App);
-    const hasSizedDraft = __hasMirrorSizedDraft(readUi, App);
     const nextLayout = hasSizedDraft
       ? buildMirrorLayoutFromHit({
           rect: mirrorRect,
@@ -216,7 +220,7 @@ export function tryHandleDoorPaintHoverPreview(args: DoorPaintHoverPreviewArgs):
       };
       setSketchPreview(guidePreviewArgs);
     }
-    previewMaterial = removeMatch
+    previewMaterial = willRemoveMirror
       ? markerUd.__matRemove || markerUd.__matGroove || baseMarkerMaterial
       : hasSizedDraft && center.isCentered
         ? markerUd.__matCenter ||
@@ -233,9 +237,10 @@ export function tryHandleDoorPaintHoverPreview(args: DoorPaintHoverPreviewArgs):
     const curtainChoice = __readCurtainChoice(readUi, App);
     const glassFrameStyleSelection = resolveGlassFrameStylePaintSelection(normalizedPaintSelection);
     const existingGlassFrameStyle = resolveDoorStyleOverrideValue(doorStyleMap, partKey) ?? null;
+    const normalizedExistingCurtain = existingCurtain || 'none';
     const willRemoveGlass =
       existingSpecial === 'glass' &&
-      existingCurtain === curtainChoice &&
+      normalizedExistingCurtain === curtainChoice &&
       existingGlassFrameStyle === glassFrameStyleSelection;
     previewMaterial = willRemoveGlass
       ? markerUd.__matRemove || markerUd.__matGroove || baseMarkerMaterial

@@ -11,6 +11,7 @@ export type CommitSketchModuleInternalDrawerArgs = {
   topY: number;
   totalHeight: number;
   pad: number;
+  woodThick?: number;
   drawerHeightM: number;
   hitYClamped: number;
   hoverHost: ManualLayoutSketchHoverHost;
@@ -26,6 +27,7 @@ export type CommitSketchModuleExternalDrawerArgs = {
   topY: number;
   totalHeight: number;
   pad: number;
+  woodThick?: number;
   hitYClamped: number;
   hoverHost: ManualLayoutSketchHoverHost;
 };

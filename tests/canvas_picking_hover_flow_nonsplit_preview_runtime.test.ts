@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { tryHandleCanvasNonSplitDoorPreviewRoute } from '../esm/native/services/canvas_picking_hover_flow_nonsplit_preview_door.ts';
 import { tryHandleCanvasNonSplitPaintPreviewRoute } from '../esm/native/services/canvas_picking_hover_flow_nonsplit_preview_paint.ts';
+import { tryHandleCanvasNonSplitPreviewRoutes } from '../esm/native/services/canvas_picking_hover_flow_nonsplit_preview.ts';
 import { tryHandleCanvasNonSplitInteriorPreviewRoutes } from '../esm/native/services/canvas_picking_hover_flow_nonsplit_preview_interior.ts';
 import type {
   HandleCanvasNonSplitHoverArgs,
@@ -84,15 +85,141 @@ test('non-split paint preview normalizes preview render ops to null before deleg
   assert.equal(captured?.previewRo, null);
 });
 
+test('non-split paint preview routes drawer-box hits through object-box feedback before door markers', () => {
+  class Vec3 {
+    x = 0;
+    y = 0;
+    z = 0;
+    set(x: number, y: number, z: number) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+      return this;
+    }
+  }
+  class Quat {
+    copy(_next: unknown) {
+      return this;
+    }
+  }
+  const drawerBoxPartId = 'drawer_box__drawer_1';
+  const wardrobeGroup = {
+    type: 'Group',
+    userData: { partId: 'root' },
+    children: [] as unknown[],
+    worldToLocal(target: Vec3) {
+      return target;
+    },
+  };
+  const drawerGroup = {
+    type: 'Group',
+    userData: { partId: 'drawer_1' },
+    children: [] as unknown[],
+    parent: wardrobeGroup,
+    localToWorld(target: Vec3) {
+      return target;
+    },
+    getWorldPosition(target: Vec3) {
+      return target.set(0, 0, 0);
+    },
+    getWorldQuaternion(target: Quat) {
+      return target;
+    },
+  };
+  const drawerBox = {
+    type: 'Group',
+    userData: { partId: drawerBoxPartId, __wpDrawerBox: true, __doorWidth: 0.56, __doorHeight: 0.18 },
+    children: [] as unknown[],
+    parent: drawerGroup,
+    localToWorld(target: Vec3) {
+      return target;
+    },
+    getWorldPosition(target: Vec3) {
+      return target.set(0, 0, 0);
+    },
+    getWorldQuaternion(target: Quat) {
+      return target;
+    },
+  };
+  const sidePanel = {
+    type: 'Mesh',
+    userData: {},
+    material: { visible: true, opacity: 1 },
+    children: [] as unknown[],
+    parent: drawerBox,
+    geometry: {
+      parameters: { width: 0.018, height: 0.18, depth: 0.48 },
+      boundingBox: { min: { x: -0.009, y: -0.09, z: -0.24 }, max: { x: 0.009, y: 0.09, z: 0.24 } },
+    },
+    position: { x: -0.27, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 },
+  };
+  drawerBox.children.push(sidePanel);
+  drawerGroup.children.push(drawerBox);
+  wardrobeGroup.children.push(drawerGroup);
+
+  const App = {
+    deps: { THREE: { Vector3: Vec3, Quaternion: Quat } },
+    store: {
+      getState: () => ({ ui: { stackSplitEnabled: false }, config: {}, mode: {}, runtime: {}, meta: {} }),
+      patch: () => undefined,
+    },
+    render: { renderer: {}, camera: {}, wardrobeGroup, scene: { children: [wardrobeGroup] } },
+    services: { runtimeCache: {}, builder: { registry: { get: () => null } } },
+    maps: { getMap: () => null },
+  };
+  const previews: Record<string, unknown>[] = [];
+  const doorMarker = {
+    visible: true,
+    userData: { __matAdd: 'add', __matRemove: 'remove', __matGroove: 'groove' },
+    position: { copy() {} },
+    quaternion: { copy() {} },
+    scale: { set() {} },
+  };
+  const raycaster = {
+    setFromCamera() {},
+    intersectObjects(_objects: unknown, _recursive?: boolean, optionalTarget?: unknown[]) {
+      const hits = [{ object: sidePanel, point: { x: -0.27, y: 0, z: 0.05 } }];
+      if (Array.isArray(optionalTarget)) {
+        optionalTarget.length = 0;
+        optionalTarget.push(...hits);
+        return optionalTarget;
+      }
+      return hits;
+    },
+  };
+
+  const handled = tryHandleCanvasNonSplitPreviewRoutes({
+    hoverArgs: createHoverArgs({
+      App: App as never,
+      paintSelection: 'walnut',
+      raycaster: raycaster as never,
+      mouse: { x: 0, y: 0 } as never,
+      doorMarker: doorMarker as never,
+      previewRo: {
+        setSketchPlacementPreview(args: Record<string, unknown>) {
+          previews.push(args);
+        },
+      } as never,
+    }),
+    facePreviewState: {
+      preferredFacePreviewPartId: null,
+      preferredFacePreviewHitObject: null,
+    },
+  });
+
+  assert.equal(handled, true);
+  assert.equal(doorMarker.visible, false);
+  assert.equal(previews.length, 1);
+  assert.equal(previews[0]?.kind, 'object_boxes');
+  assert.deepEqual(previews[0]?.previewObjects, [sidePanel]);
+});
+
 test('non-split interior preview stops at the first handled route and does not fan out further', () => {
   const calls: string[] = [];
   const handled = tryHandleCanvasNonSplitInteriorPreviewRoutes(
     createHoverArgs({ isExtDrawerEditMode: true }),
     {
-      tryHandleCanvasIntDrawerHover: () => {
-        calls.push('int');
-        return false;
-      },
       tryHandleExtDrawersHoverPreview: args => {
         calls.push(`ext:${String((args as Record<string, unknown>).isExtDrawerEditMode)}`);
         return true;
@@ -113,7 +240,7 @@ test('non-split interior preview stops at the first handled route and does not f
   );
 
   assert.equal(handled, true);
-  assert.deepEqual(calls, ['int', 'ext:true']);
+  assert.deepEqual(calls, ['ext:true']);
 });
 
 test('non-split interior preview reaches cell-dims with the canonical helper surface when earlier routes miss', () => {
@@ -121,7 +248,6 @@ test('non-split interior preview reaches cell-dims with the canonical helper sur
   const handled = tryHandleCanvasNonSplitInteriorPreviewRoutes(
     createHoverArgs({ isCellDimsMode: true, previewRo: { kind: 'preview' } as never }),
     {
-      tryHandleCanvasIntDrawerHover: () => false,
       tryHandleExtDrawersHoverPreview: () => false,
       tryHandleDrawerDividerHoverPreview: () => false,
       tryHandleCanvasLayoutFamilyHover: () => false,

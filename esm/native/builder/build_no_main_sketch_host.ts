@@ -2,15 +2,12 @@ import { getCacheBag } from '../runtime/cache_access.js';
 import { NO_MAIN_SKETCH_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { getWardrobeGroup } from '../runtime/render_access.js';
 import { makeRodCreator } from './contents_pipeline.js';
-import { makeInternalDrawerCreator } from './internal_drawers_pipeline.js';
 import { applyInteriorLayout } from './interior_pipeline.js';
 import { readModulesConfigurationListFromConfigSnapshot } from '../features/modules_configuration/modules_config_api.js';
 import type {
   AppContainer,
   BuilderContentsSurfaceLike,
-  BuilderCreateInternalDrawerBoxFn,
   BuilderOutlineFn,
-  BuilderPartMaterialResolver,
   BuilderSketchBoxLike,
   BuilderSketchDrawerLike,
   BuilderSketchExtrasLike,
@@ -238,8 +235,10 @@ export function maybeRenderNoMainSketchHost(args: {
     config: moduleCfg,
     moduleIndex: 0,
     effectiveBottomY,
+    effectiveTopY,
+    gridDivisions: NO_MAIN_SKETCH_DIMENSIONS.defaultGridDivisions,
     localGridStep,
-    isInternalDrawersEnabled: !!args.isInternalDrawersEnabled,
+    woodThick: Number(args.woodThick),
     innerW,
     internalCenterX: 0,
     internalZ: Number(args.internalZ),
@@ -258,33 +257,6 @@ export function maybeRenderNoMainSketchHost(args: {
       undefined,
     doorStyle: readStringProp(readRecord(args.ui), 'doorStyle') || '',
   });
-  const checkAndCreateInternalDrawer = makeInternalDrawerCreator({
-    App: args.App,
-    THREE: three,
-    cfg: cfg || {},
-    config: moduleCfg,
-    moduleIndex: 0,
-    keyPrefix: 'no_main_',
-    effectiveBottomY,
-    localGridStep,
-    drawerSizingGridStep: localGridStep,
-    internalCenterX: 0,
-    internalZ: Number(args.internalZ),
-    internalDepth: Math.max(Number(args.woodThick), Number(args.internalDepth)),
-    innerW,
-    isInternalDrawersEnabled: !!args.isInternalDrawersEnabled,
-    wardrobeGroup,
-    createInternalDrawerBox:
-      readFunction<BuilderCreateInternalDrawerBoxFn>(args.createInternalDrawerBox) || null,
-    addOutlines: readFunction<BuilderOutlineFn>(args.addOutlines) || null,
-    getPartMaterial: readFunction<BuilderPartMaterialResolver>(args.getPartMaterial) || null,
-    bodyMat: args.bodyMat,
-    showContentsEnabled: !!args.showContentsEnabled,
-    addFoldedClothes:
-      readFunction<NonNullable<BuilderContentsSurfaceLike['addFoldedClothes']>>(args.addFoldedClothes) ||
-      undefined,
-  });
-
   return applyInteriorLayout({
     App: args.App,
     THREE: args.THREE,
@@ -297,7 +269,6 @@ export function maybeRenderNoMainSketchHost(args: {
     addFoldedClothes:
       readFunction<NonNullable<BuilderContentsSurfaceLike['addFoldedClothes']>>(args.addFoldedClothes) ||
       null,
-    checkAndCreateInternalDrawer,
     effectiveBottomY,
     effectiveTopY,
     localGridStep,
@@ -310,6 +281,7 @@ export function maybeRenderNoMainSketchHost(args: {
     moduleIndex: 0,
     modulesLength: 1,
     currentShelfMat: args.bodyMat,
+    currentBraceShelfMat: args.bodyMat,
     bodyMat: args.bodyMat,
     isInternalDrawersEnabled: false,
     getPartMaterial: args.getPartMaterial,

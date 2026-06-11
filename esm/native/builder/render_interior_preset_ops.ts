@@ -69,6 +69,7 @@ export function createBuilderRenderInteriorPresetOps(deps: RenderInteriorOpsDeps
     const modulesLength = typeof input.modulesLength === 'number' ? Number(input.modulesLength) : -1;
     const moduleKey = readModuleKeyString(input, moduleIndex);
     const currentShelfMat = input.currentShelfMat;
+    const currentBraceShelfMat = input.currentBraceShelfMat || currentShelfMat;
     const bodyMat = input.bodyMat;
     const braceSet = buildBraceShelfIndexSet(input);
     const shelfSet: Record<number, true> = Object.create(null);
@@ -108,8 +109,6 @@ export function createBuilderRenderInteriorPresetOps(deps: RenderInteriorOpsDeps
     const leftInnerX = moduleFaces ? moduleFaces.leftX : internalCenterX - innerW / 2;
     const rightInnerX = moduleFaces ? moduleFaces.rightX : internalCenterX + innerW / 2;
 
-    const isInternalDrawersEnabled = !!input.isInternalDrawersEnabled;
-    const intDrawersSlot = Number(input.intDrawersSlot || 0);
     const addGridShelf = createAddGridShelf({
       App,
       threeSurface,
@@ -117,6 +116,10 @@ export function createBuilderRenderInteriorPresetOps(deps: RenderInteriorOpsDeps
       createBoard,
       addFoldedClothes,
       currentShelfMat,
+      currentBraceShelfMat,
+      moduleKey,
+      getPartMaterial: input.getPartMaterial,
+      getPartColorValue: input.getPartColorValue,
       braceSet,
       effectiveBottomY,
       effectiveTopY,
@@ -135,8 +138,6 @@ export function createBuilderRenderInteriorPresetOps(deps: RenderInteriorOpsDeps
       braceShelfWidth,
       leftInnerX,
       rightInnerX,
-      isInternalDrawersEnabled,
-      intDrawersSlot,
       renderOpsHandleCatch: __renderOpsHandleCatch,
     });
 

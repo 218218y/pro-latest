@@ -37,6 +37,7 @@ export type ResolveSketchModuleSurfacePreviewArgs = {
   isRod: boolean;
   allowExistingShelfRemove?: boolean;
   allowExistingRodRemove?: boolean;
+  allowExistingStorageRemove?: boolean;
   variant: string;
   shelfDepthOverrideM: number | null;
   boxH: number;

@@ -78,6 +78,7 @@ export function createBuilderRenderInteriorCustomOps(deps: RenderInteriorOpsDeps
     const modulesLength = typeof input.modulesLength === 'number' ? Number(input.modulesLength) : -1;
     const moduleKey = readModuleKeyString(input, moduleIndex);
     const currentShelfMat = input.currentShelfMat;
+    const currentBraceShelfMat = input.currentBraceShelfMat || currentShelfMat;
     const bodyMat = input.bodyMat;
     const braceSet = buildBraceShelfIndexSet(input);
     const shelfSet = buildShelfIndexSet(ops);
@@ -108,8 +109,8 @@ export function createBuilderRenderInteriorCustomOps(deps: RenderInteriorOpsDeps
         : innerW;
     const leftInnerX = moduleFaces ? moduleFaces.leftX : internalCenterX - innerW / 2;
     const rightInnerX = moduleFaces ? moduleFaces.rightX : internalCenterX + innerW / 2;
-    const isInternalDrawersEnabled = !!input.isInternalDrawersEnabled;
-    const activeSlots = Array.isArray(input.intDrawersList) ? input.intDrawersList : [];
+    const isInternalDrawersEnabled = false;
+    const activeSlots: unknown[] = [];
 
     const addGridShelf = createAddCustomGridShelf({
       threeSurface,
@@ -118,6 +119,10 @@ export function createBuilderRenderInteriorCustomOps(deps: RenderInteriorOpsDeps
       createBoard,
       addFoldedClothes: input.addFoldedClothes,
       currentShelfMat,
+      currentBraceShelfMat,
+      moduleKey,
+      getPartMaterial: input.getPartMaterial,
+      getPartColorValue: input.getPartColorValue,
       braceSet,
       braceMetrics: {
         regularDepth,
@@ -177,7 +182,6 @@ export function createBuilderRenderInteriorCustomOps(deps: RenderInteriorOpsDeps
       shelfSet,
       shelfVariantByIndex,
       addGridShelf,
-      checkAndCreateInternalDrawer: input.checkAndCreateInternalDrawer,
       createRod,
       rodMap: buildRodMap(ops),
     });

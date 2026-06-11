@@ -23,11 +23,8 @@ test('corner lower stack cell patch seeds missing lower shell from the base corn
   const modules = lower.modulesConfiguration as AnyRecord[];
 
   assert.equal(lower.legacyHint, 'keep-me');
-  assert.equal((lower.specialDims as AnyRecord).widthCm, 333);
+  assert.equal(lower.specialDims, undefined);
   assert.equal(modules[1].layout, 'bottom-cell');
-
-  (lower.specialDims as AnyRecord).widthCm = 999;
-  assert.equal((base.specialDims as AnyRecord).widthCm, 333);
 });
 
 test('corner lower stack record patch seeds missing lower shell from the base corner snapshot before sanitizing the patch', () => {
@@ -42,11 +39,30 @@ test('corner lower stack record patch seeds missing lower shell from the base co
   const lower = patched.stackSplitLower as AnyRecord;
 
   assert.equal(lower.preserveMe, true);
-  assert.equal((lower.specialDims as AnyRecord).depthCm, 55);
+  assert.equal(lower.specialDims, undefined);
   assert.equal(lower.extDrawersCount, 3);
+});
 
-  (lower.specialDims as AnyRecord).depthCm = 999;
-  assert.equal((base.specialDims as AnyRecord).depthCm, 55);
+test('corner lower stack seed does not inherit top special dimensions when no lower shell exists', () => {
+  const base: AnyRecord = {
+    layout: 'top-layout',
+    specialDims: { baseWidthCm: 140, widthCm: 140, depthCm: 70 },
+    connectorSpecialDims: { widthCm: 115 },
+    legacyHint: 'keep-me',
+    modulesConfiguration: [{ specialDims: { widthCm: 80 } }],
+  };
+
+  const patched = patchCornerConfigurationForStack(base, base, 'bottom', {
+    layout: 'bottom-layout',
+  }) as AnyRecord;
+  const lower = patched.stackSplitLower as AnyRecord;
+
+  assert.equal(lower.legacyHint, 'keep-me');
+  assert.equal(lower.layout, 'bottom-layout');
+  assert.equal(lower.specialDims, undefined);
+  assert.equal(lower.connectorSpecialDims, undefined);
+  assert.deepEqual(lower.modulesConfiguration, []);
+  assert.deepEqual(base.specialDims, { baseWidthCm: 140, widthCm: 140, depthCm: 70 });
 });
 
 test('corner top stack cell patch preserves the original corner snapshot reference for semantic no-op patches', () => {
@@ -54,8 +70,6 @@ test('corner top stack cell patch preserves the original corner snapshot referen
     layout: 'corner-shell',
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersList: [],
-    intDrawersSlot: 0,
     isCustom: false,
     gridDivisions: 6,
     customData: {
@@ -69,8 +83,6 @@ test('corner top stack cell patch preserves the original corner snapshot referen
         doors: 2,
         extDrawersCount: 0,
         hasShoeDrawer: false,
-        intDrawersList: [],
-        intDrawersSlot: 0,
         isCustom: false,
         customData: {
           shelves: [false, false, false, false, false, false],
@@ -101,7 +113,6 @@ test('corner lower stack record patch preserves the original corner snapshot ref
       layout: 'drawers',
       extDrawersCount: 2,
       hasShoeDrawer: false,
-      intDrawersList: [],
       isCustom: false,
       gridDivisions: 6,
       customData: {
@@ -116,8 +127,6 @@ test('corner lower stack record patch preserves the original corner snapshot ref
       layout: 'drawers',
       extDrawersCount: 1,
       hasShoeDrawer: false,
-      intDrawersList: [],
-      intDrawersSlot: 0,
       isCustom: true,
       gridDivisions: 6,
       customData: {
@@ -146,8 +155,6 @@ test('corner ensure reuses the previous canonical bottom snapshot when the lower
       layout: 'shelves',
       extDrawersCount: 0,
       hasShoeDrawer: false,
-      intDrawersList: [],
-      intDrawersSlot: 0,
       isCustom: true,
       gridDivisions: 6,
       customData: {
@@ -164,8 +171,6 @@ test('corner ensure reuses the previous canonical bottom snapshot when the lower
       layout: 'shelves',
       extDrawersCount: 0,
       hasShoeDrawer: false,
-      intDrawersList: [],
-      intDrawersSlot: 0,
       isCustom: true,
       gridDivisions: 6,
       customData: {

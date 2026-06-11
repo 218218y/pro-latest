@@ -11,10 +11,12 @@ export function useObservedViewportValue<T>(
 ): ObservedViewportValueResult<T> {
   const {
     enabled,
-    anchor,
+    anchor = null,
+    resolveAnchor,
     initialValue,
     observeScroll = false,
     resizeTargets = [],
+    resolveResizeTargets,
     measure,
     areEqual,
   } = args;
@@ -42,8 +44,13 @@ export function useObservedViewportValue<T>(
         generationRef.current += 1;
       };
     }
-    const doc = getNodeDocument(anchor);
-    const win = getNodeWindow(anchor);
+
+    // Refs are populated before layout effects run. Resolve them here instead of
+    // freezing `ref.current` during render; otherwise first-open floating toolbars
+    // keep the default placement until a later render happens to re-measure them.
+    const currentAnchor = resolveAnchor?.() ?? anchor ?? null;
+    const doc = getNodeDocument(currentAnchor);
+    const win = getNodeWindow(currentAnchor);
     if (!doc || !win) {
       commitValue(initialValue);
       return () => {
@@ -56,19 +63,32 @@ export function useObservedViewportValue<T>(
       refreshNow();
     };
 
+    refreshIfCurrent();
+
+    const currentResizeTargets = resolveResizeTargets?.() ?? resizeTargets;
     const stopObserving = observeViewportLayout({
       doc,
       win,
       onUpdate: refreshIfCurrent,
       observeScroll,
-      resizeTargets,
+      resizeTargets: currentResizeTargets,
     });
 
     return () => {
       generationRef.current += 1;
       stopObserving();
     };
-  }, [anchor, commitValue, enabled, initialValue, observeScroll, refreshNow, resizeTargets]);
+  }, [
+    anchor,
+    commitValue,
+    enabled,
+    initialValue,
+    observeScroll,
+    refreshNow,
+    resizeTargets,
+    resolveAnchor,
+    resolveResizeTargets,
+  ]);
 
   return { value, valueRef, refreshNow };
 }

@@ -1,3 +1,4 @@
+import { isShelfBoardPartId } from '../features/shelf_part_identity.js';
 import type { RaycastHitLike } from './canvas_picking_engine.js';
 import type { ManualLayoutSketchDirectHitContext } from './canvas_picking_sketch_direct_hit_workflow_contracts.js';
 import { asConfig } from './canvas_picking_sketch_direct_hit_workflow_contracts.js';
@@ -26,7 +27,7 @@ export function tryApplySketchDirectHitShelfActions(args: ManualLayoutSketchDire
       const userData = asRecord(hit?.object?.userData);
       if (!userData) return false;
       if (userData.__kind === 'shelf_pin' || userData.__kind === 'brace_seam') return false;
-      return userData.partId === 'all_shelves' || userData.partId === 'corner_shelves';
+      return isShelfBoardPartId(userData.partId);
     });
     const shelfHitY = typeof shelfBoardHit?.point?.y === 'number' ? shelfBoardHit.point.y : null;
 

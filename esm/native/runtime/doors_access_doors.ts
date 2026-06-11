@@ -1,6 +1,7 @@
 import type {
   ActionMetaLike,
   DoorsCaptureLocalOpenOptionsLike,
+  DoorsCloseDrawerOptionsLike,
   DoorsReleaseEditHoldOptionsLike,
   DoorsSyncVisualsOptionsLike,
 } from '../../../types';
@@ -79,13 +80,22 @@ export function releaseDoorsEditHoldViaService(
   return false;
 }
 
-export function closeDrawerByIdViaService(App: unknown, drawerId: unknown): boolean {
+export function closeDrawerByIdViaService(
+  App: unknown,
+  drawerId: unknown,
+  opts?: DoorsCloseDrawerOptionsLike
+): boolean {
   const key = asKey(drawerId);
   if (!key) return false;
   try {
-    const closeDrawerById = getDoorsMethod<(drawerId: string | number) => unknown>(App, 'closeDrawerById');
+    const closeDrawerById = getDoorsMethod<
+      (drawerId: string | number, opts?: DoorsCloseDrawerOptionsLike) => unknown
+    >(App, 'closeDrawerById');
     if (closeDrawerById) {
-      closeDrawerById(typeof drawerId === 'number' ? drawerId : key);
+      closeDrawerById(
+        typeof drawerId === 'number' ? drawerId : key,
+        asRecord<DoorsCloseDrawerOptionsLike>(opts) || undefined
+      );
       return true;
     }
   } catch {

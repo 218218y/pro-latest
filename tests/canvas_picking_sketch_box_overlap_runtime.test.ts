@@ -112,3 +112,58 @@ test('overlap primitive still allows exact edge contact without treating it as o
     false
   );
 });
+
+test('placement resolution can be confined to the pointer slot instead of jumping across blockers', () => {
+  const blockedBelow = resolveSketchModuleBoxPlacement({
+    boxes: [],
+    blockers: [{ id: 'shelf-1', minY: -0.78, maxY: -0.74, collisionGapM: 0, hardCollision: true }],
+    desiredCenterX: 0,
+    desiredCenterY: -0.9,
+    boxW: 0.6,
+    boxH: 0.4,
+    pad: 0.02,
+    confineToPointerSlot: true,
+    ...moduleArgs,
+  });
+
+  assert.equal(blockedBelow.blocked, true);
+  assert.equal(blockedBelow.adjusted, false);
+  assert.equal(blockedBelow.anchorBoxId, 'blocker:shelf-1');
+
+  const adjustedAbove = resolveSketchModuleBoxPlacement({
+    boxes: [],
+    blockers: [{ id: 'shelf-1', minY: -0.78, maxY: -0.74, collisionGapM: 0, hardCollision: true }],
+    desiredCenterX: 0,
+    desiredCenterY: -0.7,
+    boxW: 0.6,
+    boxH: 0.4,
+    pad: 0.02,
+    confineToPointerSlot: true,
+    ...moduleArgs,
+  });
+
+  assert.equal(adjustedAbove.blocked, false);
+  assert.equal(adjustedAbove.adjusted, true);
+  assert.ok(Math.abs(adjustedAbove.centerY - -0.54) <= 1e-9);
+});
+
+test('placement resolution reports blocked when vertical content blockers leave no valid box slot', () => {
+  const resolved = resolveSketchModuleBoxPlacement({
+    boxes: [],
+    blockers: [
+      { id: 'bottom-blocker', minY: -0.9, maxY: -0.25, hardCollision: true },
+      { id: 'middle-blocker', minY: -0.35, maxY: 0.35, hardCollision: true },
+      { id: 'top-blocker', minY: 0.25, maxY: 0.9, hardCollision: true },
+    ],
+    desiredCenterX: 0,
+    desiredCenterY: 0,
+    boxW: 0.6,
+    boxH: 0.4,
+    pad: 0.02,
+    ...moduleArgs,
+  });
+
+  assert.equal(resolved.blocked, true);
+  assert.equal(resolved.adjusted, false);
+  assert.equal(resolved.anchorBoxId, 'blocker:middle-blocker');
+});

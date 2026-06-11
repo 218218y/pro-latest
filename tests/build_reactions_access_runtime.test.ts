@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import type { AppContainer } from '../types';
 import { getBuildReactionsServiceMaybe } from '../esm/native/runtime/build_reactions_access.ts';
+import {
+  consumeCanvasPostBuildHoverRefresh,
+  requestCanvasPostBuildHoverRefresh,
+} from '../esm/native/runtime/canvas_interaction_flags.ts';
 import { installBuildReactionsService } from '../esm/native/services/build_reactions.ts';
 
 test('installBuildReactionsService installs canonical services.buildReactions slot without replacing the slot object', () => {
@@ -111,4 +116,59 @@ test('build reactions access heals a drifted afterBuild slot back to the canonic
   assert.equal(healedService, service);
   assert.equal(healedService.afterBuild, canonicalAfterBuild);
   assert.equal(healedService.__wpAfterBuild, canonicalAfterBuild);
+});
+
+test('canonical build reactions refresh a pending canvas hover after the rebuilt scene exists', () => {
+  const matrixCalls: string[] = [];
+  const hoverCalls: Array<{ x: number; y: number; matrixCalls: string[] }> = [];
+  const renderCalls: boolean[] = [];
+  const App = {
+    services: {
+      canvasPicking: {
+        handleHoverNDC(x: number, y: number) {
+          hoverCalls.push({ x, y, matrixCalls: [...matrixCalls] });
+          return true;
+        },
+      },
+      platform: {
+        triggerRender(updateShadows?: boolean) {
+          renderCalls.push(updateShadows === true);
+        },
+      },
+      sceneView: {
+        syncFromStore() {
+          return true;
+        },
+      },
+    },
+    store: {
+      getState: () => ({ ui: { raw: {} } }),
+    },
+    render: {
+      camera: {
+        updateWorldMatrix(updateParents: boolean, updateChildren: boolean) {
+          matrixCalls.push(`camera:${updateParents}:${updateChildren}`);
+        },
+      },
+      wardrobeGroup: {
+        updateWorldMatrix(updateParents: boolean, updateChildren: boolean) {
+          matrixCalls.push(`wardrobe:${updateParents}:${updateChildren}`);
+        },
+      },
+    },
+  } as unknown as AppContainer;
+
+  requestCanvasPostBuildHoverRefresh(App, 0.25, -0.4, 'test.afterBuild');
+  const service = installBuildReactionsService(App);
+  service.afterBuild?.(true);
+
+  assert.deepEqual(hoverCalls, [
+    {
+      x: 0.25,
+      y: -0.4,
+      matrixCalls: ['camera:true:false', 'wardrobe:true:true'],
+    },
+  ]);
+  assert.deepEqual(renderCalls, [false]);
+  assert.equal(consumeCanvasPostBuildHoverRefresh(App), null);
 });

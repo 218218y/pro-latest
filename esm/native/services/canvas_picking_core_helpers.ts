@@ -41,6 +41,7 @@ export {
   __wp_isDoorLikePartId,
   __wp_isDrawerLikePartId,
   __wp_isDoorOrDrawerLikePartId,
+  __wp_isDoorActionPaintTargetPartId,
   __wp_isSegmentedDoorBaseId,
   __wp_canonDoorPartKeyForMaps,
   __wp_scopeCornerPartKeyForStack,

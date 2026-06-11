@@ -1,6 +1,7 @@
 import { makeMaterialResolver, resolveGlobalColorChoice } from './material_resolver.js';
 import { getCommonMatsOrThrow } from './common_mats_resolver.js';
 import { getBaseLegColorHex } from '../features/base_leg_support.js';
+import { isFrontColorBraceShelvesOnlyMode } from '../features/front_color_shelf_inheritance.js';
 
 import type { BuildFlowPlanMaterials, BuildFlowPlanMaterialsArgs } from './build_flow_plan_contracts.js';
 
@@ -11,6 +12,10 @@ export function resolveBuildFlowPlanMaterials(args: BuildFlowPlanMaterialsArgs):
   const globalFrontMat = getMaterialFn(colorHex, 'front', useTexture, textureDataURL);
   const bodyMat = globalFrontMat;
   const { masoniteMat, whiteMat, shadowMat } = getCommonMatsOrThrow({ App, THREE });
+  const defaultShelfMat = isFrontColorBraceShelvesOnlyMode(ui.frontColorShelfInheritanceMode)
+    ? whiteMat
+    : bodyMat;
+  const braceShelfMat = bodyMat;
   const legMat = getMaterialFn(getBaseLegColorHex(ui.baseLegColor), 'metal');
 
   const materialResolver = makeMaterialResolver({
@@ -31,6 +36,8 @@ export function resolveBuildFlowPlanMaterials(args: BuildFlowPlanMaterialsArgs):
     whiteMat,
     shadowMat,
     legMat,
+    defaultShelfMat,
+    braceShelfMat,
     getPartColorValue: materialResolver.getPartColorValue,
     getPartMaterial: materialResolver.getPartMaterial,
   };

@@ -6,6 +6,7 @@ import {
 } from './module_loop_pipeline_module_frame.js';
 import { createInterDivider } from './module_loop_pipeline_module_dividers.js';
 import { applyEdgeHandleDefaults, registerModuleHitBox } from './module_loop_pipeline_module_registry.js';
+import { applyHexCellGeometryForModule } from './module_loop_pipeline_hex_cell.js';
 
 import type { ModuleLoopRuntime } from './module_loop_pipeline_runtime.js';
 
@@ -22,6 +23,7 @@ export function runModuleLoopItem(
 
   registerModuleHitBox(runtime, state, index, frame);
   createInterDivider(runtime, state, index, frame);
+  applyHexCellGeometryForModule(runtime, state, index, frame);
 
   const metrics = resolveModuleVerticalMetrics(runtime, frame);
   writeInternalGridMap(runtime, index, frame, metrics);

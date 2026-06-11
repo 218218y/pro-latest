@@ -1,6 +1,6 @@
 import { applyOverrideToSpecialDims, assignSpecialDimsToConfig } from '../features/special_dims/index.js';
 import {
-  patchCornerConfig,
+  patchCornerConfigForStack,
   commitCornerHistory,
   refreshCornerStructure,
   showCornerToast,
@@ -16,7 +16,8 @@ export function applyCornerCellHeightDepthSelection(
   ctx: CornerCellHeightDepthContext,
   state: CornerCellHeightDepthState
 ): boolean {
-  const { App, nextCornerCfg, cellIdx, applyH, applyD, modsPrev, modsNext, nextCellCfg, sdCell } = ctx;
+  const { App, stackKey, nextCornerCfg, cellIdx, applyH, applyD, modsPrev, modsNext, nextCellCfg, sdCell } =
+    ctx;
   const { cellBaseH, cellBaseD, toggledBackCellH, toggledBackCellD, willChangeH, willChangeD } = state;
 
   if (applyH != null) {
@@ -43,13 +44,14 @@ export function applyCornerCellHeightDepthSelection(
   assignSpecialDimsToConfig(nextCellCfg, sdCell);
   while (modsNext.length <= cellIdx) modsNext.push({});
   modsNext[cellIdx] = nextCellCfg;
-  sanitizeCornerModulesForPatch(nextCornerCfg, modsNext, modsPrev);
+  sanitizeCornerModulesForPatch(nextCornerCfg, modsNext, modsPrev, stackKey);
 
-  patchCornerConfig(
+  patchCornerConfigForStack(
     App,
     nextCornerCfg,
     'cellDims.apply.corner.cell.heightOnly',
-    'cellDims.corner.cell.patchConfig'
+    'cellDims.corner.cell.patchConfig',
+    stackKey
   );
   commitCornerHistory('cellDims.apply.corner.cell.heightOnly', App);
   refreshCornerStructure(App, 'cellDims.apply.corner.cell.heightOnly', 'cellDims.corner.cell.refresh');

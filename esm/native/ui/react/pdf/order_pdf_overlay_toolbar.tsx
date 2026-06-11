@@ -17,7 +17,6 @@ type OrderPdfOverlayToolbarProps = {
   onExportImagePdf: () => void;
   imagePdfBusy: boolean;
   onExportInteractiveToGmail: () => void;
-  onExportInteractiveDownloadAndGmail: () => void;
   gmailBusy: boolean;
   hasImportedPdfImages: boolean;
   hasImportedPdfRenderImage: boolean;
@@ -69,7 +68,6 @@ export function OrderPdfOverlayToolbar(props: OrderPdfOverlayToolbarProps): Reac
     onExportImagePdf,
     imagePdfBusy,
     onExportInteractiveToGmail,
-    onExportInteractiveDownloadAndGmail,
     gmailBusy,
     hasImportedPdfImages,
     hasImportedPdfRenderImage,
@@ -91,29 +89,36 @@ export function OrderPdfOverlayToolbar(props: OrderPdfOverlayToolbarProps): Reac
     hasImportedPdfImage: hasImportedPdfOpenImage,
     enabled: includeOpenClosedOn,
   });
+  const imageOptionsLabel = resolveOrderPdfSketchImageOptionsTitle(hasImportedPdfImages);
+  const printTooltip = imagePdfBusy
+    ? 'מייצר PDF כתמונה…'
+    : 'הדפס/הורד PDF כתמונה (לא אינטראקטיבי) – שומר על מראה אחיד בלי אותיות הפוכות';
+  const gmailTooltip = gmailBusy ? 'יוצר טיוטה…' : 'פתח טיוטת מייל (Gmail) עם PDF כתמונה מצורף';
 
   return (
     <div className="wp-pdf-editor-toolbar" dir="ltr">
-      <div className="wp-pdf-editor-toolbar-left" dir="ltr" title="זום">
+      <div className="wp-pdf-editor-toolbar-left" dir="ltr" aria-label="זום">
         <div className="wp-pdf-editor-zoom" dir="ltr">
           <button
             type="button"
-            className="wp-pdf-editor-btn wp-pdf-editor-btn--iconOnly"
+            className="wp-pdf-editor-btn wp-pdf-editor-btn--iconOnly wp-pdf-ui-hint"
             onClick={onZoomOut}
-            title="הקטן"
+            data-tooltip="הקטן"
+            aria-label="הקטן"
             tabIndex={-1}
           >
-            <i className="fas fa-minus" />
+            <i className="fas fa-minus" aria-hidden="true" />
           </button>
           <span className="wp-pdf-editor-zoom-val">{Math.round(zoom * 100)}%</span>
           <button
             type="button"
-            className="wp-pdf-editor-btn wp-pdf-editor-btn--iconOnly"
+            className="wp-pdf-editor-btn wp-pdf-editor-btn--iconOnly wp-pdf-ui-hint"
             onClick={onZoomIn}
-            title="הגדל"
+            data-tooltip="הגדל"
+            aria-label="הגדל"
             tabIndex={-1}
           >
-            <i className="fas fa-plus" />
+            <i className="fas fa-plus" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -121,26 +126,26 @@ export function OrderPdfOverlayToolbar(props: OrderPdfOverlayToolbarProps): Reac
       <div className="wp-pdf-editor-toolbar-center" dir="rtl">
         <button
           type="button"
-          className="wp-pdf-editor-btn"
+          className="wp-pdf-editor-btn wp-pdf-editor-toolbar-action-btn wp-pdf-ui-hint"
           onClick={onRefreshAuto}
-          title="עדכן מהפרויקט"
+          data-tooltip="עדכן מהפרויקט"
+          aria-label="עדכן מהפרויקט"
           tabIndex={-1}
           data-testid="order-pdf-refresh-button"
         >
-          <i className="fas fa-sync" />
-          <span>עדכן</span>
+          <i className="fas fa-sync" aria-hidden="true" />
         </button>
 
         <button
           type="button"
-          className="wp-pdf-editor-btn"
+          className="wp-pdf-editor-btn wp-pdf-editor-toolbar-action-btn wp-pdf-ui-hint"
           onClick={onLoadPdfClick}
-          title="טען PDF קיים לעריכה (אפשר גם לגרור PDF לתוך העורך)"
+          data-tooltip="טען PDF קיים לעריכה (אפשר גם לגרור PDF לתוך העורך)"
+          aria-label="טען PDF קיים לעריכה"
           tabIndex={-1}
           data-testid="order-pdf-load-button"
         >
-          <i className="fas fa-upload" />
-          <span>טען PDF</span>
+          <i className="fas fa-upload" aria-hidden="true" />
         </button>
 
         <input
@@ -154,75 +159,57 @@ export function OrderPdfOverlayToolbar(props: OrderPdfOverlayToolbarProps): Reac
 
         <button
           type="button"
-          className="wp-pdf-editor-btn wp-pdf-editor-btn--pdf"
+          className="wp-pdf-editor-btn wp-pdf-editor-toolbar-action-btn wp-pdf-editor-btn--pdf wp-pdf-ui-hint"
           onClick={onExportInteractive}
-          title="הורד PDF (אינטראקטיבי לעריכה באקרובט)"
+          data-tooltip="הורד PDF (אינטראקטיבי לעריכה באקרובט)"
+          aria-label="הורד PDF"
           tabIndex={-1}
           data-testid="order-pdf-download-button"
         >
-          <i className="fas fa-download" />
-          <span>הורד PDF</span>
+          <i className="fas fa-download" aria-hidden="true" />
         </button>
 
         <button
           type="button"
-          className="wp-pdf-editor-btn wp-pdf-editor-btn--pdfImg"
+          className="wp-pdf-editor-btn wp-pdf-editor-toolbar-action-btn wp-pdf-editor-btn--pdfImg wp-pdf-ui-hint"
           onClick={onExportImagePdf}
           disabled={imagePdfBusy}
-          title={
-            imagePdfBusy
-              ? 'מייצר PDF כתמונה…'
-              : 'הדפס/הורד PDF כתמונה (לא אינטראקטיבי) – שומר על מראה אחיד בלי אותיות הפוכות'
-          }
+          data-tooltip={printTooltip}
+          aria-label={imagePdfBusy ? 'מייצר PDF כתמונה' : 'הדפס PDF'}
           tabIndex={-1}
           data-testid="order-pdf-print-button"
         >
-          <i className="fas fa-print" />
-          <span>הדפס PDF</span>
+          <i className="fas fa-print" aria-hidden="true" />
         </button>
 
         <button
           type="button"
-          className="wp-pdf-editor-btn wp-pdf-editor-btn--mail"
+          className="wp-pdf-editor-btn wp-pdf-editor-toolbar-action-btn wp-pdf-editor-btn--mail wp-pdf-ui-hint"
           onClick={onExportInteractiveToGmail}
           disabled={gmailBusy}
-          title={gmailBusy ? 'יוצר טיוטה…' : 'פתח טיוטת מייל (Gmail) עם PDF כתמונה מצורף'}
+          data-tooltip={gmailTooltip}
+          aria-label={gmailBusy ? 'יוצר טיוטת מייל' : 'פתח טיוטת מייל עם PDF מצורף'}
           tabIndex={-1}
           data-testid="order-pdf-gmail-button"
         >
           <GmailIcon title="Gmail" />
-          <span>מייל</span>
         </button>
 
-        <button
-          type="button"
-          className="wp-pdf-editor-btn wp-pdf-editor-btn--gmail"
-          onClick={onExportInteractiveDownloadAndGmail}
-          disabled={gmailBusy}
-          title={gmailBusy ? 'יוצר טיוטה…' : 'הורד PDF אינטראקטיבי + פתח טיוטה ב-Gmail עם PDF כתמונה מצורף'}
-          tabIndex={-1}
-          data-testid="order-pdf-download-gmail-button"
-        >
-          <i className="fas fa-download" />
-          <span>הורד PDF</span>
-          <span className="wp-pdf-editor-btn-plus">+</span>
-          <GmailIcon title="Gmail" />
-        </button>
-
-        <div
-          className="wp-pdf-editor-imgopts"
-          title={resolveOrderPdfSketchImageOptionsTitle(hasImportedPdfImages)}
-        >
+        <div className="wp-pdf-editor-imgopts" aria-label={imageOptionsLabel}>
+          <span className="wp-pdf-editor-imgopts-label">צרף תמונות:</span>
           <button
             type="button"
-            className={`wp-pdf-editor-toggle${includeRenderSketchOn ? ' is-on' : ''}`}
+            className={`wp-pdf-editor-toggle wp-pdf-ui-hint${includeRenderSketchOn ? ' is-on' : ''}`}
             aria-pressed={includeRenderSketchOn}
+            aria-label={renderSketchState.title}
+            data-tooltip={renderSketchState.title}
             data-testid="order-pdf-toggle-render-sketch"
             tabIndex={-1}
             onClick={onToggleRenderSketch}
-            title={renderSketchState.title}
           >
-            <i className="fas fa-images" />
+            <span className="wp-pdf-editor-toggle-check" aria-hidden="true">
+              ✓
+            </span>
             <span>
               הדמיה/סקיצה
               {renderSketchState.suffix}
@@ -231,14 +218,17 @@ export function OrderPdfOverlayToolbar(props: OrderPdfOverlayToolbarProps): Reac
 
           <button
             type="button"
-            className={`wp-pdf-editor-toggle${includeOpenClosedOn ? ' is-on' : ''}`}
+            className={`wp-pdf-editor-toggle wp-pdf-ui-hint${includeOpenClosedOn ? ' is-on' : ''}`}
             aria-pressed={includeOpenClosedOn}
+            aria-label={openClosedState.title}
+            data-tooltip={openClosedState.title}
             data-testid="order-pdf-toggle-open-closed"
             tabIndex={-1}
             onClick={onToggleOpenClosed}
-            title={openClosedState.title}
           >
-            <i className="fas fa-door-open" />
+            <span className="wp-pdf-editor-toggle-check" aria-hidden="true">
+              ✓
+            </span>
             <span>
               פתוח/סגור
               {openClosedState.suffix}
@@ -250,13 +240,14 @@ export function OrderPdfOverlayToolbar(props: OrderPdfOverlayToolbarProps): Reac
       <div className="wp-pdf-editor-toolbar-right" dir="ltr">
         <button
           type="button"
-          className="wp-pdf-editor-btn wp-pdf-editor-btn--iconOnly"
+          className="wp-pdf-editor-btn wp-pdf-editor-btn--iconOnly wp-pdf-ui-hint"
           onClick={onClose}
-          title="סגור"
+          data-tooltip="סגור"
+          aria-label="סגור"
           tabIndex={-1}
           data-testid="order-pdf-close-button"
         >
-          <i className="fas fa-times" />
+          <i className="fas fa-times" aria-hidden="true" />
         </button>
       </div>
     </div>

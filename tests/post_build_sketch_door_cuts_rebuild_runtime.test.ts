@@ -71,6 +71,7 @@ const FakeTHREE = {
 
 function createBaseRuntime(overrides: Partial<Record<string, unknown>> = {}) {
   return {
+    App: {},
     THREE: FakeTHREE,
     bodyMat: { name: 'body' },
     globalFrontMat: { name: 'front' },
@@ -79,6 +80,8 @@ function createBaseRuntime(overrides: Partial<Record<string, unknown>> = {}) {
     getPartMaterial: (partId: string) => ({ name: `mat:${partId}` }),
     getMirrorMaterial: null,
     resolveHandleType: () => 'standard',
+    resolveEdgeHandleVariant: () => 'short',
+    resolveHandleColor: () => 'black',
     resolveCurtain: () => null,
     resolveSpecial: () => null,
     doorStyle: 'flat',
@@ -219,4 +222,102 @@ test('segmented sketch door rebuild disposes detached non-cached subtree resourc
   assert.equal(disposed.cachedMaterial, 0);
   assert.equal(disposed.cachedTexture, 0);
   assert.equal(doorGroup.children.length, 1);
+});
+
+test('segmented sketch door rebuild suppresses handles whose real footprint cannot fit', () => {
+  const toasts: Array<[string, string | undefined]> = [];
+  const doorGroup = new FakeGroup();
+  doorGroup.userData = {
+    partId: 'd44_full',
+    __doorWidth: 0.9,
+    __doorHeight: 0.6,
+    __hingeLeft: true,
+  };
+  doorGroup.position.set(0, 0.3, 0);
+
+  const runtime = createBaseRuntime({
+    App: {
+      services: {
+        uiFeedback: {
+          toast: (message: string, type?: string) => {
+            toasts.push([message, type]);
+          },
+        },
+      },
+    },
+    resolveHandleType: () => 'edge',
+    resolveEdgeHandleVariant: () => 'long',
+    createHandleMesh: () => {
+      const handle = new FakeGroup();
+      handle.userData.__kind = 'handle';
+      return handle;
+    },
+  });
+
+  rebuildSketchSegmentedDoor({
+    runtime,
+    g: doorGroup,
+    ud: doorGroup.userData,
+    visibleSegments: [{ yMin: 0, yMax: 0.25 }],
+    basePartId: 'd44_full',
+  });
+
+  assert.equal(
+    doorGroup.children.some(child => child.userData.__kind === 'handle'),
+    false
+  );
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /ידית הוסרה/);
+  assert.equal(toasts[0]![1], 'info');
+});
+
+test('segmented sketch door rebuild reports all suppressed segment handles through one shared toast', () => {
+  const toasts: Array<[string, string | undefined]> = [];
+  const doorGroup = new FakeGroup();
+  doorGroup.userData = {
+    partId: 'd45_full',
+    __doorWidth: 0.9,
+    __doorHeight: 1.2,
+    __hingeLeft: true,
+  };
+  doorGroup.position.set(0, 0.6, 0);
+
+  const runtime = createBaseRuntime({
+    App: {
+      services: {
+        uiFeedback: {
+          toast: (message: string, type?: string) => {
+            toasts.push([message, type]);
+          },
+        },
+      },
+    },
+    resolveHandleType: () => 'edge',
+    resolveEdgeHandleVariant: () => 'long',
+    createHandleMesh: () => {
+      const handle = new FakeGroup();
+      handle.userData.__kind = 'handle';
+      return handle;
+    },
+  });
+
+  rebuildSketchSegmentedDoor({
+    runtime,
+    g: doorGroup,
+    ud: doorGroup.userData,
+    visibleSegments: [
+      { yMin: 0, yMax: 0.25 },
+      { yMin: 0.45, yMax: 0.7 },
+      { yMin: 0.95, yMax: 1.2 },
+    ],
+    basePartId: 'd45_full',
+  });
+
+  assert.equal(
+    doorGroup.children.some(child => child.userData.__kind === 'handle'),
+    false
+  );
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /הוסרו 3 ידיות/);
+  assert.equal(toasts[0]![1], 'info');
 });

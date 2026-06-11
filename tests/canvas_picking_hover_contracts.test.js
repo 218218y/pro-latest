@@ -70,7 +70,6 @@ const doorActionHoverRemove = read('esm/native/services/canvas_picking_door_acti
 const doorSplitHover = read('esm/native/services/canvas_picking_door_split_hover_flow.ts');
 const interiorHover = read('esm/native/services/canvas_picking_interior_hover_flow.ts');
 const interiorHoverShared = read('esm/native/services/canvas_picking_interior_hover_shared.ts');
-const interiorHoverIntDrawer = read('esm/native/services/canvas_picking_interior_hover_int_drawer.ts');
 const interiorHoverLayoutFamily = read('esm/native/services/canvas_picking_interior_hover_layout_family.ts');
 const interiorHoverLayoutMode = read('esm/native/services/canvas_picking_interior_hover_layout_mode.ts');
 const interiorHoverManualMode = read('esm/native/services/canvas_picking_interior_hover_manual_mode.ts');
@@ -196,12 +195,11 @@ test('canvas picking hover owners stay thin and delegate preview/target/interior
   );
   assert.match(
     hoverFlowNonSplitPreviewInterior,
-    /import \{[\s\S]*tryHandleCanvasIntDrawerHover,[\s\S]*tryHandleCanvasLayoutFamilyHover,[\s\S]*\} from '\.\/canvas_picking_interior_hover_flow\.js';/
+    /import \{ tryHandleCanvasLayoutFamilyHover \} from '\.\/canvas_picking_interior_hover_flow\.js';/
   );
   assert.match(hoverFlowNonSplitPreviewInterior, /tryHandleExtDrawersHoverPreview\(\{/);
   assert.match(hoverFlowNonSplitPreviewInterior, /tryHandleDrawerDividerHoverPreview\(\{/);
   assert.match(hoverFlowNonSplitPreviewInterior, /tryHandleCellDimsHoverPreview\(\{/);
-  assert.match(hoverFlowNonSplitPreviewInterior, /tryHandleCanvasIntDrawerHover\(\{/);
   assert.match(hoverFlowNonSplitPreviewInterior, /tryHandleCanvasLayoutFamilyHover\(\{/);
   assert.match(
     hoverFlowNonSplitSketch,
@@ -320,17 +318,12 @@ test('canvas picking hover owners stay thin and delegate preview/target/interior
 
   assert.match(
     interiorHover,
-    /export \{ tryHandleCanvasIntDrawerHover \} from '\.\/canvas_picking_interior_hover_int_drawer\.js';/
-  );
-  assert.match(
-    interiorHover,
     /export \{ tryHandleCanvasLayoutFamilyHover \} from '\.\/canvas_picking_interior_hover_layout_family\.js';/
   );
   assert.match(
     interiorHover,
     /export type \{ CanvasInteriorHoverFlowArgs \} from '\.\/canvas_picking_interior_hover_shared\.js';/
   );
-  assert.doesNotMatch(interiorHover, /const\s+__intDrawerMode\s*=\s*getModeId\(App, 'INT_DRAWER'/);
   assert.doesNotMatch(interiorHover, /const\s+__layoutMode\s*=\s*getModeId\(App, 'LAYOUT'/);
   assert.doesNotMatch(interiorHover, /const\s+__manualMode\s*=\s*getModeId\(App, 'MANUAL_LAYOUT'/);
   assert.doesNotMatch(interiorHover, /const\s+__braceMode\s*=\s*getModeId\(App, 'BRACE_SHELVES'/);
@@ -343,11 +336,6 @@ test('canvas picking hover owners stay thin and delegate preview/target/interior
     interiorHoverShared,
     /export \{ readHoverModuleConfig \} from '\.\/canvas_picking_interior_hover_config\.js';/
   );
-  assert.match(
-    interiorHoverIntDrawer,
-    /export function tryHandleCanvasIntDrawerHover\(args: CanvasInteriorHoverFlowArgs\): boolean/
-  );
-  assert.match(interiorHoverIntDrawer, /const\s+__intDrawerMode\s*=\s*getModeId\(App, 'INT_DRAWER'/);
   assert.match(
     interiorHoverLayoutFamily,
     /export function tryHandleCanvasLayoutFamilyHover\(args: CanvasInteriorHoverFlowArgs\): boolean/

@@ -27,10 +27,7 @@ function emptyRecord(): UnknownRecord {
 }
 
 type InteriorModesLike = Partial<
-  Record<
-    'HANDLE' | 'LAYOUT' | 'MANUAL_LAYOUT' | 'BRACE_SHELVES' | 'EXT_DRAWER' | 'DIVIDER' | 'INT_DRAWER',
-    unknown
-  >
+  Record<'HANDLE' | 'LAYOUT' | 'MANUAL_LAYOUT' | 'BRACE_SHELVES' | 'EXT_DRAWER' | 'DIVIDER', unknown>
 >;
 
 function getInteriorModes(): InteriorModesLike {
@@ -237,10 +234,6 @@ export function toggleDividerMode(app: AppContainer): void {
 }
 
 export function toggleIntDrawerMode(app: AppContainer): void {
-  turnOffHandleModeIfNeeded(app);
-  const modes = getInteriorModes();
-  const MODE_INT = String(modes.INT_DRAWER || 'int_drawer');
-
   const uiSnap = getUiSnap(app);
   const enabled = !!uiSnap.internalDrawersEnabled;
   if (!enabled) {
@@ -248,43 +241,14 @@ export function toggleIntDrawerMode(app: AppContainer): void {
     return;
   }
 
-  const cur = getPrimaryMode(app);
-  if (String(cur) === MODE_INT) {
-    exitPrimaryMode(app, MODE_INT, readCloseDoorsOpts(true));
-    return;
-  }
-
-  enterPrimaryMode(app, MODE_INT, {
-    openDoors: true,
-    cursor: 'alias',
-    toast: 'עריכת מגירות פנימיות: לחץ בתוך תא כדי להוסיף/להסיר',
-  });
+  enterManualLayoutMode(app, 'sketch_int_drawers');
 }
 
 export function setInternalDrawersEnabled(app: AppContainer, on: unknown): void {
   const enabled = !!on;
   const uiSnap = getUiSnap(app);
   if (enabled === !!uiSnap.internalDrawersEnabled) return;
-  const source = 'react:interior:intDrawersToggle';
-
-  if (!enabled) {
-    try {
-      const modes = getInteriorModes();
-      const MODE_INT = String(modes.INT_DRAWER || 'int_drawer');
-      const cur = getPrimaryMode(app);
-      if (String(cur) === MODE_INT) {
-        exitPrimaryMode(app, MODE_INT, {
-          ...readCloseDoorsOpts(true),
-          source,
-          immediate: true,
-          uiPatch: { internalDrawersEnabled: false },
-        });
-        return;
-      }
-    } catch {
-      // ignore
-    }
-  }
+  const source = 'react:interior:sketchIntDrawersToggle';
 
   try {
     const m: ActionMetaLike = interactiveImmediateMeta(app, source);

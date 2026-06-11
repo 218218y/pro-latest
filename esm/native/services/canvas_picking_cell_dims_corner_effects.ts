@@ -3,9 +3,15 @@ import type { ActionMetaLike, AppContainer, UnknownRecord } from '../../../types
 import { getUiFeedback } from '../runtime/service_access.js';
 import { requestBuilderStructuralRefresh } from '../runtime/builder_service_access.js';
 import { setCfgCornerConfiguration } from '../runtime/cfg_access.js';
+import { getCfg } from '../kernel/api.js';
 import { patchUiSoft } from '../runtime/ui_write_access.js';
 import { __wp_commitHistoryTouch, __wp_metaNoBuild } from './canvas_picking_core_helpers.js';
-import { sanitizeCornerCellListForPatch } from '../features/modules_configuration/corner_cells_api.js';
+import {
+  patchCornerConfigurationForStack,
+  readCornerConfigurationFromConfigSnapshot,
+  sanitizeCornerCellListForPatch,
+  sanitizeLowerCornerCellListForPatch,
+} from '../features/modules_configuration/corner_cells_api.js';
 import type { CornerConfigShape } from './canvas_picking_cell_dims_corner_contracts.js';
 import { asRecord, reportCornerDimsIssue } from './canvas_picking_cell_dims_corner_context.js';
 
@@ -38,8 +44,30 @@ export function patchCornerConfig(
   source: string,
   op: string
 ): void {
+  patchCornerConfigForStack(App, nextCornerCfg, source, op, 'top');
+}
+
+export function patchCornerConfigForStack(
+  App: AppContainer,
+  nextCornerCfg: CornerConfigShape,
+  source: string,
+  op: string,
+  stackKey: 'top' | 'bottom' = 'top'
+): void {
   try {
     const meta = createHistoryableNoBuildMeta(App, source);
+    if (stackKey === 'bottom') {
+      const cfg = getCfg(App);
+      const currentCorner = readCornerConfigurationFromConfigSnapshot(cfg) || {};
+      const nextCorner = patchCornerConfigurationForStack(
+        currentCorner,
+        currentCorner,
+        'bottom',
+        nextCornerCfg
+      );
+      setCfgCornerConfiguration(App, nextCorner, meta);
+      return;
+    }
     setCfgCornerConfiguration(App, nextCornerCfg, meta);
   } catch (_e) {
     reportCornerDimsIssue(App, _e, op);
@@ -97,7 +125,11 @@ export function buildCornerCellToastMessage(name: string, parts: string[], suffi
 export function sanitizeCornerModulesForPatch(
   nextCornerCfg: CornerConfigShape,
   modsNext: UnknownRecord[],
-  modsPrev: UnknownRecord[]
+  modsPrev: UnknownRecord[],
+  stackKey: 'top' | 'bottom' = 'top'
 ): void {
-  nextCornerCfg.modulesConfiguration = sanitizeCornerCellListForPatch(modsNext, modsPrev);
+  nextCornerCfg.modulesConfiguration =
+    stackKey === 'bottom'
+      ? sanitizeLowerCornerCellListForPatch(modsNext, modsPrev)
+      : sanitizeCornerCellListForPatch(modsNext, modsPrev);
 }

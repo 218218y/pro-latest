@@ -9,6 +9,7 @@ import {
   setRuntimeSketchMode,
   setUiActiveTab,
   setUiCurrentFloorType,
+  setUiDarkMode,
   setUiFlag,
   setUiShowContents,
   setUiShowHanger,
@@ -95,6 +96,9 @@ test('[stageC] react UI wrappers prefer semantic UI namespace methods when insta
         setCurrentFloorType(value, meta) {
           calls.push({ op: 'ui.setCurrentFloorType', value, meta });
         },
+        setDarkMode(on, meta) {
+          calls.push({ op: 'ui.setDarkMode', on, meta });
+        },
       },
     },
     store: createStoreRecorder(createStoreState()).store,
@@ -105,6 +109,7 @@ test('[stageC] react UI wrappers prefer semantic UI namespace methods when insta
   setUiShowContents(App, 1, { source: 'react:contents' });
   setUiShowHanger(App, 0, { source: 'react:hanger' });
   setUiCurrentFloorType(App, 'oak', { source: 'react:floor' });
+  setUiDarkMode(App, 1, { source: 'react:darkMode' });
 
   assert.deepEqual(calls, [
     { op: 'ui.setActiveTab', next: 'render', meta: { source: 'react:tab' } },
@@ -112,6 +117,7 @@ test('[stageC] react UI wrappers prefer semantic UI namespace methods when insta
     { op: 'ui.setShowContents', on: true, meta: { source: 'react:contents' } },
     { op: 'ui.setShowHanger', on: false, meta: { source: 'react:hanger' } },
     { op: 'ui.setCurrentFloorType', value: 'oak', meta: { source: 'react:floor' } },
+    { op: 'ui.setDarkMode', on: true, meta: { source: 'react:darkMode' } },
   ]);
 });
 
@@ -125,6 +131,7 @@ test('[stageC] react UI/runtime wrappers use canonical slice writers with normal
   setUiShowContents(App, true, { source: 'react:contents' });
   setUiShowHanger(App, true, { source: 'react:hanger' });
   setUiCurrentFloorType(App, 'tile', { source: 'react:floor' });
+  setUiDarkMode(App, true, { source: 'react:darkMode' });
   setRuntimeGlobalClickMode(App, 'truthy', { source: 'react:globalClick' });
   setRuntimeSketchMode(App, 0, { source: 'react:sketchMode' });
 
@@ -134,6 +141,7 @@ test('[stageC] react UI/runtime wrappers use canonical slice writers with normal
     showContents: false,
     showHanger: true,
     currentFloorType: 'tile',
+    darkMode: true,
   });
   assert.deepEqual(state.runtime, {
     globalClickMode: true,
@@ -148,6 +156,7 @@ test('[stageC] react UI/runtime wrappers use canonical slice writers with normal
       { op: 'store.setUi', payload: { showContents: true, showHanger: false } },
       { op: 'store.setUi', payload: { showHanger: true, showContents: false } },
       { op: 'store.setUi', payload: { currentFloorType: 'tile' } },
+      { op: 'store.setUi', payload: { darkMode: true } },
       { op: 'store.setRuntime', payload: { globalClickMode: true } },
       { op: 'store.setRuntime', payload: { sketchMode: false } },
     ]

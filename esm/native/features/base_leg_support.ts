@@ -1,6 +1,7 @@
 import type { UnknownRecord } from '../../../types/index.js';
 
 import { BASE_LEG_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { METAL_FINISH_PALETTE_BY_COLOR } from './metal_finish_palette.js';
 
 export type BaseLegStyle = 'tapered' | 'round' | 'square';
 export type BaseLegColor = 'black' | 'nickel' | 'gold';
@@ -41,7 +42,7 @@ export const BASE_LEG_WIDTH_MAX_CM: number = BASE_LEG_DIMENSIONS.limits.widthMax
 
 const BASE_LEG_COLOR_HEX: Record<BaseLegColor, string> = {
   black: '#111111',
-  nickel: '#b8bec6',
+  nickel: METAL_FINISH_PALETTE_BY_COLOR.nickel.cssHex,
   gold: '#d4af37',
 };
 

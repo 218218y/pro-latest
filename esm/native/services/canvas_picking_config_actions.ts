@@ -24,6 +24,7 @@ import {
   cfgSetMap,
   setCfgMirrorLayoutMap,
   setCfgHeight,
+  setCfgLowerModulesConfiguration,
   setCfgIndividualColors,
   setCfgManualWidth,
   setCfgModulesConfiguration,
@@ -85,6 +86,7 @@ function cloneMirrorLayoutMap(src: MirrorLayoutMap): MirrorLayoutMap {
 export interface CellDimsConfigSnapshotArgs {
   App: AppContainer;
   modulesConfiguration: unknown;
+  modulesBucket?: 'modulesConfiguration' | 'stackSplitLowerModulesConfiguration';
   manualWidth?: boolean;
   width?: unknown;
   height?: unknown;
@@ -119,16 +121,24 @@ function buildModulesGeometrySnapshot(args: CellDimsConfigSnapshotArgs): Modules
 export function applyCellDimsConfigSnapshot(args: CellDimsConfigSnapshotArgs): void {
   const { App, meta } = args;
   const snapshot = buildModulesGeometrySnapshot(args);
-  if (applyModulesGeometrySnapshotViaActions(App, snapshot, meta)) return;
+  const bucket = args.modulesBucket || 'modulesConfiguration';
+
+  if (bucket === 'modulesConfiguration' && applyModulesGeometrySnapshotViaActions(App, snapshot, meta)) {
+    return;
+  }
 
   cfgBatch(
     App,
     function () {
-      setCfgModulesConfiguration(App, snapshot.modulesConfiguration, meta);
-      if (typeof snapshot.isManualWidth === 'boolean') setCfgManualWidth(App, snapshot.isManualWidth, meta);
-      if (typeof snapshot.width !== 'undefined') setCfgWidth(App, snapshot.width, meta);
-      if (typeof snapshot.height !== 'undefined') setCfgHeight(App, snapshot.height, meta);
-      if (typeof snapshot.depth !== 'undefined') setCfgDepth(App, snapshot.depth, meta);
+      if (bucket === 'stackSplitLowerModulesConfiguration') {
+        setCfgLowerModulesConfiguration(App, snapshot.modulesConfiguration, meta);
+      } else {
+        setCfgModulesConfiguration(App, snapshot.modulesConfiguration, meta);
+        if (typeof snapshot.isManualWidth === 'boolean') setCfgManualWidth(App, snapshot.isManualWidth, meta);
+        if (typeof snapshot.width !== 'undefined') setCfgWidth(App, snapshot.width, meta);
+        if (typeof snapshot.height !== 'undefined') setCfgHeight(App, snapshot.height, meta);
+        if (typeof snapshot.depth !== 'undefined') setCfgDepth(App, snapshot.depth, meta);
+      }
     },
     meta
   );

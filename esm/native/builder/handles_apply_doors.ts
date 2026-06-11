@@ -1,7 +1,12 @@
 import { getDoorsArray } from '../runtime/render_access.js';
 import { HANDLE_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import {
+  clampDoorHandleLocalCenterYToFit,
+  resolveDoorHandleVerticalFit,
+} from '../../shared/wardrobe_construction_validation_shared.js';
 import { resolveManualHandleLocalPosition } from '../features/manual_handle_position.js';
 import { createHandleMeshV7 } from './handles_mesh.js';
+import { notifyHandleFitSuppressions } from './handles_fit_suppression_feedback.js';
 import type { HandlesApplyRuntime } from './handles_apply_shared.js';
 import type { NodeLike } from './handles_shared.js';
 
@@ -10,6 +15,7 @@ export function applyDoorHandles(runtime: HandlesApplyRuntime): void {
     runtime;
   const doorsArray = getDoorsArray(App);
   if (!Array.isArray(doorsArray)) return;
+  const suppressedPartIds: string[] = [];
 
   for (const d of doorsArray) {
     const g = d && d.group;
@@ -29,20 +35,44 @@ export function applyDoorHandles(runtime: HandlesApplyRuntime): void {
     const doorW = typeof g.userData.__doorWidth === 'number' ? g.userData.__doorWidth : 0;
     const doorH = typeof g.userData.__doorHeight === 'number' ? g.userData.__doorHeight : 0;
     const isLeftHinge = !!g.userData.__hingeLeft;
+    const edgeHandleVariant = hType === 'edge' ? getEdgeHandleVariant(id) : undefined;
 
     const handle = createHandleMeshV7(hType, doorW, doorH, isLeftHinge, false, {
       App,
-      edgeHandleVariant: hType === 'edge' ? getEdgeHandleVariant(id) : undefined,
+      edgeHandleVariant,
       handleColor: getHandleColor(id),
     });
     if (!handle) continue;
 
     applyDoorHandleZFlip(g, handle);
-    if (!applyDoorHandleManualPlacement(runtime, g, handle, doorW, isLeftHinge, hType, id)) {
+    const isManualPlacement = applyDoorHandleManualPlacement(
+      runtime,
+      g,
+      handle,
+      doorW,
+      isLeftHinge,
+      hType,
+      id
+    );
+    if (!isManualPlacement) {
       applyDoorHandleVerticalPlacement(runtime, g, handle, doorH);
+    }
+    if (
+      !ensureDoorHandleFitsLeaf({
+        hType,
+        edgeHandleVariant,
+        doorH,
+        handle,
+        isManualPlacement,
+      })
+    ) {
+      suppressedPartIds.push(String(id));
+      continue;
     }
     g.add(handle);
   }
+
+  notifySuppressedDoorHandles(App, suppressedPartIds);
 }
 
 function applyDoorHandleZFlip(group: NodeLike, handle: NodeLike): void {
@@ -121,4 +151,35 @@ function applyDoorHandleVerticalPlacement(
   if (!Number.isFinite(absY)) return;
   const targetAbsY = runtime.clampAbsYToGroup(Number(absY), Number(group.position?.y), Number(doorH));
   handle.position.y = targetAbsY - group.position.y;
+}
+
+function ensureDoorHandleFitsLeaf(args: {
+  hType: string;
+  edgeHandleVariant: unknown;
+  doorH: number;
+  handle: NodeLike;
+  isManualPlacement: boolean;
+}): boolean {
+  const input = {
+    handleType: args.hType,
+    edgeHandleVariant: args.edgeHandleVariant,
+    doorHeightM: args.doorH,
+    localCenterYM: Number(args.handle.position?.y) || 0,
+  };
+
+  if (args.isManualPlacement) {
+    return resolveDoorHandleVerticalFit(input).fits;
+  }
+
+  const clampedY = clampDoorHandleLocalCenterYToFit(input);
+  if (clampedY == null) return false;
+  args.handle.position.y = clampedY;
+  return true;
+}
+
+function notifySuppressedDoorHandles(App: unknown, partIds: string[]): void {
+  notifyHandleFitSuppressions(App, partIds, {
+    scope: 'standard-door-handles',
+    completePass: true,
+  });
 }

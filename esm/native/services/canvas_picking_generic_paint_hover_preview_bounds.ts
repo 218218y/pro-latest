@@ -1,6 +1,7 @@
 import type { AppContainer, UnknownRecord } from '../../../types';
 
 import { __wp_measureObjectLocalBox } from './canvas_picking_local_helpers.js';
+import { __readObjectLocalGeometryBox } from './canvas_picking_generic_paint_hover_shared.js';
 import type { PaintPreviewGroupBox } from './canvas_picking_generic_paint_hover_shared.js';
 
 function readPreviewBoxThickness(
@@ -30,6 +31,25 @@ export function resolvePaintPreviewGroupBoxFromFallback(args: {
     woodThick,
     anchor: fallbackObject,
     anchorParent: fallbackParent || wardrobeGroup,
+  };
+}
+
+export function resolvePaintPreviewObjectBoxesFromAnchor(args: {
+  wardrobeGroup: UnknownRecord;
+  anchorObject: UnknownRecord;
+  anchorParent: UnknownRecord | null;
+}): PaintPreviewGroupBox | null {
+  const { wardrobeGroup, anchorObject, anchorParent } = args;
+  const localBox = __readObjectLocalGeometryBox(anchorObject);
+  const woodThick = readPreviewBoxThickness(localBox);
+  if (!localBox || !woodThick) return null;
+  return {
+    ...localBox,
+    woodThick,
+    anchor: anchorObject,
+    anchorParent: anchorParent || wardrobeGroup,
+    kind: 'object_boxes',
+    previewObjects: [anchorObject],
   };
 }
 

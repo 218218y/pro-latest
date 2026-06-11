@@ -1,11 +1,50 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 
-import { getCloudSyncServiceMaybe, getDocumentMaybe } from '../../services/api.js';
+import { getCloudSyncServiceMaybe, getDocumentMaybe, runPerfAction } from '../../services/api.js';
 import { createCloudSyncUiActionController } from './cloud_sync_ui_action_controller_runtime.js';
 import { createQuickActionsDockController } from './overlay_quick_actions_dock_controller_runtime.js';
 import { useApp, useExportActions, useUiFeedback } from './hooks.js';
 import { reportOverlayAppNonFatal } from './overlay_app_shared.js';
+
+const QUICK_ACTION_EXPORT_TOOLTIPS = {
+  snapshot: {
+    title: 'צילום',
+    detail: 'תמונת תצוגה נוכחית להורדה למחשב',
+  },
+  copy: {
+    title: 'העתק ללוח',
+    detail: 'תמונת תצוגה נוכחית בהעתקה ללוח',
+  },
+  renderAndSketch: {
+    title: 'סקיצה/הדמיה',
+    detail: 'תמונה מזווית קבועה משולבת משתי תמונות בהעתקה ללוח',
+  },
+  dualImage: {
+    title: 'פתוח/סגור',
+    detail: 'תמונה מזווית קבועה משולבת משתי תמונות בהעתקה ללוח',
+  },
+} as const;
+
+type QuickActionExportTooltipConfig =
+  (typeof QUICK_ACTION_EXPORT_TOOLTIPS)[keyof typeof QUICK_ACTION_EXPORT_TOOLTIPS];
+
+function formatQuickActionExportTooltipLabel(tooltip: QuickActionExportTooltipConfig): string {
+  return `${tooltip.title}, ${tooltip.detail}`;
+}
+
+function QuickActionExportTooltipView({
+  tooltip,
+}: {
+  tooltip: QuickActionExportTooltipConfig;
+}): ReactElement {
+  return (
+    <span className="wp-qa-tooltip" aria-hidden="true">
+      <span className="wp-qa-tooltip-title">{tooltip.title}</span>
+      <span className="wp-qa-tooltip-detail">{tooltip.detail}</span>
+    </span>
+  );
+}
 
 export function QuickActionsDock(): ReactElement {
   const app = useApp();
@@ -38,8 +77,13 @@ export function QuickActionsDock(): ReactElement {
   }, [cloudSyncUiController]);
 
   const togglePinnedSync = useCallback(async () => {
-    await cloudSyncUiController.toggleFloatingSyncEnabled();
-  }, [cloudSyncUiController]);
+    await runPerfAction(
+      app,
+      'cloudSync.floatingSync.toggle',
+      () => cloudSyncUiController.toggleFloatingSyncEnabled(),
+      { detail: { source: 'quick-actions' } }
+    );
+  }, [app, cloudSyncUiController]);
 
   useEffect(() => {
     setPinnedSync(quickActionsController.readPinnedSync());
@@ -97,6 +141,7 @@ export function QuickActionsDock(): ReactElement {
           ref={toggleRef}
           type="button"
           className="cam-btn wp-qa-toggle hint-bottom"
+          data-testid="quick-actions-toggle-button"
           data-tooltip={menuOpen ? 'סגור תפריט' : 'פתח תפריט'}
           aria-label={menuOpen ? 'סגור תפריט' : 'פתח תפריט'}
           onClick={(event: import('react').MouseEvent<HTMLButtonElement>) => {
@@ -143,9 +188,10 @@ export function QuickActionsDock(): ReactElement {
             <div className="wp-qa-grid">
               <button
                 type="button"
-                className="wp-qa-btn hint-bottom"
-                data-tooltip="צילום"
-                aria-label="צילום"
+                className="wp-qa-btn"
+                data-tooltip-title={QUICK_ACTION_EXPORT_TOOLTIPS.snapshot.title}
+                data-tooltip-detail={QUICK_ACTION_EXPORT_TOOLTIPS.snapshot.detail}
+                aria-label={formatQuickActionExportTooltipLabel(QUICK_ACTION_EXPORT_TOOLTIPS.snapshot)}
                 onClick={(event: import('react').MouseEvent<HTMLButtonElement>) => {
                   quickActionsController.runAction({
                     action: () => exp.exportTakeSnapshot(),
@@ -157,13 +203,15 @@ export function QuickActionsDock(): ReactElement {
                 }}
               >
                 <i className="fas fa-camera" />
+                <QuickActionExportTooltipView tooltip={QUICK_ACTION_EXPORT_TOOLTIPS.snapshot} />
               </button>
 
               <button
                 type="button"
-                className="wp-qa-btn hint-bottom"
-                data-tooltip="העתק ללוח"
-                aria-label="העתק ללוח"
+                className="wp-qa-btn"
+                data-tooltip-title={QUICK_ACTION_EXPORT_TOOLTIPS.copy.title}
+                data-tooltip-detail={QUICK_ACTION_EXPORT_TOOLTIPS.copy.detail}
+                aria-label={formatQuickActionExportTooltipLabel(QUICK_ACTION_EXPORT_TOOLTIPS.copy)}
                 onClick={(event: import('react').MouseEvent<HTMLButtonElement>) => {
                   quickActionsController.runAction({
                     action: () => exp.exportCopyToClipboard(),
@@ -175,13 +223,15 @@ export function QuickActionsDock(): ReactElement {
                 }}
               >
                 <i className="fas fa-copy" />
+                <QuickActionExportTooltipView tooltip={QUICK_ACTION_EXPORT_TOOLTIPS.copy} />
               </button>
 
               <button
                 type="button"
-                className="wp-qa-btn hint-bottom"
-                data-tooltip="סקיצה/הדמיה"
-                aria-label="סקיצה/הדמיה"
+                className="wp-qa-btn"
+                data-tooltip-title={QUICK_ACTION_EXPORT_TOOLTIPS.renderAndSketch.title}
+                data-tooltip-detail={QUICK_ACTION_EXPORT_TOOLTIPS.renderAndSketch.detail}
+                aria-label={formatQuickActionExportTooltipLabel(QUICK_ACTION_EXPORT_TOOLTIPS.renderAndSketch)}
                 onClick={(event: import('react').MouseEvent<HTMLButtonElement>) => {
                   quickActionsController.runAction({
                     action: () => exp.exportRenderAndSketch(),
@@ -193,13 +243,15 @@ export function QuickActionsDock(): ReactElement {
                 }}
               >
                 <i className="fas fa-images" />
+                <QuickActionExportTooltipView tooltip={QUICK_ACTION_EXPORT_TOOLTIPS.renderAndSketch} />
               </button>
 
               <button
                 type="button"
-                className="wp-qa-btn hint-bottom"
-                data-tooltip="פתוח/סגור"
-                aria-label="פתוח/סגור"
+                className="wp-qa-btn"
+                data-tooltip-title={QUICK_ACTION_EXPORT_TOOLTIPS.dualImage.title}
+                data-tooltip-detail={QUICK_ACTION_EXPORT_TOOLTIPS.dualImage.detail}
+                aria-label={formatQuickActionExportTooltipLabel(QUICK_ACTION_EXPORT_TOOLTIPS.dualImage)}
                 onClick={(event: import('react').MouseEvent<HTMLButtonElement>) => {
                   quickActionsController.runAction({
                     action: () => exp.exportDualImage(),
@@ -211,6 +263,7 @@ export function QuickActionsDock(): ReactElement {
                 }}
               >
                 <i className="fas fa-columns" />
+                <QuickActionExportTooltipView tooltip={QUICK_ACTION_EXPORT_TOOLTIPS.dualImage} />
               </button>
             </div>
           </div>
@@ -228,6 +281,7 @@ export function QuickActionsDock(): ReactElement {
               <button
                 type="button"
                 className="wp-qa-sync hint-bottom"
+                data-testid="quick-actions-sync-button"
                 data-tooltip="סנכרן סקיצה"
                 aria-label="סנכרן סקיצה"
                 onClick={(event: import('react').MouseEvent<HTMLButtonElement>) => {
@@ -246,6 +300,7 @@ export function QuickActionsDock(): ReactElement {
               <button
                 type="button"
                 className={'wp-qa-sync-pin hint-bottom' + (pinnedSync ? ' is-on' : '')}
+                data-testid="quick-actions-sync-pin-button"
                 data-tooltip={pinnedSync ? 'בטל הצמדה' : 'הצמד כפתור סנכרון'}
                 aria-label={pinnedSync ? 'בטל הצמדה' : 'הצמד כפתור סנכרון'}
                 aria-pressed={pinnedSync}

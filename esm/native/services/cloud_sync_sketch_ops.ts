@@ -11,6 +11,10 @@ import {
   type CloudSyncFloatingSketchSyncOps,
 } from './cloud_sync_sketch_ops_floating.js';
 import { createCloudSyncSketchRoomOps, type CloudSyncSketchRoomOps } from './cloud_sync_sketch_ops_sketch.js';
+import {
+  createCloudSyncShowContentsOps,
+  type CloudSyncShowContentsOps,
+} from './cloud_sync_show_contents_ops.js';
 import type { CloudSyncRealtimeHintSender } from './cloud_sync_pull_scopes.js';
 import {
   type CloudSyncSketchConfig,
@@ -49,12 +53,18 @@ export type CloudSyncSketchOps = {
 export function createCloudSyncSketchOps(deps: CreateCloudSyncSketchOpsDeps): CloudSyncSketchOps {
   const cloudSketchRoomOps: CloudSyncSketchRoomOps = createCloudSyncSketchRoomOps(deps);
   const floatingSketchSyncOps: CloudSyncFloatingSketchSyncOps = createCloudSyncFloatingSketchSyncOps(deps);
+  const showContentsOps: CloudSyncShowContentsOps = createCloudSyncShowContentsOps(deps);
 
   return {
     ...cloudSketchRoomOps,
     ...floatingSketchSyncOps,
+    pullFloatingSketchSyncPinnedOnce: async (isInitial: boolean): Promise<void> => {
+      await floatingSketchSyncOps.pullFloatingSketchSyncPinnedOnce(isInitial);
+      await showContentsOps.pullShowContentsSyncedOnce(isInitial);
+    },
     dispose: () => {
       floatingSketchSyncOps.dispose();
+      showContentsOps.dispose();
     },
   };
 }

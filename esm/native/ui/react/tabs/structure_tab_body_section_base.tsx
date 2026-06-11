@@ -18,6 +18,7 @@ import {
   BASE_LEG_WIDTH_MAX_CM,
   BASE_LEG_WIDTH_MIN_CM,
 } from '../../../features/base_leg_support.js';
+import { METAL_FINISH_PALETTE_BY_COLOR } from '../../../features/metal_finish_palette.js';
 import {
   BASE_PLINTH_HEIGHT_MAX_CM,
   BASE_PLINTH_HEIGHT_MIN_CM,
@@ -26,7 +27,7 @@ import {
 
 const LEG_COLOR_SWATCH_BY_COLOR: Record<StructureBaseLegColor, string> = {
   black: '#111111',
-  nickel: '#b8bec6',
+  nickel: METAL_FINISH_PALETTE_BY_COLOR.nickel.cssHex,
   gold: '#d4af37',
 };
 

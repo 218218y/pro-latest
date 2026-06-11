@@ -20,6 +20,7 @@ export {
 export {
   createRodRemoveHoverRecord,
   createShelfRemoveHoverRecord,
+  createStorageRemoveHoverRecord,
 } from './canvas_picking_sketch_module_surface_preview_hover_records.js';
 
 export {

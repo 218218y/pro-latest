@@ -16,7 +16,6 @@ import {
   computeSlidingDoorOps,
   computeExternalDrawersOpsForModule,
   computeInteriorCustomOps,
-  computeInternalDrawersOpsForSlot,
   computeCarcassOps,
 } from './core_pure.js';
 import { computeInteriorPresetOps } from '../features/interior_layout_presets/api.js';
@@ -34,6 +33,5 @@ export {
   computeExternalDrawersOpsForModule,
   computeInteriorPresetOps,
   computeInteriorCustomOps,
-  computeInternalDrawersOpsForSlot,
   computeCarcassOps,
 };

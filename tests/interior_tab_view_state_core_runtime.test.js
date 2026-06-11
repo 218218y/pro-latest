@@ -30,7 +30,6 @@ const sandbox = {
           BRACE_SHELVES: 'brace_shelves',
           EXT_DRAWER: 'ext_drawer',
           DIVIDER: 'divider',
-          INT_DRAWER: 'int_drawer',
           HANDLE: 'handle',
           DOOR_TRIM: 'door_trim',
         },
@@ -58,6 +57,7 @@ const sandbox = {
           manualTool: 'rod',
           manualToolRaw: 'sketch_shelf_double',
           isSketchToolActive: true,
+          isSketchDivisionToolActive: true,
         }),
         deriveInteriorTabUiToolState: args => ({
           currentGridDivisions: 8,
@@ -72,9 +72,10 @@ const sandbox = {
           handleToolEdgeVariant: 'short',
         }),
         deriveInteriorTabVisibilityState: args => ({
-          showManualRow: args.manualRowOpen || !args.isSketchToolActive,
+          showManualRow: args.manualRowOpen || args.isSketchDivisionToolActive,
           activeManualToolForUi: args.manualUiTool,
           showGridControls: args.manualUiTool === 'rod',
+          showShelfVariantControls: args.manualUiTool === 'shelf',
         }),
       };
     }
@@ -171,9 +172,11 @@ test('interior tab core runtime derives canonical mode consts and merged view st
 
   assert.equal(state.manualTool, 'rod');
   assert.equal(state.isSketchToolActive, true);
+  assert.equal(state.isSketchDivisionToolActive, true);
   assert.equal(state.extDrawerType, 'shoe');
   assert.equal(state.handleToolType, 'none');
   assert.equal(state.activeManualToolForUi, 'rod');
   assert.equal(state.showGridControls, true);
+  assert.equal(state.showShelfVariantControls, false);
   assert.deepEqual(state.modeOpts, { marker: 'mode', raw: { manualTool: 'rod' } });
 });

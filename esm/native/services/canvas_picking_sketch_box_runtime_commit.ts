@@ -4,12 +4,51 @@ import { commitSketchFreePlacementHoverRecord } from './canvas_picking_sketch_fr
 import { __wp_toModuleKey } from './canvas_picking_core_helpers.js';
 import { pickSketchFreeBoxHost } from './canvas_picking_sketch_free_boxes.js';
 import { getSketchFreeBoxContentKind } from './canvas_picking_sketch_box_dividers.js';
+import { isSketchFreeBoxUnderWardrobeColumn } from './canvas_picking_sketch_free_box_shared.js';
 import {
   __wp_measureWardrobeLocalBox,
   __wp_readSketchHover,
   __wp_writeSketchHover,
   __wp_clearSketchHover,
 } from './canvas_picking_projection_runtime.js';
+
+function readNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function readRecordValue(record: unknown, key: string): unknown {
+  return record && typeof record === 'object' && !Array.isArray(record) ? Reflect.get(record, key) : null;
+}
+
+function isBlockedFreeBoxAddHover(hoverRec: unknown, wardrobeBox: unknown): boolean {
+  if (!wardrobeBox || typeof wardrobeBox !== 'object' || Array.isArray(wardrobeBox)) return false;
+  if (readRecordValue(hoverRec, 'kind') !== 'box') return false;
+  if (readRecordValue(hoverRec, 'freePlacement') !== true) return false;
+  if (readRecordValue(hoverRec, 'op') === 'remove') return false;
+
+  const xCenter = readNumber(readRecordValue(hoverRec, 'xCenter'));
+  const yCenter = readNumber(readRecordValue(hoverRec, 'yCenter'));
+  const heightM = readNumber(readRecordValue(hoverRec, 'heightM'));
+  if (xCenter == null || yCenter == null || heightM == null) return false;
+
+  const measuredWardrobeBox = wardrobeBox as {
+    centerX: number;
+    centerY: number;
+    width: number;
+    height: number;
+  };
+  return isSketchFreeBoxUnderWardrobeColumn({
+    planeX: xCenter,
+    planeY: yCenter,
+    boxH: heightM,
+    wardrobeBox: measuredWardrobeBox,
+  });
+}
 
 export type SketchBoxFreePlacementCommitDeps = {
   matchRecentSketchHover: typeof matchRecentSketchHover;
@@ -44,6 +83,10 @@ export function tryCommitSketchFreePlacementFromHoverWithDeps(
   const floorY = wardrobeBox
     ? Math.max(0, Number(wardrobeBox.centerY) - Number(wardrobeBox.height) / 2)
     : NaN;
+  if (isBlockedFreeBoxAddHover(hoverRec, wardrobeBox)) {
+    deps.clearSketchHover(App);
+    return false;
+  }
   const commit = deps.commitSketchFreePlacementHoverRecord({
     App,
     host,

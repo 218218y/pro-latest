@@ -139,3 +139,418 @@ test('module surface preview stays unhandled when no content kind or removal pro
 
   assert.deepEqual(result, { handled: false });
 });
+
+test('module surface preview resolves preset storage hover as remove when removal probe is enabled', () => {
+  const result = resolveSketchModuleSurfacePreview({
+    host: { tool: 'sketch_int_drawers', moduleKey: 0, isBottom: false, ts: 2 },
+    tool: 'sketch_int_drawers',
+    hitModuleKey: 0,
+    intersects: [],
+    info: { gridDivisions: 6 },
+    cfgRef: { layout: 'storage', isCustom: false },
+    hitLocalX: 0,
+    yClamped: 0.22,
+    bottomY: 0,
+    topY: 1.2,
+    spanH: 1.2,
+    pad: 0.003,
+    woodThick: 0.018,
+    innerW: 1,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    isBox: false,
+    isStorage: false,
+    isShelf: false,
+    isRod: false,
+    allowExistingShelfRemove: false,
+    allowExistingRodRemove: false,
+    allowExistingStorageRemove: true,
+    variant: 'regular',
+    shelfDepthOverrideM: null,
+    boxH: 0.4,
+    boxWidthOverrideM: null,
+    boxDepthOverrideM: null,
+    storageH: 0.5,
+    boxes: [],
+    storageBarriers: [],
+    shelves: [],
+    rods: [],
+    isCornerKey: () => false,
+    resolveSketchBoxGeometry,
+    readSketchBoxDividers: () => [],
+    resolveSketchBoxSegments: () => [],
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.preview?.kind, 'storage');
+  assert.equal(result.preview?.op, 'remove');
+  assert.equal(result.hoverRecord?.kind, 'storage');
+  assert.equal(result.hoverRecord?.removeKind, 'base');
+});
+
+test('module surface preview resolves sketch storage barrier hover as remove when removal probe is enabled', () => {
+  const result = resolveSketchModuleSurfacePreview({
+    host: { tool: 'sketch_int_drawers', moduleKey: 1, isBottom: false, ts: 3 },
+    tool: 'sketch_int_drawers',
+    hitModuleKey: 1,
+    intersects: [],
+    info: { gridDivisions: 6 },
+    cfgRef: { layout: 'shelves', isCustom: true, customData: { storage: false } },
+    hitLocalX: 0,
+    yClamped: 0.72,
+    bottomY: 0,
+    topY: 1.2,
+    spanH: 1.2,
+    pad: 0.003,
+    woodThick: 0.018,
+    innerW: 1,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    isBox: false,
+    isStorage: false,
+    isShelf: false,
+    isRod: false,
+    allowExistingShelfRemove: false,
+    allowExistingRodRemove: false,
+    allowExistingStorageRemove: true,
+    variant: 'regular',
+    shelfDepthOverrideM: null,
+    boxH: 0.4,
+    boxWidthOverrideM: null,
+    boxDepthOverrideM: null,
+    storageH: 0.5,
+    boxes: [],
+    storageBarriers: [{ yNorm: 0.6, heightM: 0.32 }],
+    shelves: [],
+    rods: [],
+    isCornerKey: () => false,
+    resolveSketchBoxGeometry,
+    readSketchBoxDividers: () => [],
+    resolveSketchBoxSegments: () => [],
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.preview?.kind, 'storage');
+  assert.equal(result.preview?.op, 'remove');
+  assert.equal(result.hoverRecord?.kind, 'storage');
+  assert.equal(result.hoverRecord?.removeKind, 'sketch');
+  assert.equal(result.hoverRecord?.removeIdx, 0);
+});
+
+test('module surface preview resolves base shelf hover remove while sketch external drawers tool is active', () => {
+  const result = resolveSketchModuleSurfacePreview({
+    host: { tool: 'sketch_ext_drawers:3', moduleKey: 1, isBottom: false, ts: 4 },
+    tool: 'sketch_ext_drawers:3',
+    hitModuleKey: 1,
+    intersects: [{ object: { userData: { partId: 'all_shelves' } }, point: { y: 0.4 } }] as any,
+    info: { gridDivisions: 3 },
+    cfgRef: {
+      layout: 'shelves',
+      isCustom: true,
+      customData: {
+        shelves: [true, false],
+        rods: [],
+        storage: false,
+        shelfVariants: ['regular', ''],
+      },
+    },
+    hitLocalX: 0,
+    yClamped: 0.4,
+    bottomY: 0,
+    topY: 1.2,
+    spanH: 1.2,
+    pad: 0.003,
+    woodThick: 0.018,
+    innerW: 1,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    isBox: false,
+    isStorage: false,
+    isShelf: false,
+    isRod: false,
+    allowExistingShelfRemove: true,
+    allowExistingRodRemove: false,
+    allowExistingStorageRemove: false,
+    variant: 'regular',
+    shelfDepthOverrideM: null,
+    boxH: 0.4,
+    boxWidthOverrideM: null,
+    boxDepthOverrideM: null,
+    storageH: 0.5,
+    boxes: [],
+    storageBarriers: [],
+    shelves: [],
+    rods: [],
+    isCornerKey: () => false,
+    resolveSketchBoxGeometry,
+    readSketchBoxDividers: () => [],
+    resolveSketchBoxSegments: () => [],
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.preview?.kind, 'shelf');
+  assert.equal(result.preview?.op, 'remove');
+  assert.equal(result.hoverRecord?.kind, 'shelf');
+  assert.equal(result.hoverRecord?.removeKind, 'base');
+  assert.equal(result.hoverRecord?.shelfIndex, 1);
+});
+
+test('module surface preview snaps sketch storage above internal drawer stacks after the pointer leaves the stack', () => {
+  const result = resolveSketchModuleSurfacePreview({
+    host: { tool: 'sketch_storage:50', moduleKey: 0, isBottom: false, ts: 5 },
+    tool: 'sketch_storage:50',
+    hitModuleKey: 0,
+    intersects: [],
+    info: { gridDivisions: 6 },
+    cfgRef: { layout: 'shelves', isCustom: true },
+    hitLocalX: 0,
+    yClamped: 1.21,
+    bottomY: 0,
+    topY: 2,
+    spanH: 2,
+    pad: 0.02,
+    woodThick: 0.018,
+    innerW: 1,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    isBox: false,
+    isStorage: true,
+    isShelf: false,
+    isRod: false,
+    allowExistingShelfRemove: false,
+    allowExistingRodRemove: false,
+    allowExistingStorageRemove: false,
+    variant: 'regular',
+    shelfDepthOverrideM: null,
+    boxH: 0.4,
+    boxWidthOverrideM: null,
+    boxDepthOverrideM: null,
+    storageH: 0.5,
+    boxes: [],
+    storageBarriers: [],
+    shelves: [],
+    drawers: [{ id: 'drawers-1', yNormC: 0.5, drawerHeightM: 0.18 }],
+    extDrawers: [],
+    rods: [],
+    isCornerKey: () => false,
+    resolveSketchBoxGeometry,
+    readSketchBoxDividers: () => [],
+    resolveSketchBoxSegments: () => [],
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.preview?.kind, 'storage');
+  assert.equal(result.preview?.op, 'add');
+  assert.equal(result.preview?.blockedReason, undefined);
+  assert.ok(Number(result.preview?.y) > 1.44);
+  assert.ok(Number(result.preview?.y) < 1.47);
+});
+
+test('module surface preview marks shelf placement blocked over sketch drawer stacks', () => {
+  const result = resolveSketchModuleSurfacePreview({
+    host: { tool: 'sketch_shelf:regular', moduleKey: 0, isBottom: false, ts: 5 },
+    tool: 'sketch_shelf:regular',
+    hitModuleKey: 0,
+    intersects: [],
+    info: { gridDivisions: 6 },
+    cfgRef: { layout: 'shelves', isCustom: true },
+    hitLocalX: 0,
+    yClamped: 1,
+    bottomY: 0,
+    topY: 2,
+    spanH: 2,
+    pad: 0.02,
+    woodThick: 0.018,
+    innerW: 1,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    isBox: false,
+    isStorage: false,
+    isShelf: true,
+    isRod: false,
+    allowExistingShelfRemove: false,
+    allowExistingRodRemove: false,
+    allowExistingStorageRemove: false,
+    variant: 'regular',
+    shelfDepthOverrideM: null,
+    boxH: 0.4,
+    boxWidthOverrideM: null,
+    boxDepthOverrideM: null,
+    storageH: 0.5,
+    boxes: [],
+    storageBarriers: [],
+    shelves: [],
+    drawers: [{ id: 'drawers-1', yNormC: 0.5, drawerHeightM: 0.18 }],
+    extDrawers: [],
+    rods: [],
+    isCornerKey: () => false,
+    resolveSketchBoxGeometry,
+    readSketchBoxDividers: () => [],
+    resolveSketchBoxSegments: () => [],
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.preview?.kind, 'shelf');
+  assert.equal(result.preview?.op, 'blocked');
+  assert.equal(result.preview?.blockedReason, 'collision');
+});
+
+test('module surface box preview blocks on the pointed shelf and only adjusts inside the pointed slot', () => {
+  const blockedOnShelf = resolveSketchModuleSurfacePreview({
+    host: { tool: 'sketch_box:40', moduleKey: 0, isBottom: false, ts: 6 },
+    tool: 'sketch_box:40',
+    hitModuleKey: 0,
+    intersects: [],
+    info: { gridDivisions: 6 },
+    cfgRef: { layout: 'shelves', isCustom: true },
+    hitLocalX: 0,
+    yClamped: 1,
+    bottomY: 0,
+    topY: 2,
+    spanH: 2,
+    pad: 0.02,
+    woodThick: 0.018,
+    innerW: 1,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    isBox: true,
+    isStorage: false,
+    isShelf: false,
+    isRod: false,
+    allowExistingShelfRemove: false,
+    allowExistingRodRemove: false,
+    allowExistingStorageRemove: false,
+    variant: 'regular',
+    shelfDepthOverrideM: null,
+    boxH: 0.4,
+    boxWidthOverrideM: 0.36,
+    boxDepthOverrideM: 0.32,
+    storageH: 0.5,
+    boxes: [],
+    storageBarriers: [],
+    shelves: [{ id: 'shelf-1', yNorm: 0.5, variant: 'regular' }],
+    rods: [],
+    drawers: [],
+    extDrawers: [],
+    isCornerKey: () => false,
+    resolveSketchBoxGeometry,
+    readSketchBoxDividers: () => [],
+    resolveSketchBoxSegments: () => [],
+  });
+
+  assert.equal(blockedOnShelf.handled, true);
+  assert.equal(blockedOnShelf.preview?.kind, 'box');
+  assert.equal(blockedOnShelf.preview?.op, 'blocked');
+  assert.equal(blockedOnShelf.hoverRecord?.kind, 'box');
+  assert.equal(blockedOnShelf.hoverRecord?.op, 'add');
+
+  const adjustedAboveShelf = resolveSketchModuleSurfacePreview({
+    host: { tool: 'sketch_box:40', moduleKey: 0, isBottom: false, ts: 6 },
+    tool: 'sketch_box:40',
+    hitModuleKey: 0,
+    intersects: [],
+    info: { gridDivisions: 6 },
+    cfgRef: { layout: 'shelves', isCustom: true },
+    hitLocalX: 0,
+    yClamped: 1.02,
+    bottomY: 0,
+    topY: 2,
+    spanH: 2,
+    pad: 0.02,
+    woodThick: 0.018,
+    innerW: 1,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    isBox: true,
+    isStorage: false,
+    isShelf: false,
+    isRod: false,
+    allowExistingShelfRemove: false,
+    allowExistingRodRemove: false,
+    allowExistingStorageRemove: false,
+    variant: 'regular',
+    shelfDepthOverrideM: null,
+    boxH: 0.4,
+    boxWidthOverrideM: 0.36,
+    boxDepthOverrideM: 0.32,
+    storageH: 0.5,
+    boxes: [],
+    storageBarriers: [],
+    shelves: [{ id: 'shelf-1', yNorm: 0.5, variant: 'regular' }],
+    rods: [],
+    drawers: [],
+    extDrawers: [],
+    isCornerKey: () => false,
+    resolveSketchBoxGeometry,
+    readSketchBoxDividers: () => [],
+    resolveSketchBoxSegments: () => [],
+  });
+
+  assert.equal(adjustedAboveShelf.preview?.op, 'add');
+  assert.equal(adjustedAboveShelf.hoverRecord?.op, 'add');
+  assert.ok(Number(adjustedAboveShelf.preview?.y) > 1.2);
+});
+
+test('module surface box preview marks the box blocked when existing vertical content leaves no room', () => {
+  const result = resolveSketchModuleSurfacePreview({
+    host: { tool: 'sketch_box:40', moduleKey: 0, isBottom: false, ts: 7 },
+    tool: 'sketch_box:40',
+    hitModuleKey: 0,
+    intersects: [],
+    info: { gridDivisions: 6 },
+    cfgRef: { layout: 'shelves', isCustom: true },
+    hitLocalX: 0,
+    yClamped: 1,
+    bottomY: 0,
+    topY: 2,
+    spanH: 2,
+    pad: 0.02,
+    woodThick: 0.018,
+    innerW: 1,
+    internalCenterX: 0,
+    internalDepth: 0.55,
+    internalZ: 0,
+    isBox: true,
+    isStorage: false,
+    isShelf: false,
+    isRod: false,
+    allowExistingShelfRemove: false,
+    allowExistingRodRemove: false,
+    allowExistingStorageRemove: false,
+    variant: 'regular',
+    shelfDepthOverrideM: null,
+    boxH: 0.4,
+    boxWidthOverrideM: 0.36,
+    boxDepthOverrideM: 0.32,
+    storageH: 0.5,
+    boxes: [],
+    storageBarriers: [
+      { id: 'storage-bottom', yNorm: 0.2, heightM: 0.7 },
+      { id: 'storage-middle', yNorm: 0.5, heightM: 0.7 },
+      { id: 'storage-top', yNorm: 0.8, heightM: 0.7 },
+    ],
+    shelves: [],
+    rods: [],
+    drawers: [],
+    extDrawers: [],
+    isCornerKey: () => false,
+    resolveSketchBoxGeometry,
+    readSketchBoxDividers: () => [],
+    resolveSketchBoxSegments: () => [],
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.preview?.kind, 'box');
+  assert.equal(result.preview?.op, 'blocked');
+  assert.equal(result.preview?.blockedReason, 'collision');
+  assert.equal(result.hoverRecord?.kind, 'box');
+  assert.equal(result.hoverRecord?.op, 'add');
+  assert.equal(result.hoverRecord?.__wpBlockedReason, 'collision');
+});

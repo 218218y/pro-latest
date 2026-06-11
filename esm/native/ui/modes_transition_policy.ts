@@ -181,8 +181,7 @@ function shouldDefaultCloseDoorsOnExit(App: AppLike, currentMode: string): boole
   return (
     currentMode === (modes.LAYOUT || 'layout') ||
     currentMode === (modes.MANUAL_LAYOUT || 'manual_layout') ||
-    currentMode === (modes.BRACE_SHELVES || 'brace_shelves') ||
-    currentMode === (modes.INT_DRAWER || 'int_drawer')
+    currentMode === (modes.BRACE_SHELVES || 'brace_shelves')
   );
 }
 
@@ -202,7 +201,7 @@ function readDividerDrawerOpenId(App: AppLike, currentMode: string): string | nu
 function clearDividerDrawerOpenId(App: AppLike, prevDrawerOpenId: string | null): void {
   try {
     clearDrawerRebuildIntent(App);
-    if (prevDrawerOpenId) closeDrawerById(App, prevDrawerOpenId);
+    if (prevDrawerOpenId) closeDrawerById(App, prevDrawerOpenId, { snap: false });
     const tools = getTools(App);
     if (typeof tools.setDrawersOpenId === 'function') tools.setDrawersOpenId(null);
   } catch (err) {

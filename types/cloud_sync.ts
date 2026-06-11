@@ -199,6 +199,18 @@ export interface CloudSyncSyncPinState {
   by: string;
 }
 
+export interface CloudSyncContentsTogglePayload extends UnknownRecord {
+  showContentsEnabled?: boolean | number | string | null;
+  showContentsRev?: number | string | null;
+  showContentsBy?: string | null;
+}
+
+export interface CloudSyncContentsToggleState {
+  enabled: boolean;
+  rev: number;
+  by: string;
+}
+
 export interface CloudSyncSketchPayload extends UnknownRecord {
   sketchRev?: number | string | null;
   sketchHash?: string | null;

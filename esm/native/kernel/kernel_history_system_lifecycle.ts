@@ -10,6 +10,11 @@ export function installKernelHistoryLifecycle(
   historySystem: KernelHistorySystem,
   args: CreateKernelHistorySystemArgs
 ): void {
+  const clearCoalesceBoundary = () => {
+    historySystem._lastCoalesceKey = '';
+    historySystem._lastCoalesceAt = 0;
+  };
+
   const scheduleTimeout = (handler: () => void, timeoutMs: number) => {
     try {
       return args.getTimers().setTimeout(handler, timeoutMs);
@@ -84,7 +89,9 @@ export function installKernelHistoryLifecycle(
 
     const lastKey = typeof historySystem._lastCoalesceKey === 'string' ? historySystem._lastCoalesceKey : '';
     const lastAt = typeof historySystem._lastCoalesceAt === 'number' ? historySystem._lastCoalesceAt : 0;
-    const canCoalesce = !!coalesceKey && coalesceKey === lastKey && now - lastAt < coalesceMs;
+    const coalesceAcrossIdle = !!(o && o.coalesceAcrossIdle === true);
+    const canCoalesce =
+      !!coalesceKey && coalesceKey === lastKey && (coalesceAcrossIdle || now - lastAt < coalesceMs);
 
     if (historySystem.lastSavedJSON && !canCoalesce) {
       historySystem.undoStack.push(historySystem.lastSavedJSON);
@@ -94,6 +101,13 @@ export function installKernelHistoryLifecycle(
     historySystem.lastSavedJSON = currentJson;
     historySystem._lastCoalesceKey = coalesceKey || '';
     historySystem._lastCoalesceAt = coalesceKey ? now : 0;
+
+    while (
+      historySystem.undoStack.length > 0 &&
+      historySystem.undoStack[historySystem.undoStack.length - 1] === currentJson
+    ) {
+      historySystem.undoStack.pop();
+    }
 
     const keepRedo = !!(o && o.keepRedo === true);
     if (!keepRedo) historySystem.redoStack = [];
@@ -113,12 +127,23 @@ export function installKernelHistoryLifecycle(
     historySystem.pause();
     try {
       const cur = historySystem.getCurrentSnapshot();
+      while (
+        historySystem.undoStack.length > 0 &&
+        historySystem.undoStack[historySystem.undoStack.length - 1] === cur
+      ) {
+        historySystem.undoStack.pop();
+      }
+
+      if (historySystem.undoStack.length === 0) {
+        historySystem.lastSavedJSON = cur;
+        historySystem.resume();
+        historySystem.updateButtons();
+        return;
+      }
+
       historySystem.redoStack.push(cur);
 
-      let prevStateJSON = historySystem.undoStack.pop();
-      while (prevStateJSON && prevStateJSON === cur && historySystem.undoStack.length) {
-        prevStateJSON = historySystem.undoStack.pop();
-      }
+      const prevStateJSON = historySystem.undoStack.pop();
 
       if (!prevStateJSON || prevStateJSON === cur) {
         historySystem.redoStack.pop();
@@ -129,6 +154,7 @@ export function installKernelHistoryLifecycle(
       }
 
       historySystem.lastSavedJSON = prevStateJSON;
+      clearCoalesceBoundary();
       historySystem.applyState(prevStateJSON);
       historySystem.updateButtons();
     } catch {
@@ -149,12 +175,23 @@ export function installKernelHistoryLifecycle(
     historySystem.pause();
     try {
       const cur = historySystem.getCurrentSnapshot();
+      while (
+        historySystem.redoStack.length > 0 &&
+        historySystem.redoStack[historySystem.redoStack.length - 1] === cur
+      ) {
+        historySystem.redoStack.pop();
+      }
+
+      if (historySystem.redoStack.length === 0) {
+        historySystem.lastSavedJSON = cur;
+        historySystem.resume();
+        historySystem.updateButtons();
+        return;
+      }
+
       historySystem.undoStack.push(cur);
 
-      let nextStateJSON = historySystem.redoStack.pop();
-      while (nextStateJSON && nextStateJSON === cur && historySystem.redoStack.length) {
-        nextStateJSON = historySystem.redoStack.pop();
-      }
+      const nextStateJSON = historySystem.redoStack.pop();
 
       if (!nextStateJSON || nextStateJSON === cur) {
         historySystem.undoStack.pop();
@@ -165,6 +202,7 @@ export function installKernelHistoryLifecycle(
       }
 
       historySystem.lastSavedJSON = nextStateJSON;
+      clearCoalesceBoundary();
       historySystem.applyState(nextStateJSON);
       historySystem.updateButtons();
     } catch {
@@ -179,7 +217,12 @@ export function installKernelHistoryLifecycle(
       const data = JSON.parse(jsonState);
       const rec = args.asRecord(data, {});
       preserveUiOnlySnapshotFields(rec, args.getCurrentUiSnapshot(), args.captureSavedNotes);
-      args.loadProjectSnapshot(rec);
+      historySystem.__isApplyingState = true;
+      try {
+        args.loadProjectSnapshot(rec);
+      } finally {
+        historySystem.__isApplyingState = false;
+      }
     } catch (error) {
       args.reportNonFatal('kernelHistorySystem.applyState', error, { throttleMs: 4000 });
     } finally {

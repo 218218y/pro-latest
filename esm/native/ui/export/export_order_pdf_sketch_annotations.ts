@@ -274,6 +274,46 @@ export function compositeOrderPdfSketchStrokesOntoBase(args: {
   return true;
 }
 
+export function createOrderPdfRenderAnnotationLayerPngOp(
+  deps: Pick<ExportOrderPdfDeps, '_createDomCanvas' | '_exportReportThrottled'>,
+  canvasToPngBytes: (canvas: HTMLCanvasElement) => Promise<Uint8Array>
+) {
+  return async function renderSketchAnnotationLayerPngBytes(args: {
+    app: AppContainer;
+    draft: OrderPdfDraftLike | null | undefined;
+    key: OrderPdfSketchAnnotationPageKeyLike;
+    width: number;
+    height: number;
+  }): Promise<Uint8Array | null> {
+    const width = Math.max(1, Math.round(Number(args.width) || 0));
+    const height = Math.max(1, Math.round(Number(args.height) || 0));
+    const strokes = listOrderPdfSketchStrokes(args.draft, args.key);
+    const textBoxes = listOrderPdfSketchTextBoxes(args.draft, args.key);
+    if (!strokes.length && !textBoxes.length) return null;
+
+    try {
+      const canvas = deps._createDomCanvas(args.app, width, height);
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      paintOrderPdfSketchAnnotationLayer({
+        ctx,
+        canvasWidth: width,
+        canvasHeight: height,
+        strokes,
+        textBoxes,
+      });
+      return await canvasToPngBytes(canvas);
+    } catch (error) {
+      deps._exportReportThrottled(args.app, 'buildOrderPdfInteractive.renderPageAnnotations', error, {
+        throttleMs: 1000,
+      });
+      return null;
+    }
+  };
+}
+
 export function createOrderPdfApplySketchAnnotationsToCompositePngOp(
   deps: Pick<ExportOrderPdfDeps, '_createDomCanvas' | '_exportReportThrottled' | 'getWindowMaybe'>,
   canvasToPngBytes: (canvas: HTMLCanvasElement) => Promise<Uint8Array>

@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  parseContentsTogglePayload,
   parseFloatingSyncPayload,
   parseSketchPayload,
   resolveCloudSyncTabsGateState,
 } from '../esm/native/services/cloud_sync_payload_state.ts';
 
-test('cloud sync payload state parsers normalize sync-pin and sketch payloads through one canonical seam', () => {
+test('cloud sync payload state parsers normalize sync-pin, show-contents, and sketch payloads through one canonical seam', () => {
   assert.deepEqual(parseFloatingSyncPayload(null), { enabled: false, rev: 0, by: '' });
   assert.deepEqual(
     parseFloatingSyncPayload({ syncPinEnabled: 'yes', syncPinRev: 4, syncPinBy: '  owner  ' }),
@@ -16,6 +17,15 @@ test('cloud sync payload state parsers normalize sync-pin and sketch payloads th
   assert.deepEqual(
     parseSketchPayload({ sketchRev: 7, sketchHash: '  abc  ', sketchBy: '  me  ', sketch: { ok: true } }),
     { rev: 7, hash: 'abc', by: 'me', sketch: { ok: true } }
+  );
+
+  assert.deepEqual(
+    parseContentsTogglePayload({
+      showContentsEnabled: '1',
+      showContentsRev: '6',
+      showContentsBy: ' client-contents ',
+    }),
+    { enabled: true, rev: 0, by: 'client-contents' }
   );
 
   assert.deepEqual(

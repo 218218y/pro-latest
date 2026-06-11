@@ -19,6 +19,7 @@ export function resolveBuildFlowPlanLayout(
     doorsCount,
     calculateModuleStructureFn,
     splitActiveForBuild,
+    stackSplitUnifiedFrame,
     lowerHeightCm,
     H,
     D,
@@ -44,7 +45,7 @@ export function resolveBuildFlowPlanLayout(
       )
     : null;
 
-  const { moduleHeightsTotal, carcassH } = collectModuleHeights({
+  const { moduleHeightsTotal, carcassH: topCarcassH } = collectModuleHeights({
     moduleCfgList,
     splitActiveForBuild,
     lowerHeightCm,
@@ -52,8 +53,13 @@ export function resolveBuildFlowPlanLayout(
     woodThick,
   });
 
+  const carcassH = stackSplitUnifiedFrame
+    ? Math.max(topCarcassH, H + lowerHeightCm / 100 - woodThick)
+    : topCarcassH;
+
   const { moduleDepthsTotal, carcassD } = collectModuleDepths({
     moduleCfgList,
+    moduleInternalWidths,
     D,
     woodThick,
   });

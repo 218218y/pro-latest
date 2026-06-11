@@ -3,6 +3,7 @@ import type {
   ResolveSketchBoxGeometryFn,
   SketchModuleBoxActionState,
 } from './canvas_picking_sketch_module_box_workflow_shared.js';
+import type { VerticalOccupancyRange } from './canvas_picking_manual_layout_sketch_vertical_stack.js';
 
 export function resolveSketchModuleBoxPlacementAction(args: {
   boxes: unknown[];
@@ -20,6 +21,7 @@ export function resolveSketchModuleBoxPlacementAction(args: {
   woodThick: number;
   boxGeo: ReturnType<ResolveSketchBoxGeometryFn>;
   resolveSketchBoxGeometry: ResolveSketchBoxGeometryFn;
+  placementBlockers?: VerticalOccupancyRange[] | null;
 }): SketchModuleBoxActionState {
   const widthM = args.widthM != null && Number.isFinite(args.widthM) && args.widthM > 0 ? args.widthM : null;
   const depthM = args.depthM != null && Number.isFinite(args.depthM) && args.depthM > 0 ? args.depthM : null;
@@ -38,6 +40,8 @@ export function resolveSketchModuleBoxPlacementAction(args: {
     internalZ: Number(args.internalZ),
     woodThick: Number(args.woodThick),
     resolveSketchBoxGeometry: args.resolveSketchBoxGeometry,
+    blockers: args.placementBlockers,
+    confineToPointerSlot: true,
   });
   if (resolvedPlacement.blocked) {
     return {

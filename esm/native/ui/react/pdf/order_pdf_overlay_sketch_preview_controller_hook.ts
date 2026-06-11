@@ -32,6 +32,12 @@ export function useOrderPdfOverlaySketchPreview(
     null
   );
   const viewport = useOrderPdfSketchPreviewViewportStateAdapters(app, docMaybe);
+  const sketchPreviewReady =
+    sketchPreviewOpen &&
+    !sketchPreviewBusy &&
+    !sketchPreviewError &&
+    sketchPreviewEntries.length > 0 &&
+    sketchPreviewLoadedSignatureRef.current === sketchPreviewSignature;
 
   useEffect(() => {
     return () => revokeOrderPdfSketchPreviewEntries(sketchPreviewEntries, winMaybe);
@@ -66,6 +72,15 @@ export function useOrderPdfOverlaySketchPreview(
     setSketchPreviewEntries,
     viewport,
   });
+
+  const closeSketchPreview = useCallback(() => {
+    setSketchPreviewOpen(prev => {
+      if (!prev) return false;
+      restoreSketchPreviewSessionState();
+      sketchPreviewSessionSnapshotRef.current = null;
+      return false;
+    });
+  }, [restoreSketchPreviewSessionState]);
 
   const toggleSketchPreview = useCallback(() => {
     setSketchPreviewOpen(prev => {
@@ -111,7 +126,9 @@ export function useOrderPdfOverlaySketchPreview(
     sketchPreviewBusy,
     sketchPreviewError,
     sketchPreviewEntries,
+    sketchPreviewReady,
     toggleSketchPreview,
+    closeSketchPreview,
     refreshSketchPreview,
   };
 }

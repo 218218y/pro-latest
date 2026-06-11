@@ -39,7 +39,9 @@ export function buildStackSplitLowerUnit(args: BuildStackSplitLowerUnitArgs): Bu
     splitBottomStartIndex: prepared.splitBottomStartIndex,
     splitDzBottom: prepared.splitDzBottom,
   });
-  addStackSplitDecorativeSeparatorIfNeeded({ buildArgs: args, prepared });
+  if (!args.stackSplitUnifiedFrame) {
+    addStackSplitDecorativeSeparatorIfNeeded({ buildArgs: args, prepared });
+  }
 
   const groupChildren =
     prepared.group && Array.isArray(prepared.group.children) ? prepared.group.children : null;

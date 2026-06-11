@@ -1,5 +1,9 @@
-import { getCfg } from '../kernel/api.js';
-import { readCornerConfigurationCellForStack } from '../features/modules_configuration/corner_cells_api.js';
+import { getCfg, getUi } from '../kernel/api.js';
+import {
+  ensureCornerConfigurationCellForStack,
+  readCornerConfigurationCellForStack,
+  resolveTopCornerCellDefaultLayoutFromUi,
+} from '../features/modules_configuration/corner_cells_api.js';
 import {
   readModulesConfigurationListFromConfigSnapshot,
   type ModulesConfigBucketKey,
@@ -11,6 +15,38 @@ import type {
   ModuleKey,
 } from './canvas_picking_interior_hover_contracts.js';
 import { asHoverModuleConfig } from './canvas_picking_interior_hover_state.js';
+
+function readCornerRootFromConfigSnapshot(cfg: unknown): unknown {
+  return cfg && typeof cfg === 'object' && !Array.isArray(cfg)
+    ? (cfg as { cornerConfiguration?: unknown }).cornerConfiguration
+    : null;
+}
+
+function readMaterializedCornerHoverConfig(
+  App: AppContainer,
+  cfg: unknown,
+  idx: number,
+  isBottom: boolean
+): HoverModuleConfigLike | null {
+  const existing = readCornerConfigurationCellForStack(cfg, isBottom ? 'bottom' : 'top', idx);
+  const stack = isBottom ? 'bottom' : 'top';
+  if (existing) return asHoverModuleConfig(existing);
+
+  const cornerRoot = readCornerRootFromConfigSnapshot(cfg);
+  const materialized = ensureCornerConfigurationCellForStack(
+    cornerRoot,
+    cornerRoot,
+    stack,
+    idx,
+    isBottom
+      ? undefined
+      : {
+          defaultLayout: cellIndex => resolveTopCornerCellDefaultLayoutFromUi(getUi(App), cellIndex),
+        }
+  );
+
+  return asHoverModuleConfig(readCornerConfigurationCellForStack(materialized, stack, idx));
+}
 
 export function readHoverModuleConfig(
   App: AppContainer,
@@ -32,7 +68,7 @@ export function readHoverModuleConfig(
         const n = Number(hitModuleKey.slice('corner:'.length));
         if (Number.isFinite(n) && n >= 0) idx = Math.floor(n);
       }
-      return asHoverModuleConfig(readCornerConfigurationCellForStack(cfg, isBottom ? 'bottom' : 'top', idx));
+      return readMaterializedCornerHoverConfig(App, cfg, idx, isBottom);
     }
   } catch {
     // ignore

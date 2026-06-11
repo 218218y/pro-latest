@@ -6,8 +6,10 @@ import {
   CHEST_BODY_PARTS,
   CORNER_BODY_PARTS,
   CORNER_CORNICE_PARTS,
+  LOWER_MAIN_BODY_PARTS,
   MAIN_BODY_PARTS,
   __isCornicePart,
+  __isCorniceWavePart,
   __isCornerCornicePart,
 } from './canvas_picking_paint_targets.js';
 import {
@@ -28,10 +30,15 @@ export function applyGroupedOrCornerPaintTarget(args: {
     toggleGroupedPaint(state.ensureColors(), MAIN_BODY_PARTS, paintSelection);
     return true;
   }
+  if (LOWER_MAIN_BODY_PARTS.includes(foundPartId)) {
+    toggleGroupedPaint(state.ensureColors(), LOWER_MAIN_BODY_PARTS, paintSelection);
+    return true;
+  }
   if (CHEST_BODY_PARTS.includes(foundPartId)) {
     toggleGroupedPaint(state.ensureColors(), CHEST_BODY_PARTS, paintSelection);
     return true;
   }
+  if (__isCorniceWavePart(foundPartId)) return false;
   if (__isCornicePart(foundPartId)) {
     toggleCorniceGroupPaint(state.ensureColors(), paintSelection);
     return true;

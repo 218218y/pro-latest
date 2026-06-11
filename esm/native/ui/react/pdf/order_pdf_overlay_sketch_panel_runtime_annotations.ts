@@ -16,7 +16,11 @@ export type OrderPdfSketchStrokeMap = Record<OrderPdfSketchAnnotationPageKey, Or
 export type OrderPdfSketchTextBoxMap = Record<OrderPdfSketchAnnotationPageKey, OrderPdfSketchTextBox[]>;
 export type OrderPdfSketchStrokeCounts = Record<OrderPdfSketchAnnotationPageKey, number>;
 
-const ORDER_PDF_SKETCH_PAGE_KEYS: readonly OrderPdfSketchAnnotationPageKey[] = ['renderSketch', 'openClosed'];
+const ORDER_PDF_SKETCH_PAGE_KEYS: readonly OrderPdfSketchAnnotationPageKey[] = [
+  'orderPdfPage1',
+  'renderSketch',
+  'openClosed',
+];
 
 export function readOrderPdfSketchAnnotationSortKey(
   value: { createdAt?: number },
@@ -96,6 +100,7 @@ export function cloneOrderPdfSketchAnnotationItem(
 
 export function buildOrderPdfSketchStrokeMap(draft: OrderPdfDraft | null): OrderPdfSketchStrokeMap {
   return {
+    orderPdfPage1: listOrderPdfSketchStrokes(draft, 'orderPdfPage1'),
     renderSketch: listOrderPdfSketchStrokes(draft, 'renderSketch'),
     openClosed: listOrderPdfSketchStrokes(draft, 'openClosed'),
   };
@@ -103,6 +108,7 @@ export function buildOrderPdfSketchStrokeMap(draft: OrderPdfDraft | null): Order
 
 export function buildOrderPdfSketchTextBoxMap(draft: OrderPdfDraft | null): OrderPdfSketchTextBoxMap {
   return {
+    orderPdfPage1: listOrderPdfSketchTextBoxes(draft, 'orderPdfPage1'),
     renderSketch: listOrderPdfSketchTextBoxes(draft, 'renderSketch'),
     openClosed: listOrderPdfSketchTextBoxes(draft, 'openClosed'),
   };
@@ -113,6 +119,7 @@ export function buildOrderPdfSketchStrokeCounts(
   textBoxesByKey?: OrderPdfSketchTextBoxMap
 ): OrderPdfSketchStrokeCounts {
   return {
+    orderPdfPage1: strokesByKey.orderPdfPage1.length + (textBoxesByKey?.orderPdfPage1.length || 0),
     renderSketch: strokesByKey.renderSketch.length + (textBoxesByKey?.renderSketch.length || 0),
     openClosed: strokesByKey.openClosed.length + (textBoxesByKey?.openClosed.length || 0),
   };

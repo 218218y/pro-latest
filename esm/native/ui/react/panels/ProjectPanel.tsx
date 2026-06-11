@@ -2,21 +2,15 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import type { ActionMetaLike, MetaActionsNamespaceLike } from '../../../../../types';
+import { Button } from '../components/index.js';
 import { useApp, useMeta, useUiSelector } from '../hooks.js';
 import { selectAutosaveInfo, selectProjectName } from '../selectors/ui_selectors.js';
 import { setUiProjectName } from '../actions/store_actions.js';
 import { readAutosaveInfoFromStorage } from '../../../services/api.js';
 import { useProjectPanelActions } from './project_panel_actions.js';
 
-type ProjectPanelVariant = 'default' | 'structure';
-
-type ProjectPanelProps = {
-  variant?: ProjectPanelVariant;
-};
-
-// Shared panel: project name + load/save/restore.
-
-export function ProjectPanel({ variant = 'default' }: ProjectPanelProps): ReactElement {
+// Canonical structure-tab project header: restore + project name + project file I/O.
+export function ProjectPanel(): ReactElement {
   const app = useApp();
   const meta: MetaActionsNamespaceLike = useMeta();
   const projectName = useUiSelector(selectProjectName);
@@ -45,6 +39,13 @@ export function ProjectPanel({ variant = 'default' }: ProjectPanelProps): ReactE
         ? meta.uiOnly(undefined, 'react:project:name')
         : { source: 'react:project:name' };
     setUiProjectName(app, next, m);
+    return next;
+  };
+
+  const handleSaveDraft = (value: string) => {
+    const next = commitName(value);
+    setDraft(next);
+    handleSaveClick();
   };
 
   // Canonical autosave: stored under App.services.storage and surfaced into ui.autosaveInfo by the autosave service.
@@ -64,42 +65,28 @@ export function ProjectPanel({ variant = 'default' }: ProjectPanelProps): ReactE
   const canRestore = !!autosaveInfo;
   const restoreTime = autosaveInfo && autosaveInfo.dateString ? String(autosaveInfo.dateString) : '';
 
-  const fileInput = (
-    <input
-      ref={loadRef}
-      id={loadInputId}
-      name="projectFile"
-      aria-label="טען קובץ פרויקט"
-      data-testid="project-load-input"
-      type="file"
-      className="hidden"
-      accept=".json,application/json"
-      onChange={handleLoadInputChange}
-    />
-  );
+  return (
+    <div className="wp-r-structure-head">
+      <button
+        type="button"
+        data-testid="project-restore-button"
+        className="wp-r-restore-pill"
+        disabled={!canRestore}
+        onClick={handleRestore}
+        title={canRestore ? 'טען את העריכה האחרונה שנשמרה אוטומטית' : 'אין עריכה אחרונה לשחזור'}
+      >
+        <span className="wp-r-restore-pill-inner">
+          <i className="fas fa-history" />
+          <span className="wp-r-restore-text">טען עריכה אחרונה</span>
+          {restoreTime ? <span className="wp-r-restore-time">({restoreTime})</span> : null}
+        </span>
+      </button>
 
-  if (variant === 'structure') {
-    return (
-      <div className="wp-r-structure-head">
-        <button
-          type="button"
-          data-testid="project-restore-button"
-          className="wp-r-restore-pill"
-          disabled={!canRestore}
-          onClick={handleRestore}
-          title={canRestore ? 'טען את העריכה האחרונה שנשמרה אוטומטית' : 'אין עריכה אחרונה לשחזור'}
-        >
-          <span className="wp-r-restore-pill-inner">
-            <i className="fas fa-history" />
-            <span className="wp-r-restore-text">טען עריכה אחרונה</span>
-            {restoreTime ? <span className="wp-r-restore-time">({restoreTime})</span> : null}
-          </span>
-        </button>
+      <label className="wp-r-project-name-title" htmlFor={nameInputId}>
+        שם הפרויקט:
+      </label>
 
-        <label className="wp-r-project-name-title" htmlFor={nameInputId}>
-          שם הפרויקט:
-        </label>
-
+      <div className="wp-r-project-name-row">
         <input
           id={nameInputId}
           name="projectName"
@@ -112,81 +99,54 @@ export function ProjectPanel({ variant = 'default' }: ProjectPanelProps): ReactE
             isFocused.current = true;
           }}
           onChange={(e: import('react').ChangeEvent<HTMLInputElement>) => setDraft(e.target.value)}
+          onKeyDown={(e: import('react').KeyboardEvent<HTMLInputElement>) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            handleSaveDraft(e.currentTarget.value);
+          }}
           onBlur={() => {
             isFocused.current = false;
             commitName(draft);
           }}
           placeholder="לדוגמה: ארון חדר ילדים…"
         />
-      </div>
-    );
-  }
 
-  return (
-    <div className="control-section wp-r-project-panel">
-      <label className="section-title" htmlFor={nameInputId}>
-        שם הפרויקט:
-      </label>
+        <div className="wp-r-project-io wp-r-project-io--structure" aria-label="פעולות קובץ פרויקט">
+          <Button
+            variant="header"
+            data-testid="project-load-button"
+            className="btn-header-export-load wp-r-project-icon-btn"
+            onClick={handleLoadButtonClick}
+            title="טען קובץ"
+            aria-label="טען קובץ"
+          >
+            <i className="fas fa-folder-open" aria-hidden="true" />
+          </Button>
 
-      <div className="row">
-        <div className="col">
-          <input
-            id={nameInputId}
-            name="projectName"
-            aria-label="שם הפרויקט"
-            type="text"
-            data-testid="project-name-input"
-            className="project-input wp-r-project-input"
-            value={draft}
-            onFocus={() => {
-              isFocused.current = true;
-            }}
-            onChange={(e: import('react').ChangeEvent<HTMLInputElement>) => setDraft(e.target.value)}
-            onBlur={() => {
-              isFocused.current = false;
-              commitName(draft);
-            }}
-            placeholder="לדוגמה: ארון הורים"
-          />
+          <Button
+            variant="header"
+            data-testid="project-save-button"
+            className="btn-save btn-header-save wp-r-project-icon-btn"
+            onClick={() => handleSaveDraft(draft)}
+            title="שמור"
+            aria-label="שמור"
+          >
+            <i className="fas fa-save" aria-hidden="true" />
+          </Button>
         </div>
       </div>
 
-      <div className="wp-r-btn-row wp-r-wrap wp-r-project-io">
-        <button
-          type="button"
-          data-testid="project-load-button"
-          className="btn btn-primary btn-inline btn-sm wp-r-project-io-btn"
-          onClick={handleLoadButtonClick}
-        >
-          <i className="fas fa-folder-open" /> טען קובץ
-        </button>
-
-        <button
-          type="button"
-          data-testid="project-save-button"
-          className="btn btn-save btn-inline btn-sm wp-r-project-io-btn"
-          onClick={handleSaveClick}
-        >
-          <i className="fas fa-save" /> שמור
-        </button>
-      </div>
-
-      <button
-        type="button"
-        data-testid="project-restore-button"
-        className="wp-r-restore-pill wp-r-project-restore"
-        disabled={!canRestore}
-        onClick={handleRestore}
-        title={canRestore ? 'טען את העריכה האחרונה שנשמרה אוטומטית' : 'אין עריכה אחרונה לשחזור'}
-      >
-        <span className="wp-r-restore-pill-inner">
-          <i className="fas fa-history" />
-          <span className="wp-r-restore-text">טען עריכה אחרונה</span>
-          {restoreTime ? <span className="wp-r-restore-time">({restoreTime})</span> : null}
-        </span>
-      </button>
-
-      {fileInput}
+      <input
+        ref={loadRef}
+        id={loadInputId}
+        name="projectFile"
+        aria-label="טען קובץ פרויקט"
+        data-testid="project-load-input"
+        type="file"
+        className="hidden"
+        accept=".json,application/json"
+        onChange={handleLoadInputChange}
+      />
     </div>
   );
 }

@@ -23,6 +23,17 @@ export type CloudSyncOwnerRooms = {
 const PRIVATE_KEY = 'wp_private_room';
 const SKETCH_ROOM_SUFFIX = '::sketch';
 
+function readPrivateRoomStorageKey(storage: StorageLike): string {
+  try {
+    const rec =
+      storage && typeof storage === 'object' ? (storage as { KEYS?: Record<string, unknown> }) : null;
+    const key = rec?.KEYS?.PRIVATE_ROOM;
+    return typeof key === 'string' && key.trim() ? key.trim() : PRIVATE_KEY;
+  } catch {
+    return PRIVATE_KEY;
+  }
+}
+
 function readRoomString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -34,7 +45,8 @@ function readStoredPrivateRoom(args: {
 }): string {
   const { App, storage, reportNonFatal } = args;
   try {
-    return typeof storage.getString === 'function' ? readRoomString(storage.getString(PRIVATE_KEY)) : '';
+    const key = readPrivateRoomStorageKey(storage);
+    return typeof storage.getString === 'function' ? readRoomString(storage.getString(key)) : '';
   } catch (e) {
     reportNonFatal(App, 'privateRoom.read', e, { throttleMs: 8000 });
     return '';
@@ -51,7 +63,8 @@ function writeStoredPrivateRoom(args: {
   const next = readRoomString(args.value);
   if (!next) return;
   try {
-    if (typeof storage.setString === 'function') storage.setString(PRIVATE_KEY, next);
+    const key = readPrivateRoomStorageKey(storage);
+    if (typeof storage.setString === 'function') storage.setString(key, next);
   } catch (e) {
     reportNonFatal(App, 'privateRoom.write', e, { throttleMs: 8000 });
   }

@@ -18,7 +18,7 @@ type ManualLayoutCustomData = LayoutConfigCustomDataLike & {
 export type { ManualLayoutConfigRecord, ManualLayoutCustomData };
 
 export type ManualLayoutShelfVariant = 'regular' | 'double' | 'glass' | 'brace';
-export type ManualLayoutExtraListKey = 'rods' | 'shelves';
+export type ManualLayoutExtraListKey = 'rods' | 'shelves' | 'storageBarriers';
 
 export type ManualLayoutGridMutationArgs = {
   divs: number;
@@ -46,6 +46,8 @@ export type RemoveManualLayoutBaseShelfArgs = ManualLayoutGridMutationArgs & {
 export type RemoveManualLayoutBaseRodArgs = ManualLayoutGridMutationArgs & {
   rodIndex: number;
 };
+
+export type RemoveManualLayoutBaseStorageArgs = ManualLayoutGridMutationArgs;
 
 function readNumber(value: unknown): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;

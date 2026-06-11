@@ -98,6 +98,11 @@ export function installStateApiUiSurface(ctx: StateApiSurfaceUiContext): void {
       return uiNs.patch?.({ globalClickMode: !!on }, uiOnlyMeta(meta, 'actions.ui:setGlobalClickUi'));
     };
   }
+  if (typeof uiNs.setDarkMode !== 'function') {
+    uiNs.setDarkMode = function setDarkMode(on: unknown, meta?: ActionMetaLike) {
+      return uiNs.patch?.({ darkMode: !!on }, uiOnlyMeta(meta, 'actions.ui:setDarkMode'));
+    };
+  }
   if (typeof uiNs.setShowContents !== 'function') {
     uiNs.setShowContents = function setShowContents(on: unknown, meta?: ActionMetaLike) {
       const enabled = !!on;

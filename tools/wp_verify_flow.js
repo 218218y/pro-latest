@@ -108,6 +108,13 @@ export function runVerifyFlow({ projectRoot, childEnv, flags, runners = {} }) {
       label: 'node tools/wp_release_parity.js --require-dist --require-release --artifacts-only',
     });
     npmRunImpl({ projectRoot, childEnv, scriptName: 'bundle:site2' });
+    runCmdImpl({
+      projectRoot,
+      childEnv,
+      cmd: process.execPath,
+      args: ['tools/wp_release_clean_audit.mjs', '--dirs', 'dist/release,dist/site2/release'],
+      label: 'node tools/wp_release_clean_audit.mjs --dirs dist/release,dist/site2/release',
+    });
   }
 
   return {

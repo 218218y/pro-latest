@@ -75,7 +75,7 @@ export const WARDROBE_LIMITS = Object.freeze({
   doors: Object.freeze({ min: 0, slidingMin: 2, max: 14 }),
   chestDrawers: Object.freeze({ min: 2, max: 8 }),
   cell: Object.freeze({
-    widthMinCm: 40,
+    widthMinCm: 20,
     widthMaxCm: 560,
     heightMinCm: 100,
     heightMaxCm: 300,
@@ -394,6 +394,8 @@ export const DOOR_SYSTEM_DIMENSIONS = Object.freeze({
     visualWidthClearanceM: 0.004,
     visualHeightClearanceM: 0.004,
     visualThicknessM: MATERIAL_DIMENSIONS.wood.thicknessM,
+    insetFrameThicknessM: 0.036,
+    insetRevealM: 0.003,
     frontTrimZOffsetM: 0.011,
     opFrontZOffsetM: 0.01,
     sameModuleLeafGapMaxM: 0.003,
@@ -411,7 +413,7 @@ export const DOOR_SYSTEM_DIMENSIONS = Object.freeze({
       topClampOffsetM: 0.12,
       minHeightForSplitM: 0.2,
       hoverMinDoorHeightM: 0.05,
-      hoverFallbackDoorWidthM: 0.45,
+      hoverDefaultDoorWidthM: 0.45,
       hoverRegionMinHeightM: 0.05,
       hoverStandardLineMinHeightM: 0.014,
       hoverStandardLineMaxHeightM: 0.026,
@@ -521,12 +523,12 @@ export const INTERIOR_FITTINGS_DIMENSIONS = Object.freeze({
     splitShelfRows: Object.freeze([5, 1]),
     mixedRodYFactor: 3.5,
     hangingRodYFactor: 3.8,
-    splitUpperRodYFactor: 4.6,
-    splitUpperRodLimitFactor: 2.3,
+    splitUpperRodYFactor: 4.8,
+    splitUpperRodLimitFactor: 2.5,
     splitLowerRodYFactor: 2.3,
     splitLowerRodLimitFactor: 1.3,
-    storageRodYFactor: 3.5,
-    storageRodLimitFactor: 3.5,
+    storageRodYFactor: 3.8,
+    storageRodLimitFactor: 3.8,
   }),
 });
 
@@ -545,15 +547,48 @@ export const CONTENT_VISUAL_DIMENSIONS = Object.freeze({
     maxCount: 96,
     widthBaseM: 0.022,
     widthRandomRangeM: 0.026,
+    setWidthBaseM: 0.026,
+    setWidthRandomRangeM: 0.012,
+    talmudSetWidthBaseM: 0.032,
+    talmudSetWidthRandomRangeM: 0.01,
+    narrowSetWidthBaseM: 0.019,
+    narrowSetWidthRandomRangeM: 0.009,
     gapBaseM: 0.003,
     gapRandomRangeM: 0.006,
+    setGapBaseM: 0.0016,
+    setGapRandomRangeM: 0.0022,
+    setTrailingGapM: 0.007,
     tiltZRangeRad: 0.045,
+    setTiltZRangeRad: 0.018,
+    edgeTiltZRangeRad: 0.04,
     angleCosMin: 0.001,
     heightBaseM: 0.16,
     heightRandomRangeM: 0.18,
+    alignedHeightRatioBase: 0.78,
+    alignedHeightRatioRange: 0.15,
+    setHeightVariationM: 0.012,
+    edgeHeightVariationM: 0.028,
+    talmudHeightBoostM: 0.028,
+    narrowSetHeightTrimM: 0.018,
+    edgeZoneRatio: 0.14,
+    edgeZoneMaxM: 0.13,
+    setChance: 0.76,
+    talmudSetChance: 0.34,
+    narrowSetChance: 0.28,
+    setMinVolumes: 5,
+    setMaxVolumes: 14,
+    shortRunMinVolumes: 2,
+    shortRunMaxVolumes: 5,
     widthMinM: 0.01,
+    spineBandChance: 0.82,
+    spineBandHeightM: 0.008,
+    spineBandThicknessM: 0.003,
+    spineBandWidthInsetRatio: 0.18,
+    spineBandYOffsetRatioA: 0.22,
+    spineBandYOffsetRatioB: -0.18,
+    stackChance: 0.08,
     stackLookaheadM: 0.04,
-    stackMaxItems: 3,
+    stackMaxItems: 2,
     stackWidthBaseM: 0.07,
     stackWidthRandomRangeM: 0.035,
     stackTrailingGapM: 0.012,
@@ -915,12 +950,16 @@ export const DRAWER_DIMENSIONS = Object.freeze({
     connectorWidthClearanceM: 0.09,
     connectorHeightClearanceM: 0.06,
     separatorBoardWidthClearanceM: 0.025,
+    contentsBottomInsetM: 0.015,
+    contentsWidthClearanceM: 0.05,
+    contentsHeightClearanceM: 0.03,
   }),
   internal: Object.freeze({
     defaultGridStepM: 0.25,
     defaultDepthM: 0.5,
     defaultInnerWidthM: 0.6,
     maxSingleDrawerHeightM: 0.35,
+    defaultSingleDrawerHeightM: 0.165,
     verticalInsetM: 0.02,
     minDrawerHeightM: 0.01,
     widthClearanceM: 0.03,
@@ -929,6 +968,9 @@ export const DRAWER_DIMENSIONS = Object.freeze({
     betweenDrawersGapM: 0.03,
     stackCount: 2,
     openOffsetZM: 0.25,
+    contentsBottomInsetM: 0.015,
+    contentsWidthClearanceM: 0.05,
+    contentsHeightClearanceM: 0.03,
   }),
 });
 
@@ -1314,6 +1356,7 @@ export const CORNER_WING_DIMENSIONS = Object.freeze({
     externalRegularHeightM: DRAWER_DIMENSIONS.external.regularHeightM,
     internalDefaultDepthM: DRAWER_DIMENSIONS.internal.defaultDepthM,
     internalMaxSingleDrawerHeightM: DRAWER_DIMENSIONS.internal.maxSingleDrawerHeightM,
+    internalDefaultSingleHeightM: DRAWER_DIMENSIONS.internal.defaultSingleDrawerHeightM,
     internalVerticalInsetM: DRAWER_DIMENSIONS.internal.verticalInsetM,
     internalMinHeightM: DRAWER_DIMENSIONS.internal.minDrawerHeightM,
     internalFirstBottomGapM: DRAWER_DIMENSIONS.internal.firstDrawerBottomGapM,
@@ -1444,6 +1487,10 @@ export const CHEST_MODE_DIMENSIONS = Object.freeze({
   }),
   dimensionGuideSideOffsetM: 0.15,
   dimensionGuideTopOffsetM: 0.1,
+  dimensionGuideTextScale: Object.freeze({
+    total: Object.freeze({ scale: 0.66, styleKey: 'compactTotal' }),
+    segment: 0.6,
+  }),
 });
 
 export const HANDLE_DIMENSIONS = Object.freeze({
@@ -1589,6 +1636,7 @@ export function resolveExternalDrawerGeometry(args?: {
   woodThicknessM?: unknown;
   frontZM?: unknown;
   drawerHeightM?: unknown;
+  doorMountMode?: unknown;
 }): ExternalDrawerGeometry {
   const external = DRAWER_DIMENSIONS.external;
   const externalWidthM = finiteOr(args?.externalWidthM, 0);
@@ -1597,12 +1645,19 @@ export function resolveExternalDrawerGeometry(args?: {
   const frontZM = finiteOr(args?.frontZM, depthM / 2);
   const drawerHeightM = finiteOr(args?.drawerHeightM, external.regularHeightM);
   const connectD = external.connectorDepthM;
+  const visualT = external.visualThicknessM;
+  const isInsetMount = String(args?.doorMountMode || '') === 'inset';
+  const insetRevealM = isInsetMount
+    ? Math.min(DOOR_SYSTEM_DIMENSIONS.hinged.insetRevealM, Math.max(0, woodThicknessM / 3))
+    : 0;
+  const zClosed = isInsetMount ? frontZM - visualT / 2 - insetRevealM : frontZM + external.frontOffsetZM;
+  const zOpen = isInsetMount ? zClosed + external.openOffsetZM : frontZM + external.openOffsetZM;
 
   return {
-    zClosed: frontZM + external.frontOffsetZM,
-    zOpen: frontZM + external.openOffsetZM,
+    zClosed,
+    zOpen,
     visualW: externalWidthM - external.visualWidthClearanceM,
-    visualT: external.visualThicknessM,
+    visualT,
     visualH: drawerHeightM - external.visualHeightClearanceM,
     boxW: externalWidthM - external.boxWidthClearanceM,
     boxH: drawerHeightM - external.boxHeightClearanceM,

@@ -1,7 +1,11 @@
 import type { MirrorLayoutEntry, MirrorLayoutList } from '../../../types';
 
 import { readMirrorLayoutList } from '../features/mirror_layout.js';
-import { resolveGlassFrameStylePaintSelection } from '../features/door_style_overrides.js';
+import {
+  isDoorStyleOverrideValue,
+  resolveGlassFrameStylePaintSelection,
+} from '../features/door_style_overrides.js';
+import { isHexCellDiagonalPanelPartId } from '../features/hex_cell/index.js';
 import {
   __wp_canonDoorPartKeyForMaps,
   __wp_scopeCornerPartKeyForStack,
@@ -15,6 +19,41 @@ import {
 } from './canvas_picking_paint_flow_shared.js';
 import type { CanvasPaintClickArgs } from './canvas_picking_paint_flow_contracts.js';
 import type { PaintFlowMutableState } from './canvas_picking_paint_flow_apply_state.js';
+
+const GLASS_PREVIOUS_STYLE_PREFIX = '__wp_glass_previous_door_style__:';
+const GLASS_PREVIOUS_STYLE_NONE = '__wp_none__';
+
+function getGlassPreviousStyleKey(partKey: string): string {
+  return `${GLASS_PREVIOUS_STYLE_PREFIX}${partKey}`;
+}
+
+function normalizeCurtainChoiceForCompare(value: unknown): string {
+  const text = typeof value === 'string' ? value.trim() : '';
+  return text || 'none';
+}
+
+function rememberDoorStyleBeforeGlass(state: PaintFlowMutableState, paintPartKey: string): void {
+  const markerKey = getGlassPreviousStyleKey(paintPartKey);
+  if (typeof state.special0[markerKey] !== 'undefined') return;
+  const previousStyle = state.style0[paintPartKey];
+  state.ensureSpecial()[markerKey] = isDoorStyleOverrideValue(previousStyle)
+    ? previousStyle
+    : GLASS_PREVIOUS_STYLE_NONE;
+}
+
+function restoreDoorStyleBeforeGlass(state: PaintFlowMutableState, paintPartKey: string): void {
+  const markerKey = getGlassPreviousStyleKey(paintPartKey);
+  const previousStyle = state.special0[markerKey];
+  const nextStyle = state.ensureStyle();
+  if (isDoorStyleOverrideValue(previousStyle)) nextStyle[paintPartKey] = previousStyle;
+  else delete nextStyle[paintPartKey];
+  delete state.ensureSpecial()[markerKey];
+}
+
+function clearDoorStyleBeforeGlassMarker(state: PaintFlowMutableState, paintPartKey: string): void {
+  const markerKey = getGlassPreviousStyleKey(paintPartKey);
+  if (typeof state.special0[markerKey] !== 'undefined') delete state.ensureSpecial()[markerKey];
+}
 
 export type ResolveMirrorLayoutForPaintClickFn = (
   args: CanvasPaintClickArgs,
@@ -97,8 +136,9 @@ export function applyPaintPartMutation(args: {
   const resolveMirrorLayout = args.resolveMirrorLayout || resolveMirrorLayoutForPaintClick;
   const glassFrameStyle = resolveGlassFrameStylePaintSelection(paintSelection);
   const isSpecialPaintPart = isSpecialPart(paintPartKey);
+  const isHexCellDiagonalPaintPart = isHexCellDiagonalPanelPartId(paintPartKey);
 
-  if (isSpecialPaintPart && paintSelection === 'mirror') {
+  if (isSpecialPaintPart && !isHexCellDiagonalPaintPart && paintSelection === 'mirror') {
     const mirrorResult = resolveMirrorLayout(clickArgs, existingMirrorLayouts);
     const { removeMatch, canApplyMirror } = mirrorResult;
     if (existingSpecial === 'mirror' && removeMatch) {
@@ -109,6 +149,7 @@ export function applyPaintPartMutation(args: {
         state.ensureMirrorLayout()[paintPartKey] = nextLayouts;
       } else {
         delete state.ensureSpecial()[paintPartKey];
+        clearDoorStyleBeforeGlassMarker(state, paintPartKey);
         delete state.ensureCurtains()[paintPartKey];
         delete state.ensureMirrorLayout()[paintPartKey];
       }
@@ -124,6 +165,7 @@ export function applyPaintPartMutation(args: {
       !existingMirrorLayouts.length;
     if (isTogglingCanonicalOutsideMirror) {
       delete state.ensureSpecial()[paintPartKey];
+      clearDoorStyleBeforeGlassMarker(state, paintPartKey);
       delete state.ensureCurtains()[paintPartKey];
       delete state.ensureMirrorLayout()[paintPartKey];
       return;
@@ -136,6 +178,7 @@ export function applyPaintPartMutation(args: {
     });
 
     state.ensureSpecial()[paintPartKey] = 'mirror';
+    clearDoorStyleBeforeGlassMarker(state, paintPartKey);
     delete state.ensureCurtains()[paintPartKey];
     if (nextLayouts && nextLayouts.length) state.ensureMirrorLayout()[paintPartKey] = nextLayouts;
     else delete state.ensureMirrorLayout()[paintPartKey];
@@ -145,14 +188,18 @@ export function applyPaintPartMutation(args: {
   if (isSpecialPaintPart && glassFrameStyle != null) {
     const existingStyle = state.style0[paintPartKey] || null;
     const shouldRemove =
-      existingSpecial === 'glass' && existingCurtain === curtainChoice && existingStyle === glassFrameStyle;
+      existingSpecial === 'glass' &&
+      normalizeCurtainChoiceForCompare(existingCurtain) === curtainChoice &&
+      existingStyle === glassFrameStyle;
     if (shouldRemove) {
       delete state.ensureSpecial()[paintPartKey];
+      restoreDoorStyleBeforeGlass(state, paintPartKey);
       delete state.ensureCurtains()[paintPartKey];
       delete state.ensureMirrorLayout()[paintPartKey];
       return;
     }
 
+    if (existingSpecial !== 'glass') rememberDoorStyleBeforeGlass(state, paintPartKey);
     state.ensureSpecial()[paintPartKey] = 'glass';
     state.ensureCurtains()[paintPartKey] = curtainChoice;
     state.ensureStyle()[paintPartKey] = glassFrameStyle;

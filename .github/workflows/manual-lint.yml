@@ -1,4 +1,4 @@
-name: Manual Lint
+name: Manual Strict Lint
 
 on:
   workflow_dispatch:
@@ -20,7 +20,7 @@ env:
 
 jobs:
   lint:
-    name: Lint
+    name: Strict lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -37,8 +37,8 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Run lint
-        run: npm run lint
+      - name: Run strict lint
+        run: npm run lint:strict
 
       - name: Upload lint diagnostics
         if: failure()

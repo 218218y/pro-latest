@@ -28,31 +28,9 @@ function makeThreeStub() {
     constructor(public opts: AnyRecord) {}
   }
 
-  class Color {
-    #hex = 'ffffff';
-    setStyle(style: string) {
-      this.#hex = String(style || '#ffffff')
-        .replace(/^#/, '')
-        .padStart(6, '0')
-        .slice(-6);
-    }
-    getHSL(target: { h: number; s: number; l: number }) {
-      target.h = 0;
-      target.s = 0;
-      target.l = 1;
-    }
-    setHSL() {
-      return this;
-    }
-    getHexString() {
-      return this.#hex;
-    }
-  }
-
   return {
     MeshBasicMaterial,
     MeshStandardMaterial,
-    Color,
     Texture: class {},
     CanvasTexture: class {},
     RepeatWrapping: 'repeat',
@@ -78,4 +56,14 @@ test('materials_factory uses canonical render cache/meta seams without materiali
   assert.equal('__wpRenderCache' in App, false);
   assert.equal('__wpRenderMeta' in App, false);
   assert.equal('__wpRenderMaterials' in App, false);
+});
+
+test('materials_factory keeps front color albedo canonical instead of applying display compensation', () => {
+  const App: AnyRecord = {
+    deps: { THREE: makeThreeStub() },
+    store: makeStore({ sketchMode: false }),
+  };
+
+  const material = getMaterial(App, '#336699', 'front') as AnyRecord;
+  assert.equal((material.opts as AnyRecord).color, '#336699');
 });

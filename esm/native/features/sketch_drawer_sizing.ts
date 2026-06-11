@@ -24,6 +24,43 @@ export const SKETCH_INTERNAL_DRAWER_STACK_COUNT: number = DRAWER_DIMENSIONS.sket
 
 const MIN_RENDER_DRAWER_HEIGHT_M = DRAWER_DIMENSIONS.sketch.minRenderHeightM;
 const HEIGHT_TOKEN_EPSILON = DRAWER_DIMENSIONS.sketch.heightTokenEpsilonCm;
+const STACK_FIT_EPSILON_M = 1e-9;
+
+export const SKETCH_INTERNAL_DRAWERS_DIRTY_KEY = '__internalDrawersSketchDirty';
+
+function hasNonEmptyArray(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0;
+}
+
+function readSketchExtrasRecord(value: unknown): Record<string, unknown> | null {
+  const rec = readRecord(value);
+  return readRecord(rec?.sketchExtras);
+}
+
+function sketchBoxHasInternalDrawers(box: unknown): boolean {
+  const rec = readRecord(box);
+  return hasNonEmptyArray(rec?.drawers);
+}
+
+export function markSketchInternalDrawersDirty(cfg: Record<string, unknown>): void {
+  const extra =
+    readSketchExtrasRecord(cfg) ||
+    (() => {
+      const created: Record<string, unknown> = {};
+      cfg.sketchExtras = created;
+      return created;
+    })();
+  extra[SKETCH_INTERNAL_DRAWERS_DIRTY_KEY] = true;
+}
+
+export function hasSketchInternalDrawersDirtyOrData(value: unknown): boolean {
+  const extra = readSketchExtrasRecord(value);
+  if (!extra) return false;
+  if (extra[SKETCH_INTERNAL_DRAWERS_DIRTY_KEY] === true) return true;
+  if (hasNonEmptyArray(extra.drawers)) return true;
+  const boxes = Array.isArray(extra.boxes) ? extra.boxes : [];
+  return boxes.some(sketchBoxHasInternalDrawers);
+}
 
 export type SketchExternalDrawersToolSpec = {
   count: number;
@@ -46,6 +83,12 @@ export type SketchExternalDrawerMetrics = {
   drawerCount: number;
   drawerH: number;
   stackH: number;
+};
+
+export type SketchDrawerFitResult<TMetrics> = {
+  metrics: TMetrics;
+  availableHeightM: number;
+  fits: boolean;
 };
 
 function readFiniteNumber(value: unknown): number | null {
@@ -74,6 +117,11 @@ function formatHeightToken(value: number): string {
 
 function isSameHeightCm(a: number, b: number): boolean {
   return Math.abs(a - b) <= HEIGHT_TOKEN_EPSILON;
+}
+
+function readAvailableHeightM(value: unknown): number {
+  const height = readFiniteNumber(value);
+  return height != null && height > 0 ? height : 0;
 }
 
 export function normalizeSketchDrawerHeightCm(value: unknown, defaultCm: number): number {
@@ -183,22 +231,8 @@ export function resolveSketchInternalDrawerMetrics(args?: {
   );
   const gapRaw = readFiniteNumber(args?.drawerGapM);
   const requestedGap = gapRaw != null && gapRaw >= 0 ? gapRaw : DEFAULT_SKETCH_INTERNAL_DRAWER_GAP_M;
-  const available = readFiniteNumber(args?.availableHeightM);
-
-  let drawerGap = requestedGap;
-  let drawerH = requestedH;
-  if (available != null && available > 0) {
-    const maxWithGap = (available - requestedGap) / SKETCH_INTERNAL_DRAWER_STACK_COUNT;
-    if (maxWithGap > 0) {
-      drawerH = Math.min(requestedH, maxWithGap);
-    } else {
-      drawerGap = 0;
-      drawerH = Math.min(requestedH, available / SKETCH_INTERNAL_DRAWER_STACK_COUNT);
-    }
-  }
-
-  drawerH = Math.max(MIN_RENDER_DRAWER_HEIGHT_M, drawerH);
-  drawerGap = Math.max(0, drawerGap);
+  const drawerH = Math.max(MIN_RENDER_DRAWER_HEIGHT_M, requestedH);
+  const drawerGap = Math.max(0, requestedGap);
   return {
     drawerH,
     drawerGap,
@@ -223,13 +257,44 @@ export function resolveSketchExternalDrawerMetrics(args?: {
     args?.drawerHeightM,
     DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M
   );
-  const available = readFiniteNumber(args?.availableHeightM);
-  const maxDrawerH = available != null && available > 0 ? available / drawerCount : null;
-  const drawerH =
-    maxDrawerH != null ? Math.max(MIN_RENDER_DRAWER_HEIGHT_M, Math.min(requestedH, maxDrawerH)) : requestedH;
+  const drawerH = Math.max(MIN_RENDER_DRAWER_HEIGHT_M, requestedH);
   return {
     drawerCount,
     drawerH,
     stackH: drawerCount * drawerH,
+  };
+}
+
+export function sketchStackFitsAvailableHeight(stackH: unknown, availableHeightM: unknown): boolean {
+  const stack = readFiniteNumber(stackH) ?? 0;
+  const available = readAvailableHeightM(availableHeightM);
+  return stack <= available + STACK_FIT_EPSILON_M;
+}
+
+export function resolveSketchInternalDrawerFit(args?: {
+  drawerHeightM?: unknown;
+  availableHeightM?: unknown;
+  drawerGapM?: unknown;
+}): SketchDrawerFitResult<SketchInternalDrawerMetrics> {
+  const metrics = resolveSketchInternalDrawerMetrics(args);
+  const availableHeightM = readAvailableHeightM(args?.availableHeightM);
+  return {
+    metrics,
+    availableHeightM,
+    fits: sketchStackFitsAvailableHeight(metrics.stackH, availableHeightM),
+  };
+}
+
+export function resolveSketchExternalDrawerFit(args?: {
+  drawerCount?: unknown;
+  drawerHeightM?: unknown;
+  availableHeightM?: unknown;
+}): SketchDrawerFitResult<SketchExternalDrawerMetrics> {
+  const metrics = resolveSketchExternalDrawerMetrics(args);
+  const availableHeightM = readAvailableHeightM(args?.availableHeightM);
+  return {
+    metrics,
+    availableHeightM,
+    fits: sketchStackFitsAvailableHeight(metrics.stackH, availableHeightM),
   };
 }

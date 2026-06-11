@@ -220,6 +220,76 @@ function runManualHandleHover(args: {
   });
 }
 
+function runGrooveHover(args: {
+  app: ReturnType<typeof createApp>['app'];
+  wardrobeGroup: ReturnType<typeof createApp>['wardrobeGroup'];
+  owner: ReturnType<typeof createApp>['owner'];
+  hitPoint: Vec3;
+  doorMarker: ReturnType<typeof createMarker>;
+}) {
+  const { app, wardrobeGroup, owner, hitPoint, doorMarker } = args;
+  return tryHandleDoorActionHover({
+    App: app,
+    ndcX: 0.15,
+    ndcY: -0.05,
+    raycaster: {} as never,
+    mouse: {} as never,
+    getViewportRoots() {
+      return { camera: app.render.camera, wardrobeGroup };
+    },
+    getSplitHoverRaycastRoots() {
+      return [wardrobeGroup];
+    },
+    raycastReuse() {
+      return [{ object: owner, point: hitPoint }] as never;
+    },
+    isViewportRoot(_App, node) {
+      return node === wardrobeGroup;
+    },
+    str(_App, value) {
+      return String(value ?? '');
+    },
+    isDoorLikePartId(partId) {
+      return partId === 'd1_left';
+    },
+    isDoorOrDrawerLikePartId(partId) {
+      return partId === 'd1_left';
+    },
+    doorMarker,
+    hideLayoutPreview() {},
+    hideSketchPreview() {},
+    setSketchPreview: null,
+    isGrooveEditMode: true,
+    isRemoveDoorMode: false,
+    isHandleEditMode: false,
+    isHingeEditMode: false,
+    isMirrorPaintMode: false,
+    isDoorTrimMode: false,
+    paintSelection: null,
+    readUi() {
+      return {};
+    },
+    normalizeDoorBaseKey(_App, _hitDoorGroup, hitDoorPid) {
+      return String(hitDoorPid);
+    },
+    readSplitHoverDoorBounds() {
+      return { minY: -1, maxY: 1 };
+    },
+    getCanvasPickingRuntime() {
+      return {};
+    },
+    isRemoved() {
+      return false;
+    },
+    isSegmentedDoorBaseId() {
+      return false;
+    },
+    canonDoorPartKeyForMaps(id) {
+      return id;
+    },
+  });
+}
+
 test('door action hover trim mode keeps marker routing alive even when sketch preview factory is unavailable', () => {
   const { app, wardrobeGroup, owner, hitPoint } = createApp();
   const doorMarker = createMarker();
@@ -295,6 +365,29 @@ test('door action hover trim mode keeps marker routing alive even when sketch pr
   assert.equal(doorMarker.visible, true);
   assert.equal(doorMarker.material, 'add');
   assert.deepEqual((doorMarker.scale as { last: [number, number, number] | null }).last, [1, 0.035, 1]);
+});
+
+test('groove hover uses add material when the hovered door has no existing groove', () => {
+  const { app, wardrobeGroup, owner, hitPoint } = createApp();
+  const doorMarker = createMarker();
+
+  const handled = runGrooveHover({ app, wardrobeGroup, owner, hitPoint, doorMarker });
+
+  assert.equal(handled, true);
+  assert.equal(doorMarker.visible, true);
+  assert.equal(doorMarker.material, 'groove');
+});
+
+test('groove hover uses remove material when the next click will remove an existing groove', () => {
+  const { app, wardrobeGroup, owner, hitPoint, mapsState } = createApp();
+  mapsState.groovesMap = { groove_d1_left: true };
+  const doorMarker = createMarker();
+
+  const handled = runGrooveHover({ app, wardrobeGroup, owner, hitPoint, doorMarker });
+
+  assert.equal(handled, true);
+  assert.equal(doorMarker.visible, true);
+  assert.equal(doorMarker.material, 'remove');
 });
 
 test('manual handle hover uses the precise raycast hit and keeps width labels away from the door', () => {

@@ -17,7 +17,7 @@ export type OrderPdfSketchStrokeToolWidthMap = Record<OrderPdfSketchStrokeTool, 
 export const ORDER_PDF_SKETCH_STROKE_TOOL_DEFAULT_WIDTHS = Object.freeze({
   pen: 2,
   marker: 6,
-  eraser: 2,
+  eraser: 14,
   line: 2,
   square: 2,
   circle: 2,

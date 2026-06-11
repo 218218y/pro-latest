@@ -18,8 +18,6 @@ test('non-library recompute canonicalizes preserved modules through the top-modu
     layout: 'mixed',
     extDrawersCount: '4',
     hasShoeDrawer: 1,
-    intDrawersSlot: '2',
-    intDrawersList: null,
     isCustom: '',
     customData: {
       storage: true,
@@ -88,8 +86,6 @@ test('non-library recompute canonicalizes preserved modules through the top-modu
   assert.equal(next[0].doors, 2, 'preserved modules should be rematerialized against the live structure');
   assert.equal(next[0].extDrawersCount, 4);
   assert.equal(next[0].hasShoeDrawer, true);
-  assert.equal(next[0].intDrawersSlot, 2);
-  assert.deepEqual(next[0].intDrawersList, []);
   assert.equal(next[0].isCustom, false);
   assert.equal(next[0].customData?.storage, true);
   assert.deepEqual(next[0].customData?.shelves, [false, false, false, false, false, false]);

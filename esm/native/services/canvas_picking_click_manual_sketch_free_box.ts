@@ -34,6 +34,7 @@ type TryHandleCanvasManualSketchFreeBoxArgs = {
   tool: string;
   ndcX: number;
   ndcY: number;
+  foundModuleIndex: number | 'corner' | `corner:${number}` | null;
   host: SketchFreeBoxHost | null;
   wardrobeBox: SelectorLocalBox | null;
   raycaster: RaycasterLike | null | undefined;
@@ -88,6 +89,7 @@ export function tryHandleCanvasManualSketchFreeBoxClick(
     tool,
     ndcX,
     ndcY,
+    foundModuleIndex,
     host,
     wardrobeBox,
     raycaster,
@@ -115,7 +117,10 @@ export function tryHandleCanvasManualSketchFreeBoxClick(
     requireFreePlacement: true,
   });
 
-  if (!(hoverRec && hoverRec.freePlacement === true)) {
+  const hasRecentFreePlacementHover = !!(hoverRec && hoverRec.freePlacement === true);
+  if (!hasRecentFreePlacementHover && foundModuleIndex !== null) return false;
+
+  if (!hasRecentFreePlacementHover) {
     const { camera, wardrobeGroup } = __wp_getViewportRoots(App);
     const wardrobeBackZ =
       wardrobeBox && Number.isFinite(wardrobeBox.centerZ) && Number.isFinite(wardrobeBox.depth)

@@ -28,15 +28,15 @@ function makeArgs(overrides: Partial<HoverArgs>): HoverArgs {
   };
 }
 
-test('free-box hover below the room floor clamps onto the floor instead of sinking under it', () => {
-  const placement = resolveSketchFreeBoxHoverPlacement(makeArgs({}));
+test('free-box hover below the room floor clamps onto the floor when it is outside the wardrobe column', () => {
+  const placement = resolveSketchFreeBoxHoverPlacement(makeArgs({ planeX: 1.35 }));
 
   assert.ok(placement);
   assert.equal(placement.op, 'add');
   assert.ok(Math.abs(placement.previewY - 0.206) <= 1e-9);
 });
 
-test('free-box hover below the wardrobe snaps to room floor even when still overlapping the wardrobe width', () => {
+test('free-box hover near the lower wardrobe interior still snaps when it is not under the base', () => {
   const placement = resolveSketchFreeBoxHoverPlacement(
     makeArgs({
       planeX: 0.1,
@@ -49,4 +49,35 @@ test('free-box hover below the wardrobe snaps to room floor even when still over
   assert.ok(placement);
   assert.equal(placement.op, 'add');
   assert.ok(Math.abs(placement.previewY - 0.156) <= 1e-9);
+});
+
+test('free-box hover under the wardrobe column is blocked instead of becoming a swallowed free box', () => {
+  const placement = resolveSketchFreeBoxHoverPlacement(makeArgs({ planeX: 0, planeY: -0.95, boxH: 0.4 }));
+
+  assert.equal(placement, null);
+});
+
+test('free-box hover under the wardrobe column still allows removing an existing bad free box', () => {
+  const placement = resolveSketchFreeBoxHoverPlacement(
+    makeArgs({
+      planeX: 0,
+      planeY: -0.95,
+      boxH: 0.4,
+      freeBoxes: [
+        {
+          id: 'bad-under-wardrobe',
+          freePlacement: true,
+          absX: 0,
+          absY: -0.95,
+          heightM: 0.4,
+          widthM: 0.6,
+          depthM: 0.5,
+        },
+      ],
+    })
+  );
+
+  assert.ok(placement);
+  assert.equal(placement.op, 'remove');
+  assert.equal(placement.removeId, 'bad-under-wardrobe');
 });

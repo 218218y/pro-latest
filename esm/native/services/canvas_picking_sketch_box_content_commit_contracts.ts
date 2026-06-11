@@ -7,6 +7,7 @@ export type SketchBoxToggleHoverMode = 'none' | 'free-toggle' | 'manual-toggle';
 export type SketchBoxToggleContentKind = 'drawers' | 'ext_drawers';
 
 export type CommitSketchModuleBoxContentArgs = {
+  cfg?: RecordMap | null;
   box: SketchModuleBoxLike;
   boxId?: string | null;
   contentKind: string;

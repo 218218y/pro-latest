@@ -70,6 +70,9 @@ const projectUiRawMigrationReaders: {
   cellDimsWidth: readNullableNumber,
   cellDimsHeight: readNullableNumber,
   cellDimsDepth: readNullableNumber,
+  cellDimsHexMode: readBoolean,
+  cellDimsHexProtrusion: readNullableNumber,
+  cellDimsHexDoorWidth: readNullableNumber,
 };
 
 function readMigrationScalar<K extends UiRawScalarKey>(

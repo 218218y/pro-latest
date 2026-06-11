@@ -91,6 +91,9 @@ const uiRawScalarReaders: UiRawScalarReaderMap = {
   cellDimsWidth: source => readNullableNumberProp(source, 'cellDimsWidth'),
   cellDimsHeight: source => readNullableNumberProp(source, 'cellDimsHeight'),
   cellDimsDepth: source => readNullableNumberProp(source, 'cellDimsDepth'),
+  cellDimsHexMode: source => readBooleanProp(source, 'cellDimsHexMode'),
+  cellDimsHexProtrusion: source => readNullableNumberProp(source, 'cellDimsHexProtrusion'),
+  cellDimsHexDoorWidth: source => readNullableNumberProp(source, 'cellDimsHexDoorWidth'),
 };
 
 function readUiRawValue<K extends UiRawScalarKey>(

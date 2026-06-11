@@ -194,6 +194,7 @@ test('manual-layout hover intent readers normalize box-content and vertical remo
     baseLegHeightCm: 14,
     baseLegWidthCm: 5.5,
     corniceType: 'flat',
+    blockedReason: null,
   });
   assert.deepEqual(stack, {
     kind: 'ext_drawers',
@@ -209,6 +210,7 @@ test('manual-layout hover intent readers normalize box-content and vertical remo
     stackH: null,
     drawerHeightM: null,
     drawerCount: 5,
+    blockedReason: null,
   });
   assert.deepEqual(rod, {
     kind: 'rod',

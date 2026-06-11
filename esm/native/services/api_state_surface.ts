@@ -110,6 +110,7 @@ export {
   setCfgWardrobeType,
   setCfgMultiColorMode,
   setCfgBoardMaterial,
+  setCfgDoorMountMode,
   setCfgGlobalHandleType,
   setCfgShowDimensions,
   setCfgLibraryMode,

@@ -15,7 +15,6 @@ import {
   INTERIOR_FITTINGS_DIMENSIONS,
   LIBRARY_PRESET_DIMENSIONS,
 } from '../../../shared/wardrobe_dimension_tokens_shared.js';
-import { removeSpecialDimsInPlace } from '../special_dims/index.js';
 
 function isRecord(v: unknown): v is UnknownRecord {
   return !!v && typeof v === 'object' && !Array.isArray(v);
@@ -28,6 +27,16 @@ function cloneRecord<T extends UnknownRecord>(src: T): T {
 function toInt(v: unknown, defaultValue: number): number {
   const n = parseInt(String(v ?? ''), 10);
   return Number.isFinite(n) ? n : defaultValue;
+}
+
+function normalizeLowerWidthDepthSpecialDims(src: unknown): UnknownRecord | null {
+  if (!isRecord(src)) return null;
+  const out: UnknownRecord = {};
+  for (const key of ['widthCm', 'baseWidthCm', 'depthCm', 'baseDepthCm']) {
+    const n = Number(src[key]);
+    if (Number.isFinite(n) && n > 0) out[key] = n;
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 function cloneModuleCustomData(src: unknown, defaultCellCount: number): ModuleCustomDataLike {
@@ -52,8 +61,6 @@ export function createDefaultTopModuleConfig(i: number): NormalizedTopModuleConf
     layout: i === 0 ? 'hanging_top2' : 'shelves',
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersSlot: 0,
-    intDrawersList: [],
     isCustom: false,
     customData: createDefaultModuleCustomData(),
     doors: LIBRARY_PRESET_DIMENSIONS.defaultModuleDoorsCount,
@@ -70,8 +77,6 @@ export function normalizeTopModuleConfig(src: unknown, i: number): NormalizedTop
     layout,
     extDrawersCount: toInt(base.extDrawersCount, 0),
     hasShoeDrawer: !!base.hasShoeDrawer,
-    intDrawersSlot: toInt(base.intDrawersSlot, 0),
-    intDrawersList: Array.isArray(base.intDrawersList) ? base.intDrawersList.slice() : [],
     isCustom: !!base.isCustom,
     customData: cloneModuleCustomData(
       base.customData,
@@ -86,8 +91,6 @@ export function createDefaultLowerModuleConfig(_i: number): ModuleConfigLike {
     layout: 'shelves',
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersSlot: 0,
-    intDrawersList: [],
     isCustom: true,
     gridDivisions: INTERIOR_FITTINGS_DIMENSIONS.storage.gridDivisionsDefault,
     customData: {
@@ -105,7 +108,6 @@ export function normalizeLowerModuleConfig(src: unknown, i: number): ModuleConfi
     layout: typeof base.layout === 'string' && base.layout ? base.layout : 'shelves',
     extDrawersCount: toInt(base.extDrawersCount, 0),
     hasShoeDrawer: !!base.hasShoeDrawer,
-    intDrawersList: Array.isArray(base.intDrawersList) ? base.intDrawersList.slice() : [],
     isCustom: !!base.isCustom,
     gridDivisions: Math.max(
       1,
@@ -117,11 +119,11 @@ export function normalizeLowerModuleConfig(src: unknown, i: number): ModuleConfi
     ),
   };
 
-  // Lower stack must NOT inherit per-cell special dims or saved manual dims.
-  try {
-    removeSpecialDimsInPlace(cfg);
-    delete cfg.savedDims;
-  } catch (_) {}
+  // Lower stack supports per-cell width/depth, but not height or saved manual height state.
+  const lowerSpecialDims = normalizeLowerWidthDepthSpecialDims(base.specialDims);
+  if (lowerSpecialDims) cfg.specialDims = lowerSpecialDims;
+  else delete cfg.specialDims;
+  delete cfg.savedDims;
 
   return cfg;
 }

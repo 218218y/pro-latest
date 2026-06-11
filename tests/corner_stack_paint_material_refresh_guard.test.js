@@ -24,5 +24,6 @@ test('corner no-build paint refresh inherits __wpStack through the traversal so 
     traversal,
     /stack\.push\(\{ obj: child, partId: ownPartId, stackKey: ownStackKey, skip: skipSubtree \}\);/
   );
-  assert.match(traversal, /const material = getPartMat\(ownPartId, ownStackKey\);/);
+  assert.match(traversal, /const shelfDefaultKey = userData\.__wpShelfGroupPartId/);
+  assert.match(traversal, /const material = getPartMat\(ownPartId, ownStackKey, userData\);/);
 });

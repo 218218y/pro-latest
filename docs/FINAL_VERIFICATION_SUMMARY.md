@@ -1,37 +1,44 @@
 # Final Verification Summary
 
-- generated_at: 2026-05-11T02:27:04.031Z
-- workspace: `/mnt/data/stage9_work`
+- generated_at: 2026-05-25T20:14:28.250Z
+- workspace: `C:\Users\יעקב\Downloads\pro\latestzip`
 - total lanes: **25**
-- passed: **23**
-- environment-blocked: **2**
+- passed: **24**
+- environment-blocked: **0**
 - runner-blocked: **0**
-- failed: **0**
-- selected profiles: `e2e`
+- failed: **1**
+- selected profiles: `default`
 - selected categories: `(all)`
 - selected lanes: `(all)`
 - skipped lanes: `(none)`
 - resumed from: `(start)`
-- state file: `.artifacts/stage9-closeout.json`
+- state file: `(none)`
 
 ## Interpretation
 
-כל ה־lanes שנבחרו לריצת closeout עברו או נחסמו סביבתית בלבד. כלומר אין כאן כשל verify פעיל ברמת הקוד בתוך סט הסגירה הזה.
+יש לפחות lane אחד שנכשל ברמת verify/command, ולכן הסגירה הזו עדיין לא מלאה.
 
-יש גם lane אחד לפחות שנחסם סביבתית; הוא לא נספר ככשל קוד, אבל כן נשאר פתוח לסביבה מלאה עם browser/רשת זמינים.
+לא זוהו חסימות סביבתיות בריצת closeout הזו.
 
 לא זוהו חסימות runner בריצת closeout הזו.
 
 ## Lane results
 
-### ✅ Build dist bundle
+### ❌ Build dist bundle
 
 - id: `build-dist`
 - category: `build`
 - command: `npm run build:dist`
-- status: **passed**
-- exit code: `0`
-- duration: `13962ms`
+- status: **failed**
+- exit code: `1`
+- duration: `14065ms`
+
+#### stderr
+
+```text
+[WP BuildDist] TypeScript build failed (exit 2)
+
+```
 
 #### stdout
 
@@ -41,8 +48,8 @@
 > node tools/wp_build_dist.js
 
 [WP BuildDist] Building dist modules (tsc:local-node-modules)...
-[WP BuildDist] Copying static assets to dist/...
-[WP BuildDist] Done: dist/esm + dist/types + static assets
+esm/native/services/canvas_picking_cell_dims_corner_context.ts(188,5): error TS2322: Type 'boolean | undefined' is not assignable to type 'boolean'.
+  Type 'undefined' is not assignable to type 'boolean'.
 
 ```
 
@@ -53,7 +60,7 @@
 - command: `npm run perf:smoke`
 - status: **passed**
 - exit code: `0`
-- duration: `3857ms`
+- duration: `4499ms`
 
 #### stdout
 
@@ -71,136 +78,99 @@
 > test:perf-toolchain-core
 > node --test tests/wp_perf_smoke_runtime.test.js tests/wp_toolchain_family_contracts.test.js tests/wp_check_runtime.test.js tests/wp_verify_runtime.test.js tests/wp_verify_lane_runtime.test.js
 
-TAP version 13
-# Subtest: check arg parsing preserves baseline/json/gate/strict flags
-ok 1 - check arg parsing preserves baseline/json/gate/strict flags
-  ---
-  duration_ms: 1.430528
-  type: 'test'
-  ...
-# Subtest: check mode detection prefers js first and falls back to esm
-ok 2 - check mode detection prefers js first and falls back to esm
-  ---
-  duration_ms: 1.147994
-  type: 'test'
-  ...
-# Subtest: check syntax runner reports malformed js files
-ok 3 - check syntax runner reports malformed js files
-  ---
-  duration_ms: 106.471996
-  type: 'test'
-  ...
-# Subtest: check policy stats count legacy/root needles by directory
-ok 4 - check policy stats count legacy/root needles by directory
-  ---
-  duration_ms: 2.032686
-  type: 'test'
-  ...
-# Subtest: check gate/strict results report regressions and clean strict state
-ok 5 - check gate/strict results report regressions and clean strict state
-  ---
-  duration_ms: 1.906616
-  type: 'test'
-  ...
-# Subtest: check json report preserves file and policy summary fields
-ok 6 - check json report preserves file and policy summary fields
-  ---
-  duration_ms: 0.379263
-  type: 'test'
-  ...
-# Subtest: perf smoke args parse lanes, scripts, baseline paths, and flags canonically
-ok 7 - perf smoke args parse lanes, scripts, baseline paths, and flags canonically
-  ---
-  duration_ms: 1.62929
-  type: 'test'
-  ...
-# Subtest: perf smoke help text advertises default lanes and baseline flags
-ok 8 - perf smoke help text advertises default lanes and baseline flags
-  ---
-  duration_ms: 0.239464
-  type: 'test'
-  ...
-# Subtest: perf smoke planner resolves verify lanes and dedupes script overlap
-ok 9 - perf smoke planner resolves verify lanes and dedupes script overlap
-  ---
-  duration_ms: 0.491982
-  type: 'test'
-  ...
-# Subtest: perf smoke baseline evaluation detects regressions and profile drift
-ok 10 - perf smoke baseline evaluation detects regressions and profile drift
-  ---
-  duration_ms: 1.345841
-  type: 'test'
-  ...
-# Subtest: perf smoke flow updates baseline, writes outputs, and enforces budgets through the canonical flow
-ok 11 - perf smoke flow updates baseline, writes outputs, and enforces budgets through the canonical flow
-  ---
-  duration_ms: 45.259012
-  type: 'test'
-  ...
-# Subtest: [toolchain] build-dist keeps one thin entrypoint plus canonical owner modules
-ok 12 - [toolchain] build-dist keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 4.129946
-  type: 'test'
-  ...
-# Subtest: [toolchain] bundle keeps one thin entrypoint plus canonical owner modules
-ok 13 - [toolchain] bundle keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 1.064998
-  type: 'test'
-  ...
-# Subtest: [toolchain] check keeps one thin entrypoint plus canonical owner modules
-ok 14 - [toolchain] check keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 0.551881
-  type: 'test'
-  ...
-# Subtest: [toolchain] release keeps one thin entrypoint plus canonical owner modules
-ok 15 - [toolchain] release keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 1.566893
-  type: 'test'
-  ...
-# Subtest: [toolchain] release-parity keeps one thin entrypoint plus canonical owner modules
-ok 16 - [toolchain] release-parity keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 1.200953
-  type: 'test'
-  ...
-# Subtest: [toolchain] test keeps one thin entrypoint plus canonical owner modules
-ok 17 - [toolchain] test keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 38.874894
-  type: 'test'
-  ...
-# Subtest: [toolchain] typecheck keeps one thin entrypoint plus canonical owner modules
-ok 18 - [toolchain] typecheck keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 0.765195
-  type: 'test'
-  ...
-# Subtest: [toolchain] verify-lane keeps one thin entrypoint plus canonical owner modules
-ok 19 - [toolchain] verify-lane keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 1.915331
-  type: 'test'
-  ...
-# Subtest: [toolchain] perf-smoke keeps one thin entrypoint plus canonical owner modules
-ok 20 - [toolchain] perf-smoke keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 0.688343
-  type: 'test'
-  ...
-# Subtest: [toolchain] verify keeps one thin entrypoint plus canonical owner modules
-ok 21 - [toolchain] verify keeps one thin entrypoint plus canonical owner modules
-  ---
-  duration_ms: 1.160783
-  type: 'test'
-  ...
-# Subtest
+✔ check arg parsing preserves baseline/json/gate/strict flags (1.6551ms)
+✔ check mode detection prefers js first and falls back to esm (1.6088ms)
+✔ check syntax runner reports malformed js files (68.075ms)
+✔ check policy stats count legacy/root needles by directory (2.5783ms)
+✔ check gate/strict results report regressions and clean strict state (0.4717ms)
+✔ check json report preserves file and policy summary fields (0.176ms)
+✔ perf smoke args parse lanes, scripts, baseline paths, and flags canonically (2.1227ms)
+✔ perf smoke help text advertises default lanes and baseline flags (0.3432ms)
+✔ perf smoke planner resolves verify lanes and dedupes script overlap (0.5184ms)
+✔ perf smoke baseline evaluation detects regressions and profile drift (1.7366ms)
+✔ perf smoke flow updates baseline, writes outputs, and enforces budgets through the canonical flow (10.9637ms)
+✔ [toolchain] build-dist keeps one thin entrypoint plus canonical owner modules (3.7249ms)
+✔ [toolchain] bundle keeps one thin entrypoint plus canonical owner modules (1.245ms)
+✔ [toolchain] check keeps one thin entrypoint plus canonical owner modules (0.716ms)
+✔ [toolchain] release keeps one thin entrypoint plus canonical owner modules (0.8677ms)
+✔ [toolchain] release-parity keeps one thin entrypoint plus canonical owner modules (0.9029ms)
+✔ [toolchain] test keeps one thin entrypoint plus canonical owner modules (0.6202ms)
+✔ [toolchain] typecheck keeps one thin entrypoint plus canonical owner modules (0.5743ms)
+✔ [toolchain] verify-lane keeps one thin entrypoint plus canonical owner modules (1.324ms)
+✔ [toolchain] perf-smoke keeps one thin entrypoint plus canonical owner modules (0.6715ms)
+✔ [toolchain] verify keeps one thin entrypoint plus canonical owner modules (0.7186ms)
+✔ verify lane state parses multiple lane names plus print/dry-run/no-dedupe flags (3.0081ms)
+✔ verify lane catalog lists stable lane names, flattens nested aliases, and dedupes multi-lane plans canonically (0.5702ms)
+✔ verify lane planner reports the canonical script order for single and multi-lane runs (0.4639ms)
+✔ verify lane flow runs flattened scripts in order (0.4076ms)
+✔ verify lane flow dedupes overlapping scripts across multiple lanes by default (0.2721ms)
+✔ verify lane help text advertises the canonical lane catalog and multi-lane support (0.4766ms)
+
+============================================================
+[WardrobePro] build dist (no assets)
+============================================================
+
+✔ verify args parsing preserves gate/no-build/skip-bundle/soft-format policy (1.9129ms)
+✔ format check classification warns in normal mode and fails in strict gate mode (0.5177ms)
+✔ ensureDistBuilt refuses missing dist in no-build mode and requests build otherwise (2.1456ms)
+✔ verify flow orders core checks and skips bundle commands when requested (2.9167ms)
+✔ verify flow runs both client release bundle targets in order when bundling is enabled (1.9712ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 164.1859
+
+============================================================
+[WP Perf Smoke] npm run test:ui-react-import-hardening-contracts
+============================================================
+
+
+> test:ui-react-import-hardening-contracts
+> node --test tests/ui_react_import_hardening_contracts.test.js
+
+✔ ui react import hardening removes legacy React namespace access from pure ts modules (20.5736ms)
+✔ ui react import hardening uses explicit named type imports for event-heavy contracts (0.2328ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 98.5809
+
+============================================================
+[WP Perf Smoke] npm run test:ui-react-jsx-hardening-contracts
+============================================================
+
+
+> test:ui-react-jsx-hardening-contracts
+> node --test tests/ui_react_jsx_import_hardening_contracts.test.js
+
+✔ ui react jsx import hardening removes legacy default React imports and namespace access from tsx modules (7.4293ms)
+✔ ui react jsx import hardening uses explicit named imports in representative components (0.256ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 84.8815
+
+============================================================
+[WP Perf Smoke] npm run test:ui-type-hardening-contracts
+============================================================
+
+
+> test:ui-type-hardening-contracts
+> node
 ...
-[trimmed 6293 chars]
+[trimmed 1083 chars]
 ```
 
 ### ✅ Overlay/export family core verify (direct)
@@ -210,16 +180,16 @@ ok 21 - [toolchain] verify keeps one thin entrypoint plus canonical owner module
 - command: `(grouped steps)`
 - status: **passed**
 - exit code: `0`
-- duration: `10958ms`
+- duration: `8458ms`
 
 #### steps
 
-- ✅ overlay/export contracts: `node --test tests/export_overlay_errors_family_contracts.test.js` (passed, 194ms)
-- ✅ typecheck platform: `tsc -p tsconfig.checkjs.platform.json` (passed, 2702ms)
-- ✅ typecheck services: `tsc -p tsconfig.checkjs.services.json` (passed, 4202ms)
-- ✅ typecheck runtime: `tsc -p tsconfig.checkjs.runtime.json` (passed, 2368ms)
-- ✅ layer contracts: `node tools/wp_layer_contract.js` (passed, 808ms)
-- ✅ public api contracts: `node tools/wp_public_api_contract.js` (passed, 684ms)
+- ✅ overlay/export contracts: `node --test tests/export_overlay_errors_family_contracts.test.js` (passed, 152ms)
+- ✅ typecheck platform: `tsc -p tsconfig.checkjs.platform.json` (passed, 1714ms)
+- ✅ typecheck services: `tsc -p tsconfig.checkjs.services.json` (passed, 3209ms)
+- ✅ typecheck runtime: `tsc -p tsconfig.checkjs.runtime.json` (passed, 1559ms)
+- ✅ layer contracts: `node tools/wp_layer_contract.js` (passed, 917ms)
+- ✅ public api contracts: `node tools/wp_public_api_contract.js` (passed, 907ms)
 
 ### ✅ Order PDF overlay core batch (direct)
 
@@ -228,143 +198,53 @@ ok 21 - [toolchain] verify keeps one thin entrypoint plus canonical owner module
 - command: `node tools/wp_run_tsx_tests.mjs tests/order_pdf_overlay_controller_actions_runtime.test.ts tests/order_pdf_overlay_draft_action_feedback_runtime.test.ts tests/order_pdf_overlay_draft_commands_runtime.test.ts tests/order_pdf_overlay_draft_effects_runtime.test.ts tests/order_pdf_overlay_interactions_runtime.test.ts tests/order_pdf_overlay_runtime_export_runtime.test.ts tests/order_pdf_overlay_text_details_lines_runtime.test.ts tests/order_pdf_overlay_text_runtime.test.ts tests/order_pdf_text_details_merge_support_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `5182ms`
+- duration: `2680ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/order_pdf_overlay_controller_actions_runtime.test.ts" "tests/order_pdf_overlay_draft_action_feedback_runtime.test.ts" "tests/order_pdf_overlay_draft_commands_runtime.test.ts" "tests/order_pdf_overlay_draft_effects_runtime.test.ts" "tests/order_pdf_overlay_interactions_runtime.test.ts" "tests/order_pdf_overlay_runtime_export_runtime.test.ts" "tests/order_pdf_overlay_text_details_lines_runtime.test.ts" "tests/order_pdf_overlay_text_runtime.test.ts" "tests/order_pdf_text_details_merge_support_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/order_pdf_overlay_controller_actions_runtime.test.ts" "tests/order_pdf_overlay_draft_action_feedback_runtime.test.ts" "tests/order_pdf_overlay_draft_commands_runtime.test.ts" "tests/order_pdf_overlay_draft_effects_runtime.test.ts" "tests/order_pdf_overlay_interactions_runtime.test.ts" "tests/order_pdf_overlay_runtime_export_runtime.test.ts" "tests/order_pdf_overlay_text_details_lines_runtime.test.ts" "tests/order_pdf_overlay_text_runtime.test.ts" "tests/order_pdf_text_details_merge_support_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: order pdf export actions honor image/gmail busy flags before starting another action
-ok 1 - order pdf export actions honor image/gmail busy flags before starting another action
-  ---
-  duration_ms: 7.998694
-  type: 'test'
-  ...
-# Subtest: order pdf interaction handlers report pointer-cancel failures instead of throwing
-ok 2 - order pdf interaction handlers report pointer-cancel failures instead of throwing
-  ---
-  duration_ms: 0.686359
-  type: 'test'
-  ...
-# Subtest: order pdf export actions reuse cached interactive blob while draft signature is unchanged
-ok 3 - order pdf export actions reuse cached interactive blob while draft signature is unchanged
-  ---
-  duration_ms: 1.558516
-  type: 'test'
-  ...
-# Subtest: getOrderPdfOverlayDraftActionToast maps initial-load not-ready to a clear error
-ok 4 - getOrderPdfOverlayDraftActionToast maps initial-load not-ready to a clear error
-  ---
-  duration_ms: 1.017308
-  type: 'test'
-  ...
-# Subtest: getOrderPdfOverlayDraftActionToast keeps refresh confirm pending without a toast guess
-ok 5 - getOrderPdfOverlayDraftActionToast keeps refresh confirm pending without a toast guess
-  ---
-  duration_ms: 0.109885
-  type: 'test'
-  ...
-# Subtest: getOrderPdfOverlayDraftActionToast prefers configured inline-confirm success text
-ok 6 - getOrderPdfOverlayDraftActionToast prefers configured inline-confirm success text
-  ---
-  duration_ms: 0.102573
-  type: 'test'
-  ...
-# Subtest: applyOrderPdfOverlayDraftActionToast emits fallback cancel info when no next draft exists
-ok 7 - applyOrderPdfOverlayDraftActionToast emits fallback cancel info when no next draft exists
-  ---
-  duration_ms: 0.209464
-  type: 'test'
-  ...
-# Subtest: readOrderPdfDraftSeedFromProjectWithDeps reports not-ready when export API is missing
-ok 8 - readOrderPdfDraftSeedFromProjectWithDeps reports not-ready when export API is missing
-  ---
-  duration_ms: 1.11762
-  type: 'test'
-  ...
-# Subtest: loadOrderPdfInitialDraftWithDeps returns seeded draft and detailsDirty state
-ok 9 - loadOrderPdfInitialDraftWithDeps returns seeded draft and detailsDirty state
-  ---
-  duration_ms: 0.32066
-  type: 'test'
-  ...
-# Subtest: refreshOrderPdfDraftFromProjectWithDeps returns pending confirm when merge policy requires it
-ok 10 - refreshOrderPdfDraftFromProjectWithDeps returns pending confirm when merge policy requires it
-  ---
-  duration_ms: 0.235402
-  type: 'test'
-  ...
-# Subtest: resolveOrderPdfInlineConfirmAction returns the selected follow-up draft
-ok 11 - resolveOrderPdfInlineConfirmAction returns the selected follow-up draft
-  ---
-  duration_ms: 0.201779
-  type: 'test'
-  ...
-# Subtest: order pdf draft effects derives manual text from legacy manual HTML when detailsFull is false
-ok 12 - order pdf draft effects derives manual text from legacy manual HTML when detailsFull is false
-  ---
-  duration_ms: 2.304704
-  type: 'test'
-  ...
-# Subtest: order pdf draft effects derives text/seed from legacy manual HTML when detailsFull is already true
-ok 13 - order pdf draft effects derives text/seed from legacy manual HTML when detailsFull is already true
-  ---
-  duration_ms: 1.10819
-  type: 'test'
-  ...
-# Subtest: order pdf stage/file interactions keep close intent and PDF validation behavior canonical
-ok 14 - order pdf stage/file interactions keep close intent and PDF validation behavior canonical
-  ---
-  duration_ms: 2.100719
-  type: 'test'
-  ...
-# Subtest: order pdf focus trap cleanup cancels late initial-focus raf work and keyboard guards respect modal state
-ok 15 - order pdf focus trap cleanup cancels late initial-focus raf work and keyboard guards respect modal state
-  ---
-  duration_ms: 1.186135
-  type: 'test'
-  ...
-# Subtest: getPdfJsLibFromModule accepts either direct or default PDF.js-like module shapes
-ok 16 - getPdfJsLibFromModule accepts either direct or default PDF.js-like module shapes
-  ---
-  duration_ms: 1.06275
-  type: 'test'
-  ...
-# Subtest: getOrderPdfDraftFn and asExportApiLike only expose callable PDF export hooks
-ok 17 - getOrderPdfDraftFn and asExportApiLike only expose callable PDF export hooks
-  ---
-  duration_ms: 0.938156
-  type: 'test'
-  ...
-# Subtest: bindExportApiFromModule captures the app once and returns null for missing module/app
-ok 18 - bindExportApiFromModule captures the app once and returns null for missing module/app
-  ---
-  duration_ms: 0.334193
-  type: 'test'
-  ...
-# Subtest: order pdf details line helpers parse and collect canonical keyed rows
-ok 19 - order pdf details line helpers parse and collect canonical keyed rows
-  ---
-  duration_ms: 1.297835
-  type: 'test'
-  ...
-# Subtest: order pdf details line helpers preserve inline tails and positioned extras
-ok 20 - order pdf details line helpers preserve inline tails and positioned extras
-  ---
-  duration_ms: 0.817502
-  type: 'test'
-  ...
-# Subtest: order pdf text fallback html decoder preserves newlines and common entities without a document
-ok 21 -
-...
-[trimmed 1426 chars]
+✔ order pdf export actions honor image/gmail busy flags before starting another action (8.0773ms)
+✔ order pdf interaction handlers report pointer-cancel failures instead of throwing (0.6859ms)
+✔ order pdf export actions reuse cached interactive blob while draft signature is unchanged (1.4512ms)
+✔ getOrderPdfOverlayDraftActionToast maps initial-load not-ready to a clear error (1.7998ms)
+✔ getOrderPdfOverlayDraftActionToast keeps refresh confirm pending without a toast guess (0.2104ms)
+✔ getOrderPdfOverlayDraftActionToast prefers configured inline-confirm success text (0.1968ms)
+✔ applyOrderPdfOverlayDraftActionToast emits fallback cancel info when no next draft exists (0.2964ms)
+✔ readOrderPdfDraftSeedFromProjectWithDeps reports not-ready when export API is missing (2.0609ms)
+✔ loadOrderPdfInitialDraftWithDeps returns seeded draft and detailsDirty state (0.6216ms)
+✔ refreshOrderPdfDraftFromProjectWithDeps returns pending confirm when merge policy requires it (0.4737ms)
+✔ resolveOrderPdfInlineConfirmAction returns the selected follow-up draft (0.2299ms)
+✔ order pdf draft effects derives manual text from legacy manual HTML when detailsFull is false (2.6789ms)
+✔ order pdf draft effects derives text/seed from legacy manual HTML when detailsFull is already true (1.0324ms)
+✔ order pdf stage/file interactions keep close intent and PDF validation behavior canonical (2.3613ms)
+✔ order pdf focus trap cleanup cancels late initial-focus raf work and keyboard guards respect modal state (1.7191ms)
+✔ getPdfJsLibFromModule accepts either direct or default PDF.js-like module shapes (1.157ms)
+✔ getOrderPdfDraftFn and asExportApiLike only expose callable PDF export hooks (2.0015ms)
+✔ bindExportApiFromModule captures the app once and returns null for missing module/app (0.807ms)
+✔ order pdf details line helpers parse and collect canonical keyed rows (2.285ms)
+✔ order pdf details line helpers preserve inline tails and positioned extras (1.1392ms)
+✔ order pdf text fallback html decoder preserves newlines and common entities without a document (1.1264ms)
+✔ order pdf text public seam exposes the canonical empty draft defaults (0.9872ms)
+✔ order pdf text merge falls back to exact base replacement when no marker document is available (0.5055ms)
+✔ order pdf merge support keeps inline suffixes and positioned extras through the canonical support seam (3.0117ms)
+✔ order pdf merge support marks ambiguous line merges unsafe when new keyed rows appear (1.3974ms)
+✔ order pdf merge support resolves clean detected regions without preserving stale manual leftovers (0.5689ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2575.0359
+
 ```
 
 ### ✅ Order PDF PDF-render batch (direct)
@@ -374,136 +254,44 @@ ok 21 -
 - command: `node tools/wp_run_tsx_tests.mjs tests/order_pdf_overlay_pdf_import_runtime.test.ts tests/order_pdf_overlay_pdf_render_canvas_runtime.test.ts tests/order_pdf_overlay_pdf_render_cleanup_runtime.test.ts tests/order_pdf_overlay_pdf_render_runtime.test.ts tests/order_pdf_image_pdf_text_layout_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `4853ms`
+- duration: `2115ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/order_pdf_overlay_pdf_import_runtime.test.ts" "tests/order_pdf_overlay_pdf_render_canvas_runtime.test.ts" "tests/order_pdf_overlay_pdf_render_cleanup_runtime.test.ts" "tests/order_pdf_overlay_pdf_render_runtime.test.ts" "tests/order_pdf_image_pdf_text_layout_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/order_pdf_overlay_pdf_import_runtime.test.ts" "tests/order_pdf_overlay_pdf_render_canvas_runtime.test.ts" "tests/order_pdf_overlay_pdf_render_cleanup_runtime.test.ts" "tests/order_pdf_overlay_pdf_render_runtime.test.ts" "tests/order_pdf_image_pdf_text_layout_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: [order-pdf] prepared details split can be painted without re-wrapping
-ok 1 - [order-pdf] prepared details split can be painted without re-wrapping
-  ---
-  duration_ms: 1.798567
-  type: 'test'
-  ...
-# Subtest: [order-pdf] prepared layout preserves wrapped lines and visible max-line window
-ok 2 - [order-pdf] prepared layout preserves wrapped lines and visible max-line window
-  ---
-  duration_ms: 0.227846
-  type: 'test'
-  ...
-# Subtest: [order-pdf] image-pdf details text uses the canonical full-details touched semantics
-ok 3 - [order-pdf] image-pdf details text uses the canonical full-details touched semantics
-  ---
-  duration_ms: 0.193701
-  type: 'test'
-  ...
-# Subtest: order pdf pdf-import keeps only imported tail pages when both sketch exports are disabled
-ok 4 - order pdf pdf-import keeps only imported tail pages when both sketch exports are disabled
-  ---
-  duration_ms: 29.099893
-  type: 'test'
-  ...
-# Subtest: order pdf pdf-import keeps built render page and imported open page when only open-closed export is disabled
-ok 5 - order pdf pdf-import keeps built render page and imported open page when only open-closed export is disabled
-  ---
-  duration_ms: 12.44865
-  type: 'test'
-  ...
-# Subtest: order pdf pdf-import does not duplicate imported tail pages when both sketch exports stay enabled
-ok 6 - order pdf pdf-import does not duplicate imported tail pages when both sketch exports stay enabled
-  ---
-  duration_ms: 11.814659
-  type: 'test'
-  ...
-# Subtest: order pdf pdf-import detects trailing non-form pages and keeps extracted draft flags aligned with imported tails
-ok 7 - order pdf pdf-import detects trailing non-form pages and keeps extracted draft flags aligned with imported tails
-  ---
-  duration_ms: 5.973059
-  type: 'test'
-  ...
-# Subtest: order pdf pdf-import extracts fallback field names through the canonical document-field runtime
-ok 8 - order pdf pdf-import extracts fallback field names through the canonical document-field runtime
-  ---
-  duration_ms: 37.484613
-  type: 'test'
-  ...
-# Subtest: order pdf pdf-import reads bytes from file-like objects and tolerates read failures
-ok 9 - order pdf pdf-import reads bytes from file-like objects and tolerates read failures
-  ---
-  duration_ms: 0.353371
-  type: 'test'
-  ...
-# Subtest: order pdf pdf-import falls back to imported open-closed page when the built pdf only contains one generated tail page
-ok 10 - order pdf pdf-import falls back to imported open-closed page when the built pdf only contains one generated tail page
-  ---
-  duration_ms: 7.201949
-  type: 'test'
-  ...
-# Subtest: order pdf pdf-import applies html-only legacy details and notes through the canonical imported-field runtime
-ok 11 - order pdf pdf-import applies html-only legacy details and notes through the canonical imported-field runtime
-  ---
-  duration_ms: 1.576237
-  type: 'test'
-  ...
-# Subtest: order pdf canvas render runtime: uses injected browser timers and renders once through the queued canvas path
-ok 12 - order pdf canvas render runtime: uses injected browser timers and renders once through the queued canvas path
-  ---
-  duration_ms: 1.933241
-  type: 'test'
-  ...
-# Subtest: order pdf canvas render runtime: stale timer callback becomes a no-op after cleanup
-ok 13 - order pdf canvas render runtime: stale timer callback becomes a no-op after cleanup
-  ---
-  duration_ms: 0.282474
-  type: 'test'
-  ...
-# Subtest: cleanupOrderPdfLoadedDocument clears loaded page/doc state so a strict remount can reload cleanly
-ok 14 - cleanupOrderPdfLoadedDocument clears loaded page/doc state so a strict remount can reload cleanly
-  ---
-  duration_ms: 1.090876
-  type: 'test'
-  ...
-# Subtest: loadOrderPdfFirstPage reloads when a stale page tick exists without a live pdf document
-ok 15 - loadOrderPdfFirstPage reloads when a stale page tick exists without a live pdf document
-  ---
-  duration_ms: 0.589345
-  type: 'test'
-  ...
-# Subtest: loadOrderPdfFirstPage clears doc/task refs when cancellation arrives after the first page resolves
-ok 16 - loadOrderPdfFirstPage clears doc/task refs when cancellation arrives after the first page resolves
-  ---
-  duration_ms: 0.296461
-  type: 'test'
-  ...
-# Subtest: order pdf render helpers treat destroyed/aborted worker errors as expected cancellations
-ok 17 - order pdf render helpers treat destroyed/aborted worker errors as expected cancellations
-  ---
-  duration_ms: 2.026969
-  type: 'test'
-  ...
-# Subtest: loadOrderPdfFirstPage clones source bytes before handing them to pdf.js
-ok 18 - loadOrderPdfFirstPage clones source bytes before handing them to pdf.js
-  ---
-  duration_ms: 0.937894
-  type: 'test'
-  ...
-1..18
-# tests 18
-# suites 0
-# pass 18
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 4723.185015
+✔ [order-pdf] prepared details split can be painted without re-wrapping (2.9438ms)
+✔ [order-pdf] prepared layout preserves wrapped lines and visible max-line window (0.3046ms)
+✔ [order-pdf] image-pdf details text uses the canonical full-details touched semantics (0.2692ms)
+✔ order pdf pdf-import keeps only imported tail pages when both sketch exports are disabled (28.2542ms)
+✔ order pdf pdf-import keeps built render page and imported open page when only open-closed export is disabled (7.1662ms)
+✔ order pdf pdf-import does not duplicate imported tail pages when both sketch exports stay enabled (4.9327ms)
+✔ order pdf pdf-import detects trailing non-form pages and keeps extracted draft flags aligned with imported tails (2.1708ms)
+✔ order pdf pdf-import extracts fallback field names through the canonical document-field runtime (29.5483ms)
+✔ order pdf pdf-import reads bytes from file-like objects and tolerates read failures (0.5274ms)
+✔ order pdf pdf-import falls back to imported open-closed page when the built pdf only contains one generated tail page (5.6296ms)
+✔ order pdf pdf-import applies html-only legacy details and notes through the canonical imported-field runtime (1.4181ms)
+✔ order pdf canvas render runtime: uses injected browser timers and renders once through the queued canvas path (2.3807ms)
+✔ order pdf canvas render runtime: stale timer callback becomes a no-op after cleanup (0.2942ms)
+✔ cleanupOrderPdfLoadedDocument clears loaded page/doc state so a strict remount can reload cleanly (0.8993ms)
+✔ loadOrderPdfFirstPage reloads when a stale page tick exists without a live pdf document (0.495ms)
+✔ loadOrderPdfFirstPage clears doc/task refs when cancellation arrives after the first page resolves (0.2686ms)
+✔ order pdf render helpers treat destroyed/aborted worker errors as expected cancellations (2.9484ms)
+✔ loadOrderPdfFirstPage clones source bytes before handing them to pdf.js (1.7438ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2006.4291
 
 ```
 
@@ -514,131 +302,58 @@ ok 18 - loadOrderPdfFirstPage clones source bytes before handing them to pdf.js
 - command: `node tools/wp_run_tsx_tests.mjs tests/order_pdf_history_shortcuts_runtime.test.ts tests/order_pdf_sketch_draft_persistence_runtime.test.ts tests/order_pdf_sketch_palette_placement_runtime.test.ts tests/order_pdf_sketch_panel_runtime.test.ts tests/order_pdf_sketch_preview_session_runtime.test.ts tests/order_pdf_sketch_shortcuts_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `3533ms`
+- duration: `1543ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/order_pdf_history_shortcuts_runtime.test.ts" "tests/order_pdf_sketch_draft_persistence_runtime.test.ts" "tests/order_pdf_sketch_palette_placement_runtime.test.ts" "tests/order_pdf_sketch_panel_runtime.test.ts" "tests/order_pdf_sketch_preview_session_runtime.test.ts" "tests/order_pdf_sketch_shortcuts_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/order_pdf_history_shortcuts_runtime.test.ts" "tests/order_pdf_sketch_draft_persistence_runtime.test.ts" "tests/order_pdf_sketch_palette_placement_runtime.test.ts" "tests/order_pdf_sketch_panel_runtime.test.ts" "tests/order_pdf_sketch_preview_session_runtime.test.ts" "tests/order_pdf_sketch_shortcuts_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: [history-ui] suspended history shortcuts are detected from the active overlay element
-ok 1 - [history-ui] suspended history shortcuts are detected from the active overlay element
-  ---
-  duration_ms: 0.750331
-  type: 'test'
-  ...
-# Subtest: [history-ui] suspended history shortcuts fall back to a document-level overlay marker
-ok 2 - [history-ui] suspended history shortcuts fall back to a document-level overlay marker
-  ---
-  duration_ms: 0.182533
-  type: 'test'
-  ...
-# Subtest: [order-pdf] draft rehydrate keeps sketch annotations and sketch include flags
-ok 3 - [order-pdf] draft rehydrate keeps sketch annotations and sketch include flags
-  ---
-  duration_ms: 3.786149
-  type: 'test'
-  ...
-# Subtest: [order-pdf] refresh-auto preserves sketch annotations while refreshing project details
-ok 4 - [order-pdf] refresh-auto preserves sketch annotations while refreshing project details
-  ---
-  duration_ms: 0.881778
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch floating palette placement anchors left of the toolbar trigger without leaving the viewport
-ok 5 - [order-pdf] sketch floating palette placement anchors left of the toolbar trigger without leaving the viewport
-  ---
-  duration_ms: 0.807695
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch floating palette placement clamps inside the viewport when there is not enough space
-ok 6 - [order-pdf] sketch floating palette placement clamps inside the viewport when there is not enough space
-  ---
-  duration_ms: 0.137411
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch toolbar placement tracks the visible stage band instead of sticking to the initial viewport slot
-ok 7 - [order-pdf] sketch toolbar placement tracks the visible stage band instead of sticking to the initial viewport slot
-  ---
-  duration_ms: 0.694816
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch toolbar placement falls back to inline mode on narrow viewports
-ok 8 - [order-pdf] sketch toolbar placement falls back to inline mode on narrow viewports
-  ---
-  duration_ms: 0.098739
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch toolbar placement equality treats left-anchored toolbars as real geometry changes
-ok 9 - [order-pdf] sketch toolbar placement equality treats left-anchored toolbars as real geometry changes
-  ---
-  duration_ms: 0.099681
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch canvas repaint helper suppresses redraws for cloned-but-equal annotation payloads
-ok 10 - [order-pdf] sketch canvas repaint helper suppresses redraws for cloned-but-equal annotation payloads
-  ---
-  duration_ms: 0.303932
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch canvas repaint helper suppresses duplicate redraws until geometry or payload really changes
-ok 11 - [order-pdf] sketch canvas repaint helper suppresses duplicate redraws until geometry or payload really changes
-  ---
-  duration_ms: 0.099964
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch canvas frame only commits once a real 2d context exists
-ok 12 - [order-pdf] sketch canvas frame only commits once a real 2d context exists
-  ---
-  duration_ms: 0.248251
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch panel runtime builds per-page stroke maps and counts canonically
-ok 13 - [order-pdf] sketch panel runtime builds per-page stroke maps and counts canonically
-  ---
-  duration_ms: 1.400994
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch panel runtime redo stack helpers clone, trim, and clear per page key
-ok 14 - [order-pdf] sketch panel runtime redo stack helpers clone, trim, and clear per page key
-  ---
-  duration_ms: 0.390428
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch panel runtime drawing point collector skips jitter but keeps meaningful motion
-ok 15 - [order-pdf] sketch panel runtime drawing point collector skips jitter but keeps meaningful motion
-  ---
-  duration_ms: 0.123425
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch panel runtime normalizes client drawing points once per measured host rect
-ok 16 - [order-pdf] sketch panel runtime normalizes client drawing points once per measured host rect
-  ---
-  duration_ms: 0.176972
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch panel runtime appends coalesced client batches without rereading layout per point
-ok 17 - [order-pdf] sketch panel runtime appends coalesced client batches without rereading layout per point
-  ---
-  duration_ms: 0.204935
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch panel runtime tracks geometric tools as anchor/end drags and emits normalized paths
-ok 18 - [order-pdf] sketch panel runtime tracks geometric tools as anchor/end drags and emits normalized paths
-  ---
-  duration_ms: 0.482375
-  type: 'test'
-  ...
-# Subtest: [order-pdf] sketch panel runtime keeps the latest geometric drag point when coalesced batches contain stale history
-ok 19 - [order-pdf] sketch panel runtime keeps the latest geometric drag point when coalesced batches contain sta
-...
-[trimmed 3043 chars]
+✔ [history-ui] suspended history shortcuts are detected from the active overlay element (1.1106ms)
+✔ [history-ui] suspended history shortcuts fall back to a document-level overlay marker (0.2737ms)
+✔ [order-pdf] draft rehydrate keeps sketch annotations and sketch include flags (2.4504ms)
+✔ [order-pdf] refresh-auto preserves sketch annotations while refreshing project details (0.6809ms)
+✔ [order-pdf] sketch floating palette placement anchors left of the toolbar trigger without leaving the viewport (1.2308ms)
+✔ [order-pdf] sketch floating palette placement clamps inside the viewport when there is not enough space (0.1995ms)
+✔ [order-pdf] sketch toolbar placement tracks the visible stage band instead of sticking to the initial viewport slot (1.0306ms)
+✔ [order-pdf] sketch toolbar placement falls back to inline mode on narrow viewports (0.1251ms)
+✔ [order-pdf] sketch toolbar placement equality treats left-anchored toolbars as real geometry changes (0.1455ms)
+✔ [order-pdf] sketch canvas repaint helper suppresses redraws for cloned-but-equal annotation payloads (0.4811ms)
+✔ [order-pdf] sketch canvas repaint helper suppresses duplicate redraws until geometry or payload really changes (0.2262ms)
+✔ [order-pdf] sketch canvas frame only commits once a real 2d context exists (0.522ms)
+✔ [order-pdf] sketch panel runtime builds per-page stroke maps and counts canonically (1.7602ms)
+✔ [order-pdf] sketch panel runtime redo stack helpers clone, trim, and clear per page key (0.4494ms)
+✔ [order-pdf] sketch panel runtime drawing point collector skips jitter but keeps meaningful motion (0.1546ms)
+✔ [order-pdf] sketch panel runtime normalizes client drawing points once per measured host rect (0.2122ms)
+✔ [order-pdf] sketch panel runtime appends coalesced client batches without rereading layout per point (0.271ms)
+✔ [order-pdf] sketch panel runtime tracks geometric tools as anchor/end drags and emits normalized paths (0.6206ms)
+✔ [order-pdf] sketch panel runtime keeps the latest geometric drag point when coalesced batches contain stale history (0.1572ms)
+✔ [order-pdf] sketch panel runtime builds per-page text-box maps and folds them into redo counts (0.278ms)
+✔ [order-pdf] sketch panel runtime normalizes and compares measured drawing rects canonically (0.3107ms)
+✔ [order-pdf] sketch panel runtime reads drawing rects once from the measured host surface (0.3088ms)
+✔ [order-pdf] sketch preview session restores the original sketch mode after success (1.3261ms)
+✔ [order-pdf] sketch preview session restores the original sketch mode after failure (1.0643ms)
+✔ [order-pdf] sketch preview session snapshot captures and restores both sketch and doors-open states (0.2462ms)
+✔ [order-pdf] sketch preview session restores the original doors-open state after success (0.1957ms)
+✔ [order-pdf] sketch preview session snapshot captures and restores the original camera pose (0.6345ms)
+✔ [order-pdf] sketch preview session restores the original camera pose after success (0.2954ms)
+✔ [order-pdf] sketch undo shortcut matches english and hebrew ctrl/cmd+z (0.8284ms)
+✔ [order-pdf] sketch redo shortcut matches ctrl/cmd+y and ctrl/cmd+shift+z in english and hebrew (0.1939ms)
+✔ [order-pdf] sketch history shortcuts are always consumed while the sketch panel is open (0.1884ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1431.4166
+
 ```
 
 ### ✅ Order PDF export overlay batch (direct)
@@ -648,112 +363,40 @@ ok 19 - [order-pdf] sketch panel runtime keeps the latest geometric drag point w
 - command: `node tools/wp_run_tsx_tests.mjs tests/order_pdf_overlay_export_ops_runtime.test.ts tests/order_pdf_overlay_export_commands_runtime.test.ts tests/order_pdf_overlay_export_singleflight_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `3368ms`
+- duration: `1654ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/order_pdf_overlay_export_ops_runtime.test.ts" "tests/order_pdf_overlay_export_commands_runtime.test.ts" "tests/order_pdf_overlay_export_singleflight_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/order_pdf_overlay_export_ops_runtime.test.ts" "tests/order_pdf_overlay_export_commands_runtime.test.ts" "tests/order_pdf_overlay_export_singleflight_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: loadOrderPdfIntoEditorWithDeps returns success and persists cleaned draft data
-ok 1 - loadOrderPdfIntoEditorWithDeps returns success and persists cleaned draft data
-  ---
-  duration_ms: 1.891689
-  type: 'test'
-  ...
-# Subtest: exportOrderPdfInteractiveWithDeps returns warning-style success when the browser blocks the download
-ok 2 - exportOrderPdfInteractiveWithDeps returns warning-style success when the browser blocks the download
-  ---
-  duration_ms: 0.409574
-  type: 'test'
-  ...
-# Subtest: exportOrderPdfImageWithDeps reports busy before building another image PDF
-ok 3 - exportOrderPdfImageWithDeps reports busy before building another image PDF
-  ---
-  duration_ms: 0.307766
-  type: 'test'
-  ...
-# Subtest: exportOrderPdfViaGmailWithDeps keeps popup-blocked Gmail as a warning result instead of throwing
-ok 4 - exportOrderPdfViaGmailWithDeps keeps popup-blocked Gmail as a warning result instead of throwing
-  ---
-  duration_ms: 0.214611
-  type: 'test'
-  ...
-# Subtest: loadOrderPdfIntoEditorWithDeps preserves the real error detail for the toast
-ok 5 - loadOrderPdfIntoEditorWithDeps preserves the real error detail for the toast
-  ---
-  duration_ms: 0.495513
-  type: 'test'
-  ...
-# Subtest: exportOrderPdfInteractiveWithDeps preserves the real export failure detail
-ok 6 - exportOrderPdfInteractiveWithDeps preserves the real export failure detail
-  ---
-  duration_ms: 0.233192
-  type: 'test'
-  ...
-# Subtest: loadOrderPdfIntoEditorWithDeps treats html-only extracted legacy details as found fields
-ok 7 - loadOrderPdfIntoEditorWithDeps treats html-only extracted legacy details as found fields
-  ---
-  duration_ms: 0.512178
-  type: 'test'
-  ...
-# Subtest: loadOrderPdfIntoEditorWithDeps does not partially commit refs or counters when cleanup fails late
-ok 8 - loadOrderPdfIntoEditorWithDeps does not partially commit refs or counters when cleanup fails late
-  ---
-  duration_ms: 0.489601
-  type: 'test'
-  ...
-# Subtest: order pdf overlay export ops fail fast when rasterization has no document seam
-ok 9 - order pdf overlay export ops fail fast when rasterization has no document seam
-  ---
-  duration_ms: 1.40736
-  type: 'test'
-  ...
-# Subtest: order pdf overlay export ops build image attachments through the canonical attachment seam
-ok 10 - order pdf overlay export ops build image attachments through the canonical attachment seam
-  ---
-  duration_ms: 500.33372
-  type: 'test'
-  ...
-# Subtest: order pdf overlay image rasterization does not repaint sketch annotations already baked into sketch pages
-ok 11 - order pdf overlay image rasterization does not repaint sketch annotations already baked into sketch pages
-  ---
-  duration_ms: 1.424444
-  type: 'test'
-  ...
-# Subtest: order pdf export single-flight reuses duplicate same-key work per app and clears after completion
-ok 12 - order pdf export single-flight reuses duplicate same-key work per app and clears after completion
-  ---
-  duration_ms: 2.057678
-  type: 'test'
-  ...
-# Subtest: order pdf export single-flight returns busy for conflicting keys on the same app and stays independent across apps
-ok 13 - order pdf export single-flight returns busy for conflicting keys on the same app and stays independent across apps
-  ---
-  duration_ms: 0.339997
-  type: 'test'
-  ...
-# Subtest: order pdf export single-flight derives stable load keys and maps them back to action kinds
-ok 14 - order pdf export single-flight derives stable load keys and maps them back to action kinds
-  ---
-  duration_ms: 0.389825
-  type: 'test'
-  ...
-1..14
-# tests 14
-# suites 0
-# pass 14
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 3253.239729
+✔ loadOrderPdfIntoEditorWithDeps returns success and persists cleaned draft data (2.2458ms)
+✔ exportOrderPdfInteractiveWithDeps returns warning-style success when the browser blocks the download (0.404ms)
+✔ exportOrderPdfImageWithDeps reports busy before building another image PDF (0.2353ms)
+✔ exportOrderPdfViaGmailWithDeps keeps popup-blocked Gmail as a warning result instead of throwing (0.2091ms)
+✔ loadOrderPdfIntoEditorWithDeps preserves the real error detail for the toast (0.6749ms)
+✔ exportOrderPdfInteractiveWithDeps preserves the real export failure detail (0.3308ms)
+✔ loadOrderPdfIntoEditorWithDeps treats html-only extracted legacy details as found fields (0.562ms)
+✔ loadOrderPdfIntoEditorWithDeps does not partially commit refs or counters when cleanup fails late (0.4769ms)
+✔ order pdf overlay export ops fail fast when rasterization has no document seam (1.3053ms)
+✔ order pdf overlay export ops build image attachments through the canonical attachment seam (336.8337ms)
+✔ order pdf overlay image rasterization does not repaint sketch annotations already baked into sketch pages (0.8054ms)
+✔ order pdf export single-flight reuses duplicate same-key work per app and clears after completion (2.389ms)
+✔ order pdf export single-flight returns busy for conflicting keys on the same app and stays independent across apps (0.554ms)
+✔ order pdf export single-flight derives stable load keys and maps them back to action kinds (0.5818ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1530.8502
 
 ```
 
@@ -764,58 +407,31 @@ ok 14 - order pdf export single-flight derives stable load keys and maps them ba
 - command: `node tools/wp_run_tsx_tests.mjs tests/export_order_pdf_builder_draft_runtime.test.ts tests/export_order_pdf_builder_runtime.test.ts tests/export_order_pdf_builder_sketch_annotations_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `3980ms`
+- duration: `2207ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/export_order_pdf_builder_draft_runtime.test.ts" "tests/export_order_pdf_builder_runtime.test.ts" "tests/export_order_pdf_builder_sketch_annotations_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/export_order_pdf_builder_draft_runtime.test.ts" "tests/export_order_pdf_builder_runtime.test.ts" "tests/export_order_pdf_builder_sketch_annotations_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: resolveOrderPdfString keeps strings but canonicalizes nullish and numeric values
-ok 1 - resolveOrderPdfString keeps strings but canonicalizes nullish and numeric values
-  ---
-  duration_ms: 0.860691
-  type: 'test'
-  ...
-# Subtest: resolveOrderPdfOrderDetails prefers manual details only when the draft semantics say so
-ok 2 - resolveOrderPdfOrderDetails prefers manual details only when the draft semantics say so
-  ---
-  duration_ms: 0.291625
-  type: 'test'
-  ...
-# Subtest: resolveOrderPdfDraft keeps canonical defaults while honoring draft overrides
-ok 3 - resolveOrderPdfDraft keeps canonical defaults while honoring draft overrides
-  ---
-  duration_ms: 1.819055
-  type: 'test'
-  ...
-# Subtest: buildOrderPdfInteractiveBlobFromDraft keeps the embedded AcroForm template usable
-ok 4 - buildOrderPdfInteractiveBlobFromDraft keeps the embedded AcroForm template usable
-  ---
-  duration_ms: 709.230669
-  type: 'test'
-  ...
-# Subtest: captureOrderPdfCompositeImages applies sketch annotations after base composite capture
-ok 5 - captureOrderPdfCompositeImages applies sketch annotations after base composite capture
-  ---
-  duration_ms: 1.727063
-  type: 'test'
-  ...
-1..5
-# tests 5
-# suites 0
-# pass 5
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 3863.936764
+✔ resolveOrderPdfString keeps strings but canonicalizes nullish and numeric values (1.1979ms)
+✔ resolveOrderPdfOrderDetails prefers manual details only when the draft semantics say so (0.4188ms)
+✔ resolveOrderPdfDraft keeps canonical defaults while honoring draft overrides (2.3751ms)
+✔ buildOrderPdfInteractiveBlobFromDraft keeps the embedded AcroForm template usable (566.8356ms)
+✔ captureOrderPdfCompositeImages applies sketch annotations after base composite capture (2.003ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2077.6785
 
 ```
 
@@ -826,76 +442,36 @@ ok 5 - captureOrderPdfCompositeImages applies sketch annotations after base comp
 - command: `node tools/wp_run_tsx_tests.mjs tests/export_order_pdf_capture_cache_runtime.test.ts tests/export_order_pdf_capture_runtime.test.ts tests/export_order_pdf_ops_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `3069ms`
+- duration: `1509ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/export_order_pdf_capture_cache_runtime.test.ts" "tests/export_order_pdf_capture_runtime.test.ts" "tests/export_order_pdf_ops_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/export_order_pdf_capture_cache_runtime.test.ts" "tests/export_order_pdf_capture_runtime.test.ts" "tests/export_order_pdf_ops_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: order pdf capture cache signature falls back cleanly when state is missing or invalid
-ok 1 - order pdf capture cache signature falls back cleanly when state is missing or invalid
-  ---
-  duration_ms: 1.589543
-  type: 'test'
-  ...
-# Subtest: order pdf capture cache returns cloned bytes instead of live cache buffers
-ok 2 - order pdf capture cache returns cloned bytes instead of live cache buffers
-  ---
-  duration_ms: 0.703512
-  type: 'test'
-  ...
-# Subtest: order pdf capture cache reuses sketch base assets while signature is unchanged
-ok 3 - order pdf capture cache reuses sketch base assets while signature is unchanged
-  ---
-  duration_ms: 0.573064
-  type: 'test'
-  ...
-# Subtest: order pdf capture cache ignores pdf editor draft changes but invalidates on build/config changes
-ok 4 - order pdf capture cache ignores pdf editor draft changes but invalidates on build/config changes
-  ---
-  duration_ms: 0.231975
-  type: 'test'
-  ...
-# Subtest: order pdf capture cache signature ignores sketch-only annotation changes
-ok 5 - order pdf capture cache signature ignores sketch-only annotation changes
-  ---
-  duration_ms: 0.961975
-  type: 'test'
-  ...
-# Subtest: export order pdf capture viewer toggles doors/sketch canonically and rasterizes the composed canvas
-ok 6 - export order pdf capture viewer toggles doors/sketch canonically and rasterizes the composed canvas
-  ---
-  duration_ms: 2.534265
-  type: 'test'
-  ...
-# Subtest: export order pdf capture canvas helpers keep first successful fetch result while tolerating earlier failures
-ok 7 - export order pdf capture canvas helpers keep first successful fetch result while tolerating earlier failures
-  ---
-  duration_ms: 0.572114
-  type: 'test'
-  ...
-# Subtest: export order pdf ops factory exposes stable draft/export surface
-ok 8 - export order pdf ops factory exposes stable draft/export surface
-  ---
-  duration_ms: 2.072035
-  type: 'test'
-  ...
-1..8
-# tests 8
-# suites 0
-# pass 8
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 2940.957697
+✔ order pdf capture cache signature falls back cleanly when state is missing or invalid (1.6439ms)
+✔ order pdf capture cache returns cloned bytes instead of live cache buffers (1.2391ms)
+✔ order pdf capture cache reuses sketch base assets while signature is unchanged (0.888ms)
+✔ order pdf capture cache ignores pdf editor draft changes but invalidates on build/config changes (0.439ms)
+✔ order pdf capture cache signature ignores sketch-only annotation changes (0.917ms)
+✔ export order pdf capture viewer toggles doors/sketch canonically and rasterizes the composed canvas (1.9928ms)
+✔ export order pdf capture canvas helpers keep first successful fetch result while tolerating earlier failures (0.4375ms)
+✔ order PDF render/sketch composite preserves chest live viewport and screenshot note mapping (1.5246ms)
+✔ order PDF open/closed composite preserves corner live viewport and screenshot note mapping (1.0556ms)
+✔ export order pdf ops factory exposes stable draft/export surface (1.9548ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1376.5917
 
 ```
 
@@ -906,76 +482,34 @@ ok 8 - export order pdf ops factory exposes stable draft/export surface
 - command: `node tools/wp_run_tsx_tests.mjs tests/export_order_pdf_sketch_annotations_runtime.test.ts tests/export_order_pdf_text_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `1970ms`
+- duration: `1258ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/export_order_pdf_sketch_annotations_runtime.test.ts" "tests/export_order_pdf_text_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/export_order_pdf_sketch_annotations_runtime.test.ts" "tests/export_order_pdf_text_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: listOrderPdfSketchStrokes keeps only valid strokes for the requested page
-ok 1 - listOrderPdfSketchStrokes keeps only valid strokes for the requested page
-  ---
-  duration_ms: 0.788819
-  type: 'test'
-  ...
-# Subtest: paintOrderPdfSketchAnnotationsForPage paints only the active page strokes onto the full composite canvas
-ok 2 - paintOrderPdfSketchAnnotationsForPage paints only the active page strokes onto the full composite canvas
-  ---
-  duration_ms: 0.991234
-  type: 'test'
-  ...
-# Subtest: paintOrderPdfSketchAnnotationsForPage uses destination-out when the persisted stroke is an eraser
-ok 3 - paintOrderPdfSketchAnnotationsForPage uses destination-out when the persisted stroke is an eraser
-  ---
-  duration_ms: 0.15273
-  type: 'test'
-  ...
-# Subtest: compositeOrderPdfSketchStrokesOntoBase keeps erasing isolated to the transparent annotation layer
-ok 4 - compositeOrderPdfSketchStrokesOntoBase keeps erasing isolated to the transparent annotation layer
-  ---
-  duration_ms: 0.397519
-  type: 'test'
-  ...
-# Subtest: paintOrderPdfSketchAnnotationsForPage paints persisted text boxes onto the active page composite
-ok 5 - paintOrderPdfSketchAnnotationsForPage paints persisted text boxes onto the active page composite
-  ---
-  duration_ms: 0.599336
-  type: 'test'
-  ...
-# Subtest: export order pdf text ops compose details, bidi, and layout behavior from one canonical seam
-ok 6 - export order pdf text ops compose details, bidi, and layout behavior from one canonical seam
-  ---
-  duration_ms: 2.191844
-  type: 'test'
-  ...
-# Subtest: export order pdf text ops keep canonical draft defaults and bidi stabilization behavior
-ok 7 - export order pdf text ops keep canonical draft defaults and bidi stabilization behavior
-  ---
-  duration_ms: 2.007091
-  type: 'test'
-  ...
-# Subtest: export order pdf text uses wardrobe-type depth fallback only when raw depth is missing
-ok 8 - export order pdf text uses wardrobe-type depth fallback only when raw depth is missing
-  ---
-  duration_ms: 0.352847
-  type: 'test'
-  ...
-1..8
-# tests 8
-# suites 0
-# pass 8
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 1848.303937
+✔ listOrderPdfSketchStrokes keeps only valid strokes for the requested page (0.8462ms)
+✔ paintOrderPdfSketchAnnotationsForPage paints only the active page strokes onto the full composite canvas (0.9899ms)
+✔ paintOrderPdfSketchAnnotationsForPage uses destination-out when the persisted stroke is an eraser (0.1374ms)
+✔ compositeOrderPdfSketchStrokesOntoBase keeps erasing isolated to the transparent annotation layer (0.3775ms)
+✔ paintOrderPdfSketchAnnotationsForPage paints persisted text boxes onto the active page composite (0.5329ms)
+✔ export order pdf text ops compose details, bidi, and layout behavior from one canonical seam (3.2ms)
+✔ export order pdf text ops keep canonical draft defaults and bidi stabilization behavior (1.3991ms)
+✔ export order pdf text uses wardrobe-type depth fallback only when raw depth is missing (0.3036ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1138.2351
 
 ```
 
@@ -986,142 +520,47 @@ ok 8 - export order pdf text uses wardrobe-type depth fallback only when raw dep
 - command: `node tools/wp_run_tsx_tests.mjs tests/sketch_manual_tool_host_runtime.test.ts tests/canvas_picking_layout_edit_flow_manual_runtime.test.ts tests/canvas_picking_manual_layout_sketch_hover_routing_runtime.test.ts tests/canvas_picking_manual_layout_sketch_hover_module_context_runtime.test.ts tests/canvas_picking_manual_layout_sketch_hover_module_preview_runtime.test.ts tests/canvas_picking_manual_layout_sketch_hover_surface_runtime.test.ts tests/canvas_picking_manual_layout_sketch_hover_tools_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `2606ms`
+- duration: `1189ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/sketch_manual_tool_host_runtime.test.ts" "tests/canvas_picking_layout_edit_flow_manual_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_routing_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_module_context_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_module_preview_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_surface_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_tools_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/sketch_manual_tool_host_runtime.test.ts" "tests/canvas_picking_layout_edit_flow_manual_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_routing_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_module_context_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_module_preview_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_surface_runtime.test.ts" "tests/canvas_picking_manual_layout_sketch_hover_tools_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: manual-layout flow fills all shelves for a new brace layout through the canonical mutation owner
-ok 1 - manual-layout flow fills all shelves for a new brace layout through the canonical mutation owner
-  ---
-  duration_ms: 34.444779
-  type: 'test'
-  ...
-# Subtest: manual-layout flow toggles a rod off and removes only the matching exact preset rod metadata
-ok 2 - manual-layout flow toggles a rod off and removes only the matching exact preset rod metadata
-  ---
-  duration_ms: 0.490753
-  type: 'test'
-  ...
-# Subtest: manual-layout hover module context clamps sketch-box placement and preserves width/depth overrides
-ok 3 - manual-layout hover module context clamps sketch-box placement and preserves width/depth overrides
-  ---
-  duration_ms: 2.247535
-  type: 'test'
-  ...
-# Subtest: manual-layout hover module context falls back to the corner root config when no cell config exists
-ok 4 - manual-layout hover module context falls back to the corner root config when no cell config exists
-  ---
-  duration_ms: 1.11631
-  type: 'test'
-  ...
-# Subtest: manual-layout module box preview routes shelf hover through the focused box owner
-ok 5 - manual-layout module box preview routes shelf hover through the focused box owner
-  ---
-  duration_ms: 2.845216
-  type: 'test'
-  ...
-# Subtest: manual-layout module stack preview routes ext drawers through the focused stack owner
-ok 6 - manual-layout module stack preview routes ext drawers through the focused stack owner
-  ---
-  duration_ms: 2.153934
-  type: 'test'
-  ...
-# Subtest: manual-layout sketch hover keeps selector hits inside module flow even for sketch-box tools
-ok 7 - manual-layout sketch hover keeps selector hits inside module flow even for sketch-box tools
-  ---
-  duration_ms: 5.757974
-  type: 'test'
-  ...
-# Subtest: manual-layout sketch hover falls back to standalone free placement when no selector is hit
-ok 8 - manual-layout sketch hover falls back to standalone free placement when no selector is hit
-  ---
-  duration_ms: 1.40185
-  type: 'test'
-  ...
-# Subtest: module surface hover writes preview-only shelf add results instead of dropping them
-ok 9 - module surface hover writes preview-only shelf add results instead of dropping them
-  ---
-  duration_ms: 4.406634
-  type: 'test'
-  ...
-# Subtest: module preview flow probes existing shelf removal before drawer stack add previews
-ok 10 - module preview flow probes existing shelf removal before drawer stack add previews
-  ---
-  duration_ms: 0.85688
-  type: 'test'
-  ...
-# Subtest: existing vertical remove helper is a no-op when nothing removable is under the cursor
-ok 11 - existing vertical remove helper is a no-op when nothing removable is under the cursor
-  ---
-  duration_ms: 0.485046
-  type: 'test'
-  ...
-# Subtest: door action hover state resolves the nearest door leaf owner with metrics
-ok 12 - door action hover state resolves the nearest door leaf owner with metrics
-  ---
-  duration_ms: 0.327651
-  type: 'test'
-  ...
-# Subtest: manual-layout sketch hover selector helper keeps selector-local X in selector-parent space and prefers specific selectors
-ok 13 - manual-layout sketch hover selector helper keeps selector-local X in selector-parent space and prefers specific selectors
-  ---
-  duration_ms: 1.09992
-  type: 'test'
-  ...
-# Subtest: manual-layout sketch hover runtime hides layout preview only once when the active tool is not a sketch tool
-ok 14 - manual-layout sketch hover runtime hides layout preview only once when the active tool is not a sketch tool
-  ---
-  duration_ms: 1.611908
-  type: 'test'
-  ...
-# Subtest: manual-layout sketch hover runtime hides preview + clears hover when mode is not manual-layout
-ok 15 - manual-layout sketch hover runtime hides preview + clears hover when mode is not manual-layout
-  ---
-  duration_ms: 0.298599
-  type: 'test'
-  ...
-# Subtest: manual tool access prefers canonical mode-state value before runtime tools fallback
-ok 16 - manual tool access prefers canonical mode-state value before runtime tools fallback
-  ---
-  duration_ms: 1.129041
-  type: 'test'
-  ...
-# Subtest: manual tool access falls back to runtime tools when mode-state tool is absent
-ok 17 - manual tool access falls back to runtime tools when mode-state tool is absent
-  ---
-  duration_ms: 0.184695
-  type: 'test'
-  ...
-# Subtest: sketch-free host falls back to internal grid maps before the zero-door hinged default host
-ok 18 - sketch-free host falls back to internal grid maps before the zero-door hinged default host
-  ---
-  duration_ms: 1.65888
-  type: 'test'
-  ...
-# Subtest: sketch-free host uses the hinged zero-door fallback only when no config or grid host exists
-ok 19 - sketch-free host uses the hinged zero-door fallback only when no config or grid host exists
-  ---
-  duration_ms: 0.195246
-  type: 'test'
-  ...
-1..19
-# tests 19
-# suites 0
-# pass 19
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 2458.362059
+✔ manual-layout flow fills all shelves for a new brace layout through the canonical mutation owner (4.4842ms)
+✔ manual-layout flow toggles a rod off and removes only the matching exact preset rod metadata (0.8785ms)
+✔ manual-layout hover module context clamps sketch-box placement and preserves width/depth overrides (7.3689ms)
+✔ manual-layout hover module context falls back to the corner root config when no cell config exists (1.5167ms)
+✔ manual-layout module box preview routes shelf hover through the focused box owner (3.9913ms)
+✔ manual-layout module stack preview routes ext drawers through the focused stack owner (2.4582ms)
+✔ manual-layout sketch hover keeps selector hits inside module flow even for sketch-box tools (5.9326ms)
+✔ manual-layout sketch hover falls back to standalone free placement when no selector is hit (1.187ms)
+✔ manual-layout sketch external drawer hover marks standard external drawers for removal only (0.7715ms)
+✔ manual-layout sketch internal drawer hover ignores standard external drawers (0.318ms)
+✔ module surface hover writes preview-only shelf add results instead of dropping them (5.1674ms)
+✔ module preview flow probes existing shelf removal before drawer stack add previews (0.8103ms)
+✔ existing vertical remove helper is a no-op when nothing removable is under the cursor (0.5641ms)
+✔ door action hover state resolves the nearest door leaf owner with metrics (0.3068ms)
+✔ manual-layout sketch hover selector helper keeps selector-local X in selector-parent space and prefers specific selectors (1.9819ms)
+✔ manual-layout sketch hover runtime hides layout preview only once when the active tool is not a sketch tool (2.4519ms)
+✔ manual-layout sketch hover runtime hides preview + clears hover when mode is not manual-layout (0.4505ms)
+✔ manual tool access prefers canonical mode-state value before runtime tools fallback (1.1996ms)
+✔ manual tool access falls back to runtime tools when mode-state tool is absent (0.2875ms)
+✔ sketch-free host falls back to internal grid maps before the zero-door hinged default host (1.7489ms)
+✔ sketch-free host uses the hinged zero-door fallback only when no config or grid host exists (0.1889ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1042.5988
 
 ```
 
@@ -1132,137 +571,52 @@ ok 19 - sketch-free host uses the hinged zero-door fallback only when no config 
 - command: `node tools/wp_run_tsx_tests.mjs tests/canvas_picking_sketch_box_runtime_runtime.test.ts tests/canvas_picking_sketch_box_door_preview_runtime.test.ts tests/canvas_picking_sketch_box_doors_runtime.test.ts tests/canvas_picking_sketch_box_overlap_runtime.test.ts tests/sketch_box_hover_click_runtime.test.ts tests/sketch_box_door_visuals_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `2516ms`
+- duration: `1175ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/canvas_picking_sketch_box_runtime_runtime.test.ts" "tests/canvas_picking_sketch_box_door_preview_runtime.test.ts" "tests/canvas_picking_sketch_box_doors_runtime.test.ts" "tests/canvas_picking_sketch_box_overlap_runtime.test.ts" "tests/sketch_box_hover_click_runtime.test.ts" "tests/sketch_box_door_visuals_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/canvas_picking_sketch_box_runtime_runtime.test.ts" "tests/canvas_picking_sketch_box_door_preview_runtime.test.ts" "tests/canvas_picking_sketch_box_doors_runtime.test.ts" "tests/canvas_picking_sketch_box_overlap_runtime.test.ts" "tests/sketch_box_hover_click_runtime.test.ts" "tests/sketch_box_door_visuals_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: sketch-box door preview stays inert for hinge toggles when the active segment has no door
-ok 1 - sketch-box door preview stays inert for hinge toggles when the active segment has no door
-  ---
-  duration_ms: 1.316428
-  type: 'test'
-  ...
-# Subtest: sketch-box door preview resolves canonical remove metadata for an existing double-door pair
-ok 2 - sketch-box door preview resolves canonical remove metadata for an existing double-door pair
-  ---
-  duration_ms: 7.807055
-  type: 'test'
-  ...
-# Subtest: sketch-box door preview keeps explicit hinge/remove metadata for a single existing door
-ok 3 - sketch-box door preview keeps explicit hinge/remove metadata for a single existing door
-  ---
-  duration_ms: 0.307815
-  type: 'test'
-  ...
-# Subtest: sketch-box doors upsert single-door records through the canonical id factory and segment placement seam
-ok 4 - sketch-box doors upsert single-door records through the canonical id factory and segment placement seam
-  ---
-  duration_ms: 1.596449
-  type: 'test'
-  ...
-# Subtest: sketch-box doors toggle hinge for a single door but stay inert when the segment already has a double-door pair
-ok 5 - sketch-box doors toggle hinge for a single door but stay inert when the segment already has a double-door pair
-  ---
-  duration_ms: 7.407844
-  type: 'test'
-  ...
-# Subtest: sketch-box doors remove a focused segment door without disturbing the other segment
-ok 6 - sketch-box doors remove a focused segment door without disturbing the other segment
-  ---
-  duration_ms: 0.373628
-  type: 'test'
-  ...
-# Subtest: resolved module boxes ignore free-placement items and the requested ignoreBoxId
-ok 7 - resolved module boxes ignore free-placement items and the requested ignoreBoxId
-  ---
-  duration_ms: 1.810301
-  type: 'test'
-  ...
-# Subtest: vertical center clamp respects module bounds even when desired center is far outside range
-ok 8 - vertical center clamp respects module bounds even when desired center is far outside range
-  ---
-  duration_ms: 0.16758
-  type: 'test'
-  ...
-# Subtest: placement resolution can ignore the edited box id instead of blocking on itself
-ok 9 - placement resolution can ignore the edited box id instead of blocking on itself
-  ---
-  duration_ms: 0.31832
-  type: 'test'
-  ...
-# Subtest: placement reports blocked when overlap chain reaches the module ceiling and floor
-ok 10 - placement reports blocked when overlap chain reaches the module ceiling and floor
-  ---
-  duration_ms: 0.675187
-  type: 'test'
-  ...
-# Subtest: overlap primitive still allows exact edge contact without treating it as overlap
-ok 11 - overlap primitive still allows exact edge contact without treating it as overlap
-  ---
-  duration_ms: 0.098659
-  type: 'test'
-  ...
-# Subtest: sketch-box runtime parses width/depth overrides and rejects unrelated tools
-ok 12 - sketch-box runtime parses width/depth overrides and rejects unrelated tools
-  ---
-  duration_ms: 1.421248
-  type: 'test'
-  ...
-# Subtest: sketch-box runtime geometry center-snaps and width-clamps inside the module span
-ok 13 - sketch-box runtime geometry center-snaps and width-clamps inside the module span
-  ---
-  duration_ms: 0.396297
-  type: 'test'
-  ...
-# Subtest: sketch-box runtime hit scan ignores free-placement boxes and prefers the nearest centered match
-ok 14 - sketch-box runtime hit scan ignores free-placement boxes and prefers the nearest centered match
-  ---
-  duration_ms: 0.39458
-  type: 'test'
-  ...
-# Subtest: sketch-box free-placement commit keeps matching/commit/hover mutation policy centralized
-ok 15 - sketch-box free-placement commit keeps matching/commit/hover mutation policy centralized
-  ---
-  duration_ms: 0.268247
-  type: 'test'
-  ...
-# Subtest: sketch-box free-placement commit clears hover when the canonical commit finishes without next hover
-ok 16 - sketch-box free-placement commit clears hover when the canonical commit finishes without next hover
-  ---
-  duration_ms: 0.190278
-  type: 'test'
-  ...
-# Subtest: sketch-box free-placement commit stays inert when no canonical host is available
-ok 17 - sketch-box free-placement commit stays inert when no canonical host is available
-  ---
-  duration_ms: 0.134917
-  type: 'test'
-  ...
-# Subtest: sketch-box door visuals forward mirror state, mirror layout, and deep pick meta through the special visual path
-ok 18 - sketch-box door visuals forward mirror state, mirror layout, and deep pick meta through the special visual path
-  ---
-  duration_ms: 58.714246
-  type: 'test'
-  ...
-# Subtest: sketch external drawers hover context loads persisted module stacks for remove/overlap handling
-ok 19 - sketch external drawers hover context loads persisted module stacks for remove/overlap handling
-  ---
-  duration_ms: 4.637177
-  type: 'test'
-  ...
-# Subtest: free-box content click stays on the free box even when a wardrobe module is behind it
-ok 20 - free-box content click stays on the free box even whe
-...
-[trimmed 1521 chars]
+✔ sketch-box door preview stays inert for hinge toggles when the active segment has no door (2.0516ms)
+✔ sketch-box door preview resolves canonical remove metadata for an existing double-door pair (18.5566ms)
+✔ sketch-box door preview keeps explicit hinge/remove metadata for a single existing door (0.7228ms)
+✔ sketch-box doors upsert single-door records through the canonical id factory and segment placement seam (2.194ms)
+✔ sketch-box doors toggle hinge for a single door but stay inert when the segment already has a double-door pair (27.0086ms)
+✔ sketch-box doors remove a focused segment door without disturbing the other segment (0.5553ms)
+✔ resolved module boxes ignore free-placement items and the requested ignoreBoxId (2.5658ms)
+✔ vertical center clamp respects module bounds even when desired center is far outside range (0.2205ms)
+✔ placement resolution can ignore the edited box id instead of blocking on itself (0.546ms)
+✔ placement reports blocked when overlap chain reaches the module ceiling and floor (0.9389ms)
+✔ overlap primitive still allows exact edge contact without treating it as overlap (0.186ms)
+✔ sketch-box runtime parses width/depth overrides and rejects unrelated tools (1.6291ms)
+✔ sketch-box runtime geometry center-snaps and width-clamps inside the module span (0.3946ms)
+✔ sketch-box runtime hit scan ignores free-placement boxes and prefers the nearest centered match (0.3741ms)
+✔ sketch-box free-placement commit keeps matching/commit/hover mutation policy centralized (0.3153ms)
+✔ sketch-box free-placement commit clears hover when the canonical commit finishes without next hover (0.2368ms)
+✔ sketch-box free-placement commit stays inert when no canonical host is available (0.2421ms)
+✔ sketch-box door visuals forward mirror state, mirror layout, and deep pick meta through the special visual path (3.2866ms)
+✔ sketch external drawers hover context loads persisted module stacks for remove/overlap handling (13.7793ms)
+✔ free-box content click stays on the free box even when a wardrobe module is behind it (0.8712ms)
+✔ free-box external drawers use the box bottom directly and sketch hover blocks drawer collisions across internal and external stacks (2.6275ms)
+✔ module sketch hover blocks collisions between internal and external drawer stacks (0.5649ms)
+✔ free-box sketch drawer clicks refresh hover state instead of dropping straight through to the module behind (1.0754ms)
+✔ module sketch drawer click flow enforces cross-blocking and keeps immediate remove hover after commit (1.0608ms)
+✔ module sketch external drawers preview reads the selector front envelope instead of the inner cavity only (1.629ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1050.9917
+
 ```
 
 ### ✅ Sketch free-box batch (direct)
@@ -1272,130 +626,55 @@ ok 20 - free-box content click stays on the free box even whe
 - command: `node tools/wp_run_tsx_tests.mjs tests/canvas_picking_sketch_free_surface_preview_runtime.test.ts tests/canvas_picking_sketch_free_box_content_preview_runtime.test.ts tests/canvas_picking_sketch_free_commit_runtime.test.ts tests/sketch_free_boxes_attach_runtime.test.ts tests/sketch_free_boxes_hover_plane_attach_runtime.test.ts tests/sketch_free_boxes_outside_attach_runtime.test.ts tests/sketch_free_boxes_remove_and_sidewall_runtime.test.ts tests/sketch_free_boxes_room_floor_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `1981ms`
+- duration: `1084ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/canvas_picking_sketch_free_surface_preview_runtime.test.ts" "tests/canvas_picking_sketch_free_box_content_preview_runtime.test.ts" "tests/canvas_picking_sketch_free_commit_runtime.test.ts" "tests/sketch_free_boxes_attach_runtime.test.ts" "tests/sketch_free_boxes_hover_plane_attach_runtime.test.ts" "tests/sketch_free_boxes_outside_attach_runtime.test.ts" "tests/sketch_free_boxes_remove_and_sidewall_runtime.test.ts" "tests/sketch_free_boxes_room_floor_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/canvas_picking_sketch_free_surface_preview_runtime.test.ts" "tests/canvas_picking_sketch_free_box_content_preview_runtime.test.ts" "tests/canvas_picking_sketch_free_commit_runtime.test.ts" "tests/sketch_free_boxes_attach_runtime.test.ts" "tests/sketch_free_boxes_hover_plane_attach_runtime.test.ts" "tests/sketch_free_boxes_outside_attach_runtime.test.ts" "tests/sketch_free_boxes_remove_and_sidewall_runtime.test.ts" "tests/sketch_free_boxes_room_floor_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: sketch-free box content preview short-circuits unsupported content kinds before target scanning
-ok 1 - sketch-free box content preview short-circuits unsupported content kinds before target scanning
-  ---
-  duration_ms: 0.744632
-  type: 'test'
-  ...
-# Subtest: sketch-free box content preview keeps door-hinge hover inert when the active segment has no door
-ok 2 - sketch-free box content preview keeps door-hinge hover inert when the active segment has no door
-  ---
-  duration_ms: 1.295491
-  type: 'test'
-  ...
-# Subtest: sketch-free box content preview returns canonical double-door removal metadata for an existing pair
-ok 3 - sketch-free box content preview returns canonical double-door removal metadata for an existing pair
-  ---
-  duration_ms: 7.660205
-  type: 'test'
-  ...
-# Subtest: sketch-free placement hover record keeps canonical host/free-placement fields
-ok 4 - sketch-free placement hover record keeps canonical host/free-placement fields
-  ---
-  duration_ms: 1.198258
-  type: 'test'
-  ...
-# Subtest: sketch-free placement commit adds a free-placement box through the canonical modules patch seam
-ok 5 - sketch-free placement commit adds a free-placement box through the canonical modules patch seam
-  ---
-  duration_ms: 0.875588
-  type: 'test'
-  ...
-# Subtest: sketch-free placement content commit routes free-placement door removal through the canonical content seam
-ok 6 - sketch-free placement content commit routes free-placement door removal through the canonical content seam
-  ---
-  duration_ms: 1.112928
-  type: 'test'
-  ...
-# Subtest: sketch free surface target scan prefers the candidate with a box-local hit over plain plane-distance fallbacks
-ok 7 - sketch free surface target scan prefers the candidate with a box-local hit over plain plane-distance fallbacks
-  ---
-  duration_ms: 1.135696
-  type: 'test'
-  ...
-# Subtest: sketch free surface placement preview produces canonical remove hover metadata and front overlay geometry
-ok 8 - sketch free surface placement preview produces canonical remove hover metadata and front overlay geometry
-  ---
-  duration_ms: 0.86216
-  type: 'test'
-  ...
-# Subtest: free-box attach keeps side attachment stable near upper corner while preserving asymmetric offset
-ok 9 - free-box attach keeps side attachment stable near upper corner while preserving asymmetric offset
-  ---
-  duration_ms: 1.069782
-  type: 'test'
-  ...
-# Subtest: free-box attach still prefers top/bottom when the cursor is only outside vertically
-ok 10 - free-box attach still prefers top/bottom when the cursor is only outside vertically
-  ---
-  duration_ms: 0.16252
-  type: 'test'
-  ...
-# Subtest: free-box attach near the lower corners still prefers vertical stacking symmetrically on the left and right
-ok 11 - free-box attach near the lower corners still prefers vertical stacking symmetrically on the left and right
-  ---
-  duration_ms: 0.18783
-  type: 'test'
-  ...
-# Subtest: free-box attach below still allows a true staircase corner touch before detaching
-ok 12 - free-box attach below still allows a true staircase corner touch before detaching
-  ---
-  duration_ms: 0.203643
-  type: 'test'
-  ...
-# Subtest: free-box attach still prefers side attachment when the cursor is clearly outside only on X
-ok 13 - free-box attach still prefers side attachment when the cursor is clearly outside only on X
-  ---
-  duration_ms: 0.149133
-  type: 'test'
-  ...
-# Subtest: free-box hover attach below falls back to a valid floor-safe side placement when room floor blocks under-stack placement
-ok 14 - free-box hover attach below falls back to a valid floor-safe side placement when room floor blocks under-stack placement
-  ---
-  duration_ms: 2.361261
-  type: 'test'
-  ...
-# Subtest: free-box hover attach above keeps plane X even when surface hit lands on the left wall of the target box
-ok 15 - free-box hover attach above keeps plane X even when surface hit lands on the left wall of the target box
-  ---
-  duration_ms: 0.312742
-  type: 'test'
-  ...
-# Subtest: free-box hover near lower corners stays symmetric when room floor forces the fallback placement sideways
-ok 16 - free-box hover near lower corners stays symmetric when room floor forces the fallback placement sideways
-  ---
-  duration_ms: 0.739367
-  type: 'test'
-  ...
-# Subtest: free-box hover below at the outer edge still resolves to the floor-safe side placement
-ok 17 - free-box hover below at the outer edge still resolves to the floor-safe side placement
-  ---
-  duration_ms: 0.35649
-  type: 'test'
-  ...
-# Subtest: free-box hover between adjacent boxes keeps the gap column instead of snapping to an outer side wall
-ok 18 - free-box hover between adjacent boxes keeps the gap column instead of snapping to an outer side wall
-  ---
-  duration_ms: 0.41182
-  type: 'test'
-  ...
-# Subtest: free-box hover slightly off-center between adjacent boxes still stays in the gap column until a real sid
-...
-[trimmed 2590 chars]
+✔ sketch-free box content preview short-circuits unsupported content kinds before target scanning (1.6702ms)
+✔ sketch-free box content preview keeps door-hinge hover inert when the active segment has no door (2.8576ms)
+✔ sketch-free box content preview returns canonical double-door removal metadata for an existing pair (18.3ms)
+✔ sketch-free placement hover record keeps canonical host/free-placement fields (2.9249ms)
+✔ sketch-free placement commit adds a free-placement box through the canonical modules patch seam (1.3784ms)
+✔ sketch-free placement content commit routes free-placement door removal through the canonical content seam (1.992ms)
+✔ sketch free surface target scan prefers the candidate with a box-local hit over plain plane-distance fallbacks (2.002ms)
+✔ sketch free surface placement preview produces canonical remove hover metadata and front overlay geometry (1.506ms)
+✔ free-box attach keeps side attachment stable near upper corner while preserving asymmetric offset (1.9571ms)
+✔ free-box attach still prefers top/bottom when the cursor is only outside vertically (0.3125ms)
+✔ free-box attach near the lower corners still prefers vertical stacking symmetrically on the left and right (0.3074ms)
+✔ free-box attach below still allows a true staircase corner touch before detaching (0.2305ms)
+✔ free-box attach still prefers side attachment when the cursor is clearly outside only on X (0.2378ms)
+✔ free-box hover attach below falls back to a valid floor-safe side placement when room floor blocks under-stack placement (5.1377ms)
+✔ free-box hover attach above keeps plane X even when surface hit lands on the left wall of the target box (0.5874ms)
+✔ free-box hover near lower corners stays symmetric when room floor forces the fallback placement sideways (1.0125ms)
+✔ free-box hover below at the outer edge still resolves to the floor-safe side placement (0.4931ms)
+✔ free-box hover between adjacent boxes keeps the gap column instead of snapping to an outer side wall (0.6806ms)
+✔ free-box hover slightly off-center between adjacent boxes still stays in the gap column until a real side target exists (0.5138ms)
+✔ free-box outside placement snaps along X when the box overlaps the wardrobe from the side (2.4298ms)
+✔ free-box outside placement snaps along Y when the box overlaps the wardrobe from above (0.3804ms)
+✔ free-box remove hover works from most of the box interior using plane hit, not only a tiny center point (2.217ms)
+✔ free-box outside placement snaps flush to the wardrobe side wall instead of requiring a large empty gap (0.7697ms)
+✔ free-box placement still remains available when the box is fully inside the wardrobe body (0.2798ms)
+✔ free-box placement above the wardrobe stays outside above the roof instead of being clamped back inside (0.3206ms)
+✔ free-box placement at side height above the wardrobe still remains available as outside free placement (0.2233ms)
+✔ free-box hover below the room floor clamps onto the floor instead of sinking under it (1.9275ms)
+✔ free-box hover below the wardrobe snaps to room floor even when still overlapping the wardrobe width (0.2499ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 956.6985
+
 ```
 
 ### ✅ Sketch render/visuals batch (direct)
@@ -1405,100 +684,38 @@ ok 18 - free-box hover between adjacent boxes keeps the gap column instead of sn
 - command: `node tools/wp_run_tsx_tests.mjs tests/render_interior_sketch_visuals_runtime.test.ts tests/render_interior_sketch_fronts_runtime.test.ts tests/render_interior_sketch_layout_dimensions_runtime.test.ts tests/render_interior_sketch_layout_geometry_runtime.test.ts tests/sketch_front_visual_state_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `1357ms`
+- duration: `725ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/render_interior_sketch_visuals_runtime.test.ts" "tests/render_interior_sketch_fronts_runtime.test.ts" "tests/render_interior_sketch_layout_dimensions_runtime.test.ts" "tests/render_interior_sketch_layout_geometry_runtime.test.ts" "tests/sketch_front_visual_state_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/render_interior_sketch_visuals_runtime.test.ts" "tests/render_interior_sketch_fronts_runtime.test.ts" "tests/render_interior_sketch_layout_dimensions_runtime.test.ts" "tests/render_interior_sketch_layout_geometry_runtime.test.ts" "tests/sketch_front_visual_state_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: render sketch box fronts reuses one mirror material across mirrored external drawers
-ok 1 - render sketch box fronts reuses one mirror material across mirrored external drawers
-  ---
-  duration_ms: 3.93438
-  type: 'test'
-  ...
-# Subtest: renderSketchFreeBoxDimensions keeps height on the right and depth on the left
-ok 2 - renderSketchFreeBoxDimensions keeps height on the right and depth on the left
-  ---
-  duration_ms: 0.959419
-  type: 'test'
-  ...
-# Subtest: renderSketchFreeBoxDimensionOverlays groups adjacent entries and renders merged width plus segment widths
-ok 3 - renderSketchFreeBoxDimensionOverlays groups adjacent entries and renders merged width plus segment widths
-  ---
-  duration_ms: 1.150435
-  type: 'test'
-  ...
-# Subtest: renderSketchFreeBoxDimensionOverlays keeps a hairline placement gap from inflating the merged total width label
-ok 4 - renderSketchFreeBoxDimensionOverlays keeps a hairline placement gap from inflating the merged total width label
-  ---
-  duration_ms: 0.272151
-  type: 'test'
-  ...
-# Subtest: render interior sketch layout geometry clamps box size and center inside the internal span
-ok 5 - render interior sketch layout geometry clamps box size and center inside the internal span
-  ---
-  duration_ms: 0.779475
-  type: 'test'
-  ...
-# Subtest: render interior sketch layout geometry keeps free-box vertical slack and normalized inner geometry
-ok 6 - render interior sketch layout geometry keeps free-box vertical slack and normalized inner geometry
-  ---
-  duration_ms: 0.270991
-  type: 'test'
-  ...
-# Subtest: render interior sketch layout dividers sort explicit dividers and still honor legacy centered fallbacks
-ok 7 - render interior sketch layout dividers sort explicit dividers and still honor legacy centered fallbacks
-  ---
-  duration_ms: 0.689866
-  type: 'test'
-  ...
-# Subtest: render interior sketch layout resolves content segments from divider-separated spans
-ok 8 - render interior sketch layout resolves content segments from divider-separated spans
-  ---
-  duration_ms: 0.565269
-  type: 'test'
-  ...
-# Subtest: render interior sketch visuals resolve mirror state ahead of curtain and keep mirror layouts
-ok 9 - render interior sketch visuals resolve mirror state ahead of curtain and keep mirror layouts
-  ---
-  duration_ms: 1.562968
-  type: 'test'
-  ...
-# Subtest: render interior sketch visuals fall back to glass + curtain from part colors when no mirror override exists
-ok 10 - render interior sketch visuals fall back to glass + curtain from part colors when no mirror override exists
-  ---
-  duration_ms: 0.146306
-  type: 'test'
-  ...
-# Subtest: render interior sketch visuals expose callable factories only for function inputs
-ok 11 - render interior sketch visuals expose callable factories only for function inputs
-  ---
-  duration_ms: 0.111039
-  type: 'test'
-  ...
-# Subtest: sketch front visual state reuses canonical full-door mirror/glass maps for split door segments
-ok 12 - sketch front visual state reuses canonical full-door mirror/glass maps for split door segments
-  ---
-  duration_ms: 1.649128
-  type: 'test'
-  ...
-1..12
-# tests 12
-# suites 0
-# pass 12
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 1228.322356
+✔ render sketch box fronts reuses one mirror material across mirrored external drawers (4.1179ms)
+✔ renderSketchFreeBoxDimensions keeps height on the right and depth on the left (1.0173ms)
+✔ renderSketchFreeBoxDimensionOverlays groups adjacent entries and renders merged width plus segment widths (1.4159ms)
+✔ renderSketchFreeBoxDimensionOverlays keeps a hairline placement gap from inflating the merged total width label (0.2768ms)
+✔ render interior sketch layout geometry clamps box size and center inside the internal span (1.951ms)
+✔ render interior sketch layout geometry keeps free-box vertical slack and normalized inner geometry (0.6439ms)
+✔ render interior sketch layout dividers sort explicit dividers and still honor legacy centered fallbacks (1.4319ms)
+✔ render interior sketch layout resolves content segments from divider-separated spans (1.0974ms)
+✔ render interior sketch visuals resolve mirror state ahead of curtain and keep mirror layouts (2.9665ms)
+✔ render interior sketch visuals fall back to glass + curtain from part colors when no mirror override exists (0.3192ms)
+✔ render interior sketch visuals expose callable factories only for function inputs (0.2368ms)
+✔ sketch front visual state reuses canonical full-door mirror/glass maps for split door segments (3.4921ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 609.3978
 
 ```
 
@@ -1509,156 +726,99 @@ ok 12 - sketch front visual state reuses canonical full-door mirror/glass maps f
 - command: `node tools/wp_serial_tests.mjs --batch-size 3 --heartbeat-ms 10000 --timeout-ms 120000 --failed-files-path .artifacts/cloud-sync-surfaces.lifecycle.failed.txt --timings-path .artifacts/cloud-sync-surfaces.lifecycle.timings.json tests/cloud_sync_panel_actions_runtime.test.js tests/cloud_sync_action_feedback_runtime.test.ts tests/cloud_sync_access_runtime.test.ts tests/cloud_sync_install_support_runtime.test.ts tests/cloud_sync_lifecycle_install_cleanup_runtime.test.js tests/cloud_sync_actions_runtime.test.ts tests/cloud_sync_async_singleflight_owner_runtime.test.ts tests/cloud_sync_config_runtime.test.ts tests/cloud_sync_delete_temp_runtime.test.ts tests/cloud_sync_lifecycle_attention_runtime.test.ts tests/cloud_sync_lifecycle_realtime_runtime.test.ts tests/cloud_sync_lifecycle_start_idempotent_runtime.test.ts tests/cloud_sync_lifecycle_realtime_support_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `9042ms`
+- duration: `4967ms`
 
 #### stderr
 
 ```text
 [serial-tests batch 1/5] 3 files (tests/cloud_sync_panel_actions_runtime.test.js … tests/cloud_sync_access_runtime.test.ts)
-[serial-tests batch 1/5] ok (1.0s)
+[serial-tests batch 1/5] ok (659ms)
 [serial-tests batch 2/5] 3 files (tests/cloud_sync_install_support_runtime.test.ts … tests/cloud_sync_actions_runtime.test.ts)
-[serial-tests batch 2/5] ok (3.7s)
+[serial-tests batch 2/5] ok (1.8s)
 [serial-tests batch 3/5] 3 files (tests/cloud_sync_async_singleflight_owner_runtime.test.ts … tests/cloud_sync_delete_temp_runtime.test.ts)
-[serial-tests batch 3/5] ok (1.0s)
+[serial-tests batch 3/5] ok (589ms)
 [serial-tests batch 4/5] 3 files (tests/cloud_sync_lifecycle_attention_runtime.test.ts … tests/cloud_sync_lifecycle_start_idempotent_runtime.test.ts)
-[serial-tests batch 4/5] ok (2.5s)
+[serial-tests batch 4/5] ok (1.4s)
 [serial-tests batch 5/5] 1 file (tests/cloud_sync_lifecycle_realtime_support_runtime.test.ts)
-[serial-tests batch 5/5] ok (668ms)
-[serial-tests] completed 13 files in 9.0s across 5 batches
+[serial-tests batch 5/5] ok (467ms)
+[serial-tests] completed 13 files in 4.9s across 5 batches
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: cloud sync access reads canonical services panelApi and ignores legacy root alias
-ok 1 - cloud sync access reads canonical services panelApi and ignores legacy root alias
-  ---
-  duration_ms: 1.31503
-  type: 'test'
-  ...
-# Subtest: cloud sync access ensures canonical service state on services root
-ok 2 - cloud sync access ensures canonical service state on services root
-  ---
-  duration_ms: 0.208647
-  type: 'test'
-  ...
-# Subtest: cloud sync access exposes test hooks through canonical service state only
-ok 3 - cloud sync access exposes test hooks through canonical service state only
-  ---
-  duration_ms: 0.146498
-  type: 'test'
-  ...
-# Subtest: cloud sync feedback reporters emit canonical toasts and preserve silent success semantics where required
-ok 4 - cloud sync feedback reporters emit canonical toasts and preserve silent success semantics where required
-  ---
-  duration_ms: 26.000514
-  type: 'test'
-  ...
-# Subtest: cloud sync feedback prefers preserved error messages when available
-ok 5 - cloud sync feedback prefers preserved error messages when available
-  ---
-  duration_ms: 0.293589
-  type: 'test'
-  ...
-# Subtest: cloud sync panel actions derive stable snapshot state and route handlers through the canonical ui controller
-ok 6 - cloud sync panel actions derive stable snapshot state and route handlers through the canonical ui controller
-  ---
-  duration_ms: 74.623874
-  type: 'test'
-  ...
-# Subtest: cloud sync panel actions fall back to derived status when panel snapshot api is unavailable
-ok 7 - cloud sync panel actions fall back to derived status when panel snapshot api is unavailable
-  ---
-  duration_ms: 20.716064
-  type: 'test'
-  ...
-1..7
-# tests 7
-# suites 0
-# pass 7
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 935.727127
-TAP version 13
-# Subtest: cloud sync actions return canonical room/share, site2 tabs gate, sketch sync, cleanup, and floating pin results with feedback mapping
-ok 1 - cloud sync actions return canonical room/share, site2 tabs gate, sketch sync, cleanup, and floating pin results with feedback mapping
-  ---
-  duration_ms: 2.236223
-  type: 'test'
-  ...
-# Subtest: cloud sync actions keep local site2 handling and report missing cloud mutation services explicitly
-ok 2 - cloud sync actions keep local site2 handling and report missing cloud mutation services explicitly
-  ---
-  duration_ms: 1.338874
-  type: 'test'
-  ...
-# Subtest: cloud sync install support preserves backward compatibility for untagged published dispose refs
-ok 3 - cloud sync install support preserves backward compatibility for untagged published dispose refs
-  ---
-  duration_ms: 0.852029
-  type: 'test'
-  ...
-# Subtest: cloud sync install support stamps dispose epoch and reattaches it when cleanup preserves dispose
-ok 4 - cloud sync install support stamps dispose epoch and reattaches it when cleanup preserves dispose
-  ---
-  duration_ms: 1.061837
-  type: 'test'
-  ...
-# Subtest: cloud sync install support does fallback cleanup when the published dispose ref belongs to a stale epoch
-ok 5 - cloud sync install support does fallback cleanup when the published dispose ref belongs to a stale epoch
-  ---
-  duration_ms: 0.333467
-  type: 'test'
-  ...
-# Subtest: cloud sync install support clears only canonical published slots and preserves unrelated state
-ok 6 - cloud sync install support clears only canonical published slots and preserves unrelated state
-  ---
-  duration_ms: 0.747342
-  type: 'test'
-  ...
-# Subtest: cloud sync install support preserves canonical test hooks by default while clearing published slots
-ok 7 - cloud sync install support preserves canonical test hooks by default while clearing published slots
-  ---
-  duration_ms: 0.311319
-  type: 'test'
-  ...
-# Subtest: cloud sync install support drops test hooks when cleanup opts out of hook preservation
-ok 8 - cloud sync install support drops test hooks when cleanup opts out of hook preservation
-  ---
-  duration_ms: 0.218694
-  type: 'test'
-  ...
-# Subtest: cloud_sync lifecycle: double install/uninstall stays idempotent and cleans listeners/wrappers
-ok 9 - cloud_sync lifecycle: double install/uninstall stays idempotent and cleans listeners/wrappers
-  ---
-  duration_ms: 14.161077
-  type: 'test'
-  ...
-# Subtest: cloud_sync lifecycle: no timer/listener leaks after dispose
-ok 10 - cloud_sync lifecycle: no timer/listener leaks after dispose
-  ---
-  duration_ms: 1.920968
-  type: 'test'
-  ...
-# Subtest: cloud_sync lifecycle: installing a second app does not dispose the first app lifecycle
-ok 11 - cloud_sync lifecycle: installing a second app does not dispose the first app lifecycle
-  ---
-  duration_ms: 3.071942
-  type: 'test'
-  ...
-# Subtest: cloud_sync lifecycle: realtime reconnect/dispose race is ignored after dispose
-ok 12 - cloud_sync lifecycle: realtime reconnect/dispose race is ignored after dispose
-  ---
-  duration_ms: 2.375305
-  type: 'test'
-  ...
-# Subtest
+✔ cloud sync access reads canonical services panelApi and ignores legacy root alias (1.087ms)
+✔ cloud sync access ensures canonical service state on services root (0.3567ms)
+✔ cloud sync access exposes test hooks through canonical service state only (0.2049ms)
+✔ cloud sync feedback reporters emit canonical toasts and preserve silent success semantics where required (2.3285ms)
+✔ cloud sync feedback prefers preserved error messages when available (0.2299ms)
+✔ cloud sync panel actions derive stable snapshot state and route handlers through the canonical ui controller (64.2111ms)
+✔ cloud sync panel actions fall back to derived status when panel snapshot api is unavailable (17.0821ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 608.8673
+✔ cloud sync actions return canonical room/share, site2 tabs gate, sketch sync, cleanup, and floating pin results with feedback mapping (1.9422ms)
+✔ cloud sync actions keep local site2 handling and report missing cloud mutation services explicitly (1.2325ms)
+✔ cloud sync install support preserves backward compatibility for untagged published dispose refs (0.7875ms)
+✔ cloud sync install support stamps dispose epoch and reattaches it when cleanup preserves dispose (1.0371ms)
+✔ cloud sync install support does fallback cleanup when the published dispose ref belongs to a stale epoch (0.3287ms)
+✔ cloud sync install support clears only canonical published slots and preserves unrelated state (0.7739ms)
+✔ cloud sync install support preserves canonical test hooks by default while clearing published slots (0.2065ms)
+✔ cloud sync install support drops test hooks when cleanup opts out of hook preservation (0.1706ms)
+✔ cloud_sync lifecycle: double install/uninstall stays idempotent and cleans listeners/wrappers (12.6794ms)
+✔ cloud_sync lifecycle: no timer/listener leaks after dispose (1.5142ms)
+✔ cloud_sync lifecycle: installing a second app does not dispose the first app lifecycle (2.0378ms)
+✔ cloud_sync lifecycle: realtime reconnect/dispose race is ignored after dispose (2.078ms)
+✔ cloud_sync lifecycle: dispose clears published public state but preserves test hooks (1.0391ms)
+✔ cloud_sync lifecycle: invalidated publication epoch blocks stale polling and listener-driven pulls even before cleanup finishes (1.1863ms)
+✔ cloud_sync lifecycle: stale held dispose refs do not clear newer public state (2.3584ms)
+✔ cloud_sync lifecycle: stale install stops initial pull fanout and never starts a new lifecycle after reinstall wins mid-bootstrap (1.5673ms)
+✔ cloud_sync lifecycle: failed reinstall clears stale public state when config disappears (0.7747ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1738.8874
+✔ owned cloud-sync family flight registers immediately for synchronous re-entry reuse (1.4316ms)
+✔ owned cloud-sync family flight returns busy for synchronous conflicting re-entry (1.1523ms)
+✔ runCloudSyncOwnedAsyncFamilySingleFlight returns the active promise for conflicting keys without rerunning work (0.2883ms)
+✔ readCfg normalizes deps config and clamps site2 sketch max age (1.7158ms)
+✔ cloud sync config browser helpers keep URL params and site2 detection canonical (0.8209ms)
+✔ cloud sync config shared helpers keep rest URL and headers canonical (0.1603ms)
+✔ cloud sync delete temp removes unlocked colors, sanitizes payload, updates local state, and sends realtime hint (3.2601ms)
+✔ cloud sync delete temp does not stamp pull activity when the preflight row read fails (0.4315ms)
+✔ cloud sync delete temp preserves thrown message, reports nonfatal, and resets push flag on errors (0.3977ms)
+✔ cloud sync delete temp reuses duplicate same-kind writes and reports busy for conflicting main-write work (0.6254ms)
+✔ cloud sync delete-temp tracks preflight pull activity and settled push activity canonically (0.6726ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 541.3528
+✔ cloud sync attention pulls still fire on focus when eligible (2.494ms)
+✔ cloud sync attention pulls stay quiet right after a recent remote pull and resume after cooldown (0.3732ms)
+✔ cloud sync attention pulls stay quiet while offline or hidden and catch up on visible return (0.44ms)
+✔ cloud sync attention online pull does not stay blocked by subscribed status without a live channel (0.2845ms)
+✔ cloud sync attention online handler reports pull failures without breaking later attention events (0.6413ms)
+✔ cloud sync diagnostics storage listener republishes status only when the diagnostics flag actually changes (0.4441ms)
+✔ cloud sync attention pulls stay inert after the lifecycle guard flips stale before cleanup (0.3411ms)
+✔ cloud sync diagnostics storage listener stays inert after the lifecycle guard flips stale (0.3118ms)
+✔ cloud sync realtime lifecycle cleans refs and preserves real error message on subscribe failure (3.4729ms)
+
 ...
-[trimmed 12432 chars]
+[trimmed 2488 chars]
 ```
 
 ### ✅ Cloud sync main-row batch (direct)
@@ -1668,139 +828,87 @@ ok 12 - cloud_sync lifecycle: realtime reconnect/dispose race is ignored after d
 - command: `node tools/wp_serial_tests.mjs --batch-size 3 --heartbeat-ms 10000 --timeout-ms 120000 --failed-files-path .artifacts/cloud-sync-surfaces.main-row.failed.txt --timings-path .artifacts/cloud-sync-surfaces.main-row.timings.json tests/cloud_sync_main_row_payload_dedupe_runtime.test.ts tests/cloud_sync_main_row_runtime.test.ts tests/cloud_sync_main_write_singleflight_runtime.test.ts tests/cloud_sync_mutation_commands_runtime.test.ts tests/cloud_sync_mutation_commands_singleflight_runtime.test.ts tests/cloud_sync_owner_context_runtime.test.ts tests/cloud_sync_status_install_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `4592ms`
+- duration: `2258ms`
 
 #### stderr
 
 ```text
 [serial-tests batch 1/3] 3 files (tests/cloud_sync_main_row_payload_dedupe_runtime.test.ts … tests/cloud_sync_main_write_singleflight_runtime.test.ts)
-[serial-tests batch 1/3] ok (882ms)
+[serial-tests batch 1/3] ok (494ms)
 [serial-tests batch 2/3] 3 files (tests/cloud_sync_mutation_commands_runtime.test.ts … tests/cloud_sync_owner_context_runtime.test.ts)
-[serial-tests batch 2/3] ok (2.9s)
+[serial-tests batch 2/3] ok (1.2s)
 [serial-tests batch 3/3] 1 file (tests/cloud_sync_status_install_runtime.test.ts)
-[serial-tests batch 3/3] ok (742ms)
-[serial-tests] completed 7 files in 4.5s across 3 batches
+[serial-tests batch 3/3] ok (478ms)
+[serial-tests] completed 7 files in 2.2s across 3 batches
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: cloud sync main row skips remote apply churn when newer rows carry the same payload
-ok 1 - cloud sync main row skips remote apply churn when newer rows carry the same payload
-  ---
-  duration_ms: 2.205
-  type: 'test'
-  ...
-# Subtest: cloud sync main row still applies remote payloads when the effective collections actually change
-ok 2 - cloud sync main row still applies remote payloads when the effective collections actually change
-  ---
-  duration_ms: 1.115951
-  type: 'test'
-  ...
-# Subtest: cloud sync main row treats missing color-order payloads as a no-op when the effective applied state is unchanged
-ok 3 - cloud sync main row treats missing color-order payloads as a no-op when the effective applied state is unchanged
-  ---
-  duration_ms: 0.327265
-  type: 'test'
-  ...
-# Subtest: cloud sync main row seeds a missing row from local collections on the initial pull
-ok 4 - cloud sync main row seeds a missing row from local collections on the initial pull
-  ---
-  duration_ms: 3.117411
-  type: 'test'
-  ...
-# Subtest: cloud sync main row initial seed reuses returned representation when the upsert already returns the row
-ok 5 - cloud sync main row initial seed reuses returned representation when the upsert already returns the row
-  ---
-  duration_ms: 0.681468
-  type: 'test'
-  ...
-# Subtest: cloud sync main row push publishes changed collections once and skips identical repeats
-ok 6 - cloud sync main row push publishes changed collections once and skips identical repeats
-  ---
-  duration_ms: 1.463075
-  type: 'test'
-  ...
-# Subtest: cloud sync main row push reuses returned representation instead of forcing a follow-up row fetch
-ok 7 - cloud sync main row push reuses returned representation instead of forcing a follow-up row fetch
-  ---
-  duration_ms: 0.584702
-  type: 'test'
-  ...
-# Subtest: cloud sync main row reuses the same pending push promise for duplicate direct pushes
-ok 8 - cloud sync main row reuses the same pending push promise for duplicate direct pushes
-  ---
-  duration_ms: 0.781162
-  type: 'test'
-  ...
-# Subtest: cloud sync main row pull applies newer remote payloads into local storage
-ok 9 - cloud sync main row pull applies newer remote payloads into local storage
-  ---
-  duration_ms: 0.894353
-  type: 'test'
-  ...
-# Subtest: cloud sync main row coalesces repeated pending pull timers and cancels stale delayed pull on direct pull
-ok 10 - cloud sync main row coalesces repeated pending pull timers and cancels stale delayed pull on direct pull
-  ---
-  duration_ms: 0.7436
-  type: 'test'
-  ...
-# Subtest: cloud sync main row coalesces repeated pending push timers and cancels stale delayed push on direct push
-ok 11 - cloud sync main row coalesces repeated pending push timers and cancels stale delayed push on direct push
-  ---
-  duration_ms: 0.472935
-  type: 'test'
-  ...
-# Subtest: cloud sync main row push applies settled remote payload locally without forcing a follow-up pull
-ok 12 - cloud sync main row push applies settled remote payload locally without forcing a follow-up pull
-  ---
-  duration_ms: 0.792817
-  type: 'test'
-  ...
-# Subtest: cloud sync main row collapses pull retries during a push into one post-push follow-up pull
-ok 13 - cloud sync main row collapses pull retries during a push into one post-push follow-up pull
-  ---
-  duration_ms: 1.141211
-  type: 'test'
-  ...
-# Subtest: cloud sync main row keeps the earliest queued post-push pull delay across mixed blocked requests
-ok 14 - cloud sync main row keeps the earliest queued post-push pull delay across mixed blocked requests
-  ---
-  duration_ms: 1.520064
-  type: 'test'
-  ...
-# Subtest: cloud sync main row notifies push-settled listeners only after the push flight has cleared
-ok 15 - cloud sync main row notifies push-settled listeners only after the push flight has cleared
-  ---
-  duration_ms: 1.107376
-  type: 'test'
-  ...
-# Subtest: cloud sync main row keeps the earliest queued post-pull delay across mixed blocked requests
-ok 16 - cloud sync main row keeps the earliest queued post-pull delay across mixed blocked requests
-  ---
-  duration_ms: 0.898764
-  type: 'test'
-  ...
-# Subtest: cloud sync main row shares app-scoped push ownership across main-row instances for the same App
-ok 17 - cloud sync main row shares app-scoped push ownership across main-row instances for the same App
-  ---
-  duration_ms: 0.652505
-  type: 'test'
-  ...
-# Subtest: cloud sync main row rearms a delayed pull when a newer immediate request needs an earlier run
-ok 18 - cloud sync main row rearms a delayed pull when a newer immediate request needs an earlier run
-  ---
-  duration_ms: 0.303694
-  type: 'test'
-  ...
-# Subtest: cloud sync main row collapses pull requests that arrive while a pull is already in flight into one post-flight follow-up
-ok 19 - cloud sync main row collapses pull requests that arrive while a pull is already in flight into one post-flight follow-up
-  ---
-  dura
+✔ cloud sync main row skips remote apply churn when newer rows carry the same payload (2.3448ms)
+✔ cloud sync main row still applies remote payloads when the effective collections actually change (1.2022ms)
+✔ cloud sync main row treats missing color-order payloads as a no-op when the effective applied state is unchanged (0.2763ms)
+✔ cloud sync main row seeds a missing row from local collections on the initial pull (2.9959ms)
+✔ cloud sync main row initial seed reuses returned representation when the upsert already returns the row (0.5821ms)
+✔ cloud sync main row push publishes changed collections once and skips identical repeats (2.0812ms)
+✔ cloud sync main row push reuses returned representation instead of forcing a follow-up row fetch (0.7763ms)
+✔ cloud sync main row reuses the same pending push promise for duplicate direct pushes (1.0085ms)
+✔ cloud sync main row pull applies newer remote payloads into local storage (0.803ms)
+✔ cloud sync main row coalesces repeated pending pull timers and cancels stale delayed pull on direct pull (0.6348ms)
+✔ cloud sync main row coalesces repeated pending push timers and cancels stale delayed push on direct push (0.3955ms)
+✔ cloud sync main row push applies settled remote payload locally without forcing a follow-up pull (0.6089ms)
+✔ cloud sync main row collapses pull retries during a push into one post-push follow-up pull (0.7954ms)
+✔ cloud sync main row keeps the earliest queued post-push pull delay across mixed blocked requests (0.6077ms)
+✔ cloud sync main row notifies push-settled listeners only after the push flight has cleared (0.5432ms)
+✔ cloud sync main row keeps the earliest queued post-pull delay across mixed blocked requests (0.4296ms)
+✔ cloud sync main row shares app-scoped push ownership across main-row instances for the same App (0.4568ms)
+✔ cloud sync main row rearms a delayed pull when a newer immediate request needs an earlier run (0.1874ms)
+✔ cloud sync main row collapses pull requests that arrive while a pull is already in flight into one post-flight follow-up (1.4237ms)
+✔ cloud sync main row preserves one follow-up push request raised while a push is already in flight (0.6651ms)
+✔ cloud sync main row parks recovery pulls behind a debounced pending push so local changes flush first (0.7701ms)
+✔ cloud sync main row preserves canonical main pull reasons when pull-all and realtime requests coalesce (0.3612ms)
+✔ cloud sync main row keeps canonical main pull reasons across a push-blocked follow-up pull (0.7248ms)
+✔ cloud sync main-write single-flight reuses duplicate same-key work and blocks conflicting keys (0.9811ms)
+✔ cloud sync main-write single-flight shares app-scoped ownership across instances for the same owner (0.3448ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 443.2446
+✔ cloud sync mutation commands await confirm-backed cleanup flows and preserve canonical results (2.38ms)
+✔ cloud sync mutation cleanup commands return cancelled when confirm is declined (0.3757ms)
+✔ cloud sync mutation cleanup commands preserve confirm failures instead of flattening them to cancel (0.3582ms)
+✔ cloud sync delete-temp commands reuse one pending models cleanup flow per app (2.1918ms)
+✔ cloud sync delete-temp commands block conflicting cleanup family actions while one is pending (0.4154ms)
+✔ cloud sync owner context composes room helpers and per-tab client identity through dedicated seams (4.702ms)
+✔ cloud sync owner context uses the public room for gate rows when no room URL is selected (0.5494ms)
+✔ cloud sync owner context starts disabled realtime with an empty channel surface (0.3701ms)
+✔ cloud sync runtime snapshot key canonicalizes drifted runtime branches before publish gating (0.1549ms)
+✔ cloud sync owner context memoizes runtime status publishes and keeps the canonical status surface live (0.593ms)
+✔ cloud sync owner context keeps held status refs alive across owner reinstall (0.661ms)
+✔ cloud sync owner context ignores stale status publishes after a newer owner takes over (0.5974ms)
+✔ cloud sync owner context ignores late status publishes after publication teardown (0.8054ms)
+✔ cloud sync owner context ignores stale publication cleanup after a newer owner takes over (0.5152ms)
+✔ cloud sync owner context tombstones held status refs after published-state cleanup (0.4872ms)
+✔ cloud sync owner context self-heals leaked enumerable status markers even when the runtime snapshot is unchanged (0.372ms)
+✔ cloud sync owner context self-heals drifted canonical status surfaces even when runtime snapshot is unchanged (0.3106ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1154.4583
+✔ cloud sync status install keeps canonical root and nested branches stable across refreshes (1.1312ms)
+✔ cloud sync status install tombstones held status refs during surface deactivation (0.2044ms)
+✔ cloud sync status freshnes
 ...
-[trimmed 7923 chars]
+[trimmed 506 chars]
 ```
 
 ### ✅ Cloud sync panel-install batch (direct)
@@ -1810,94 +918,37 @@ ok 19 - cloud sync main row collapses pull requests that arrive while a pull is 
 - command: `node tools/wp_run_tsx_tests.mjs tests/cloud_sync_panel_api_install_healing_runtime.test.ts tests/cloud_sync_panel_api_surface_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `2432ms`
+- duration: `1287ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/cloud_sync_panel_api_install_healing_runtime.test.ts" "tests/cloud_sync_panel_api_surface_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/cloud_sync_panel_api_install_healing_runtime.test.ts" "tests/cloud_sync_panel_api_surface_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: cloud sync panel api install healing keeps canonical public surface stable and rebinds live subscriptions on reinstall
-ok 1 - cloud sync panel api install healing keeps canonical public surface stable and rebinds live subscriptions on reinstall
-  ---
-  duration_ms: 5.763501
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api install heals legacy installed markers that only preserved stale public callables
-ok 2 - cloud sync panel api install heals legacy installed markers that only preserved stale public callables
-  ---
-  duration_ms: 0.333174
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api install ignores stale publication epochs
-ok 3 - cloud sync panel api install ignores stale publication epochs
-  ---
-  duration_ms: 0.401107
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api direct cleanup invalidation blocks stale panel republish from the old epoch
-ok 4 - cloud sync panel api direct cleanup invalidation blocks stale panel republish from the old epoch
-  ---
-  duration_ms: 0.680277
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api deactivation tombstones held refs and detaches live subscriptions during published-state cleanup
-ok 5 - cloud sync panel api deactivation tombstones held refs and detaches live subscriptions during published-state cleanup
-  ---
-  duration_ms: 0.587786
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api public surface clones runtime status and snapshot reads and isolates bridged listener mutation
-ok 6 - cloud sync panel api public surface clones runtime status and snapshot reads and isolates bridged listener mutation
-  ---
-  duration_ms: 1.002476
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api mutation refs fall back to typed not-installed results when the impl does not expose mutation methods
-ok 7 - cloud sync panel api mutation refs fall back to typed not-installed results when the impl does not expose mutation methods
-  ---
-  duration_ms: 0.502336
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api exposes stable room/share/tabs-gate runtime surface and publishes panel snapshots
-ok 8 - cloud sync panel api exposes stable room/share/tabs-gate runtime surface and publishes panel snapshots
-  ---
-  duration_ms: 5.011935
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api runtime status clone strips drifted realtime/polling extras
-ok 9 - cloud sync panel api runtime status clone strips drifted realtime/polling extras
-  ---
-  duration_ms: 0.487495
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api runtime-status getter republishes only when diagnostics state actually changes
-ok 10 - cloud sync panel api runtime-status getter republishes only when diagnostics state actually changes
-  ---
-  duration_ms: 0.282291
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api diagnostics setter stays no-op when the stored diagnostics value is unchanged
-ok 11 - cloud sync panel api diagnostics setter stays no-op when the stored diagnostics value is unchanged
-  ---
-  duration_ms: 0.430763
-  type: 'test'
-  ...
-1..11
-# tests 11
-# suites 0
-# pass 11
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 2284.821942
+✔ cloud sync panel api install healing keeps canonical public surface stable and rebinds live subscriptions on reinstall (8.0707ms)
+✔ cloud sync panel api install heals legacy installed markers that only preserved stale public callables (0.4551ms)
+✔ cloud sync panel api install ignores stale publication epochs (0.6124ms)
+✔ cloud sync panel api direct cleanup invalidation blocks stale panel republish from the old epoch (1.0524ms)
+✔ cloud sync panel api deactivation tombstones held refs and detaches live subscriptions during published-state cleanup (0.8702ms)
+✔ cloud sync panel api public surface clones runtime status and snapshot reads and isolates bridged listener mutation (0.684ms)
+✔ cloud sync panel api mutation refs fall back to typed not-installed results when the impl does not expose mutation methods (0.4538ms)
+✔ cloud sync panel api exposes stable room/share/tabs-gate runtime surface and publishes panel snapshots (5.283ms)
+✔ cloud sync panel api runtime status clone strips drifted realtime/polling extras (0.4436ms)
+✔ cloud sync panel api runtime-status getter republishes only when diagnostics state actually changes (0.3286ms)
+✔ cloud sync panel api diagnostics setter stays no-op when the stored diagnostics value is unchanged (0.4766ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1163.3099
 
 ```
 
@@ -1908,46 +959,29 @@ ok 11 - cloud sync panel api diagnostics setter stays no-op when the stored diag
 - command: `node tools/wp_run_tsx_tests.mjs tests/cloud_sync_panel_api_controller_fallback_runtime.test.ts tests/cloud_sync_panel_api_failures_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `2143ms`
+- duration: `1206ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/cloud_sync_panel_api_controller_fallback_runtime.test.ts" "tests/cloud_sync_panel_api_failures_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/cloud_sync_panel_api_controller_fallback_runtime.test.ts" "tests/cloud_sync_panel_api_failures_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: cloud sync panel api republishes panel snapshot even when floating pin command throws
-ok 1 - cloud sync panel api republishes panel snapshot even when floating pin command throws
-  ---
-  duration_ms: 3.40533
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api republishes tabs-gate snapshot with local optimistic state when command throws
-ok 2 - cloud sync panel api republishes tabs-gate snapshot with local optimistic state when command throws
-  ---
-  duration_ms: 1.235433
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api preserves thrown messages for controller-facing commands
-ok 3 - cloud sync panel api preserves thrown messages for controller-facing commands
-  ---
-  duration_ms: 4.766947
-  type: 'test'
-  ...
-1..3
-# tests 3
-# suites 0
-# pass 3
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 2020.659094
+✔ cloud sync panel api republishes panel snapshot even when floating pin command throws (3.4481ms)
+✔ cloud sync panel api republishes tabs-gate snapshot with local optimistic state when command throws (1.0724ms)
+✔ cloud sync panel api preserves thrown messages for controller-facing commands (6.0232ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1098.1499
 
 ```
 
@@ -1958,58 +992,31 @@ ok 3 - cloud sync panel api preserves thrown messages for controller-facing comm
 - command: `node tools/wp_run_tsx_tests.mjs tests/cloud_sync_panel_api_singleflight_runtime.test.ts tests/cloud_sync_panel_api_subscriptions_runtime.test.ts tests/cloud_sync_panel_api_support_singleflight_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `2450ms`
+- duration: `1274ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/cloud_sync_panel_api_singleflight_runtime.test.ts" "tests/cloud_sync_panel_api_subscriptions_runtime.test.ts" "tests/cloud_sync_panel_api_support_singleflight_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/cloud_sync_panel_api_singleflight_runtime.test.ts" "tests/cloud_sync_panel_api_subscriptions_runtime.test.ts" "tests/cloud_sync_panel_api_support_singleflight_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: cloud sync panel api single-flights duplicate inflight async commands and returns busy for conflicting family targets
-ok 1 - cloud sync panel api single-flights duplicate inflight async commands and returns busy for conflicting family targets
-  ---
-  duration_ms: 4.561133
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api shares app-scoped single-flight ownership across api instances for the same App
-ok 2 - cloud sync panel api shares app-scoped single-flight ownership across api instances for the same App
-  ---
-  duration_ms: 1.302954
-  type: 'test'
-  ...
-# Subtest: cloud sync panel api fans out panel and tabs-gate source subscriptions once and clones snapshots per listener
-ok 3 - cloud sync panel api fans out panel and tabs-gate source subscriptions once and clones snapshots per listener
-  ---
-  duration_ms: 3.587931
-  type: 'test'
-  ...
-# Subtest: cloud sync async single-flight runner blocks re-entrant duplicate starts before registration settles
-ok 4 - cloud sync async single-flight runner blocks re-entrant duplicate starts before registration settles
-  ---
-  duration_ms: 0.670396
-  type: 'test'
-  ...
-# Subtest: cloud sync async family runner blocks re-entrant conflicting targets before the first run settles
-ok 5 - cloud sync async family runner blocks re-entrant conflicting targets before the first run settles
-  ---
-  duration_ms: 0.81406
-  type: 'test'
-  ...
-1..5
-# tests 5
-# suites 0
-# pass 5
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 2330.970221
+✔ cloud sync panel api single-flights duplicate inflight async commands and returns busy for conflicting family targets (4.8369ms)
+✔ cloud sync panel api shares app-scoped single-flight ownership across api instances for the same App (1.1897ms)
+✔ cloud sync panel api fans out panel and tabs-gate source subscriptions once and clones snapshots per listener (3.5623ms)
+✔ cloud sync async single-flight runner blocks re-entrant duplicate starts before registration settles (0.7651ms)
+✔ cloud sync async family runner blocks re-entrant conflicting targets before the first run settles (1.136ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1157.9234
 
 ```
 
@@ -2020,64 +1027,32 @@ ok 5 - cloud sync async family runner blocks re-entrant conflicting targets befo
 - command: `node tools/wp_run_tsx_tests.mjs tests/cloud_sync_panel_snapshot_controller_runtime.test.ts tests/cloud_sync_panel_snapshot_dedupe_runtime.test.ts tests/cloud_sync_panel_snapshot_fallback_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `3427ms`
+- duration: `1372ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/cloud_sync_panel_snapshot_controller_runtime.test.ts" "tests/cloud_sync_panel_snapshot_dedupe_runtime.test.ts" "tests/cloud_sync_panel_snapshot_fallback_runtime.test.ts"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/cloud_sync_panel_snapshot_controller_runtime.test.ts" "tests/cloud_sync_panel_snapshot_dedupe_runtime.test.ts" "tests/cloud_sync_panel_snapshot_fallback_runtime.test.ts"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: cloud sync panel snapshot controller isolates panel listener failures and reports source-dispose errors
-ok 1 - cloud sync panel snapshot controller isolates panel listener failures and reports source-dispose errors
-  ---
-  duration_ms: 2.65394
-  type: 'test'
-  ...
-# Subtest: cloud sync panel snapshot controller isolates tabs-gate listener failures and reports source-dispose errors
-ok 2 - cloud sync panel snapshot controller isolates tabs-gate listener failures and reports source-dispose errors
-  ---
-  duration_ms: 0.681366
-  type: 'test'
-  ...
-# Subtest: cloud sync panel snapshot controller suppresses duplicate panel publishes from source and command paths
-ok 3 - cloud sync panel snapshot controller suppresses duplicate panel publishes from source and command paths
-  ---
-  duration_ms: 2.049573
-  type: 'test'
-  ...
-# Subtest: cloud sync panel snapshot controller suppresses duplicate tabs-gate publishes and avoids fallback timer churn for unchanged snapshots
-ok 4 - cloud sync panel snapshot controller suppresses duplicate tabs-gate publishes and avoids fallback timer churn for unchanged snapshots
-  ---
-  duration_ms: 0.770106
-  type: 'test'
-  ...
-# Subtest: cloud sync panel snapshot controller does not create fallback timer until a tabs-gate subscriber exists
-ok 5 - cloud sync panel snapshot controller does not create fallback timer until a tabs-gate subscriber exists
-  ---
-  duration_ms: 0.286964
-  type: 'test'
-  ...
-# Subtest: cloud sync panel snapshot controller falls back to timer-driven tabs-gate minute updates when no source subscription exists
-ok 6 - cloud sync panel snapshot controller falls back to timer-driven tabs-gate minute updates when no source subscription exists
-  ---
-  duration_ms: 2.407303
-  type: 'test'
-  ...
-1..6
-# tests 6
-# suites 0
-# pass 6
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 3294.743271
+✔ cloud sync panel snapshot controller isolates panel listener failures and reports source-dispose errors (4.1734ms)
+✔ cloud sync panel snapshot controller isolates tabs-gate listener failures and reports source-dispose errors (1.0845ms)
+✔ cloud sync panel snapshot controller suppresses duplicate panel publishes from source and command paths (3.0841ms)
+✔ cloud sync panel snapshot controller suppresses duplicate tabs-gate publishes and avoids fallback timer churn for unchanged snapshots (0.7357ms)
+✔ cloud sync panel snapshot controller does not create fallback timer until a tabs-gate subscriber exists (0.3183ms)
+✔ cloud sync panel snapshot controller falls back to timer-driven tabs-gate minute updates when no source subscription exists (3.8519ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1263.6309
 
 ```
 
@@ -2088,137 +1063,89 @@ ok 6 - cloud sync panel snapshot controller falls back to timer-driven tabs-gate
 - command: `node tools/wp_serial_tests.mjs --batch-size 3 --heartbeat-ms 10000 --timeout-ms 120000 --failed-files-path .artifacts/cloud-sync-surfaces.sync-ops.failed.txt --timings-path .artifacts/cloud-sync-surfaces.sync-ops.timings.json tests/cloud_sync_pull_coalescer_runtime.test.ts tests/cloud_sync_realtime_support_runtime.test.ts tests/cloud_sync_remote_push_singleflight_runtime.test.ts tests/cloud_sync_rest_runtime.test.ts tests/cloud_sync_room_commands_runtime.test.ts tests/cloud_sync_site2_sketch_behavior_runtime.test.ts tests/cloud_sync_sketch_ops_runtime.test.ts tests/cloud_sync_sketch_pull_load_runtime.test.ts tests/cloud_sync_support_runtime.test.ts`
 - status: **passed**
 - exit code: `0`
-- duration: `4269ms`
+- duration: `2406ms`
 
 #### stderr
 
 ```text
 [serial-tests batch 1/3] 3 files (tests/cloud_sync_pull_coalescer_runtime.test.ts … tests/cloud_sync_remote_push_singleflight_runtime.test.ts)
-[serial-tests batch 1/3] ok (1.2s)
+[serial-tests batch 1/3] ok (576ms)
 [serial-tests batch 2/3] 3 files (tests/cloud_sync_rest_runtime.test.ts … tests/cloud_sync_site2_sketch_behavior_runtime.test.ts)
-[serial-tests batch 2/3] ok (1.9s)
+[serial-tests batch 2/3] ok (1.1s)
 [serial-tests batch 3/3] 3 files (tests/cloud_sync_sketch_ops_runtime.test.ts … tests/cloud_sync_support_runtime.test.ts)
-[serial-tests batch 3/3] ok (1.0s)
-[serial-tests] completed 9 files in 4.2s across 3 batches
+[serial-tests batch 3/3] ok (597ms)
+[serial-tests] completed 9 files in 2.3s across 3 batches
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: cloud sync pull coalescer collapses burst triggers into one run and supports cancel
-ok 1 - cloud sync pull coalescer collapses burst triggers into one run and supports cancel
-  ---
-  duration_ms: 2.466707
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer keeps diag reasons bounded and collapses duplicate reason labels
-ok 2 - cloud sync pull coalescer keeps diag reasons bounded and collapses duplicate reason labels
-  ---
-  duration_ms: 0.472513
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer normalizes blank scope labels for fallback reasons and diagnostics
-ok 3 - cloud sync pull coalescer normalizes blank scope labels for fallback reasons and diagnostics
-  ---
-  duration_ms: 0.349181
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer keeps an earlier pending timer instead of rearming on later burst triggers
-ok 4 - cloud sync pull coalescer keeps an earlier pending timer instead of rearming on later burst triggers
-  ---
-  duration_ms: 0.970222
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer rearms when a newer trigger asks for an earlier immediate run
-ok 5 - cloud sync pull coalescer rearms when a newer trigger asks for an earlier immediate run
-  ---
-  duration_ms: 0.302153
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer parks queued work during main-row push and resumes once the push settles
-ok 6 - cloud sync pull coalescer parks queued work during main-row push and resumes once the push settles
-  ---
-  duration_ms: 0.401535
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer keeps one fallback retry timer when main-row push is active but no push-settled hook exists
-ok 7 - cloud sync pull coalescer keeps one fallback retry timer when main-row push is active but no push-settled hook exists
-  ---
-  duration_ms: 0.473574
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer subscribes to push-settled only while blocked and can resubscribe after reuse
-ok 8 - cloud sync pull coalescer subscribes to push-settled only while blocked and can resubscribe after reuse
-  ---
-  duration_ms: 0.504168
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer cancel clears stale pending reasons and counts before the next burst
-ok 9 - cloud sync pull coalescer cancel clears stale pending reasons and counts before the next burst
-  ---
-  duration_ms: 0.503329
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer rearms directly to the debounced due time after main-row push settles
-ok 10 - cloud sync pull coalescer rearms directly to the debounced due time after main-row push settles
-  ---
-  duration_ms: 0.671224
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer keeps queued follow-up work on one canonical timer after an in-flight run settles
-ok 11 - cloud sync pull coalescer keeps queued follow-up work on one canonical timer after an in-flight run settles
-  ---
-  duration_ms: 0.602954
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer reports synchronous run failures and recovers for later work
-ok 12 - cloud sync pull coalescer reports synchronous run failures and recovers for later work
-  ---
-  duration_ms: 0.368736
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer drops queued work once the owner turns stale before the timer fires
-ok 13 - cloud sync pull coalescer drops queued work once the owner turns stale before the timer fires
-  ---
-  duration_ms: 0.199477
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer drops queued follow-up work when owner becomes stale during an in-flight run
-ok 14 - cloud sync pull coalescer drops queued follow-up work when owner becomes stale during an in-flight run
-  ---
-  duration_ms: 0.252703
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer drops queued follow-up work when suppression starts during an in-flight run
-ok 15 - cloud sync pull coalescer drops queued follow-up work when suppression starts during an in-flight run
-  ---
-  duration_ms: 0.224808
-  type: 'test'
-  ...
-# Subtest: cloud sync pull coalescer clears inFlight immediately on synchronous run throws so a same-tick retrigger is accepted
-ok 16 - cloud sync pull coalescer clears inFlight immediately on synchronous run throws so a same-tick retrigger is accepted
-  ---
-  duration_ms: 0.192954
-  type: 'test'
-  ...
-# Subtest: cloud sync realtime hint dedupes per scope/row/room and resumes after the dedupe window
-ok 17 - cloud sync realtime hint dedupes per scope/row/room and resumes after the dedupe window
-  ---
-  duration_ms: 2.088977
-  type: 'test'
-  ...
-# Subtest: cloud sync realtime connecting/failure/dispose markers share one canonical branch owner
-ok 18 - cloud sync realtime connecting/failure/dispose markers share one canonical branch owner
-  ---
-  duration_ms: 0.957216
-  type: 'test'
-  ...
-# Subtest: cloud sync realtime timeout marker clears stale channel and restarts polling on the canonical owner
-ok 19 - cloud sync realtime tim
+✔ cloud sync pull coalescer collapses burst triggers into one run and supports cancel (3.7302ms)
+✔ cloud sync pull coalescer keeps diag reasons bounded and collapses duplicate reason labels (0.5347ms)
+✔ cloud sync pull coalescer normalizes blank scope labels for fallback reasons and diagnostics (0.4334ms)
+✔ cloud sync pull coalescer keeps an earlier pending timer instead of rearming on later burst triggers (1.117ms)
+✔ cloud sync pull coalescer rearms when a newer trigger asks for an earlier immediate run (0.2907ms)
+✔ cloud sync pull coalescer parks queued work during main-row push and resumes once the push settles (0.3295ms)
+✔ cloud sync pull coalescer keeps one fallback retry timer when main-row push is active but no push-settled hook exists (0.3351ms)
+✔ cloud sync pull coalescer subscribes to push-settled only while blocked and can resubscribe after reuse (0.394ms)
+✔ cloud sync pull coalescer cancel clears stale pending reasons and counts before the next burst (0.3259ms)
+✔ cloud sync pull coalescer rearms directly to the debounced due time after main-row push settles (0.4341ms)
+✔ cloud sync pull coalescer keeps queued follow-up work on one canonical timer after an in-flight run settles (0.3825ms)
+✔ cloud sync pull coalescer reports synchronous run failures and recovers for later work (0.3979ms)
+✔ cloud sync pull coalescer drops queued work once the owner turns stale before the timer fires (0.1997ms)
+✔ cloud sync pull coalescer drops queued follow-up work when owner becomes stale during an in-flight run (0.3112ms)
+✔ cloud sync pull coalescer drops queued follow-up work when suppression starts during an in-flight run (0.2959ms)
+✔ cloud sync pull coalescer clears inFlight immediately on synchronous run throws so a same-tick retrigger is accepted (0.2901ms)
+✔ cloud sync realtime hint dedupes per scope/row/room and resumes after the dedupe window (1.5894ms)
+✔ cloud sync realtime connecting/failure/dispose markers share one canonical branch owner (0.7453ms)
+✔ cloud sync realtime timeout marker clears stale channel and restarts polling on the canonical owner (0.2868ms)
+✔ cloud sync realtime transition markers collapse polling + realtime status publication to one canonical publish (0.4376ms)
+✔ cloud sync realtime subscribed marker only issues a gap pull after a resubscribe (0.7192ms)
+✔ cloud sync realtime subscribed gap refresh respects the canonical recent-pull gate on resubscribe (0.3676ms)
+✔ cloud sync realtime beforeunload cleanup removes the current channel through the installed listener (0.2727ms)
+✔ cloud sync realtime disconnected marker resets subscribed state and restarts polling with the why label (0.2631ms)
+✔ cloud sync realtime disconnected marker can publish a preserved error in one canonical transition (0.2202ms)
+✔ cloud sync realtime disposed marker clears stale errors from the final disabled snapshot (0.2887ms)
+✔ cloud sync realtime hint does not send when realtime is explicitly disabled even if a subscribed channel string remains (0.1625ms)
+✔ cloud sync realtime hint does not send when the subscribed status no longer has a live channel (0.1404ms)
+✔ cloud sync realtime hint suppresses invalid/blank scopes and dedupes normalized scope/row values (0.2031ms)
+✔ cloud sync floating remote push single-flights duplicate targets and returns busy for conflicting targets (2.1745ms)
+✔ cloud sync tabs-gate remote push single-flights duplicate targets and returns busy for conflicting targets (0.6283ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 523.4786
+✔ cloud sync rest preserves control-row payload fields on getRow (2.0103ms)
+✔ cloud sync rest getRow accepts array responses and returns null for missing rows without object-only 406 semantics (0.3937ms)
+✔ cloud sync rest getRow returns null for empty array responses (0.8942ms)
+✔ cloud sync rest preserves tabs gate payload fields on upsert response (0.5115ms)
+✔ cloud sync rest sanitizes saved collections while preserving control rows and extra payload fields (1.2164ms)
+✔ cloud sync room commands derive status, private room targets, and share-link copy fallbacks canonically (1.9822ms)
+✔ cloud sync room mode preserves thrown error messages (0.2336ms)
+✔ cloud sync share-link copy preserves clipboard error messages when prompt fallback is unavailable (0.228ms)
+✔ cloud sync room/share-link commands normalize non-Error throwables into stable messages (0.274ms)
+✔ cloud sketch initial catchup is site2-only even when the remote row is fresh (4.4704ms)
+✔ cloud sketch stale initial catchup does not block the next fresh site2 update (0.6822ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1098.9457
+[toast] success סקיצה חדשה התעדכנה
+[toast] success סקיצה חדשה התעדכנה
+[toast] success סקיצה חדשה התעדכנה
+✔ cloud sync sketch pull only toasts success when project load really succeeds (3.5582ms)
+✔ cloud sync sk
 ...
-[trimmed 11108 chars]
+[trimmed 2450 chars]
 ```
 
 ### ✅ Cloud sync tabs-ui batch (direct)
@@ -2228,143 +1155,50 @@ ok 19 - cloud sync realtime tim
 - command: `node tools/wp_run_tsx_tests.mjs tests/cloud_sync_sync_pin_command_runtime.test.ts tests/cloud_sync_tabs_gate_command_runtime.test.ts tests/cloud_sync_tabs_gate_runtime.test.ts tests/cloud_sync_tabs_gate_timer_dedupe_runtime.test.ts tests/cloud_sync_ui_action_controller_runtime.test.js`
 - status: **passed**
 - exit code: `0`
-- duration: `4608ms`
+- duration: `3011ms`
 
 #### stderr
 
 ```text
-[run-tsx-tests] /opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test "tests/cloud_sync_sync_pin_command_runtime.test.ts" "tests/cloud_sync_tabs_gate_command_runtime.test.ts" "tests/cloud_sync_tabs_gate_runtime.test.ts" "tests/cloud_sync_tabs_gate_timer_dedupe_runtime.test.ts" "tests/cloud_sync_ui_action_controller_runtime.test.js"
+[run-tsx-tests] C:\Program Files\nodejs\node.exe --import tsx --test "tests/cloud_sync_sync_pin_command_runtime.test.ts" "tests/cloud_sync_tabs_gate_command_runtime.test.ts" "tests/cloud_sync_tabs_gate_runtime.test.ts" "tests/cloud_sync_tabs_gate_timer_dedupe_runtime.test.ts" "tests/cloud_sync_ui_action_controller_runtime.test.js"
 
 ```
 
 #### stdout
 
 ```text
-TAP version 13
-# Subtest: floating sketch sync pin command becomes a no-op when state is unchanged
-ok 1 - floating sketch sync pin command becomes a no-op when state is unchanged
-  ---
-  duration_ms: 1.77875
-  type: 'test'
-  ...
-# Subtest: floating sketch sync pin command rolls back local state on push failure
-ok 2 - floating sketch sync pin command rolls back local state on push failure
-  ---
-  duration_ms: 0.36229
-  type: 'test'
-  ...
-# Subtest: floating sketch sync pin toggle command flips the current state
-ok 3 - floating sketch sync pin toggle command flips the current state
-  ---
-  duration_ms: 0.405634
-  type: 'test'
-  ...
-# Subtest: floating sketch sync pin command preserves push failure message
-ok 4 - floating sketch sync pin command preserves push failure message
-  ---
-  duration_ms: 0.349223
-  type: 'test'
-  ...
-# Subtest: floating sketch sync pin command single-flights duplicate targets and returns busy for conflicting targets
-ok 5 - floating sketch sync pin command single-flights duplicate targets and returns busy for conflicting targets
-  ---
-  duration_ms: 0.322587
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate command skips redundant refreshes but extends stale opens
-ok 6 - cloud sync tabs gate command skips redundant refreshes but extends stale opens
-  ---
-  duration_ms: 1.333222
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate command rolls back on push failure and reports final state
-ok 7 - cloud sync tabs gate command rolls back on push failure and reports final state
-  ---
-  duration_ms: 0.656392
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate toggle command flips the current ref state
-ok 8 - cloud sync tabs gate toggle command flips the current ref state
-  ---
-  duration_ms: 0.211538
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate command preserves push failure message
-ok 9 - cloud sync tabs gate command preserves push failure message
-  ---
-  duration_ms: 0.317804
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate command single-flights duplicate targets and returns busy for conflicting targets
-ok 10 - cloud sync tabs gate command single-flights duplicate targets and returns busy for conflicting targets
-  ---
-  duration_ms: 0.405713
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate closes stale site2 UI on initial pull miss
-ok 11 - cloud sync tabs gate closes stale site2 UI on initial pull miss
-  ---
-  duration_ms: 2.961698
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate uses the current gate base room for push and pull
-ok 12 - cloud sync tabs gate uses the current gate base room for push and pull
-  ---
-  duration_ms: 1.032098
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate defaults to the public room when no room URL is selected
-ok 13 - cloud sync tabs gate defaults to the public room when no room URL is selected
-  ---
-  duration_ms: 0.721754
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate public-room push is visible to site2 public-room pull
-ok 14 - cloud sync tabs gate public-room push is visible to site2 public-room pull
-  ---
-  duration_ms: 1.439485
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate site2 ignores local open fallback when cloud row is missing
-ok 15 - cloud sync tabs gate site2 ignores local open fallback when cloud row is missing
-  ---
-  duration_ms: 0.502239
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate snapshot subscription tracks minute boundaries and expiry without store polling
-ok 16 - cloud sync tabs gate snapshot subscription tracks minute boundaries and expiry without store polling
-  ---
-  duration_ms: 1.167635
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate direct push reports controller-only canonically on site2
-ok 17 - cloud sync tabs gate direct push reports controller-only canonically on site2
-  ---
-  duration_ms: 0.225801
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate push shares app-scoped ownership across ops instances for the same App
-ok 18 - cloud sync tabs gate push shares app-scoped ownership across ops instances for the same App
-  ---
-  duration_ms: 0.631701
-  type: 'test'
-  ...
-# Subtest: cloud sync tabs gate reuses snapshot/expiry timers and suppresses duplicate snapshot fanout for unchanged state
-ok 19 - cloud sync tabs gate reuses snapshot/expiry timers and suppresses duplicate snapshot fanout for unchanged state
-  ---
-  duration_ms: 3.252451
-  type: 'test'
-  ...
-# Subtest: [cloud-sync-ui-controller] panel/sidebar/dock actions flow through one canonical reporter seam
-ok 20 - [cloud-sync-ui-controller] panel/sidebar/dock actions flow through one canonical reporter seam
-  ---
-  duration_ms: 2945.621579
-  type: 'test'
-  ...
-# Subtest: [cloud-sync-ui-controller] app-scoped single-flight dedupes same cloud actions across controllers and reports busy on conflicting control mutations
-ok 21 - [cloud-sync-ui-controller] app-scoped single-flight dedupes same cloud actions across controllers and reports busy on co
-...
-[trimmed 574 chars]
+✔ floating sketch sync pin command becomes a no-op when state is unchanged (2.6538ms)
+✔ floating sketch sync pin command rolls back local state on push failure (0.5092ms)
+✔ floating sketch sync pin toggle command flips the current state (0.3432ms)
+✔ floating sketch sync pin command preserves push failure message (0.313ms)
+✔ floating sketch sync pin command single-flights duplicate targets and returns busy for conflicting targets (0.4407ms)
+✔ cloud sync tabs gate command skips redundant refreshes but extends stale opens (2.2704ms)
+✔ cloud sync tabs gate command rolls back on push failure and reports final state (1.7723ms)
+✔ cloud sync tabs gate toggle command flips the current ref state (0.4243ms)
+✔ cloud sync tabs gate command preserves push failure message (0.4154ms)
+✔ cloud sync tabs gate command single-flights duplicate targets and returns busy for conflicting targets (0.5737ms)
+✔ cloud sync tabs gate closes stale site2 UI on initial pull miss (4.5079ms)
+✔ cloud sync tabs gate uses the current gate base room for push and pull (1.0564ms)
+✔ cloud sync tabs gate defaults to the public room when no room URL is selected (0.5848ms)
+✔ cloud sync tabs gate public-room push is visible to site2 public-room pull (1.6514ms)
+✔ cloud sync tabs gate site2 ignores local open fallback when cloud row is missing (0.6505ms)
+✔ cloud sync tabs gate snapshot subscription tracks minute boundaries and expiry without store polling (2.0064ms)
+✔ cloud sync tabs gate direct push reports controller-only canonically on site2 (0.3642ms)
+✔ cloud sync tabs gate push shares app-scoped ownership across ops instances for the same App (0.6165ms)
+✔ cloud sync tabs gate reuses snapshot/expiry timers and suppresses duplicate snapshot fanout for unchanged state (4.9623ms)
+✔ [cloud-sync-ui-controller] panel/sidebar/dock actions flow through one canonical reporter seam (2117.5769ms)
+✔ [cloud-sync-ui-controller] app-scoped single-flight dedupes same cloud actions across controllers and reports busy on conflicting control mutations (0.8171ms)
+✔ [cloud-sync-ui-controller] thrown commands downgrade to canonical error payloads (0.8574ms)
+✔ [cloud-sync-ui-controller] tabs-gate meta is cloned before async command invocation (0.2342ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2895.0686
+
 ```
 
 ### ✅ Playwright smoke suite listing
@@ -2374,7 +1208,7 @@ ok 21 - [cloud-sync-ui-controller] app-scoped single-flight dedupes same cloud a
 - command: `npm run e2e:smoke:list`
 - status: **passed**
 - exit code: `0`
-- duration: `1733ms`
+- duration: `1506ms`
 
 #### stdout
 
@@ -2402,7 +1236,7 @@ Listing tests:
   [chromium] › smoke.spec.ts:50:3 › Playwright smoke flows › header save-load roundtrip restores project name
   [chromium] › smoke.spec.ts:71:3 › Playwright smoke flows › header reset default replaces the current project cleanly
   [chromium] › smoke.spec.ts:82:3 › Playwright smoke flows › order pdf overlay opens from export and header with stable toolbar
-  [chromium] › smoke.spec.ts:98:3 › Playwright smoke flows › export tab keeps cloud-sync surface interactive
+  [chromium] › smoke.spec.ts:98:3 › Playwright smoke flows › settings tab keeps cloud-sync surface interactive
   [chromium] › user_paths.spec.ts:113:3 › Playwright real user paths › primary user journey records canonical runtime perf metrics
   [chromium] › user_paths.spec.ts:175:3 › Playwright real user paths › repeated export and pdf pressure preserves user state
   [chromium] › user_paths.spec.ts:213:3 › Playwright real user paths › cabinet core dimensions, colors, and sketch survive project roundtrip
@@ -2414,35 +1248,14 @@ Total: 26 tests in 7 files
 
 ```
 
-### ⚠️ Playwright browser preflight
+### ✅ Playwright browser preflight
 
 - id: `e2e-preflight`
 - category: `e2e`
 - command: `npm run e2e:smoke:preflight`
-- status: **environment-blocked**
-- exit code: `1`
-- duration: `1638ms`
-
-#### stderr
-
-```text
-[WardrobePro] Playwright Chromium preflight failed.
-Browser target: system Chromium at /usr/bin/chromium
-Browser launch succeeded, but real navigation is blocked by environment or browser policy.
-
-Original error:
-page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR at http://127.0.0.1:32957/
-Call log:
-  - navigating to "http://127.0.0.1:32957/", waiting until "domcontentloaded"
-
-Recommended next steps:
-  1. Run: npm run e2e:install
-  2. Re-run: npm run e2e:smoke:preflight
-  3. If bundled browsers are unavailable, set PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH or rely on a detected system Chromium
-  4. If system Chromium launches but blocks navigation, use bundled Playwright browsers in a less restricted environment
-  5. As a fallback sanity check, use: npm run e2e:smoke:list
-
-```
+- status: **passed**
+- exit code: `0`
+- duration: `1183ms`
 
 #### stdout
 
@@ -2451,20 +1264,57 @@ Recommended next steps:
 > e2e:smoke:preflight
 > node tools/wp_playwright_preflight.js
 
+[WardrobePro] Playwright Chromium preflight passed (using system Chromium at C:\Program Files\Google\Chrome\Application\chrome.exe).
 
 ```
 
-### ⚠️ Playwright smoke run
+### ✅ Playwright smoke run
 
 - id: `e2e-smoke-run`
 - category: `e2e`
 - command: `npm run e2e:smoke`
-- status: **environment-blocked**
-- exit code: `1`
-- duration: `0ms`
+- status: **passed**
+- exit code: `0`
+- duration: `141050ms`
 
-#### stderr
+#### stdout
 
 ```text
-Skipped because dependency e2e-preflight resolved to environment-blocked.
+
+> e2e:smoke
+> node tools/wp_playwright_preflight.js && playwright test -c playwright.config.ts
+
+[WardrobePro] Playwright Chromium preflight passed (using system Chromium at C:\Program Files\Google\Chrome\Application\chrome.exe).
+
+Running 26 tests using 4 workers
+
+  ✓   1 [setup] › tests\e2e\app_shell_warmup.setup.ts:5:1 › warm app shell before parallel smoke workers (4.8s)
+  ✓   3 [chromium] › tests\e2e\canvas_pointer_parity.spec.ts:15:3 › Canvas pointer parity smoke › browser hover and click apply cell dimensions to the same canvas target (13.2s)
+  ✓   2 [chromium] › tests\e2e\cloud_sync_reconnect.spec.ts:29:3 › Cloud Sync browser reconnect smoke › offline to online browser transition keeps the panel stable and sync usable (16.1s)
+  ✓   4 [chromium] › tests\e2e\resilience.spec.ts:24:3 › Playwright resilience flows › invalid project load reports failure, keeps the app stable, and records an error perf entry (16.7s)
+  ✓   6 [chromium] › tests\e2e\smoke.spec.ts:24:3 › Playwright smoke flows › boot, viewport, tabs and render toggles stay stable (13.4s)
+  ✓   5 [chromium] › tests\e2e\authoring_builds.spec.ts:477:3 › Playwright authoring build coverage › structure, design, and interior authoring steps trigger real build and render work (27.4s)
+  ✓   8 [chromium] › tests\e2e\resilience.spec.ts:50:3 › Playwright resilience flows › restore-last-session without autosave stays unavailable and keeps user state (12.4s)
+  ✓   7 [chromium] › tests\e2e\user_paths.spec.ts:113:3 › Playwright real user paths › primary user journey records canonical runtime perf metrics (19.6s)
+  ✓   9 [chromium] › tests\e2e\smoke.spec.ts:50:3 › Playwright smoke flows › header save-load roundtrip restores project name (10.0s)
+  ✓  13 [chromium] › tests\e2e\smoke.spec.ts:71:3 › Playwright smoke flows › header reset default replaces the current project cleanly (8.2s)
+  ✓  11 [chromium] › tests\e2e\resilience.spec.ts:69:3 › Playwright resilience flows › invalid settings backup import fails cleanly, preserves existing state, and records an error perf entry (16.0s)
+  ✓  12 [chromium] › tests\e2e\user_paths.spec.ts:175:3 › Playwright real user paths › repeated export and pdf pressure preserves user state (15.9s)
+  ✓  14 [chromium] › tests\e2e\smoke.spec.ts:82:3 › Playwright smoke flows › order pdf overlay opens from export and header with stable toolbar (9.7s)
+  ✓  10 [chromium] › tests\e2e\authoring_builds.spec.ts:544:3 › Playwright authoring build coverage › authored structure, design, and interior state rebuilds cleanly after project load (29.1s)
+  ✓  16 [chromium] › tests\e2e\smoke.spec.ts:98:3 › Playwright smoke flows › settings tab keeps cloud-sync surface interactive (6.9s)
+  ✓  15 [chromium] › tests\e2e\user_paths.spec.ts:213:3 › Playwright real user paths › cabinet core dimensions, colors, and sketch survive project roundtrip (15.1s)
+  ✓  17 [chromium] › tests\e2e\authoring_builds.spec.ts:607:3 › Playwright authoring build coverage › corner cabinet authoring triggers real build work and roundtrips through project load (11.3s)
+  ✓  19 [chromium] › tests\e2e\authoring_builds.spec.ts:664:3 › Playwright authoring build coverage › chest authoring triggers real build work and roundtrips through project load (9.3s)
+  ✓  18 [chromium] › tests\e2e\user_paths.spec.ts:261:3 › Playwright real user paths › cabinet authoring options survive project roundtrip (16.7s)
+  ✓  20 [chromium] › tests\e2e\authoring_builds.spec.ts:719:3 › Playwright authoring build coverage › library authoring triggers real build work and roundtrips through project load (9.8s)
+  ✓  21 [chromium] › tests\e2e\user_paths.spec.ts:311:3 › Playwright real user paths › project roundtrip preserves authored door and drawer layout maps (7.9s)
+  ✓  22 [chromium] › tests\e2e\authoring_builds.spec.ts:774:3 › Playwright authoring build coverage › library door count edits rebuild without loops and keep upper/lower module defaults stable (9.4s)
+  ✓  23 [chromium] › tests\e2e\user_paths.spec.ts:353:3 › Playwright real user paths › project roundtrip preserves authored door and drawer layout scenario matrix (12.4s)
+  ✓  24 [chromium] › tests\e2e\authoring_builds.spec.ts:813:3 › Playwright authoring build coverage › sliding structure authoring rebuilds cleanly after project load (16.5s)
+  ✓  25 [chromium] › tests\e2e\user_paths.spec.ts:400:3 › Playwright real user paths › settings backup import and restore-last-session recover real user state (20.4s)
+  ✓  26 [chromium] › tests\e2e\authoring_builds.spec.ts:879:3 › Playwright authoring build coverage › stack split and per-cell dimensions rebuild cleanly and keep lower stack isolated (15.2s)
+
+  26 passed (2.3m)
+
 ```

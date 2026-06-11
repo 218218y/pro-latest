@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   BASE_LEG_DIMENSIONS,
+  DOOR_SYSTEM_DIMENSIONS,
   DOOR_TRIM_DIMENSIONS,
   DRAWER_DIMENSIONS,
   MATERIAL_DIMENSIONS,
@@ -94,4 +95,37 @@ test('external drawer compute and fallback geometry share the same dimensional p
   assert.equal(drawer.connectZ, geom.connectZ);
   assert.equal(drawer.closed.z, geom.zClosed);
   assert.equal(drawer.open.z, geom.zOpen);
+});
+
+test('inset external drawer geometry places the face inside the front frame', () => {
+  const geom = resolveExternalDrawerGeometry({
+    externalWidthM: 0.8,
+    depthM: 0.55,
+    woodThicknessM: DOOR_SYSTEM_DIMENSIONS.hinged.insetFrameThicknessM,
+    frontZM: 0.275,
+    drawerHeightM: 0.22,
+    doorMountMode: 'inset',
+  });
+  const expectedClosedZ =
+    0.275 - DRAWER_DIMENSIONS.external.visualThicknessM / 2 - DOOR_SYSTEM_DIMENSIONS.hinged.insetRevealM;
+
+  assert.equal(geom.zClosed, expectedClosedZ);
+  assert.equal(geom.zOpen, expectedClosedZ + DRAWER_DIMENSIONS.external.openOffsetZM);
+
+  const result = computeExternalDrawersOpsForModule({
+    wardrobeType: 'hinged',
+    externalCenterX: 0,
+    externalW: 0.8,
+    depth: 0.55,
+    frontZ: 0.275,
+    startY: 0,
+    woodThick: DOOR_SYSTEM_DIMENSIONS.hinged.insetFrameThicknessM,
+    doorMountMode: 'inset',
+    regCount: 1,
+    regDrawerHeight: 0.22,
+  }) as { drawers: Array<Record<string, number | Record<string, number>>> };
+
+  const drawer = result.drawers[0] as any;
+  assert.equal(drawer.closed.z, expectedClosedZ);
+  assert.equal(drawer.open.z, expectedClosedZ + DRAWER_DIMENSIONS.external.openOffsetZM);
 });

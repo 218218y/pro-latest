@@ -15,10 +15,15 @@ import {
   subtractSketchDrawerIntervals,
 } from './post_build_sketch_door_cuts_intervals.js';
 import { rebuildSketchSegmentedDoor } from './post_build_sketch_door_cuts_rebuild.js';
+import { notifyHandleFitSuppressions } from './handles_fit_suppression_feedback.js';
 
 export function applySketchDrawerDoorCuts(args: ApplySketchDrawerDoorCutsArgs): void {
   const { App, runtime, selectDoorCuts } = args;
   const doorsArr = getDoorsArray(App);
+  const suppressedHandlePartIds: string[] = [];
+  const collectSuppressedHandlePartIds = (partIds: string[]) => {
+    for (let i = 0; i < partIds.length; i += 1) suppressedHandlePartIds.push(partIds[i]);
+  };
   if (!doorsArr.length) return;
 
   for (let i = 0; i < doorsArr.length; i++) {
@@ -69,6 +74,22 @@ export function applySketchDrawerDoorCuts(args: ApplySketchDrawerDoorCutsArgs): 
       Math.abs(visibleSegments[0].yMax - doorMax) <= DRAWER_DIMENSIONS.sketch.doorCutNoOpToleranceM
     )
       continue;
-    rebuildSketchSegmentedDoor({ runtime, g, ud, visibleSegments, basePartId: selection.basePartId });
+    rebuildSketchSegmentedDoor({
+      runtime,
+      g,
+      ud,
+      visibleSegments,
+      basePartId: selection.basePartId,
+      collectSuppressedHandlePartIds,
+    });
+  }
+
+  if (args.collectSuppressedHandlePartIds) {
+    args.collectSuppressedHandlePartIds(suppressedHandlePartIds);
+  } else {
+    notifyHandleFitSuppressions(App, suppressedHandlePartIds, {
+      scope: 'sketch-segment-door-handles',
+      completePass: true,
+    });
   }
 }

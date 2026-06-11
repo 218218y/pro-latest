@@ -84,6 +84,7 @@ function commitSketchFreePlacementContent(args: {
   if (!box) return null;
 
   return commitSketchModuleBoxContent({
+    cfg: args.cfg,
     box,
     boxId: args.boxId,
     contentKind: args.contentKind,

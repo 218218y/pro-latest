@@ -48,6 +48,8 @@ export function tryHandleCanvasPickingLayoutRoute(args: CanvasPickingClickRouteA
       foundPartId: typeof foundPartId === 'string' ? foundPartId : null,
       isBottomStack: __isBottomStack,
       ensureCornerCellConfigRef: __ensureCornerCellConfigRef,
+      ndcX: args.ndcX,
+      ndcY: args.ndcY,
     });
     return true;
   }

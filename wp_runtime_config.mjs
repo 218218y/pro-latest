@@ -1,5 +1,9 @@
 // WardrobePro runtime configuration (Pure ESM, static deployments)
 //
+// This file is the legacy/default Bargig runtime config used by the existing root build commands.
+// Multi-store releases write a generated wp_runtime_config.mjs into each dist/sites/<store>/<variant> output
+// from sites/<store>/site.profile.mjs; do not edit generated release copies manually.
+//
 // This file is optional.
 // The Pro entry (esm/entry_pro_main.ts) loads it at boot (best-effort) and merges:
 // - `default.flags`  -> deps.flags
@@ -25,6 +29,18 @@ export default {
 
   // Runtime config overrides.
   config: {
+    branding: {
+      storeId: 'bargig',
+      displayName: 'רהיטי ברגיג',
+    },
+
+    // Keep empty for backward-compatible localStorage keys in the existing Bargig deployment.
+    storageNamespace: '',
+
+    orderPdf: {
+      templateUrl: 'order_template.pdf',
+    },
+
     supabaseCloudSync: {
       // Required:
       url: 'https://paqzrxrvowwndevqptdk.supabase.co',
@@ -67,7 +83,7 @@ export default {
       site2SketchInitialAutoLoad: true,
       site2SketchInitialMaxAgeHours: 12,
 
-      // Panel in the Export tab to switch/copy room links.
+      // Panel in the Settings tab to switch/copy room links.
       showRoomWidget: true,
     },
   },

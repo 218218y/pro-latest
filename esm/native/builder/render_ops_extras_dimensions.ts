@@ -54,6 +54,31 @@ function isThreeLineSurface(value: unknown): value is ThreeLineSurface {
   );
 }
 
+type DimensionTextScaleSpec = {
+  scale?: unknown;
+  textScale?: unknown;
+  styleKey?: unknown;
+  labelStyleKey?: unknown;
+};
+
+function readFiniteScale(value: unknown, defaultValue: number): number {
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : defaultValue;
+}
+
+function readDimensionTextScaleSpec(value: unknown): { textScale: number; styleKey: string | null } {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const spec = value as DimensionTextScaleSpec;
+    const scaleSource = spec.scale ?? spec.textScale;
+    const styleSource = spec.styleKey ?? spec.labelStyleKey;
+    return {
+      textScale: readFiniteScale(scaleSource, 1),
+      styleKey: typeof styleSource === 'string' && styleSource.trim() ? styleSource.trim() : null,
+    };
+  }
+  return { textScale: readFiniteScale(value, 1), styleKey: null };
+}
+
 export function getDimLabelEntry(textStr: unknown, ctx: unknown, styleKeyIn?: unknown): DimLabelEntryLike {
   const runtime = ensureRenderOpsExtrasRuntime(readRenderOpsExtrasContextApp(ctx));
   const { App, renderMeta } = runtime;
@@ -70,8 +95,10 @@ export function getDimLabelEntry(textStr: unknown, ctx: unknown, styleKeyIn?: un
   const isCell = styleKey === 'cell';
   const isNeighbor = styleKey === 'neighbor';
   const isCenter = styleKey === 'center';
-  const width = isCell || isNeighbor || isCenter ? 96 : 128;
-  const height = isCell || isNeighbor || isCenter ? 48 : 64;
+  const isCompactTotal = styleKey === 'compactTotal';
+  const isCompactLabel = isCell || isNeighbor || isCenter || isCompactTotal;
+  const width = isCompactLabel ? 96 : 128;
+  const height = isCompactLabel ? 48 : 64;
 
   const canvas = readCanvas(createCanvasViaPlatform(App, width, height));
   if (!canvas) throw new Error('[DimLabel] cannot create canvas');
@@ -83,14 +110,19 @@ export function getDimLabelEntry(textStr: unknown, ctx: unknown, styleKeyIn?: un
 
   ctx2d.fillStyle = isCell
     ? 'rgba(232,244,255,0.62)'
-    : isNeighbor
+    : isNeighbor || isCompactTotal
       ? 'rgba(255,255,255,0.9)'
       : isCenter
         ? 'rgba(209,250,229,0.78)'
         : 'rgba(255,255,255,0.7)';
   ctx2d.fillRect(0, 0, width, height);
-  ctx2d.font = isCell || isCenter ? 'bold 28px Arial' : isNeighbor ? 'bold 30px Arial' : 'bold 40px Arial';
-  ctx2d.fillStyle = isCell ? '#0b4f79' : isNeighbor ? '#111111' : isCenter ? '#047857' : 'black';
+  ctx2d.font =
+    isCell || isCenter
+      ? 'bold 28px Arial'
+      : isNeighbor || isCompactTotal
+        ? 'bold 30px Arial'
+        : 'bold 40px Arial';
+  ctx2d.fillStyle = isCell ? '#0b4f79' : isCenter ? '#047857' : 'black';
   ctx2d.textAlign = 'center';
   ctx2d.textBaseline = 'middle';
   ctx2d.fillText(String(textStr || ''), width / 2, height / 2);
@@ -122,7 +154,8 @@ export function addDimensionLine(
   ctx: unknown,
   labelShift?: LabelShiftLike
 ): { line: import('../../../types/index.js').Object3DLike; sprite: SpriteLike } | void {
-  const textScaleNum = typeof textScale === 'number' ? textScale : Number(textScale) || 1;
+  const scaleSpec = readDimensionTextScaleSpec(textScale);
+  const textScaleNum = scaleSpec.textScale;
   const runtime = ensureRenderOpsExtrasRuntime(readRenderOpsExtrasContextApp(ctx));
   const { App, renderMaterials } = runtime;
   const wardrobeGroup = readWardrobeGroup(App);
@@ -131,7 +164,9 @@ export function addDimensionLine(
   const THREEBase = ensureRenderOpsExtrasTHREE(App);
   if (!isThreeLineSurface(THREEBase)) throw new Error('[render_ops_extras] THREE line surface unavailable');
   const THREE = THREEBase;
-  const isCell = textScaleNum < 0.95;
+  const isCompactTotal = scaleSpec.styleKey === 'compactTotal';
+  const isCell = scaleSpec.styleKey ? scaleSpec.styleKey === 'cell' : textScaleNum < 0.95;
+  const labelStyleKey = scaleSpec.styleKey || (isCell ? 'cell' : 'default');
 
   if (!renderMaterials.dimLineMaterial) {
     const material = new THREE.LineBasicMaterial({ color: 0x555555 });
@@ -155,7 +190,7 @@ export function addDimensionLine(
   line.userData.__wpExcludeWardrobeBounds = true;
   wardrobeGroup.add(line);
 
-  const entry = getDimLabelEntry(textStr, ctx, isCell ? 'cell' : 'default');
+  const entry = getDimLabelEntry(textStr, ctx, labelStyleKey);
   const sprite = new THREE.Sprite(entry.mat);
   sprite.userData = sprite.userData || {};
   sprite.userData.__wpExcludeWardrobeBounds = true;
@@ -169,7 +204,7 @@ export function addDimensionLine(
   }
 
   sprite.position.copy(midPoint);
-  if (isCell) sprite.scale.set(0.48 * textScaleNum, 0.24 * textScaleNum, 1);
+  if (isCell || isCompactTotal) sprite.scale.set(0.48 * textScaleNum, 0.24 * textScaleNum, 1);
   else sprite.scale.set(0.6 * textScaleNum, 0.3 * textScaleNum, 1);
 
   wardrobeGroup.add(sprite);

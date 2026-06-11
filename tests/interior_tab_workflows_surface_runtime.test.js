@@ -8,6 +8,9 @@ test('[interior-workflows-controller] sketch/manual/layout flows route through o
 
   controller.enterLayout('shelves');
   controller.enterLayout('brace_shelves');
+  controller.enterSketchDivision('shelf', 'glass');
+  controller.enterSketchDivision('rod', 'regular');
+  controller.enterSketchDivision('storage', 'regular');
   controller.enterSketchShelfTool('glass');
   controller.enterSketchBoxTool(500, 500, '');
   controller.enterSketchBoxCorniceTool('flat');
@@ -32,6 +35,11 @@ test('[interior-workflows-controller] sketch/manual/layout flows route through o
   assert.ok(
     calls.some(entry => entry[0] === 'enterManualLayoutMode' && entry[2] === 'sketch_shelf:glass@27')
   );
+  assert.ok(calls.some(entry => entry[0] === 'enterManualLayoutMode' && entry[2] === 'sketch_rod'));
+  assert.ok(calls.some(entry => entry[0] === 'enterManualLayoutMode' && entry[2] === 'sketch_storage:50'));
+  assert.ok(
+    calls.some(entry => entry[0] === 'enterManualLayoutMode' && entry[2] === 'sketch_shelf:glass@27')
+  );
   assert.ok(calls.some(entry => entry[0] === 'enterManualLayoutMode' && entry[2] === 'sketch_box:300@300'));
   assert.ok(
     calls.some(entry => entry[0] === 'enterManualLayoutMode' && entry[2] === 'sketch_box_cornice:classic')
@@ -47,7 +55,7 @@ test('[interior-workflows-controller] sketch/manual/layout flows route through o
   assert.ok(calls.some(entry => entry[0] === 'enterExtDrawerMode' && entry[2] === 'shoe' && entry[3] === 2));
   assert.ok(calls.some(entry => entry[0] === 'exitPrimaryMode' && entry[2] === 'ext_drawer'));
   assert.ok(calls.some(entry => entry[0] === 'toggleDividerMode'));
-  assert.ok(calls.some(entry => entry[0] === 'toggleIntDrawerMode'));
+  assert.ok(calls.some(entry => entry[0] === 'enterManualLayoutMode' && entry[2] === 'sketch_int_drawers'));
   assert.ok(calls.some(entry => entry[0] === 'setHandleControlEnabled' && entry[2] === true));
   assert.ok(calls.some(entry => entry[0] === 'setGlobalEdgeHandleVariant' && entry[2] === 'long'));
   assert.ok(calls.some(entry => entry[0] === 'setHandleModeEdgeVariant' && entry[2] === 'short'));

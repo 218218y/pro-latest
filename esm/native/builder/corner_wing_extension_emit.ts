@@ -194,6 +194,7 @@ export function emitCornerWingExtension(ctx: CornerOpsEmitContext): void {
       App,
       __wingBackPanelThick,
       __wingBackPanelCenterZ,
+      cornerCells,
     },
     helpers: { getCfg, readMap, isRecord, asRecord, readNumFrom },
   });

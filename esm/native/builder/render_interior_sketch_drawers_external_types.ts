@@ -21,6 +21,7 @@ export type SketchExternalDrawerRenderContext = ApplySketchExternalDrawersArgs &
   doorFaceTopY: number;
   resolveCachedMirrorMaterial: () => unknown;
   resolvePartMaterial: (partId: string) => unknown;
+  resolveDrawerBoxMaterial: (drawerBoxPartId: string) => unknown;
 };
 
 export type SketchExternalDrawerStackPlan = {
@@ -47,7 +48,9 @@ export type SketchExternalDrawerOpPlan = {
   py: number;
   pz: number;
   partId: string;
+  boxPartId: string;
   frontMat: unknown;
+  boxMat: unknown;
   visualW: number;
   faceW: number;
   faceOffsetX: number;

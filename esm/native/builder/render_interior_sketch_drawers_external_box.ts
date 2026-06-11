@@ -1,4 +1,5 @@
 import type { InteriorGroupLike } from './render_interior_ops_contracts.js';
+import { DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type {
   SketchExternalDrawerOpPlan,
   SketchExternalDrawerRenderContext,
@@ -38,8 +39,8 @@ function addSketchExternalDrawerBox(
         opPlan.boxW,
         opPlan.boxH,
         opPlan.boxD,
-        context.bodyMat,
-        context.bodyMat,
+        opPlan.boxMat,
+        opPlan.boxMat,
         context.input.addOutlines,
         hasDivider,
         false,
@@ -47,17 +48,34 @@ function addSketchExternalDrawerBox(
       )
     : new context.THREE.Mesh(
         new context.THREE.BoxGeometry(opPlan.boxW, opPlan.boxH, opPlan.boxD),
-        context.bodyMat
+        opPlan.boxMat
       );
   const drawerBoxObj = readObject<InteriorGroupLike>(drawerBox) ?? null;
   if (!drawerBoxObj) return;
 
   drawerBoxObj.position?.set?.(0, 0, opPlan.boxOffsetZ);
-  applySketchModulePickMetaDeep(drawerBoxObj, opPlan.partId, context.moduleKeyStr, {
+  applySketchModulePickMetaDeep(drawerBoxObj, opPlan.boxPartId, context.moduleKeyStr, {
     __wpSketchExtDrawer: true,
     __wpSketchExtDrawerId: stack.drawerId,
+    __wpDrawerBox: true,
+    __wpDrawerOwnerPartId: opPlan.partId,
+    __doorWidth: opPlan.boxW,
+    __doorHeight: opPlan.boxH,
   });
   if (context.outlineFn) context.outlineFn(drawerBoxObj);
+
+  if (context.input.showContentsEnabled === true && context.isFn(context.input.addFoldedClothes)) {
+    context.input.addFoldedClothes(
+      0,
+      -opPlan.boxH / 2 + DRAWER_DIMENSIONS.external.contentsBottomInsetM,
+      0,
+      opPlan.boxW - DRAWER_DIMENSIONS.external.contentsWidthClearanceM,
+      drawerBoxObj,
+      Math.max(0, opPlan.boxH - DRAWER_DIMENSIONS.external.contentsHeightClearanceM),
+      opPlan.boxD
+    );
+  }
+
   groupNode.add?.(drawerBoxObj);
 }
 
@@ -71,12 +89,16 @@ function addSketchExternalDrawerConnector(
 
   const connector = new context.THREE.Mesh(
     new context.THREE.BoxGeometry(opPlan.connectorW, opPlan.connectorH, opPlan.connectorD),
-    context.bodyMat
+    opPlan.boxMat
   );
   connector.position?.set?.(0, 0, opPlan.connectorZ);
-  applySketchModulePickMeta(connector, opPlan.partId, context.moduleKeyStr, {
+  applySketchModulePickMeta(connector, opPlan.boxPartId, context.moduleKeyStr, {
     __wpSketchExtDrawer: true,
     __wpSketchExtDrawerId: stack.drawerId,
+    __wpDrawerBox: true,
+    __wpDrawerOwnerPartId: opPlan.partId,
+    __doorWidth: opPlan.connectorW,
+    __doorHeight: opPlan.connectorH,
   });
   if (context.outlineFn) context.outlineFn(connector);
   groupNode.add?.(connector);

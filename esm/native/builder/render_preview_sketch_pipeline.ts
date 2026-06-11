@@ -15,6 +15,13 @@ export type { ApplySketchPlacementPreviewArgs } from './render_preview_sketch_pi
 
 export function applySketchPlacementPreview(args: ApplySketchPlacementPreviewArgs): PreviewGroupLike {
   const ctx = createSketchPlacementPreviewContext(args);
+  if (ctx.kind !== 'drawer_divider') {
+    try {
+      delete ctx.ud.__drawerDividerMotionPreview;
+    } catch {
+      // keep preview application resilient
+    }
+  }
 
   if (applyObjectBoxesSketchPlacementPreview(ctx)) {
     applySketchPlacementMeasurements(ctx);

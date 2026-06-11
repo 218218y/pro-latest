@@ -38,6 +38,34 @@ test('hinged_doors_module_ops_shared builds canonical context and resolves split
   assert.equal(ctx?.resolveSpecialForPart('d1_top', 'linen'), 'glass');
 });
 
+test('hinged_doors_module_ops_shared sinks inset hinged doors into the frame opening', () => {
+  const ctx = createHingedDoorModuleOpsContext({
+    cfg: {
+      wardrobeType: 'hinged',
+      doorMountMode: 'inset',
+    },
+    moduleIndex: 0,
+    modulesLength: 1,
+    moduleDoors: 1,
+    modWidth: 0.928,
+    currentX: -0.464,
+    effectiveBottomY: 0.036,
+    startY: 0,
+    woodThick: 0.036,
+    cabinetBodyHeight: 2.4,
+    D: 0.6,
+    moduleDoorFrontZ: 0.3,
+    opsList: [],
+  });
+
+  assert.ok(ctx);
+  assert.equal(ctx?.isInsetDoorMount, true);
+  assert.ok(Math.abs((ctx?.doorBottomY ?? 0) - 0.039) < 1e-9);
+  assert.ok(Math.abs((ctx?.effectiveTopLimit ?? 0) - 2.361) < 1e-9);
+  assert.ok(Math.abs((ctx?.totalDoorSpace ?? 0) - 2.322) < 1e-9);
+  assert.ok(Math.abs((ctx?.doorOpZ ?? 0) - 0.288) < 1e-9);
+});
+
 test('hinged_doors_module_ops_shared computes iteration overrides and clamps long edge handles', () => {
   const ctx = createHingedDoorModuleOpsContext({
     cfg: {
@@ -118,7 +146,7 @@ test('hinged_doors_module_ops_shared derives default handle height and emits seg
     moduleIndex: 0,
     pivotX: state.pivotX,
     y: 1.3,
-    z: ctx!.doorFrontZ + 0.01,
+    z: ctx!.doorOpZ,
     width: state.doorWidth,
     height: 0.9,
     meshOffsetX: state.meshOffsetX,

@@ -122,3 +122,156 @@ test('render interior rod reuses the same neutral rod material when leg color ch
   assert.equal(added[1].material, firstRodMat);
   assert.equal(added[1].material, cache.interiorRodMat);
 });
+
+test('render interior rod sends hanging clothes through default hanging_top2 clearance', () => {
+  const THREE = makeFakeThree();
+  const { ops, group } = createRodOpsHarness();
+  const clothesCalls: any[] = [];
+
+  ops.createRodWithContents({
+    THREE,
+    yPos: 1.52,
+    effectiveBottomY: 0,
+    effectiveTopY: 2.4,
+    gridDivisions: 6,
+    localGridStep: 0.4,
+    config: { layout: 'hanging_top2', isCustom: false },
+    innerW: 0.8,
+    internalCenterX: 0,
+    internalZ: 0,
+    wardrobeGroup: group,
+    showContentsEnabled: true,
+    addHangingClothes(...args: any[]) {
+      clothesCalls.push(args);
+    },
+  });
+
+  assert.equal(clothesCalls.length, 1);
+  assert.equal(Number(clothesCalls[0][5].toFixed(2)), 1.52);
+});
+
+test('render interior rod recomputes edited custom hanging clearance instead of stale preset limits', () => {
+  const THREE = makeFakeThree();
+  const { ops, group } = createRodOpsHarness();
+  const clothesCalls: any[] = [];
+
+  ops.createRodWithContents({
+    THREE,
+    yPos: 0.92,
+    effectiveBottomY: 0,
+    effectiveTopY: 2.4,
+    gridDivisions: 6,
+    localGridStep: 0.4,
+    manualHeightLimit: 0.52,
+    config: {
+      isCustom: true,
+      gridDivisions: 6,
+      customData: {
+        shelves: [false, false, false, false, true],
+        rods: [false, true, false, false, true, false],
+        rodOps: [
+          {
+            gridIndex: 2,
+            yFactor: 2.3,
+            enableHangingClothes: true,
+            enableSingleHanger: true,
+            limitFactor: 1.3,
+            limitAdd: 0,
+          },
+          {
+            gridIndex: 5,
+            yFactor: 4.8,
+            enableHangingClothes: true,
+            enableSingleHanger: true,
+            limitFactor: 2.5,
+            limitAdd: 0,
+          },
+        ],
+        storage: false,
+      },
+    },
+    innerW: 0.8,
+    internalCenterX: 0,
+    internalZ: 0,
+    wardrobeGroup: group,
+    showContentsEnabled: true,
+    addHangingClothes(...args: any[]) {
+      clothesCalls.push(args);
+    },
+  });
+
+  assert.equal(clothesCalls.length, 1);
+  assert.equal(Number(clothesCalls[0][5].toFixed(2)), 0.92);
+});
+
+test('render interior rod shortens hanging clothes above sketch drawer stacks', () => {
+  const THREE = makeFakeThree();
+  const { ops, group } = createRodOpsHarness();
+  const clothesCalls: any[] = [];
+
+  ops.createRodWithContents({
+    THREE,
+    yPos: 0.9,
+    effectiveBottomY: 0,
+    effectiveTopY: 2.4,
+    gridDivisions: 6,
+    localGridStep: 0.4,
+    woodThick: 0.02,
+    config: {
+      sketchExtras: {
+        drawers: [{ id: 'int-bottom', yNorm: 0 }],
+        extDrawers: [{ id: 'ext-bottom', yNorm: 0, count: 2 }],
+      },
+    },
+    innerW: 0.8,
+    internalCenterX: 0,
+    internalZ: 0,
+    wardrobeGroup: group,
+    showContentsEnabled: true,
+    addHangingClothes(...args: any[]) {
+      clothesCalls.push(args);
+    },
+  });
+
+  assert.equal(clothesCalls.length, 1);
+  // The external sketch drawer stack is taller than the internal two-drawer stack here,
+  // so it is the nearest real blocker below the rod: 0.9m rod - 0.44m stack top.
+  assert.equal(Number(clothesCalls[0][5].toFixed(3)), 0.46);
+});
+
+test('render interior rod reserves folded clothes above shelf blockers', () => {
+  const THREE = makeFakeThree();
+  const { ops, group } = createRodOpsHarness();
+  const clothesCalls: any[] = [];
+
+  ops.createRodWithContents({
+    THREE,
+    yPos: 1.2,
+    effectiveBottomY: 0,
+    effectiveTopY: 2.4,
+    gridDivisions: 6,
+    localGridStep: 0.4,
+    woodThick: 0.02,
+    config: {
+      isCustom: true,
+      customData: {
+        shelves: [true],
+        rods: [],
+        rodOps: [],
+        storage: false,
+      },
+    },
+    innerW: 0.8,
+    internalCenterX: 0,
+    internalZ: 0,
+    wardrobeGroup: group,
+    showContentsEnabled: true,
+    addHangingClothes(...args: any[]) {
+      clothesCalls.push(args);
+    },
+  });
+
+  assert.equal(clothesCalls.length, 1);
+  // Shelf center 0.4 + 0.01m half board + max folded stack (7 * 0.025m) + 0.006m contents gap.
+  assert.equal(Number(clothesCalls[0][5].toFixed(3)), 0.609);
+});

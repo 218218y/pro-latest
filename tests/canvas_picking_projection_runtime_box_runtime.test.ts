@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createFakeThreeRuntime } from './_fake_three_runtime.ts';
 
 import {
   __wp_measureObjectLocalBox,
   __wp_measureWardrobeLocalBox,
 } from '../esm/native/services/canvas_picking_projection_runtime_box.ts';
+
+const THREE = createFakeThreeRuntime();
 
 function createApp(stateOverrides: Record<string, unknown> = {}, runtimeCache: Record<string, unknown> = {}) {
   const state = {
@@ -77,4 +80,28 @@ test('projection box uses cached no-main workspace metrics before raw ui fallbac
     height: 2.2,
     depth: 0.62,
   });
+});
+
+test('projection box honors parentOverride by measuring through rotated corner parent frames', () => {
+  const wardrobeGroup = new THREE.Group();
+  const cornerWingGroup = new THREE.Group();
+  cornerWingGroup.position.set(2, 0, 0);
+  cornerWingGroup.rotation.y = Math.PI / 2;
+  wardrobeGroup.add(cornerWingGroup);
+
+  const sidePanel = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2, 0.5));
+  sidePanel.position.set(0.6, 1, -0.2);
+  cornerWingGroup.add(sidePanel);
+  wardrobeGroup.updateMatrixWorld(true);
+
+  const App = { deps: { THREE } } as any;
+  const box = __wp_measureObjectLocalBox(App, sidePanel, wardrobeGroup);
+
+  assert.ok(box);
+  assert.ok(Math.abs((box?.centerX ?? 0) - 1.8) < 1e-9);
+  assert.ok(Math.abs((box?.centerY ?? 0) - 1) < 1e-9);
+  assert.ok(Math.abs((box?.centerZ ?? 0) + 0.6) < 1e-9);
+  assert.ok(Math.abs((box?.width ?? 0) - 0.5) < 1e-9);
+  assert.ok(Math.abs((box?.height ?? 0) - 2) < 1e-9);
+  assert.ok(Math.abs((box?.depth ?? 0) - 0.04) < 1e-9);
 });

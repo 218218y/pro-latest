@@ -1,5 +1,6 @@
 import type { ActionMetaLike, AppContainer, UnknownRecord } from '../../../types';
 import type { CanvasLinearCellDimsArgs } from './canvas_picking_cell_dims_contracts.js';
+import type { ModulesConfigBucketKey } from '../features/modules_configuration/modules_config_api.js';
 
 import { getUiFeedback } from '../runtime/service_access.js';
 import { readRootState } from '../runtime/root_state_access.js';
@@ -10,6 +11,7 @@ export type FeedbackShape = { updateEditStateToast?: (message: string, sticky?: 
 
 export interface LinearCellDimsContext extends CanvasLinearCellDimsArgs {
   idx: number;
+  configBucket: ModulesConfigBucketKey;
   moduleCount: number;
   wardrobeType: string;
   totalW: number;

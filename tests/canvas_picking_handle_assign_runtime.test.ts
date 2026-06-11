@@ -168,6 +168,66 @@ test('manual handle position reader accepts the canonical serialized shape only'
   assert.equal(readManualHandlePosition('0.25,0.75'), null);
 });
 
+test('handle assignment treats chest drawers as drawers without targeting chest frame parts', () => {
+  const calls: Array<{ op: string; args: unknown[] }> = [];
+  const App: any = {
+    store: {
+      getState() {
+        return {
+          ui: {},
+          config: {},
+          runtime: {},
+          mode: { opts: {} },
+          meta: {},
+        };
+      },
+      patch() {
+        return undefined;
+      },
+    },
+    services: {
+      tools: {
+        getHandlesType() {
+          return 'standard';
+        },
+      },
+    },
+    maps: {
+      setHandle(partId: string, handleType: string, meta?: unknown) {
+        calls.push({ op: 'setHandle', args: [partId, handleType, meta] });
+      },
+      setKey(mapName: string, key: string, value: unknown, meta?: unknown) {
+        calls.push({ op: 'setKey', args: [mapName, key, value, meta] });
+      },
+    },
+  };
+
+  tryHandleCanvasHandleAssignClick({
+    App,
+    primaryHitObject: { userData: { partId: 'chest_left' }, parent: null },
+    foundDrawerId: null,
+    effectiveDoorId: null,
+    foundPartId: null,
+    isHandleEditMode: true,
+  });
+  assert.deepEqual(calls, []);
+
+  tryHandleCanvasHandleAssignClick({
+    App,
+    primaryHitObject: { userData: { partId: 'chest_drawer_0' }, parent: null },
+    foundDrawerId: null,
+    effectiveDoorId: null,
+    foundPartId: null,
+    isHandleEditMode: true,
+  });
+  assert.equal(calls[0].op, 'setHandle');
+  assert.deepEqual(calls[0].args, [
+    'chest_drawer_0',
+    'standard',
+    { source: 'handles:assign', immediate: true },
+  ]);
+});
+
 test('normal handle assignment clears a previous manual door handle position', () => {
   const calls: Array<{ op: string; args: unknown[] }> = [];
   const App: any = {

@@ -34,6 +34,7 @@ export function renderInteriorSketchOwnedBoxes(args: {
     moduleIndex: resolved.moduleIndex,
     moduleKeyStr: resolved.moduleKeyStr,
     currentShelfMat: resolved.currentShelfMat,
+    currentBraceShelfMat: resolved.currentBraceShelfMat,
     bodyMat: resolved.bodyMat,
     getPartMaterial: resolved.getPartMaterial,
     getPartColorValue: resolved.getPartColorValue,

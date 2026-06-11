@@ -3,6 +3,7 @@
 // Owns handle placement/clamping for segmented sketch-door rebuild flows.
 
 import { DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { clampDoorHandleLocalCenterYToFit } from '../../shared/wardrobe_construction_validation_shared.js';
 import { asObject3D, asRecord } from './post_build_extras_shared.js';
 
 import type {
@@ -24,25 +25,32 @@ export function maybeAttachSegmentHandle(args: {
   handleAbsY: number | null;
   isLeftHinge: boolean;
   segmentPartId: string;
-}): void {
+}): 'attached' | 'suppressed' | 'skipped' {
   const { runtime, g, width, seg, segHeight, centerY, handleAbsY, isLeftHinge, segmentPartId } = args;
   const { createHandleMesh, resolveHandleType } = runtime;
   const resolveHandleColor =
     typeof runtime.resolveHandleColor === 'function' ? runtime.resolveHandleColor : null;
-  if (!createHandleMesh || segHeight < DRAWER_DIMENSIONS.sketch.rebuiltSegmentMinHeightForHandleM) return;
+  if (!createHandleMesh) return 'skipped';
   try {
     const handleType = resolveHandleType(segmentPartId);
+    if (!handleType || handleType === 'none') return 'skipped';
+    const edgeHandleVariant =
+      handleType === 'edge' && typeof runtime.resolveEdgeHandleVariant === 'function'
+        ? runtime.resolveEdgeHandleVariant(segmentPartId)
+        : undefined;
+    const segCenterY = (seg.yMin + seg.yMax) / 2;
     const handle = createHandleMesh(
       handleType,
       width,
       Math.max(DRAWER_DIMENSIONS.sketch.rebuiltSegmentHandleMinHeightM, segHeight),
       isLeftHinge,
       {
+        edgeHandleVariant,
         handleColor: resolveHandleColor ? resolveHandleColor(segmentPartId) : undefined,
       }
     );
     const handleObj = asObject3D(handle);
-    if (!handleObj) return;
+    if (!handleObj) return 'skipped';
     const segPad = Math.min(
       DRAWER_DIMENSIONS.sketch.rebuiltSegmentHandlePaddingMaxM,
       Math.max(
@@ -56,12 +64,21 @@ export function maybeAttachSegmentHandle(args: {
         handleAbsY,
         padding: segPad,
       }) ?? (seg.yMin + seg.yMax) / 2;
-    if (handleObj.position) handleObj.position.y = targetAbsY - centerY;
+    const clampedLocalY = clampDoorHandleLocalCenterYToFit({
+      handleType,
+      edgeHandleVariant,
+      doorHeightM: segHeight,
+      localCenterYM: targetAbsY - segCenterY,
+    });
+    if (clampedLocalY == null) return 'suppressed';
+    if (handleObj.position) handleObj.position.y = segCenterY + clampedLocalY - centerY;
     const handleUd = asRecord(handleObj.userData) || {};
     handleUd.partId = segmentPartId;
     handleObj.userData = handleUd;
     g.add(handleObj);
+    return 'attached';
   } catch {
     // ignore optional handle rebuild failures
+    return 'skipped';
   }
 }

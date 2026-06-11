@@ -20,6 +20,7 @@ import { installStableSurfaceMethod } from '../runtime/stable_surface_methods.js
 import {
   type AppLike,
   type CaptureLocalOpenOptions,
+  type CloseDrawerOptions,
   type DrawerId,
   type HoldEditOptions,
   type ReleaseEditHoldOptions,
@@ -82,7 +83,7 @@ type DoorsServiceApi = DoorsServiceAccessLike &
     releaseEditHold?: (opts?: ReleaseEditHoldOptions) => void;
     applyEditHoldAfterBuild?: () => void;
     closeAllLocal?: () => void;
-    closeDrawerById?: (id: DrawerId) => void;
+    closeDrawerById?: (id: DrawerId, opts?: CloseDrawerOptions) => void;
     captureLocalOpenStateBeforeBuild?: (opts?: CaptureLocalOpenOptions) => void;
     applyLocalOpenStateAfterBuild?: () => void;
     forceUpdatePerState?: () => void;
@@ -99,7 +100,7 @@ type DoorsServiceInstallSurface = DoorsServiceApi & {
   __wpReleaseEditHold?: (opts?: ReleaseEditHoldOptions) => void;
   __wpApplyEditHoldAfterBuild?: () => void;
   __wpCloseAllLocal?: () => void;
-  __wpCloseDrawerById?: (id: DrawerId) => void;
+  __wpCloseDrawerById?: (id: DrawerId, opts?: CloseDrawerOptions) => void;
   __wpCaptureLocalOpenStateBeforeBuild?: (opts?: CaptureLocalOpenOptions) => void;
   __wpApplyLocalOpenStateAfterBuild?: () => void;
   __wpForceUpdatePerState?: () => void;
@@ -153,7 +154,7 @@ export function installDoorsRuntimeService(App: AppContainer): UnknownRecord {
     return (): void => closeAllLocal(context.App);
   });
   installStableSurfaceMethod(doorsSvc, 'closeDrawerById', '__wpCloseDrawerById', () => {
-    return (id: DrawerId): void => closeDrawerById(context.App, id);
+    return (id: DrawerId, opts?: CloseDrawerOptions): void => closeDrawerById(context.App, id, opts);
   });
   installStableSurfaceMethod(
     doorsSvc,

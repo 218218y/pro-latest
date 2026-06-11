@@ -1,9 +1,7 @@
 import { SKETCH_BOX_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
-import {
-  createManualLayoutSketchBlockedHoverRecord,
-  createManualLayoutSketchBoxHoverRecord,
-} from './canvas_picking_manual_layout_sketch_hover_state.js';
+import { createManualLayoutSketchBoxHoverRecord } from './canvas_picking_manual_layout_sketch_hover_state.js';
 import { resolveSketchModuleBoxAction } from './canvas_picking_sketch_module_box_workflow.js';
+import { buildSketchModuleBoxPlacementBlockers } from './canvas_picking_sketch_module_box_blockers.js';
 import { buildRectClearanceMeasurementEntries } from './canvas_picking_hover_clearance_measurements.js';
 import {
   readNumber,
@@ -42,6 +40,21 @@ export function resolveSketchModuleBoxPreviewState(args: {
     };
   }
 
+  const placementBlockers = buildSketchModuleBoxPlacementBlockers({
+    cfgRef: source.cfgRef,
+    info: source.info,
+    shelves: source.shelves,
+    rods: source.rods,
+    storageBarriers: source.storageBarriers,
+    drawers: source.drawers,
+    extDrawers: source.extDrawers,
+    bottomY: source.bottomY,
+    topY: source.topY,
+    totalHeight: source.spanH,
+    pad: source.pad,
+    woodThick: source.woodThick,
+  });
+
   const resolvedBoxAction = resolveSketchModuleBoxAction({
     boxes: source.boxes,
     cursorXHint: readNumber(hitLocalX),
@@ -60,23 +73,8 @@ export function resolveSketchModuleBoxPreviewState(args: {
     woodThick: source.woodThick,
     resolveSketchBoxGeometry: source.resolveSketchBoxGeometry,
     enableCenterSnap: true,
+    placementBlockers,
   });
-
-  if (resolvedBoxAction?.op === 'blocked') {
-    return {
-      hitLocalX,
-      yClamped,
-      boxHPreview,
-      boxWidthPreviewM,
-      boxDepthPreviewM,
-      resolvedBoxAction,
-      boxPreviewResult: {
-        handled: true,
-        hoverRecord: createManualLayoutSketchBlockedHoverRecord(source.host),
-        hidePreview: true,
-      },
-    };
-  }
 
   if (!resolvedBoxAction) {
     return {
@@ -127,6 +125,7 @@ export function resolveSketchModuleBoxPreviewState(args: {
   }
 
   const previewDims = SKETCH_BOX_DIMENSIONS.preview;
+  const blockedReason = resolvedBoxAction.op === 'blocked' ? 'collision' : null;
   const boxCanSlideHorizontally =
     Number.isFinite(source.innerW) &&
     Number(source.innerW) >
@@ -171,6 +170,7 @@ export function resolveSketchModuleBoxPreviewState(args: {
         xCenter: resolvedBoxAction.centerX,
         xNorm: resolvedBoxAction.xNorm,
         removeId: resolvedBoxAction.removeId,
+        blockedReason,
       }),
       preview: {
         kind: 'box',
@@ -184,7 +184,8 @@ export function resolveSketchModuleBoxPreviewState(args: {
         d: resolvedBoxAction.outerD,
         woodThick: source.woodThick,
         boxH: resolvedBoxAction.boxH,
-        op: resolvedBoxAction.op === 'remove' ? 'remove' : 'add',
+        op: blockedReason ? 'blocked' : resolvedBoxAction.op === 'remove' ? 'remove' : 'add',
+        blockedReason: blockedReason ?? undefined,
         frontOverlayX: boxFrontOverlay ? boxFrontOverlay.x : undefined,
         frontOverlayY: boxFrontOverlay ? boxFrontOverlay.y : undefined,
         frontOverlayZ: boxFrontOverlay ? boxFrontOverlay.z : undefined,

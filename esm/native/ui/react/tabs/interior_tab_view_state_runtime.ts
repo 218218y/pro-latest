@@ -4,7 +4,7 @@ import {
   DEFAULT_HANDLE_FINISH_COLOR,
   HANDLE_COLOR_GLOBAL_KEY,
 } from '../../../features/handle_finish_shared.js';
-import { asNum } from './interior_tab_helpers.js';
+import { asNum, readSketchDivisionManualToolId } from './interior_tab_helpers.js';
 import {
   readEdgeHandleVariant,
   readHandleUiColor,
@@ -25,7 +25,6 @@ export type InteriorTabModeStateArgs = {
   modeBraceShelves: string;
   modeExtDrawer: string;
   modeDivider: string;
-  modeIntDrawer: string;
   modeHandle: string;
   modeDoorTrim: string;
 };
@@ -52,6 +51,7 @@ export type InteriorTabVisibilityStateArgs = {
   manualRowOpen: boolean;
   isManualLayoutMode: boolean;
   isSketchToolActive: boolean;
+  isSketchDivisionToolActive: boolean;
   manualTool: 'shelf' | 'rod' | 'storage';
   manualUiTool: 'shelf' | 'rod' | 'storage';
 };
@@ -66,7 +66,6 @@ export function deriveInteriorTabModeState(args: InteriorTabModeStateArgs) {
     modeBraceShelves,
     modeExtDrawer,
     modeDivider,
-    modeIntDrawer,
     modeHandle,
     modeDoorTrim,
   } = args;
@@ -78,15 +77,19 @@ export function deriveInteriorTabModeState(args: InteriorTabModeStateArgs) {
   const isBraceShelvesMode = primary === modeBraceShelves;
   const isExtDrawerMode = primary === modeExtDrawer;
   const isDividerMode = primary === modeDivider;
-  const isIntDrawerMode = primary === modeIntDrawer;
+  const isIntDrawerMode = false;
   const isHandleMode = primary === modeHandle;
   const isManualHandlePositionMode = isHandleMode && isManualHandlePlacementMode(modeOpts.handlePlacement);
   const isDoorTrimMode = primary === modeDoorTrim;
   const layoutActive = isLayoutMode || isManualLayoutMode || isBraceShelvesMode || isDoorTrimMode;
   const layoutType = isLayoutMode ? readLayoutTypeId(modeOpts.layoutType, layoutTypeUi) : layoutTypeUi;
-  const manualTool = isManualLayoutMode ? readManualToolId(modeOpts.manualTool, 'shelf') : 'shelf';
   const manualToolRaw = isManualLayoutMode ? String(modeOpts.manualTool || '') : '';
   const isSketchToolActive = isManualLayoutMode && manualToolRaw.startsWith('sketch_');
+  const sketchDivisionManualTool = readSketchDivisionManualToolId(manualToolRaw);
+  const isSketchDivisionToolActive = isManualLayoutMode && sketchDivisionManualTool !== null;
+  const manualTool = isManualLayoutMode
+    ? sketchDivisionManualTool || readManualToolId(modeOpts.manualTool, 'shelf')
+    : 'shelf';
 
   return {
     modeOpts,
@@ -105,6 +108,7 @@ export function deriveInteriorTabModeState(args: InteriorTabModeStateArgs) {
     manualTool,
     manualToolRaw,
     isSketchToolActive,
+    isSketchDivisionToolActive,
   };
 }
 
@@ -156,15 +160,28 @@ export function deriveInteriorTabUiToolState(args: InteriorTabUiToolStateArgs) {
 }
 
 export function deriveInteriorTabVisibilityState(args: InteriorTabVisibilityStateArgs) {
-  const { manualRowOpen, isManualLayoutMode, isSketchToolActive, manualTool, manualUiTool } = args;
-  const showManualRow = manualRowOpen || (isManualLayoutMode && !isSketchToolActive);
-  const activeManualToolForUi = isManualLayoutMode && !isSketchToolActive ? manualTool : manualUiTool;
+  const {
+    manualRowOpen,
+    isManualLayoutMode,
+    isSketchToolActive,
+    isSketchDivisionToolActive,
+    manualTool,
+    manualUiTool,
+  } = args;
+  const usesManualDivisionControls =
+    isManualLayoutMode && (!isSketchToolActive || isSketchDivisionToolActive);
+  const showManualRow = manualRowOpen || usesManualDivisionControls;
+  const activeManualToolForUi = usesManualDivisionControls ? manualTool : manualUiTool;
   const showGridControls =
-    showManualRow && (activeManualToolForUi === 'shelf' || activeManualToolForUi === 'rod');
+    showManualRow &&
+    !isSketchToolActive &&
+    (activeManualToolForUi === 'shelf' || activeManualToolForUi === 'rod');
+  const showShelfVariantControls = showManualRow && activeManualToolForUi === 'shelf';
 
   return {
     showManualRow,
     activeManualToolForUi,
     showGridControls,
+    showShelfVariantControls,
   };
 }

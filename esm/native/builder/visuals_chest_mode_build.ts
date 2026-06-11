@@ -1,5 +1,6 @@
 import {
   getDrawersArray,
+  refreshTrackedMirrorSurfacesNow,
   getViewportSurface,
   getWardrobeGroup,
   trackMirrorSurface,
@@ -8,9 +9,11 @@ import { getBuilderRenderOps } from '../runtime/builder_service_access.js';
 import {
   CARCASS_BASE_DIMENSIONS,
   CHEST_MODE_DIMENSIONS,
+  DOOR_SYSTEM_DIMENSIONS,
   MATERIAL_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { resolveBaseLegGeometrySpec } from '../features/base_leg_support.js';
+import { makeDrawerBoxPartId } from '../features/drawer_box_identity.js';
 import { getCfg } from './store_access.js';
 
 import type { AppContainer, UnknownRecord } from '../../../types/index.js';
@@ -25,8 +28,10 @@ import {
 } from './visuals_chest_mode_runtime.js';
 import { resolveChestModeBuildInputs } from './visuals_chest_mode_inputs.js';
 import {
+  createChestModePartColorValueResolver,
   createChestModePartMaterialResolver,
   resolveChestModeBodyMaterialState,
+  resolveChestModeDrawerBoxMaterial,
   resolveChestModeMaterialPalette,
 } from './visuals_chest_mode_materials.js';
 import { createInternalDrawerBox } from './visuals_chest_mode_drawer_box.js';
@@ -57,6 +62,7 @@ export function buildChestOnly(App: AppContainer, opts?: UnknownRecord | null) {
     App,
     THREE,
     globalBodyMat: palette.globalBodyMat,
+    drawerBoxMat: palette.drawerBoxMat,
   });
   const renderOps = getBuilderRenderOps(App);
   const addOutlines = renderOps && typeof renderOps.addOutlines === 'function' ? renderOps.addOutlines : null;
@@ -68,13 +74,19 @@ export function buildChestOnly(App: AppContainer, opts?: UnknownRecord | null) {
   const D = inputs.D;
   const effectiveBaseType = inputs.effectiveBaseType;
   const drawersCount = inputs.drawersCount;
-  const thick = MATERIAL_DIMENSIONS.wood.thicknessM;
+  const isInsetDrawerMount = String(cfg?.doorMountMode || '') === 'inset';
+  const thick = isInsetDrawerMount
+    ? DOOR_SYSTEM_DIMENSIONS.hinged.insetFrameThicknessM
+    : MATERIAL_DIMENSIONS.wood.thicknessM;
+  const insetReveal = isInsetDrawerMount
+    ? Math.min(DOOR_SYSTEM_DIMENSIONS.hinged.insetRevealM, Math.max(0, thick / 3))
+    : 0;
   const baseH = effectiveBaseType === 'plinth' ? inputs.basePlinthHeightM : inputs.baseLegHeightM;
-  const getPartColorValue = (partId: string): unknown => {
-    const colors = cfg && typeof cfg.individualColors === 'object' ? cfg.individualColors : null;
-    if (!colors || !Object.prototype.hasOwnProperty.call(colors, partId)) return null;
-    return colors[partId];
-  };
+  const getPartColorValue = createChestModePartColorValueResolver({
+    App,
+    cfg,
+  });
+  let commodeDimensionPanel: { widthM: number; heightM: number } | null = null;
 
   const createChestBoard = (
     w: number,
@@ -165,7 +177,13 @@ export function buildChestOnly(App: AppContainer, opts?: UnknownRecord | null) {
   for (let i = 0; i < drawersCount; i++) {
     const yCenter = startY + i * singleDrawerTotalH + singleDrawerTotalH / 2;
     const drawerId = `chest_drawer_${i}`;
+    const drawerBoxId = makeDrawerBoxPartId(drawerId);
     const frontMat = getChestPartMat(drawerId);
+    const drawerBoxMat = resolveChestModeDrawerBoxMaterial({
+      globalDrawerBoxMat: palette.drawerBoxMat,
+      drawerBoxMaterial: getChestPartMat(drawerBoxId),
+      drawerBoxColorValue: getPartColorValue(drawerBoxId),
+    });
     const drawerGroup = new THREE.Group();
     drawerGroup.userData = { partId: drawerId, __doorWidth: drawerWidth, __doorHeight: drawerFrontH };
 
@@ -179,15 +197,19 @@ export function buildChestOnly(App: AppContainer, opts?: UnknownRecord | null) {
       drawerHeight: drawerFrontH,
       drawerThickness: frontThickness,
       frontMaterial: frontMat,
-      bodyMaterial: palette.drawerBoxMat,
+      bodyMaterial: drawerBoxMat,
       globalFrontMaterial: palette.globalBodyMat,
       doorStyle: inputs.doorStyle,
       isGroovesEnabled: inputs.isGroovesEnabled,
       getPartColorValue,
       addOutlines,
     });
-    frontMesh.position.set(0, 0, D / 2 + frontThickness / 2);
-    drawerGroup.userData.__frontMaxZ = D / 2 + frontThickness;
+    const frontCenterZ = isInsetDrawerMount
+      ? D / 2 - frontThickness / 2 - insetReveal
+      : D / 2 + frontThickness / 2;
+    const frontBackZ = frontCenterZ - frontThickness / 2;
+    frontMesh.position.set(0, 0, frontCenterZ);
+    drawerGroup.userData.__frontMaxZ = isInsetDrawerMount ? D / 2 - insetReveal : D / 2 + frontThickness;
     drawerGroup.add(frontMesh);
 
     const boxH = drawerFrontH - CHEST_DIMENSIONS.drawerBoxHeightClearanceM;
@@ -197,26 +219,45 @@ export function buildChestOnly(App: AppContainer, opts?: UnknownRecord | null) {
       drawerWidth - CHEST_DIMENSIONS.drawerBoxWidthClearanceM,
       boxH,
       boxD,
-      palette.drawerBoxMat,
-      palette.drawerBoxMat,
+      drawerBoxMat,
+      drawerBoxMat,
       addOutlines || undefined,
       false,
       false
     );
     boxMesh.position.set(0, 0, 0);
+    boxMesh.userData = {
+      ...(boxMesh.userData || {}),
+      partId: drawerBoxId,
+      drawerId,
+      __wpDrawerBox: true,
+      __wpDrawerOwnerPartId: drawerId,
+      __doorWidth: drawerWidth - CHEST_DIMENSIONS.drawerBoxWidthClearanceM,
+      __doorHeight: boxH,
+    };
     drawerGroup.add(boxMesh);
 
     const connDepth = CHEST_DIMENSIONS.connectorDepthM;
-    const connZ = D / 2 - connDepth / 2 - CHEST_DIMENSIONS.connectorBackInsetM;
+    const connZ = isInsetDrawerMount
+      ? frontBackZ - CHEST_DIMENSIONS.connectorBackInsetM - connDepth / 2
+      : D / 2 - connDepth / 2 - CHEST_DIMENSIONS.connectorBackInsetM;
     const connMesh = new THREE.Mesh(
       new THREE.BoxGeometry(
         drawerWidth - CHEST_DIMENSIONS.connectorWidthClearanceM,
         boxH - CHEST_DIMENSIONS.connectorHeightClearanceM,
         connDepth
       ),
-      palette.drawerBoxMat
+      drawerBoxMat
     );
     connMesh.position.set(0, 0, connZ);
+    connMesh.userData = {
+      partId: drawerBoxId,
+      drawerId,
+      __wpDrawerBox: true,
+      __wpDrawerOwnerPartId: drawerId,
+      __doorWidth: drawerWidth - CHEST_DIMENSIONS.connectorWidthClearanceM,
+      __doorHeight: boxH - CHEST_DIMENSIONS.connectorHeightClearanceM,
+    };
     drawerGroup.add(connMesh);
 
     drawerGroup.position.set(0, yCenter, 0);
@@ -235,6 +276,7 @@ export function buildChestOnly(App: AppContainer, opts?: UnknownRecord | null) {
     const commode = CHEST_MODE_DIMENSIONS.commode;
     const panelW = Math.max(commode.minMirrorWidthCm / 100, inputs.chestCommodeMirrorWidthM);
     const panelH = Math.max(commode.minMirrorHeightCm / 100, inputs.chestCommodeMirrorHeightM);
+    commodeDimensionPanel = { widthM: panelW, heightM: panelH };
     const panelThickness = commode.backPanelThicknessM;
     const panelCenterY = H + panelH / 2;
     const panelCenterZ = -D / 2 + panelThickness / 2 + commode.backPanelYOffsetM;
@@ -279,26 +321,71 @@ export function buildChestOnly(App: AppContainer, opts?: UnknownRecord | null) {
   } as BuildContextLike);
 
   if (cfg.showDimensions && addDimensionLine) {
+    const dimensionTextScale = CHEST_MODE_DIMENSIONS.dimensionGuideTextScale;
     addDimensionLine(
       new THREE.Vector3(-totalW / 2, H + CHEST_MODE_DIMENSIONS.dimensionGuideTopOffsetM, 0),
       new THREE.Vector3(totalW / 2, H + CHEST_MODE_DIMENSIONS.dimensionGuideTopOffsetM, 0),
       new THREE.Vector3(0, 0, 0),
       (totalW * 100).toFixed(0),
-      0.6
+      dimensionTextScale.total
     );
-    addDimensionLine(
-      new THREE.Vector3(totalW / 2 + CHEST_MODE_DIMENSIONS.dimensionGuideSideOffsetM, 0, 0),
-      new THREE.Vector3(totalW / 2 + CHEST_MODE_DIMENSIONS.dimensionGuideSideOffsetM, H, 0),
-      new THREE.Vector3(0, 0, 0),
-      (H * 100).toFixed(0),
-      0.6
-    );
+    if (commodeDimensionPanel) {
+      const sideOffset = CHEST_MODE_DIMENSIONS.dimensionGuideSideOffsetM;
+      const topOffset = CHEST_MODE_DIMENSIONS.dimensionGuideTopOffsetM;
+      const maxPanelW = Math.max(totalW, commodeDimensionPanel.widthM);
+      const segmentHeightX = maxPanelW / 2 + sideOffset;
+      const totalHeightX = maxPanelW / 2 + sideOffset * 2;
+      const mirrorTopY = H + commodeDimensionPanel.heightM;
+      const sideTextOffset = new THREE.Vector3(sideOffset * 0.35, 0, 0);
+
+      if (Math.abs(commodeDimensionPanel.widthM - totalW) > 0.005) {
+        addDimensionLine(
+          new THREE.Vector3(-commodeDimensionPanel.widthM / 2, mirrorTopY + topOffset, 0),
+          new THREE.Vector3(commodeDimensionPanel.widthM / 2, mirrorTopY + topOffset, 0),
+          new THREE.Vector3(0, 0, 0),
+          (commodeDimensionPanel.widthM * 100).toFixed(0),
+          dimensionTextScale.segment
+        );
+      }
+
+      addDimensionLine(
+        new THREE.Vector3(segmentHeightX, 0, 0),
+        new THREE.Vector3(segmentHeightX, H, 0),
+        sideTextOffset,
+        (H * 100).toFixed(0),
+        dimensionTextScale.segment
+      );
+      addDimensionLine(
+        new THREE.Vector3(segmentHeightX, H, 0),
+        new THREE.Vector3(segmentHeightX, mirrorTopY, 0),
+        sideTextOffset,
+        (commodeDimensionPanel.heightM * 100).toFixed(0),
+        dimensionTextScale.segment
+      );
+      addDimensionLine(
+        new THREE.Vector3(totalHeightX, 0, 0),
+        new THREE.Vector3(totalHeightX, mirrorTopY, 0),
+        new THREE.Vector3(sideOffset * 0.45, 0, 0),
+        (mirrorTopY * 100).toFixed(0),
+        dimensionTextScale.total
+      );
+    } else {
+      addDimensionLine(
+        new THREE.Vector3(totalW / 2 + CHEST_MODE_DIMENSIONS.dimensionGuideSideOffsetM, 0, 0),
+        new THREE.Vector3(totalW / 2 + CHEST_MODE_DIMENSIONS.dimensionGuideSideOffsetM, H, 0),
+        new THREE.Vector3(0, 0, 0),
+        (H * 100).toFixed(0),
+        dimensionTextScale.total
+      );
+    }
   }
 
   const { renderer, scene, camera, controls } = getViewportSurface(App);
   const rendererLike = asChestModeRenderer(renderer);
   const controlsLike = asChestModeControls(controls);
-  if (rendererLike && scene && camera && typeof rendererLike.render === 'function')
+  if (rendererLike && scene && camera && typeof rendererLike.render === 'function') {
+    refreshTrackedMirrorSurfacesNow(App);
     rendererLike.render(scene, camera);
+  }
   if (controlsLike && typeof controlsLike.update === 'function') controlsLike.update();
 }

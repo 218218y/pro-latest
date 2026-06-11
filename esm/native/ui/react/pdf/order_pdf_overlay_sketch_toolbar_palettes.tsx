@@ -52,9 +52,9 @@ export function OrderPdfSketchDrawToolPalette(props: DrawToolPaletteProps): Reac
         <button
           key={definition.tool}
           type="button"
-          className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-palette-btn${freehandTool === definition.tool ? ' active-state' : ''}`}
+          className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-palette-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-left${freehandTool === definition.tool ? ' active-state' : ''}`}
           onClick={() => onSelectFreehandTool(definition.tool)}
-          title={definition.label}
+          data-tooltip={definition.label}
           aria-label={definition.label}
           aria-pressed={tool === definition.tool}
         >
@@ -107,7 +107,6 @@ export function OrderPdfSketchColorPalette(props: ColorPaletteProps): ReactEleme
           style={{ backgroundColor: swatch }}
           onClick={() => onSelectColor(swatch)}
           aria-label={`בחר צבע ${swatch}`}
-          title={swatch}
         />
       ))}
     </OrderPdfSketchFloatingPalette>

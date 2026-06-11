@@ -183,7 +183,12 @@ test('corner and pentagon cornice hover now follows the shared paint group by pr
   );
   assert.match(
     genericPaintHoverPreviewObjectsNorm,
-    /function appendScenePartObjectsByKeySet\(out: UnknownRecord\[\], node: unknown, partKeySet: Set<string>\): void \{/
+    /function appendScenePartObjectsByKeySet\(out: UnknownRecord\[\], node: unknown, partKeySet: Set<string>, inheritedDrawerBoxPartId: string \| null = null\): void \{/
+  );
+  assert.match(genericPaintHoverPreviewObjects, /isDrawerBoxPartId\(partId\)/);
+  assert.match(
+    genericPaintHoverPreviewObjectsNorm,
+    /appendScenePartObjectsByKeySet\(out, children\[i\], partKeySet, nextInheritedDrawerBoxPartId\);/
   );
   assert.match(
     genericPaintHoverPreviewObjectsNorm,
@@ -261,7 +266,7 @@ test('paint door hover in paint mode resolves only the topmost eligible hit, so 
   );
 });
 
-test('cornice paint groups classic and wave parts together so click, hover, render, and live material refresh operate on one cornice group', () => {
+test('cornice paint keeps classic group paint while wave fascia click, hover, render, and live refresh stay per segment', () => {
   const paintFlow = readFileSync('esm/native/services/canvas_picking_paint_targets.ts', 'utf8');
   const paintApply = readFileSync('esm/native/services/canvas_picking_paint_flow_apply.ts', 'utf8');
   const paintApplyTargets = readFileSync(
@@ -272,6 +277,7 @@ test('cornice paint groups classic and wave parts together so click, hover, rend
     readFileSync('esm/native/builder/render_carcass_ops.ts', 'utf8'),
     readFileSync('esm/native/builder/render_carcass_ops_cornice.ts', 'utf8'),
     readFileSync('esm/native/builder/render_carcass_ops_cornice_apply.ts', 'utf8'),
+    readFileSync('esm/native/builder/render_carcass_ops_cornice_segments.ts', 'utf8'),
   ].join('\n');
   assert.match(
     normalizeWhitespace(paintFlow),
@@ -279,11 +285,16 @@ test('cornice paint groups classic and wave parts together so click, hover, rend
   );
   assert.match(
     normalizeWhitespace(paintFlow),
-    /const CORNER_CORNICE_PARTS = \['corner_cornice', 'corner_cornice_front', 'corner_cornice_side_left', 'corner_cornice_side_right',?\];/
+    /const CORNICE_WAVE_PARTS = \['cornice_wave_front', 'cornice_wave_side_left', 'cornice_wave_side_right',?\];/
   );
   assert.match(
     normalizeWhitespace(paintFlow),
-    /if \(__isCornicePart\(partId\)\) return \[\.\.\.CORNICE_PARTS\];/
+    /const CORNER_CORNICE_PARTS = \['corner_cornice', 'corner_cornice_front', 'corner_cornice_side_left', 'corner_cornice_side_right',?\];/
+  );
+  assert.match(normalizeWhitespace(paintFlow), /if \(__isCorniceWavePart\(partId\)\) return \[partId\];/);
+  assert.match(
+    normalizeWhitespace(paintFlow),
+    /if \(__isCornicePart\(partId\)\) return \['cornice_color'\];/
   );
   assert.match(
     normalizeWhitespace(paintFlow),
@@ -293,12 +304,26 @@ test('cornice paint groups classic and wave parts together so click, hover, rend
     normalizeWhitespace(readFileSync('esm/native/services/canvas_picking_paint_flow_shared.ts', 'utf8')),
     /export function toggleCorniceGroupPaint\(__colors: IndividualColorsMap, paint: string\): void/
   );
+  assert.match(
+    normalizeWhitespace(paintApplyTargets),
+    /if \(__isCorniceWavePart\(foundPartId\)\) return false;/
+  );
   assert.match(normalizeWhitespace(paintApplyTargets), /if \(__isCornicePart\(foundPartId\)\) \{/);
   assert.match(
     normalizeWhitespace(paintApplyTargets),
     /toggleCorniceGroupPaint\(state\.ensureColors\(\), paintSelection\);/
   );
-  assert.match(carcassFlow, /const segMat = corniceMat \|\| ctx\.bodyMat;/);
+  const carcassFlowNorm = normalizeWhitespace(carcassFlow);
+  assert.match(carcassFlowNorm, /const segMat = corniceMat \|\| ctx\.bodyMat;/);
+  assert.match(carcassFlowNorm, /const segmentArgs = \{ THREE, seg, segMat, getPartMaterial, segPid \};/);
+  assert.match(
+    carcassFlowNorm,
+    /function resolveCorniceSegmentMaterial\(args: Pick<CorniceSegmentMeshArgs, 'segMat' \| 'getPartMaterial' \| 'segPid'>\)/
+  );
+  assert.match(
+    carcassFlowNorm,
+    /const overrideMat = args\.getPartMaterial && args\.segPid \? args\.getPartMaterial\(args\.segPid\) : null;/
+  );
   assert.match(materialsApplyNorm, /export function readPartColorEntry\(args: \{/);
   assert.match(materialsApplyNorm, /partId === 'cornice_wave_front'/);
   assert.match(materialsApplyNorm, /individualColors\.cornice_color/);

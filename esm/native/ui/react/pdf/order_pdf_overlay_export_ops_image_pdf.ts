@@ -17,13 +17,14 @@ import {
   buildRasterPageLayout,
   paintRasterizedOrderTemplatePage,
 } from './order_pdf_overlay_export_ops_image_pdf_layout.js';
+import { repaintOrderPdfPageAnnotationsInsideRasterTextBoxes } from './order_pdf_overlay_export_ops_image_pdf_annotations.js';
+import { writeOrderPdfImagePdfHiddenImportFields } from './order_pdf_overlay_export_ops_image_pdf_import_fields.js';
 import type {
   OrderPdfOverlayExportOpsDeps,
   PdfLibCreateDocFn,
 } from './order_pdf_overlay_export_ops_shared.js';
 import {
   loadPdfDocumentCtor,
-  type PdfLibDocumentCtorLike,
   type PdfLibDrawablePageLike,
   type PdfLibWritableDocumentLike,
 } from './order_pdf_overlay_pdf_lib.js';
@@ -102,11 +103,7 @@ export function createOrderPdfOverlayImagePdfOps(deps: OrderPdfOverlayExportOpsD
       const injectedCreateDoc = injectedDocumentCtor
         ? getFn<PdfLibCreateDocFn>(injectedDocumentCtor, 'create')
         : null;
-      const injectedLoadDoc = injectedDocumentCtor
-        ? getFn<PdfLibDocumentCtorLike['load']>(injectedDocumentCtor, 'load')
-        : null;
-      const fallbackDocumentCtor =
-        !injectedCreateDoc || !injectedLoadDoc ? await loadPdfDocumentCtor() : null;
+      const fallbackDocumentCtor = !injectedCreateDoc ? await loadPdfDocumentCtor() : null;
       const canonicalCreateDoc = injectedCreateDoc || fallbackDocumentCtor?.create;
       if (!canonicalCreateDoc) throw new Error('pdf-lib missing PDFDocument.create');
 
@@ -221,9 +218,21 @@ export function createOrderPdfOverlayImagePdfOps(deps: OrderPdfOverlayExportOpsD
             detailsOverflowText = '';
           }
 
-          // The interactive source PDF already contains the composed sketch pages,
-          // including any freehand/text annotations baked into those exported images.
-          // Repainting annotations here would duplicate them in the rasterized image-PDF path.
+          // The interactive source PDF already contains the full-page annotation layer,
+          // but the raster text repaint whites out the PDF form boxes above it.
+          // Re-apply only the clipped portions inside those boxes so notes drawn over
+          // built-in PDF text fields survive without doubling annotations elsewhere.
+          if (i === 1) {
+            repaintOrderPdfPageAnnotationsInsideRasterTextBoxes({
+              doc,
+              ctx,
+              draft,
+              layout,
+              canvasWidth: canvas.width,
+              canvasHeight: canvas.height,
+              report: orderPdfOverlayReportNonFatal,
+            });
+          }
         } catch (err) {
           orderPdfOverlayReportNonFatal('orderPdfOverlay.rasterizeInteractivePdf.paint', err);
         }
@@ -252,20 +261,28 @@ export function createOrderPdfOverlayImagePdfOps(deps: OrderPdfOverlayExportOpsD
         });
       }
 
+      writeOrderPdfImagePdfHiddenImportFields({ outDoc, draft });
+
       if (typeof outDoc.save !== 'function') throw new Error('pdf-lib save unavailable');
       const outBytes: Uint8Array = await outDoc.save();
       const outName = baseFileName.replace(/\.pdf$/i, '') + '_image.pdf';
       return { outBytes, outName };
     } finally {
+      let taskDestroyed = false;
       try {
-        if (pdfDoc && typeof pdfDoc.destroy === 'function') pdfDoc.destroy();
-      } catch (err) {
-        orderPdfOverlayReportNonFatal('orderPdfOverlay.rasterizeInteractivePdf.destroyDoc', err);
-      }
-      try {
-        if (task && typeof task.destroy === 'function') task.destroy();
+        if (task && typeof task.destroy === 'function') {
+          task.destroy();
+          taskDestroyed = true;
+        }
       } catch (err) {
         orderPdfOverlayReportNonFatal('orderPdfOverlay.rasterizeInteractivePdf.destroyTask', err);
+      }
+      try {
+        // pdfjs-dist 5.x: when no task cleanup hook exists, release through the
+        // document-owned hook if present. pdfjs-dist 6 owns cleanup on the task.
+        if (!taskDestroyed && pdfDoc && typeof pdfDoc.destroy === 'function') pdfDoc.destroy();
+      } catch (err) {
+        orderPdfOverlayReportNonFatal('orderPdfOverlay.rasterizeInteractivePdf.destroyDoc', err);
       }
     }
   }

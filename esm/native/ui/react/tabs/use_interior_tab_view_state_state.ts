@@ -60,6 +60,7 @@ export function useInteriorTabViewStateState(app: AppContainer): UseInteriorTabV
       isExtDrawerMode: coreState.isExtDrawerMode,
       modeExtDrawer: modeConsts.modeExtDrawer,
       isSketchToolActive: coreState.isSketchToolActive,
+      isSketchDivisionToolActive: coreState.isSketchDivisionToolActive,
       manualToolRaw: coreState.manualToolRaw,
       isDoorTrimMode: coreState.isDoorTrimMode,
       modeOpts: coreState.modeOpts,
@@ -71,6 +72,7 @@ export function useInteriorTabViewStateState(app: AppContainer): UseInteriorTabV
       coreState.isExtDrawerMode,
       modeConsts.modeExtDrawer,
       coreState.isSketchToolActive,
+      coreState.isSketchDivisionToolActive,
       coreState.manualToolRaw,
       coreState.isDoorTrimMode,
       coreState.modeOpts,
@@ -88,6 +90,7 @@ export function useInteriorTabViewStateState(app: AppContainer): UseInteriorTabV
       isManualLayoutMode: coreState.isManualLayoutMode,
       isBraceShelvesMode: coreState.isBraceShelvesMode,
       isSketchToolActive: coreState.isSketchToolActive,
+      isSketchDivisionToolActive: coreState.isSketchDivisionToolActive,
       isExtDrawerMode: coreState.isExtDrawerMode,
       isDividerMode: coreState.isDividerMode,
       isIntDrawerMode: coreState.isIntDrawerMode,
@@ -116,6 +119,7 @@ export function useInteriorTabViewStateState(app: AppContainer): UseInteriorTabV
       showManualRow: coreState.showManualRow,
       activeManualToolForUi: coreState.activeManualToolForUi,
       showGridControls: coreState.showGridControls,
+      showShelfVariantControls: coreState.showShelfVariantControls,
     }),
     [coreState, wardrobeType, hasIntDrawerData, localState]
   );

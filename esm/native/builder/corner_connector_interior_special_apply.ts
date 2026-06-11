@@ -4,6 +4,7 @@
 // polygon math, and folded-content planning live in sibling owners.
 
 import { CORNER_CONNECTOR_INTERIOR_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { CORNER_SHELF_GROUP_PART_ID, markShelfBoardUserData } from '../features/shelf_part_identity.js';
 import type { P2 } from './corner_connector_interior_shared.js';
 import type { CornerConnectorSpecialInteriorFlowParams } from './corner_connector_interior_special_types.js';
 import {
@@ -29,6 +30,7 @@ export function applyCornerConnectorSpecialInterior(params: CornerConnectorSpeci
     showContentsEnabled,
     addOutlines,
     getCornerMat,
+    getCornerShelfMat,
     bodyMat,
   } = ctx;
   const {
@@ -114,12 +116,18 @@ export function applyCornerConnectorSpecialInterior(params: CornerConnectorSpeci
     if (usableDepth <= specialPostDims.shelfPlanMinDimensionM) return;
 
     const geo = new THREE.BoxGeometry(width, woodThick, usableDepth);
-    const mat = getCornerMat(partId, bodyMat);
+    const mat = getCornerShelfMat(partId, false);
     const mesh = new THREE.Mesh(geo, mat);
     const centerX = (postX + wallX) / 2;
     const centerZ = backInset + usableDepth / 2;
     mesh.position.set(centerX, bottomY + woodThick / 2, centerZ);
     mesh.userData = { partId };
+    markShelfBoardUserData(mesh.userData, {
+      groupPartId: CORNER_SHELF_GROUP_PART_ID,
+      shelfIndex: partId,
+      variant: 'regular',
+      isBrace: false,
+    });
     addOutlines(mesh);
     cornerGroup.add(mesh);
   };
@@ -157,11 +165,17 @@ export function applyCornerConnectorSpecialInterior(params: CornerConnectorSpeci
 
   const addShelfPentagon = (partId: string, bottomY: number) => {
     const geo = new THREE.ExtrudeGeometry(shelfShape, { depth: woodThick, bevelEnabled: false });
-    const mat = getCornerMat(partId, bodyMat);
+    const mat = getCornerShelfMat(partId, false);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.rotation.x = Math.PI / 2;
     mesh.position.y = bottomY + woodThick;
     mesh.userData = { partId };
+    markShelfBoardUserData(mesh.userData, {
+      groupPartId: CORNER_SHELF_GROUP_PART_ID,
+      shelfIndex: partId,
+      variant: 'regular',
+      isBrace: false,
+    });
     addOutlines(mesh);
     cornerGroup.add(mesh);
   };

@@ -65,6 +65,9 @@ export interface CornerOpsEmitContext extends UnknownRecord {
   __getMirrorMat: CornerWingMaterialsResult['getMirrorMat'];
   __resolveSpecial: CornerWingMaterialsResult['resolveSpecial'];
   getCornerMat: CornerWingMaterialsResult['getCornerMat'];
+  getCornerShelfMat: CornerWingMaterialsResult['getCornerShelfMat'];
+  defaultShelfMat: CornerWingMaterialsResult['defaultShelfMat'];
+  braceShelfMat: CornerWingMaterialsResult['braceShelfMat'];
   addOutlines: (obj: unknown) => unknown;
   getMaterial: UnknownCallable;
   __applyStableShadowsToModule: (obj: ShadowNodeLike | null | undefined) => void;

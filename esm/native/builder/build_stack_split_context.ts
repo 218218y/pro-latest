@@ -58,7 +58,7 @@ export function createStackSplitLowerBuildContext(args: {
       defaultH: prepared.bottomH,
       totalW: prepared.bottomTotalW,
       D: prepared.bottomD,
-      defaultD: prepared.bottomD,
+      defaultD: prepared.bottomDefaultD,
       woodThick: buildArgs.woodThick,
       startY: prepared.bottomStartY,
       cabinetBodyHeight: prepared.bottomCabinetBodyHeight,
@@ -96,6 +96,8 @@ export function createStackSplitLowerBuildContext(args: {
       whiteMat: buildArgs.whiteMat,
       shadowMat: buildArgs.shadowMat,
       legMat: buildArgs.legMat,
+      defaultShelfMat: buildArgs.defaultShelfMat,
+      braceShelfMat: buildArgs.braceShelfMat,
     },
 
     create: {
@@ -170,7 +172,12 @@ export function applyStackSplitLowerCornerWingIfNeeded(args: {
     Number(lowerDims.D),
     buildArgs.woodThick,
     Number(lowerDims.startY),
-    { body: buildArgs.bodyMat, front: buildArgs.globalFrontMat },
+    {
+      body: buildArgs.bodyMat,
+      front: buildArgs.globalFrontMat,
+      defaultShelfMat: buildArgs.defaultShelfMat,
+      braceShelfMat: buildArgs.braceShelfMat,
+    },
     {
       stackKey: 'bottom',
       baseType: buildArgs.baseTypeBottom,

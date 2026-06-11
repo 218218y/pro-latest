@@ -54,7 +54,8 @@ export type SketchPlacementSupport = {
     isBrace: boolean,
     THREE: InteriorTHREESurface | null,
     leftFaceXOverride?: number | null,
-    rightFaceXOverride?: number | null
+    rightFaceXOverride?: number | null,
+    shelfPartId?: string | null
   ) => void;
   addShelfPins: (
     shelfX: number,
@@ -63,7 +64,8 @@ export type SketchPlacementSupport = {
     shelfW: number,
     shelfH: number,
     shelfDepth: number,
-    enabled: boolean
+    enabled: boolean,
+    shelfPartId?: string | null
   ) => void;
 };
 
@@ -97,9 +99,17 @@ export type ApplySketchShelvesArgs = {
   regularDepth: number;
   backZ: number;
   woodThick: number;
+  effectiveTopY: number;
+  showContentsEnabled: boolean;
+  addFoldedClothes?: InteriorOpsCallable;
   currentShelfMat: unknown;
+  currentBraceShelfMat: unknown;
+  moduleKeyStr: string;
+  getPartMaterial?: InteriorOpsCallable;
+  getPartColorValue?: InteriorOpsCallable;
   glassMat: InteriorMaterialLike | null;
   createBoard: InteriorOpsCallable;
+  group: InteriorGroupLike;
   THREE: InteriorTHREESurface | null;
   addBraceDarkSeams: SketchPlacementSupport['addBraceDarkSeams'];
   addShelfPins: SketchPlacementSupport['addShelfPins'];

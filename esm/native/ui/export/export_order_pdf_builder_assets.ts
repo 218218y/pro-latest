@@ -9,6 +9,7 @@ import {
   resolveOrderPdfBuildDraft,
 } from './export_order_pdf_builder_layout.js';
 import type { OrderPdfCompositeImageSlotBytes } from './export_order_pdf_composite_image_slots_runtime.js';
+import { resolveOrderPdfTemplateUrls } from '../pdf/order_pdf_template_config.js';
 
 export type OrderPdfBuilderPreparedAssets = {
   resolvedDraft: OrderPdfResolvedDraftLike;
@@ -32,11 +33,7 @@ export async function prepareOrderPdfBuildAssets(
 ): Promise<OrderPdfBuilderPreparedAssets | null> {
   const resolvedDraft = resolveOrderPdfBuildDraft(App, draft, deps, textOps);
 
-  const templateBytes = await captureOps.fetchBytesFirstOk(App, [
-    '/order_template.pdf',
-    './order_template.pdf',
-    'order_template.pdf',
-  ]);
+  const templateBytes = await captureOps.fetchBytesFirstOk(App, resolveOrderPdfTemplateUrls(App));
   if (!templateBytes) {
     deps._toast(App, 'קובץ תבנית PDF לא נמצא (order_template.pdf)', 'error');
     return null;

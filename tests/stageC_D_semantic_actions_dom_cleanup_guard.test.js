@@ -105,7 +105,7 @@ test('[stageD] export + overlay + boot DOM access is centralized through runtime
   assert.match(exportCanvas, /function drawExportLogo\(/);
   assert.doesNotMatch(exportCanvas, /\.header-logo/);
   assert.doesNotMatch(exportCanvas, /getQs\(App\)/);
-  assert.match(overlayApp, /ensureToastContainerMaybe\(app\)/);
+  assert.match(overlayApp, /ensureToastContainerMaybe\(app, \{ preferBody: pdfOpen \}\)/);
   assert.doesNotMatch(overlayApp, /doc\.getElementById\('toastContainer'\)/);
   assert.match(bootReactUi, /getReactMountRootMaybe\(app, id\)/);
   assert.doesNotMatch(bootReactUi, /doc\.getElementById\(id\)/);

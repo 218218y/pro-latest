@@ -33,6 +33,7 @@ export type InteriorTabViewState = {
   isManualLayoutMode: boolean;
   isBraceShelvesMode: boolean;
   isSketchToolActive: boolean;
+  isSketchDivisionToolActive: boolean;
   isExtDrawerMode: boolean;
   isDividerMode: boolean;
   isIntDrawerMode: boolean;
@@ -61,6 +62,7 @@ export type InteriorTabViewState = {
   showManualRow: boolean;
   activeManualToolForUi: ManualToolId;
   showGridControls: boolean;
+  showShelfVariantControls: boolean;
   sketchShelvesOpen: boolean;
   sketchBoxHeightCm: number;
   sketchBoxHeightDraft: string;

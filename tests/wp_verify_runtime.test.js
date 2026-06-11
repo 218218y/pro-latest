@@ -153,7 +153,11 @@ test('verify flow runs both client release bundle targets in order when bundling
     'node:tools/wp_release_parity.js --require-dist --require-release --artifacts-only'
   );
   const site2Index = steps.indexOf('npm:bundle:site2');
+  const releaseCleanIndex = steps.indexOf(
+    'node:tools/wp_release_clean_audit.mjs --dirs dist/release,dist/site2/release'
+  );
   assert.ok(bundleIndex >= 0, 'verify should run the primary release bundle');
   assert.ok(parityIndex > bundleIndex, 'verify should run release parity after the primary bundle');
   assert.ok(site2Index > parityIndex, 'verify should build the site2 release after parity succeeds');
+  assert.ok(releaseCleanIndex > site2Index, 'verify should audit release cleanliness after both releases');
 });

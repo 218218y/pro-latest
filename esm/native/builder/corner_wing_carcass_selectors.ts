@@ -1,4 +1,5 @@
 import { CORNER_WING_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { getCornerHexHitDepth } from './corner_wing_hex_cell_geometry.js';
 import type { CornerWingCarcassFlowParams } from './corner_wing_carcass_shared.js';
 
 export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowParams): void {
@@ -11,7 +12,7 @@ export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowPar
   if (cornerCells.length > 0) {
     for (const cell of cornerCells) {
       const __h = Math.max(woodThick * 2, cell.bodyHeight);
-      const __hd = Math.max(CORNER_WING_DIMENSIONS.selector.minDepthM, cell.depth);
+      const __hd = getCornerHexHitDepth(cell);
 
       const hitMat = new THREE.MeshBasicMaterial({
         transparent: true,
@@ -70,6 +71,8 @@ export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowPar
         effectiveTopY: cell.effectiveTopY,
         localGridStep: cell.localGridStep,
         gridDivisions: cell.gridDivisions,
+        woodThick,
+        startY,
       };
     }
     // Keep the connector module id mapped so picking on moduleIndex:'corner' still has a grid.
@@ -80,6 +83,8 @@ export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowPar
         effectiveTopY: c0.effectiveTopY,
         localGridStep: c0.localGridStep,
         gridDivisions: c0.gridDivisions,
+        woodThick,
+        startY,
       };
     }
 
@@ -92,6 +97,8 @@ export function applyCornerWingCarcassSelectors(params: CornerWingCarcassFlowPar
         effectiveTopY: c0.effectiveTopY,
         localGridStep: c0.localGridStep,
         gridDivisions: c0.gridDivisions,
+        woodThick,
+        startY,
       };
     }
   }

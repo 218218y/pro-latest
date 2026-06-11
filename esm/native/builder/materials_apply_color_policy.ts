@@ -1,3 +1,12 @@
+import { isDrawerBoxPartId } from '../features/drawer_box_identity.js';
+import { isFrontColorBraceShelvesOnlyMode } from '../features/front_color_shelf_inheritance.js';
+import {
+  SHELF_GROUP_PART_ID,
+  CORNER_SHELF_GROUP_PART_ID,
+  isIndividualShelfPartId,
+  isShelfBoardPartId,
+  resolveShelfGroupPartId,
+} from '../features/shelf_part_identity.js';
 import { hasCustomUploadedTexture } from '../runtime/textures_cache_access.js';
 import { readMap } from '../runtime/maps_access.js';
 import type { AppContainer, BuilderMaterialsServiceLike, SavedColorLike } from '../../../types';
@@ -10,6 +19,7 @@ import {
   type BuildUiLike,
   type MaterialsCfgLike,
   type PartStackKey,
+  type ValueRecord,
 } from './materials_apply_shared.js';
 
 export type MaterialGetter = NonNullable<BuilderMaterialsServiceLike['getMaterial']>;
@@ -18,7 +28,7 @@ export type MaterialsApplyColorContext = {
   ui: BuildUiLike;
   cfg: MaterialsCfgLike;
   globalFrontMat: unknown;
-  getPartMat: (partId: string, stackKey: PartStackKey) => unknown;
+  getPartMat: (partId: string, stackKey: PartStackKey, userData?: ValueRecord | null) => unknown;
 };
 
 function readSavedColors(cfg: MaterialsCfgLike): SavedColorLike[] {
@@ -66,11 +76,20 @@ export function readPartColorEntry(args: {
     if (Object.prototype.hasOwnProperty.call(individualColors, scopedPartId)) {
       return individualColors[scopedPartId];
     }
+    const shelfGroupPartId = isIndividualShelfPartId(partId) ? resolveShelfGroupPartId(partId) : null;
+    if (shelfGroupPartId && Object.prototype.hasOwnProperty.call(individualColors, shelfGroupPartId)) {
+      return individualColors[shelfGroupPartId];
+    }
     return undefined;
   }
 
   if (Object.prototype.hasOwnProperty.call(individualColors, partId)) {
     return individualColors[partId];
+  }
+
+  const shelfGroupPartId = isIndividualShelfPartId(partId) ? resolveShelfGroupPartId(partId) : null;
+  if (shelfGroupPartId && Object.prototype.hasOwnProperty.call(individualColors, shelfGroupPartId)) {
+    return individualColors[shelfGroupPartId];
   }
 
   if (
@@ -98,6 +117,24 @@ export function readPartColorEntry(args: {
   }
 
   return undefined;
+}
+
+function isShelfLikePart(partId: string, userData?: ValueRecord | null): boolean {
+  if (isShelfBoardPartId(partId)) return true;
+  const groupPartId = typeof userData?.__wpShelfGroupPartId === 'string' ? userData.__wpShelfGroupPartId : '';
+  return groupPartId === SHELF_GROUP_PART_ID || groupPartId === CORNER_SHELF_GROUP_PART_ID;
+}
+
+function resolveShelfGroupFromUserData(partId: string, userData?: ValueRecord | null): string | null {
+  const groupPartId = typeof userData?.__wpShelfGroupPartId === 'string' ? userData.__wpShelfGroupPartId : '';
+  if (groupPartId === SHELF_GROUP_PART_ID || groupPartId === CORNER_SHELF_GROUP_PART_ID) return groupPartId;
+  return resolveShelfGroupPartId(partId);
+}
+
+function isBraceShelfUserData(userData?: ValueRecord | null): boolean {
+  if (!userData) return false;
+  if (userData.__wpShelfIsBrace === true) return true;
+  return userData.__wpShelfVariant === 'brace';
 }
 
 function resolveGlobalFrontMaterial(args: {
@@ -140,23 +177,56 @@ export function createPartMaterialResolver(args: {
   cfg: MaterialsCfgLike;
   getMaterial: MaterialGetter;
   globalFrontMat: unknown;
-}): (partId: string, stackKey: PartStackKey) => unknown {
+}): (partId: string, stackKey: PartStackKey, userData?: ValueRecord | null) => unknown {
   const { ui, cfg, getMaterial, globalFrontMat } = args;
   const isMulti = !!cfg.isMultiColorMode;
+  let whiteBodyMat: unknown | undefined;
+  const getWhiteBodyMat = () => {
+    if (!whiteBodyMat) whiteBodyMat = getMaterial('#ffffff', 'body', false);
+    return whiteBodyMat || globalFrontMat;
+  };
+  const getDrawerBoxBaseMat = getWhiteBodyMat;
   const mapFromCfg = asObject<IndividualColorsMap>(cfg.individualColors);
+  const frontColorBraceOnly = isFrontColorBraceShelvesOnlyMode(ui.frontColorShelfInheritanceMode);
 
-  return (partId: string, stackKey: PartStackKey) => {
+  return (partId: string, stackKey: PartStackKey, userData?: ValueRecord | null) => {
     if (!partId) return globalFrontMat;
+    const shelfLike = isShelfLikePart(partId, userData);
+    const shelfGroupPartId = shelfLike ? resolveShelfGroupFromUserData(partId, userData) : null;
     const entry = readPartColorEntry({
       individualColors: mapFromCfg,
       isMulti,
       partId,
       stackKey,
     });
-    if (typeof entry === 'undefined') return globalFrontMat;
-    if (entry === 'mirror' || entry === 'glass') return globalFrontMat;
+    const groupEntry =
+      typeof entry === 'undefined' && shelfGroupPartId
+        ? readPartColorEntry({
+            individualColors: mapFromCfg,
+            isMulti,
+            partId: shelfGroupPartId,
+            stackKey,
+          })
+        : undefined;
+    const effectiveEntry = typeof entry === 'undefined' ? groupEntry : entry;
+    if (
+      isDrawerBoxPartId(partId) &&
+      (typeof effectiveEntry === 'undefined' ||
+        effectiveEntry === 'mirror' ||
+        effectiveEntry === 'glass' ||
+        !effectiveEntry)
+    ) {
+      return getDrawerBoxBaseMat();
+    }
+    if (typeof effectiveEntry === 'undefined') {
+      if (frontColorBraceOnly && shelfLike) {
+        return isBraceShelfUserData(userData) ? globalFrontMat : getWhiteBodyMat();
+      }
+      return globalFrontMat;
+    }
+    if (effectiveEntry === 'mirror' || effectiveEntry === 'glass') return globalFrontMat;
 
-    const selection = String(entry || '');
+    const selection = String(effectiveEntry || '');
     if (selection.indexOf('saved_') === 0) {
       const saved = findSavedColor(cfg, selection);
       if (saved) {

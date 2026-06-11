@@ -1,10 +1,8 @@
-import type { BuildStateLike } from '../../../types/index.js';
+import type { BuildStateLike, UnknownRecord } from '../../../types/index.js';
 
 import { asRecord } from '../runtime/record.js';
 
 export type BuildDedupeSignatureReader = (state: unknown) => unknown;
-
-type AnyRecord = Record<string, unknown>;
 
 type BuildDedupeParts = {
   signature: unknown;
@@ -12,8 +10,8 @@ type BuildDedupeParts = {
   forceBuild: boolean;
 };
 
-function readRecord(value: unknown): AnyRecord | null {
-  return asRecord<AnyRecord>(value);
+function readRecord(value: unknown): UnknownRecord | null {
+  return asRecord<UnknownRecord>(value);
 }
 
 export function readTransientBuildUiFlag(state: unknown, key: string): unknown {

@@ -1,9 +1,12 @@
 import { DRAWER_DIMENSIONS, SKETCH_BOX_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import {
   buildManualLayoutSketchInternalDrawerBlockers,
+  buildManualLayoutStandardInternalDrawerBlockers,
   createManualLayoutSketchNormalizedCenterReader,
   resolveManualLayoutSketchExternalDrawerPlacement,
 } from './canvas_picking_manual_layout_sketch_stack_placement.js';
+import { buildManualLayoutVerticalContentBlockers } from './canvas_picking_manual_layout_vertical_blockers.js';
+import { buildSketchModuleBoxVerticalBlockers } from './canvas_picking_sketch_module_box_blockers.js';
 import { buildSketchModuleStackAwareMeasurementEntries } from './canvas_picking_sketch_neighbor_measurements.js';
 import { createManualLayoutSketchStackHoverRecord } from './canvas_picking_manual_layout_sketch_hover_state.js';
 import type {
@@ -63,6 +66,44 @@ export function resolveSketchModuleExternalDrawersPreview(
   } = args;
 
   const readCenterY = createManualLayoutSketchNormalizedCenterReader({ bottomY, totalHeight });
+  const internalDrawerBlockers = [
+    ...buildManualLayoutSketchInternalDrawerBlockers({
+      drawers,
+      bottomY,
+      topY,
+      pad,
+      readCenterY,
+    }),
+    ...buildManualLayoutStandardInternalDrawerBlockers({
+      cfgRef: args.cfgRef,
+      bottomY,
+      topY,
+      totalHeight,
+      gridDivisions: args.info?.gridDivisions ?? args.cfgRef?.gridDivisions,
+      moduleIndex: args.moduleKey,
+    }),
+    ...buildManualLayoutVerticalContentBlockers({
+      cfgRef: args.cfgRef,
+      info: args.info,
+      shelves: args.shelves,
+      rods: args.rods,
+      storageBarriers: args.storageBarriers,
+      bottomY,
+      topY,
+      totalHeight,
+      pad,
+      woodThick,
+    }),
+    ...buildSketchModuleBoxVerticalBlockers({
+      cfgRef: args.cfgRef,
+      boxes: args.boxes,
+      bottomY,
+      topY,
+      totalHeight,
+      pad,
+      woodThick,
+    }),
+  ];
   const placement = resolveManualLayoutSketchExternalDrawerPlacement({
     desiredCenterY,
     selectedDrawerCount:
@@ -76,14 +117,14 @@ export function resolveSketchModuleExternalDrawersPreview(
     gap: DRAWER_DIMENSIONS.sketch.verticalStackCollisionGapM,
     extDrawers,
     readCenterY,
-    blockers: buildManualLayoutSketchInternalDrawerBlockers({
-      drawers,
-      bottomY,
-      topY,
-      pad,
-      readCenterY,
-    }),
+    blockers: internalDrawerBlockers,
   });
+  const blockedReason =
+    placement.op === 'blocked'
+      ? 'collision'
+      : placement.op !== 'remove' && !placement.fitsAvailable
+        ? 'no-room'
+        : null;
   const visualT = DRAWER_DIMENSIONS.external.visualThicknessM;
   const faceEnvelope = selectorFrontEnvelope ?? readSelectorFrontEnvelope(hitSelectorObj);
   const outerW = Math.max(DRAWER_DIMENSIONS.sketch.externalPreviewMinWidthM, faceEnvelope?.outerW ?? innerW);
@@ -130,6 +171,8 @@ export function resolveSketchModuleExternalDrawersPreview(
   });
   const drawersPreview: RecordMap[] = [];
   const drawerH = placement.drawerH;
+  const hoverOp: 'add' | 'remove' = blockedReason || placement.op === 'blocked' ? 'add' : placement.op;
+  const hoverRemoveId = blockedReason || placement.op === 'blocked' ? null : placement.removeId;
   for (let i = 0; i < placement.drawerCount; i++) {
     drawersPreview.push({
       y: baseY + i * drawerH + drawerH / 2,
@@ -144,14 +187,15 @@ export function resolveSketchModuleExternalDrawersPreview(
     hoverRecord: createManualLayoutSketchStackHoverRecord({
       host,
       kind: 'ext_drawers',
-      op: placement.op,
-      removeId: placement.removeId,
+      op: hoverOp,
+      removeId: hoverRemoveId,
       yCenter: placement.yCenter,
       baseY,
       drawerCount: placement.drawerCount,
       drawerHeightM: args.drawerHeightM ?? placement.drawerH,
       drawerH,
       stackH: placement.stackH,
+      blockedReason,
     }),
     preview: {
       kind: 'ext_drawers',
@@ -162,7 +206,8 @@ export function resolveSketchModuleExternalDrawersPreview(
       d: visualT,
       woodThick,
       drawers: drawersPreview,
-      op: placement.op,
+      op: blockedReason ? 'blocked' : placement.op,
+      blockedReason: blockedReason ?? undefined,
       clearanceMeasurements,
     },
   };

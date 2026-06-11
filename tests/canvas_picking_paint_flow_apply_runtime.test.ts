@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { tryHandleCanvasPaintClick } from '../esm/native/services/canvas_picking_paint_flow.ts';
 import { applyGroupedOrCornerPaintTarget } from '../esm/native/services/canvas_picking_paint_flow_apply_targets.ts';
+import { resolvePaintTargetKeys } from '../esm/native/services/canvas_picking_paint_targets.ts';
 import {
   applyPaintPartMutation,
   resolveDirectPaintTargetKey,
@@ -117,6 +119,67 @@ test('paint grouped/corner target applies the full scoped shell set for corner w
     lower_corner_wing_side_right: 'walnut',
     lower_corner_floor: 'walnut',
   });
+});
+
+test('paint click ignores corner back-panel hit ids because those meshes are not individual-color paint targets', () => {
+  const App = createApp({
+    maps: {
+      individualColors: {},
+      curtainMap: {},
+      doorSpecialMap: {},
+      mirrorLayoutMap: {},
+    },
+  });
+  let applyPaintCalled = false;
+  App.services.tools = { getPaintColor: () => 'walnut' };
+  App.actions = {
+    colors: {
+      applyPaint() {
+        applyPaintCalled = true;
+      },
+    },
+  };
+
+  const handled = tryHandleCanvasPaintClick({
+    App,
+    foundPartId: 'corner_wing_back_c0',
+    activeStack: 'top',
+    isPaintMode: true,
+    primaryHitObject: null,
+    doorHitObject: null,
+    primaryHitPoint: null,
+    doorHitPoint: null,
+    hitIdentity: null,
+  } as never);
+
+  assert.equal(handled, false);
+  assert.equal(applyPaintCalled, false);
+});
+
+test('paint grouped target treats the stack-split lower carcass frame as one shell', () => {
+  assert.deepEqual(resolvePaintTargetKeys('lower_body_ceil', 'bottom'), [
+    'lower_body_left',
+    'lower_body_right',
+    'lower_body_ceil',
+    'lower_body_floor',
+  ]);
+
+  const state = createManualState();
+  const handled = applyGroupedOrCornerPaintTarget({
+    state,
+    foundPartId: 'lower_body_left',
+    activeStack: 'bottom',
+    paintSelection: 'walnut',
+  });
+
+  assert.equal(handled, true);
+  assert.deepEqual(state.colors, {
+    lower_body_left: 'walnut',
+    lower_body_right: 'walnut',
+    lower_body_ceil: 'walnut',
+    lower_body_floor: 'walnut',
+  });
+  assert.equal(getPaintSourceTag('walnut', 'lower_body_left'), 'paint.apply:group');
 });
 
 test('paint special mutation removes only the matched mirror layout while preserving unrelated placements', () => {
@@ -250,6 +313,126 @@ test('paint glass mutation defaults every clicked glass front to regular profile
   assert.equal(state.special.corner_c0_draw_1, 'glass');
   assert.equal(state.curtains.corner_c0_draw_1, 'none');
   assert.equal(state.style.corner_c0_draw_1, 'profile');
+
+  applyPaintPartMutation({
+    state,
+    paintPartKey: 'hex_cell_2_diag_left',
+    paintSelection: '__wp_glass_style__:flat',
+    clickArgs: {
+      App: state.App,
+      foundPartId: 'hex_cell_2_diag_left',
+      activeStack: 'top',
+      isPaintMode: true,
+    },
+  });
+
+  assert.equal(state.special.hex_cell_2_diag_left, 'glass');
+  assert.equal(state.curtains.hex_cell_2_diag_left, 'none');
+  assert.equal(state.style.hex_cell_2_diag_left, 'flat');
+
+  applyPaintPartMutation({
+    state,
+    paintPartKey: 'lower_corner_hex_cell_c3_diag_right',
+    paintSelection: '__wp_glass_style__:tom',
+    clickArgs: {
+      App: state.App,
+      foundPartId: 'corner_hex_cell_c3_diag_right',
+      activeStack: 'bottom',
+      isPaintMode: true,
+    },
+  });
+
+  assert.equal(state.special.lower_corner_hex_cell_c3_diag_right, 'glass');
+  assert.equal(state.style.lower_corner_hex_cell_c3_diag_right, 'tom');
+});
+
+test('paint glass mutation restores the exact previous door style override after removing glass', () => {
+  const addState = createManualState({
+    App: createApp({ ui: { currentCurtainChoice: 'white' } }),
+    style0: { d5_full: 'tom' },
+  });
+
+  applyPaintPartMutation({
+    state: addState,
+    paintPartKey: 'd5_full',
+    paintSelection: 'glass',
+    clickArgs: {
+      App: addState.App,
+      foundPartId: 'd5_full',
+      activeStack: 'top',
+      isPaintMode: true,
+    },
+  });
+
+  assert.equal(addState.special.d5_full, 'glass');
+  assert.equal(addState.curtains.d5_full, 'white');
+  assert.equal(addState.style.d5_full, 'profile');
+
+  const removeState = createManualState({
+    App: createApp({ ui: { currentCurtainChoice: 'white' } }),
+    special0: { ...addState.special },
+    curtains0: { ...addState.curtains },
+    style0: { ...addState.style },
+  });
+
+  applyPaintPartMutation({
+    state: removeState,
+    paintPartKey: 'd5_full',
+    paintSelection: 'glass',
+    clickArgs: {
+      App: removeState.App,
+      foundPartId: 'd5_full',
+      activeStack: 'top',
+      isPaintMode: true,
+    },
+  });
+
+  assert.deepEqual(removeState.special, {});
+  assert.equal(removeState.curtains.d5_full, undefined);
+  assert.equal(removeState.style.d5_full, 'tom');
+});
+
+test('paint glass mutation removes the temporary glass frame style when the door had no prior override', () => {
+  const addState = createManualState({
+    App: createApp({ ui: { currentCurtainChoice: 'none' } }),
+  });
+
+  applyPaintPartMutation({
+    state: addState,
+    paintPartKey: 'd6_full',
+    paintSelection: '__wp_glass_style__:tom',
+    clickArgs: {
+      App: addState.App,
+      foundPartId: 'd6_full',
+      activeStack: 'top',
+      isPaintMode: true,
+    },
+  });
+
+  assert.equal(addState.special.d6_full, 'glass');
+  assert.equal(addState.style.d6_full, 'tom');
+
+  const removeState = createManualState({
+    App: createApp({ ui: { currentCurtainChoice: 'none' } }),
+    special0: { ...addState.special },
+    curtains0: { ...addState.curtains },
+    style0: { ...addState.style },
+  });
+
+  applyPaintPartMutation({
+    state: removeState,
+    paintPartKey: 'd6_full',
+    paintSelection: '__wp_glass_style__:tom',
+    clickArgs: {
+      App: removeState.App,
+      foundPartId: 'd6_full',
+      activeStack: 'top',
+      isPaintMode: true,
+    },
+  });
+
+  assert.deepEqual(removeState.special, {});
+  assert.equal(removeState.style.d6_full, undefined);
 });
 
 test('paint color mutation clears stale curtains but preserves mirror layouts for mirror-special doors', () => {
@@ -347,6 +530,10 @@ test('paint special target detection includes corner and sketch external drawer 
   assert.equal(isSpecialPart('lower_corner_c0_draw_2'), true);
   assert.equal(isSpecialPart('sketch_ext_drawers_2_main_1'), true);
   assert.equal(isSpecialPart('sketch_box_free_a_ext_drawers_3_1'), true);
+  assert.equal(isSpecialPart('hex_cell_2_diag_left'), true);
+  assert.equal(isSpecialPart('lower_hex_cell_2_diag_right'), true);
+  assert.equal(isSpecialPart('corner_hex_cell_c3_diag_left'), true);
+  assert.equal(isSpecialPart('lower_corner_hex_cell_c3_diag_right'), true);
 });
 
 test('mirror paint click resolves sized layouts against styled-center mirror metadata instead of the full door slab', () => {

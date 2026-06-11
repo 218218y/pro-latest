@@ -42,7 +42,7 @@ export type ManualLayoutSketchHoverModuleFlowArgs = {
   ) => FindNearestSketchBoxDividerResult | null;
   __wp_resolveSketchBoxDividerPlacement: (args: SketchBoxDividerPlacementArgs) => SketchBoxDividerPlacement;
   __wp_readSketchBoxDividerXNorm: (box: unknown) => number | null;
-  __wp_writeSketchHover: (App: AppContainer, snap: UnknownRecord) => void;
+  __wp_writeSketchHover: (App: AppContainer, snap: UnknownRecord | null) => void;
 };
 
 export type ManualLayoutSketchHoverModuleContext = ManualLayoutSketchHoverModuleFlowArgs & {

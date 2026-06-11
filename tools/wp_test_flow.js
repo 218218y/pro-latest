@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import os from 'node:os';
 import { writeNodeTestOutput } from './wp_test_console.js';
 import { fileExists, getNodeArgs } from './wp_test_shared.js';
 import {
@@ -15,6 +16,108 @@ const REPORT_DIR = path.join('.artifacts', 'test-report');
 const MAX_BUFFER = 50 * 1024 * 1024;
 const MAX_JUNIT_OUTPUT = 12000;
 const MAX_INLINE_NAMES = 12;
+
+const DEFAULT_BATCH_SIZE = 96;
+const DEFAULT_MAX_JOBS = 6;
+
+function parsePositiveInt(value) {
+  const parsed = Number.parseInt(String(value ?? '').trim(), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function availableParallelism() {
+  const value = typeof os.availableParallelism === 'function' ? os.availableParallelism() : os.cpus().length;
+  return Number.isInteger(value) && value > 0 ? value : 1;
+}
+
+function resolveBatchSize(flags, childEnv) {
+  return flags.batchSize || parsePositiveInt(childEnv?.WP_TEST_BATCH_SIZE) || DEFAULT_BATCH_SIZE;
+}
+
+function resolveTestJobs(flags, childEnv) {
+  const configured = flags.jobs || parsePositiveInt(childEnv?.WP_TEST_JOBS);
+  if (configured) return configured;
+  const available = availableParallelism();
+  return Math.max(1, Math.min(DEFAULT_MAX_JOBS, available > 1 ? available - 1 : 1));
+}
+
+function chunkFiles(files, batchSize) {
+  const batches = [];
+  for (let index = 0; index < files.length; index += batchSize) {
+    batches.push(files.slice(index, index + batchSize));
+  }
+  return batches;
+}
+
+function createBatchLabel({ batch, index, total, projectRoot }) {
+  const relFiles = batch.map(filePath => normalizeSlash(path.relative(projectRoot, filePath)));
+  const range =
+    relFiles.length === 1
+      ? relFiles[0]
+      : `${relFiles[0]} … ${relFiles[relFiles.length - 1]} (${relFiles.length} files)`;
+  return `[WardrobePro] test batch ${index + 1}/${total}: ${range}`;
+}
+
+function createBatchFailureFileLabel({ batch, index, projectRoot }) {
+  const relFiles = batch.map(filePath => normalizeSlash(path.relative(projectRoot, filePath)));
+  if (relFiles.length === 1) return relFiles[0];
+  return `batch ${index + 1}: ${relFiles[0]} … ${relFiles[relFiles.length - 1]} (${relFiles.length} files)`;
+}
+
+function defaultRunOne({ filePath, nodeArgs: nodeArgList, cwd, env }) {
+  return spawnSync(process.execPath, [...nodeArgList, filePath], {
+    stdio: ['inherit', 'pipe', 'pipe'],
+    cwd,
+    env,
+    encoding: 'utf8',
+    maxBuffer: MAX_BUFFER,
+  });
+}
+
+function defaultRunBatch({ batch, nodeArgs: nodeArgList, cwd, env, jobs }) {
+  return spawnSync(process.execPath, [...nodeArgList, '--test', `--test-concurrency=${jobs}`, ...batch], {
+    stdio: ['inherit', 'pipe', 'pipe'],
+    cwd,
+    env,
+    encoding: 'utf8',
+    maxBuffer: MAX_BUFFER,
+  });
+}
+
+function writeCapturedTestOutput(res) {
+  if (typeof res?.stdout === 'string' && res.stdout.length) writeNodeTestOutput(process.stdout, res.stdout);
+  if (typeof res?.stderr === 'string' && res.stderr.length) writeNodeTestOutput(process.stderr, res.stderr);
+  if (res?.error) console.error(res.error);
+}
+
+function createFailureFromResult({ file, res }) {
+  const status = typeof res?.status === 'number' ? res.status : 1;
+  const output = capturedOutput(res);
+  const failedTests = extractFailedTestNames(output);
+  return { file, status, signal: res?.signal || null, failedTests, output };
+}
+
+function reportFailureToConsole(failure) {
+  console.error(`[WardrobePro] Test failed: ${failure.file}`);
+  for (const name of failure.failedTests.slice(0, MAX_INLINE_NAMES))
+    console.error(`[WardrobePro]   - ${name}`);
+  if (failure.failedTests.length > MAX_INLINE_NAMES) {
+    console.error(
+      `[WardrobePro]   - ... +${failure.failedTests.length - MAX_INLINE_NAMES} more failed tests`
+    );
+  }
+}
+
+function runSingleFile({ filePath, nodeArgs, projectRoot, childEnv, runOne }) {
+  const rel = normalizeSlash(path.relative(projectRoot, filePath));
+  const res = runOne({ filePath, nodeArgs, cwd: projectRoot, env: childEnv });
+  writeCapturedTestOutput(res);
+  const status = typeof res?.status === 'number' ? res.status : 1;
+  if (status === 0 && !res?.error) return null;
+  const failure = createFailureFromResult({ file: rel, res });
+  reportFailureToConsole(failure);
+  return failure;
+}
 
 function normalizeSlash(value) {
   return value.split(path.sep).join('/');
@@ -247,42 +350,48 @@ export function runTestFlow({ projectRoot, childEnv, flags, runners = {} }) {
     projectRoot,
     forceTsx: flags.forceTsx,
   });
-  const runFlags = createTestRunFlags(flags);
+  const batchSize = resolveBatchSize(flags, childEnv);
+  const jobs = resolveTestJobs(flags, childEnv);
+  const effectiveFlags = { ...flags, batchSize, jobs };
+  const runFlags = createTestRunFlags(effectiveFlags);
   const notice = createSkippedE2ENotice(selected.skippedE2E);
-  const runOne =
-    runners.runOne ||
-    function runOne({ filePath, nodeArgs: nodeArgList, cwd, env }) {
-      return spawnSync(process.execPath, [...nodeArgList, filePath], {
-        stdio: ['inherit', 'pipe', 'pipe'],
-        cwd,
-        env,
-        encoding: 'utf8',
-        maxBuffer: MAX_BUFFER,
-      });
-    };
+  const runOne = runners.runOne || defaultRunOne;
+  const runBatch = runners.runBatch || defaultRunBatch;
+  const useSerial = flags.serial || Boolean(runners.runOne) || selected.files.length <= 1;
 
   console.log(createRunBanner({ files: selected.files, flags: runFlags }));
   if (notice) console.log(notice);
 
   const failures = [];
-  for (const filePath of selected.files) {
-    const rel = normalizeSlash(path.relative(projectRoot, filePath));
-    const res = runOne({ filePath, nodeArgs, cwd: projectRoot, env: childEnv });
+  if (useSerial) {
+    for (const filePath of selected.files) {
+      const failure = runSingleFile({ filePath, nodeArgs, projectRoot, childEnv, runOne });
+      if (failure) failures.push(failure);
+    }
+  } else {
+    const batches = chunkFiles(selected.files, batchSize);
+    for (let index = 0; index < batches.length; index += 1) {
+      const batch = batches[index];
+      console.log(`${createBatchLabel({ batch, index, total: batches.length, projectRoot })} (jobs ${jobs})`);
+      const res = runBatch({ batch, nodeArgs, cwd: projectRoot, env: childEnv, jobs });
+      writeCapturedTestOutput(res);
+      const status = typeof res?.status === 'number' ? res.status : 1;
+      if (status === 0 && !res?.error) continue;
 
-    if (typeof res?.stdout === 'string' && res.stdout.length) writeNodeTestOutput(process.stdout, res.stdout);
-    if (typeof res?.stderr === 'string' && res.stderr.length) writeNodeTestOutput(process.stderr, res.stderr);
-    if (res?.error) console.error(res.error);
-
-    const status = typeof res?.status === 'number' ? res.status : 1;
-    if (status !== 0 || res?.error) {
-      const output = capturedOutput(res);
-      const failedTests = extractFailedTestNames(output);
-      console.error(`[WardrobePro] Test failed: ${rel}`);
-      for (const name of failedTests.slice(0, MAX_INLINE_NAMES)) console.error(`[WardrobePro]   - ${name}`);
-      if (failedTests.length > MAX_INLINE_NAMES) {
-        console.error(`[WardrobePro]   - ... +${failedTests.length - MAX_INLINE_NAMES} more failed tests`);
+      console.error('[WardrobePro] Batch failed; rerunning that batch file-by-file to isolate failures...');
+      const beforeFallbackFailures = failures.length;
+      for (const filePath of batch) {
+        const failure = runSingleFile({ filePath, nodeArgs, projectRoot, childEnv, runOne });
+        if (failure) failures.push(failure);
       }
-      failures.push({ file: rel, status, signal: res?.signal || null, failedTests, output });
+      if (failures.length === beforeFallbackFailures) {
+        const failure = createFailureFromResult({
+          file: createBatchFailureFileLabel({ batch, index, projectRoot }),
+          res,
+        });
+        reportFailureToConsole(failure);
+        failures.push(failure);
+      }
     }
   }
 

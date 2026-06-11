@@ -63,10 +63,12 @@ export function OrderPdfSketchNoteToolbar(props: OrderPdfSketchNoteToolbarProps)
       <button
         type="button"
         className={
-          activeBold ? 'toolbar-btn toolbar-btn--square active-state' : 'toolbar-btn toolbar-btn--square'
+          activeBold
+            ? 'toolbar-btn toolbar-btn--square active-state wp-pdf-ui-hint wp-pdf-ui-hint--side-right'
+            : 'toolbar-btn toolbar-btn--square wp-pdf-ui-hint wp-pdf-ui-hint--side-right'
         }
         aria-pressed={activeBold}
-        title="מודגש"
+        data-tooltip="מודגש"
         onMouseDown={(event: ReactMouseEvent<HTMLButtonElement>) => stopToolbarMouse(event)}
         onClick={onToggleBold}
       >
@@ -76,8 +78,8 @@ export function OrderPdfSketchNoteToolbar(props: OrderPdfSketchNoteToolbarProps)
       <div className="toolbar-color-container">
         <button
           type="button"
-          className="toolbar-btn toolbar-btn--square toolbar-color-btn"
-          title="צבע טקסט"
+          className="toolbar-btn toolbar-btn--square toolbar-color-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-right"
+          data-tooltip="צבע טקסט"
           style={{
             backgroundColor: activeColor,
             borderColor: activeColor,
@@ -99,7 +101,6 @@ export function OrderPdfSketchNoteToolbar(props: OrderPdfSketchNoteToolbarProps)
             <div
               key={color}
               className="color-swatch"
-              title={color}
               style={{ backgroundColor: color }}
               onMouseDown={(event: ReactMouseEvent<HTMLDivElement>) => stopToolbarMouse(event)}
               onClick={() => onSelectColor(color)}
@@ -111,8 +112,8 @@ export function OrderPdfSketchNoteToolbar(props: OrderPdfSketchNoteToolbarProps)
       <div className="toolbar-size-container">
         <button
           type="button"
-          className="toolbar-btn toolbar-btn--square toolbar-size-btn"
-          title="גודל טקסט"
+          className="toolbar-btn toolbar-btn--square toolbar-size-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-right"
+          data-tooltip="גודל טקסט"
           onMouseDown={(event: ReactMouseEvent<HTMLButtonElement>) => stopToolbarMouse(event)}
           onClick={onToggleSizePalette}
         >
@@ -141,8 +142,8 @@ export function OrderPdfSketchNoteToolbar(props: OrderPdfSketchNoteToolbarProps)
 
       <button
         type="button"
-        className="toolbar-btn toolbar-btn--square close-btn"
-        title="מחק תיבת טקסט"
+        className="toolbar-btn toolbar-btn--square close-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-right"
+        data-tooltip="מחק תיבת טקסט"
         onMouseDown={(event: ReactMouseEvent<HTMLButtonElement>) => stopToolbarMouse(event)}
         onClick={onDelete}
       >

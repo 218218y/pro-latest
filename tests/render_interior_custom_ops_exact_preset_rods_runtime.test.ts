@@ -62,10 +62,10 @@ test('renderInteriorCustomOps keeps exact preset-backed hanging_split rod height
         },
         {
           gridIndex: 5,
-          yFactor: 4.6,
+          yFactor: 4.8,
           enableHangingClothes: true,
           enableSingleHanger: true,
-          limitFactor: 2.3,
+          limitFactor: 2.5,
           limitAdd: 0,
         },
       ],
@@ -85,7 +85,7 @@ test('renderInteriorCustomOps keeps exact preset-backed hanging_split rod height
     })),
     [
       { y: 0.92, limit: 0.52 },
-      { y: 1.84, limit: 0.92 },
+      { y: 1.92, limit: 1 },
     ]
   );
 });

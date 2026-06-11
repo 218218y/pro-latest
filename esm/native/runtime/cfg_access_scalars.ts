@@ -112,6 +112,12 @@ export function setCfgBoardMaterial(App: unknown, value: unknown, meta?: ActionM
   return next;
 }
 
+export function setCfgDoorMountMode(App: unknown, value: unknown, meta?: ActionMetaLike): string | undefined {
+  const next = value == null ? '' : String(value);
+  void cfgSetScalar(App, 'doorMountMode', next, meta);
+  return next;
+}
+
 export function setCfgGlobalHandleType(
   App: unknown,
   value: unknown,

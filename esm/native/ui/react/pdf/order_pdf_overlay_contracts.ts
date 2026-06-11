@@ -1,4 +1,4 @@
-export type OrderPdfSketchAnnotationPageKey = 'renderSketch' | 'openClosed';
+export type OrderPdfSketchAnnotationPageKey = 'orderPdfPage1' | 'renderSketch' | 'openClosed';
 
 export type OrderPdfSketchStrokeTool = 'pen' | 'marker' | 'eraser' | 'line' | 'square' | 'circle' | 'ellipse';
 export type OrderPdfSketchTool = OrderPdfSketchStrokeTool | 'text';
@@ -160,6 +160,8 @@ export type PdfJsPageLike = Record<string, unknown> & {
 
 export type PdfJsDocumentLike = Record<string, unknown> & {
   getPage: (pageNumber: number) => Promise<PdfJsPageLike>;
+  // Legacy pdfjs-dist 5.x only. pdfjs-dist 6 removed this alias; cleanup must
+  // prefer PDFDocumentLoadingTask.destroy() whenever the loading task is known.
   destroy?: () => void;
 };
 

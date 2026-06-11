@@ -81,7 +81,9 @@ function isDoorPartId(partId: string): boolean {
 }
 
 function isDrawerPartId(partId: string): boolean {
-  return partId.includes('drawer') || partId.includes('draw') || partId.includes('chest');
+  if (/^chest_drawer_\d+$/.test(partId)) return true;
+  if (partId === 'internal_drawer_accent_line') return false;
+  return partId.includes('drawer') || partId.includes('draw');
 }
 
 function readClickPoint(args: CanvasHandleAssignClickArgs): PointLike {

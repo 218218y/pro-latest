@@ -187,6 +187,9 @@ export function readStructureTabCellDimsState(ui: StructureTabUiSnapshot): Struc
     cellDimsWidth: readStructureTabOptionalCellDim(ui, 'cellDimsWidth'),
     cellDimsHeight: readStructureTabOptionalCellDim(ui, 'cellDimsHeight'),
     cellDimsDepth: readStructureTabOptionalCellDim(ui, 'cellDimsDepth'),
+    cellDimsHexMode: !!readUiRawScalarFromSnapshot(ui, 'cellDimsHexMode'),
+    cellDimsHexProtrusion: readStructureTabOptionalCellDim(ui, 'cellDimsHexProtrusion'),
+    cellDimsHexDoorWidth: readStructureTabOptionalCellDim(ui, 'cellDimsHexDoorWidth'),
   };
 }
 

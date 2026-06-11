@@ -5,6 +5,7 @@ export {
   getSketchFreePlacementRoomFloorY,
   clampSketchFreeBoxCenterYToWorkspace,
   isWithinSketchFreePlacementBounds,
+  isSketchFreeBoxUnderWardrobeColumn,
 } from './canvas_picking_sketch_free_box_geometry_vertical.js';
 export {
   doAxisIntervalsOverlap,

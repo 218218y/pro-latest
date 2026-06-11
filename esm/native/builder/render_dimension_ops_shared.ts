@@ -2,7 +2,7 @@ import {
   WARDROBE_DEFAULTS,
   WARDROBE_DIMENSION_GUIDE_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
-import type { AppContainer } from '../../../types';
+import type { AppContainer, BuilderDimensionLineScaleSpec } from '../../../types';
 
 export type Vector3Like = { x: number; y: number; z: number };
 
@@ -18,7 +18,7 @@ export type DimensionLineFn = (
   to: Vector3Like,
   textOffset: Vector3Like,
   label: string,
-  scale?: number,
+  scale?: BuilderDimensionLineScaleSpec,
   labelOffset?: Vector3Like
 ) => unknown;
 

@@ -42,5 +42,10 @@ export function resolveSketchFreeStackContentPreview(
     resolveSketchBoxSegments,
     pickSketchBoxSegment,
   });
-  return { mode: 'preview', ...boxStackPreview };
+  if (!boxStackPreview || !boxStackPreview.preview) return { mode: 'hide' };
+  return {
+    mode: 'preview',
+    hoverRecord: boxStackPreview.hoverRecord,
+    preview: boxStackPreview.preview,
+  };
 }

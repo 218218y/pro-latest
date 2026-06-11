@@ -10,6 +10,7 @@ import {
 } from '../../services/api.js';
 
 import { useApp, useUiFeedback } from './hooks.js';
+import { ViewerNotesControls } from './overlay_notes_controls.js';
 import { reportOverlayAppNonFatal } from './overlay_app_shared.js';
 
 type HistoryStatus = Pick<HistoryStatusLike, 'canUndo' | 'canRedo'>;
@@ -173,6 +174,7 @@ export function OverlayTopControls() {
   return (
     <>
       <UndoRedoControls />
+      <ViewerNotesControls />
       <CameraControls />
     </>
   );

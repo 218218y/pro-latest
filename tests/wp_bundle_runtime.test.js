@@ -116,6 +116,7 @@ test('bundle build config keeps strict entry signatures and named chunk policy',
   assert.equal(cfg.resolve.alias[aliasKey], aliasTarget);
   assert.equal(cfg.define.__WP_BUILD_CLIENT__, 'true');
   assert.equal(cfg.define.__WP_BUILD_PERF__, 'false');
+  assert.equal(cfg.build.copyPublicDir, false);
   assert.equal(cfg.build.rolldownOptions.preserveEntrySignatures, 'strict');
   assert.equal(cfg.build.rolldownOptions.output.entryFileNames, 'wardrobepro.bundle.js');
   assert.equal(cfg.build.rolldownOptions.output.chunkFileNames, 'wardrobepro.chunk-[name].js');

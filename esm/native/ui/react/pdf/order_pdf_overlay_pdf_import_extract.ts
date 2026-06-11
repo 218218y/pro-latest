@@ -5,7 +5,11 @@ import {
   type OrderPdfImportedRichDraftFieldValues,
 } from './order_pdf_overlay_imported_draft_fields_runtime.js';
 import { loadPdfDocumentCtor } from './order_pdf_overlay_pdf_lib.js';
-import { readOrderPdfImportedDraftFieldValues } from '../../pdf/order_pdf_document_fields_runtime.js';
+import {
+  hasAnyOrderPdfImportedDraftFieldValue,
+  readOrderPdfImportedDraftFieldValues,
+} from '../../pdf/order_pdf_document_fields_runtime.js';
+import { extractLoadedPdfDraftFieldsFromTextLayer } from './order_pdf_overlay_pdf_import_text.js';
 
 export type ExtractedLoadedPdfDraftFields = OrderPdfImportedRichDraftFieldValues;
 
@@ -32,7 +36,7 @@ function readPdfFormFieldNames(form: { getFields?: () => unknown[] } | null): Se
   return names;
 }
 
-export async function extractLoadedPdfDraftFields(bytes: Uint8Array): Promise<ExtractedLoadedPdfDraftFields> {
+async function extractLoadedPdfFormDraftFields(bytes: Uint8Array): Promise<ExtractedLoadedPdfDraftFields> {
   try {
     const PDFDocument = await loadPdfDocumentCtor();
     const pdfDoc = await PDFDocument.load(bytes);
@@ -61,6 +65,14 @@ export async function extractLoadedPdfDraftFields(bytes: Uint8Array): Promise<Ex
   } catch {
     return {};
   }
+}
+
+export async function extractLoadedPdfDraftFields(bytes: Uint8Array): Promise<ExtractedLoadedPdfDraftFields> {
+  const formExtracted = await extractLoadedPdfFormDraftFields(bytes);
+  if (hasAnyOrderPdfImportedDraftFieldValue(formExtracted)) return formExtracted;
+
+  const textLayerExtracted = await extractLoadedPdfDraftFieldsFromTextLayer(bytes);
+  return hasAnyOrderPdfImportedDraftFieldValue(textLayerExtracted) ? textLayerExtracted : formExtracted;
 }
 
 export function applyExtractedLoadedPdfDraft(

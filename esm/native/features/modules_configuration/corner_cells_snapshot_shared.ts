@@ -2,7 +2,6 @@
 // Keeps lower/top default policy, scalar coercion, and custom-data normalization in one focused seam.
 
 import {
-  cloneMutableCornerValue,
   isRecord,
   readRecord,
   type CornerConfigurationLike,
@@ -21,8 +20,6 @@ export const DEFAULT_CORNER_CONFIGURATION: NormalizedCornerConfigurationLike = {
   layout: 'shelves',
   extDrawersCount: 0,
   hasShoeDrawer: false,
-  intDrawersList: [],
-  intDrawersSlot: 0,
   isCustom: false,
   gridDivisions: 6,
   customData: {
@@ -36,8 +33,6 @@ export const DEFAULT_LOWER_CORNER_CONFIGURATION: NormalizedLowerCornerConfigurat
   layout: 'shelves',
   extDrawersCount: 0,
   hasShoeDrawer: false,
-  intDrawersList: [],
-  intDrawersSlot: 0,
   isCustom: true,
   gridDivisions: 6,
   customData: {
@@ -136,7 +131,6 @@ export function shallowCornerConfigurationRefsEqual(
 export function createDefaultLowerCornerConfiguration(): NormalizedLowerCornerConfigurationLike {
   return {
     ...DEFAULT_LOWER_CORNER_CONFIGURATION,
-    intDrawersList: cloneMutableCornerValue(DEFAULT_LOWER_CORNER_CONFIGURATION.intDrawersList),
     customData: sanitizeCornerCustomDataForPatch(DEFAULT_LOWER_CORNER_CONFIGURATION.customData),
     modulesConfiguration: [],
   };

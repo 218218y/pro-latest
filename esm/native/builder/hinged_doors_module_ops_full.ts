@@ -30,6 +30,7 @@ export function appendFullHingedDoorOps(
 
   const colorKey = state.sourceKey;
   const doorHeight = ctx.totalDoorSpace;
+  if (!(doorHeight > DOOR_SYSTEM_DIMENSIONS.hinged.split.renderMinSegmentHeightM)) return;
   const doorCenterY = ctx.doorBottomY + doorHeight / 2;
   const curtain = ctx.cfg.isMultiColorMode ? ctx.resolveCurtainForPart(colorKey, null) : null;
   const special = ctx.cfg.isMultiColorMode ? ctx.resolveSpecialForPart(colorKey, curtain) : null;
@@ -45,7 +46,7 @@ export function appendFullHingedDoorOps(
     moduleIndex: ctx.index,
     pivotX: state.pivotX,
     y: doorCenterY,
-    z: ctx.doorFrontZ + DOOR_SYSTEM_DIMENSIONS.hinged.opFrontZOffsetM,
+    z: ctx.doorOpZ,
     width: state.doorWidth,
     height: doorHeight,
     meshOffsetX: state.meshOffsetX,

@@ -142,6 +142,7 @@ export type NotesOverlayControllerState = {
   typingCommitTokenRef: MutableRefObject<number>;
   selectionOffsetsRef: MutableRefObject<Array<SelectionOffsets | null>>;
   preExitDrawModeCommitRef: MutableRefObject<(() => void) | null>;
+  skipNextExitCleanupRef: MutableRefObject<boolean>;
   suppressNextClickRef: MutableRefObject<boolean>;
   ignoreOutsideClickUntilRef: MutableRefObject<number>;
   createLastPointRef: MutableRefObject<{ x: number; y: number } | null>;

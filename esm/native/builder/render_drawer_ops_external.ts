@@ -1,3 +1,4 @@
+import { makeDrawerBoxPartId, resolveDrawerBoxPaintMaterial } from '../features/drawer_box_identity.js';
 import { resolveDoorVisualStyle } from './render_door_ops_shared.js';
 import { DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { BuilderRenderDrawerDeps } from './render_drawer_ops_shared.js';
@@ -6,6 +7,7 @@ import {
   readCreateDoorVisual,
   readCreateInternalDrawerBox,
   readDrawerConfig,
+  readAddFoldedClothes,
   readExternalDrawerOp,
   readFinite,
   readFinitePositive,
@@ -35,11 +37,14 @@ export function createApplyExternalDrawersOps(deps: BuilderRenderDrawerDeps) {
     const cfg = readDrawerConfig(args?.cfg);
     const isGroovesEnabled = args?.isGroovesEnabled === true;
     const bodyMat = args?.bodyMat;
+    const drawerBoxBaseMat = args?.drawerBoxBaseMat || args?.whiteMat || bodyMat;
     const addOutlines = readOutlineFn(args?.addOutlines);
     const getPartMaterial = readGetPartMaterial(args?.getPartMaterial);
     const getPartColorValue = readGetPartColorValue(args?.getPartColorValue);
     const createDoorVisual = readCreateDoorVisual(args?.createDoorVisual);
     const createInternalDrawerBox = readCreateInternalDrawerBox(args?.createInternalDrawerBox);
+    const showContentsEnabled = args?.showContentsEnabled === true;
+    const addFoldedClothes = readAddFoldedClothes(args?.addFoldedClothes);
     const doorStyle = args?.doorStyle;
     const globalFrontMat = args?.globalFrontMat;
     const groovesMap = cfg.groovesMap || {};
@@ -52,6 +57,7 @@ export function createApplyExternalDrawersOps(deps: BuilderRenderDrawerDeps) {
       if (!drawerOp) continue;
 
       const partId = drawerOp.partId;
+      const drawerBoxPartId = makeDrawerBoxPartId(partId);
       const grooveKey = drawerOp.grooveKey || `groove_${partId}`;
       const dividerKey = drawerOp.dividerKey || null;
       const hasGroove = isGroovesEnabled && groovesMap[grooveKey] != null;
@@ -66,6 +72,12 @@ export function createApplyExternalDrawersOps(deps: BuilderRenderDrawerDeps) {
       const faceOffsetX = readFinite(drawerOp.faceOffsetX, 0);
       const baseFrontZ =
         typeof drawerOp.frontZ === 'number' && Number.isFinite(drawerOp.frontZ) ? drawerOp.frontZ : null;
+      const drawerBoxMat = resolveDrawerBoxPaintMaterial({
+        drawerBoxPartId,
+        fallbackMaterial: drawerBoxBaseMat,
+        getPartColorValue,
+        getPartMaterial,
+      });
 
       const group = new THREE.Group();
       group.userData = {
@@ -76,6 +88,7 @@ export function createApplyExternalDrawersOps(deps: BuilderRenderDrawerDeps) {
         __doorHeight: drawerOp.visualH,
         __wpFaceOffsetX: faceOffsetX,
         __wpFrontZ: baseFrontZ,
+        __wpType: 'extDrawer',
       };
       __reg(App, partId, group, 'extDrawer');
 
@@ -129,15 +142,38 @@ export function createApplyExternalDrawersOps(deps: BuilderRenderDrawerDeps) {
             drawerOp.boxW,
             drawerOp.boxH,
             drawerOp.boxD,
-            bodyMat,
-            bodyMat,
+            drawerBoxMat,
+            drawerBoxMat,
             addOutlines,
             hasDivider,
             false,
             drawerVisualState.isGlass ? { omitFrontPanel: true } : null
           )
-        : new THREE.Mesh(new THREE.BoxGeometry(drawerOp.boxW, drawerOp.boxH, drawerOp.boxD), bodyMat);
+        : new THREE.Mesh(new THREE.BoxGeometry(drawerOp.boxW, drawerOp.boxH, drawerOp.boxD), drawerBoxMat);
       drawerBox.position.set(0, 0, drawerOp.boxOffsetZ || 0);
+      drawerBox.userData = {
+        ...(drawerBox.userData || {}),
+        partId: drawerBoxPartId,
+        drawerId: partId,
+        moduleIndex: drawerOp.moduleIndex,
+        __wpStack: wpStackArg,
+        __wpDrawerBox: true,
+        __wpDrawerOwnerPartId: partId,
+        __doorWidth: drawerOp.boxW,
+        __doorHeight: drawerOp.boxH,
+      };
+
+      if (showContentsEnabled && addFoldedClothes) {
+        addFoldedClothes(
+          0,
+          -(drawerOp.boxH || 0) / 2 + DRAWER_DIMENSIONS.external.contentsBottomInsetM,
+          0,
+          (drawerOp.boxW || 0) - DRAWER_DIMENSIONS.external.contentsWidthClearanceM,
+          drawerBox,
+          Math.max(0, (drawerOp.boxH || 0) - DRAWER_DIMENSIONS.external.contentsHeightClearanceM),
+          drawerOp.boxD
+        );
+      }
 
       group.add(drawerBox);
       group.add(visual);
@@ -149,8 +185,18 @@ export function createApplyExternalDrawersOps(deps: BuilderRenderDrawerDeps) {
         typeof drawerOp.connectD === 'number'
       ) {
         const connectGeo = new THREE.BoxGeometry(drawerOp.connectW, drawerOp.connectH, drawerOp.connectD);
-        const connectMesh = new THREE.Mesh(connectGeo, bodyMat);
+        const connectMesh = new THREE.Mesh(connectGeo, drawerBoxMat);
         connectMesh.position.set(0, 0, drawerOp.connectZ || 0);
+        connectMesh.userData = {
+          partId: drawerBoxPartId,
+          drawerId: partId,
+          moduleIndex: drawerOp.moduleIndex,
+          __wpStack: wpStackArg,
+          __wpDrawerBox: true,
+          __wpDrawerOwnerPartId: partId,
+          __doorWidth: drawerOp.connectW,
+          __doorHeight: drawerOp.connectH,
+        };
         group.add(connectMesh);
       }
 
@@ -171,6 +217,7 @@ export function createApplyExternalDrawersOps(deps: BuilderRenderDrawerDeps) {
           open: openPos,
           id: partId,
           dividerKey: dividerKey || undefined,
+          isInternal: false,
         });
       }
     }

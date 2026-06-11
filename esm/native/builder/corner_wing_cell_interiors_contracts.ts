@@ -3,7 +3,6 @@ import type { CornerCellCfg } from './corner_geometry_plan.js';
 import {
   type CornerCell,
   type CornerWingCellFlowParams,
-  type SlotMetaLike,
   type ValueRecord,
   requireAddFoldedClothes,
   requireAddHangingClothes,
@@ -39,8 +38,12 @@ export type CornerWingInteriorRuntime = {
   __getMirrorMat: CornerWingCellFlowParams['ctx']['__getMirrorMat'];
   __resolveSpecial: CornerWingCellFlowParams['ctx']['__resolveSpecial'];
   getCornerMat: CornerWingCellFlowParams['ctx']['getCornerMat'];
+  getCornerShelfMat: CornerWingCellFlowParams['ctx']['getCornerShelfMat'];
+  defaultShelfMat: unknown;
+  braceShelfMat: unknown;
   bodyMat: unknown;
   frontMat: unknown;
+  whiteMat: unknown;
   getMaterial: CornerWingCellFlowParams['ctx']['getMaterial'];
   __sketchMode: unknown;
   THREE: ReturnType<typeof requireThreeCornerCellLike>;
@@ -109,6 +112,5 @@ export type CornerWingInteriorCellRuntime = {
 
 export type CornerWingInteriorLayoutOps = {
   createRod(yPos: number, limitHeight?: number | null): void;
-  checkAndCreateInternalDrawer(slotIndex: number, slotMeta?: SlotMetaLike): boolean;
   addGridShelf(gridIndex: number): void;
 };

@@ -20,6 +20,7 @@ export {
   createHistoryableNoBuildMeta,
   readToastFn,
   patchCornerConfig,
+  patchCornerConfigForStack,
   syncCornerUi,
   commitCornerHistory,
   refreshCornerStructure,

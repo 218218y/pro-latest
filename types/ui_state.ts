@@ -37,6 +37,7 @@ export interface UiState extends UnknownRecord {
   // Design tab
   doorStyle?: string;
   colorChoice?: string;
+  frontColorShelfInheritanceMode?: 'all' | 'brace' | string;
   groovesEnabled?: boolean;
   splitDoors?: boolean;
   removeDoorsEnabled?: boolean;
@@ -94,8 +95,9 @@ export interface UiState extends UnknownRecord {
   // View/mode toggles occasionally mirrored on ui
   sketchMode?: boolean;
   globalClickMode?: boolean;
+  darkMode?: boolean;
 
-  // Render tab / room design
+  // Settings visual controls / room design
   lightingControl?: boolean;
   lastSelectedFloorStyleIdByType?: UnknownRecord;
   lastSelectedFloorStyleId?: string | number | null;

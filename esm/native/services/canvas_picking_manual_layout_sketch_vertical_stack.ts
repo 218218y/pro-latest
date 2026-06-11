@@ -8,6 +8,7 @@ import {
   readSketchDrawerHeightMFromItem,
   resolveSketchExternalDrawerMetrics,
   resolveSketchInternalDrawerMetrics,
+  sketchStackFitsAvailableHeight,
 } from '../features/sketch_drawer_sizing.js';
 
 export type VerticalOccupancyRange = {
@@ -17,6 +18,9 @@ export type VerticalOccupancyRange = {
   id?: string | null;
   count?: number;
   stackH?: number;
+  collisionGapM?: number;
+  hardCollision?: boolean;
+  kind?: string;
 };
 
 function readNumber(value: unknown): number | null {
@@ -58,48 +62,133 @@ export function resolveSketchVerticalStackPlacement(args: {
   sameStacks: VerticalOccupancyRange[];
   blockers?: VerticalOccupancyRange[];
   gap?: number;
-}): { op: 'add' | 'remove'; removeId: string | null; centerY: number; range: VerticalOccupancyRange | null } {
+  relocatableHardCollisionKinds?: readonly string[];
+  relocateOnCollision?: boolean;
+  snapToAvailableSlot?: boolean;
+}): {
+  op: 'add' | 'remove' | 'blocked';
+  removeId: string | null;
+  centerY: number;
+  range: VerticalOccupancyRange | null;
+} {
   const gap =
     typeof args.gap === 'number' && Number.isFinite(args.gap) && args.gap >= 0
       ? args.gap
       : DRAWER_DIMENSIONS.sketch.verticalStackCollisionGapM;
-  const desiredCenterY = args.clampCenter(args.desiredCenterY, args.selectedStackH);
+  const pointerCenterY = args.clampCenter(args.desiredCenterY, args.selectedStackH);
+  const relocateOnCollision = args.relocateOnCollision !== false;
   const sameStacks = Array.isArray(args.sameStacks) ? args.sameStacks.filter(Boolean) : [];
   const blockers = Array.isArray(args.blockers) ? args.blockers.filter(Boolean) : [];
   const occupied = sameStacks.concat(blockers);
 
+  const readStackGap = (stack: VerticalOccupancyRange) =>
+    typeof stack.collisionGapM === 'number' && Number.isFinite(stack.collisionGapM)
+      ? Math.max(0, stack.collisionGapM)
+      : gap;
+
   const containsPointer = sameStacks.filter(
-    stack => desiredCenterY >= stack.minY - gap / 2 && desiredCenterY <= stack.maxY + gap / 2
+    stack => pointerCenterY >= stack.minY - gap / 2 && pointerCenterY <= stack.maxY + gap / 2
   );
   if (containsPointer.length) {
     containsPointer.sort(
       (a, b) =>
-        Math.abs(desiredCenterY - (a.centerY ?? (a.minY + a.maxY) / 2)) -
-        Math.abs(desiredCenterY - (b.centerY ?? (b.minY + b.maxY) / 2))
+        Math.abs(pointerCenterY - (a.centerY ?? (a.minY + a.maxY) / 2)) -
+        Math.abs(pointerCenterY - (b.centerY ?? (b.minY + b.maxY) / 2))
     );
     const stack = containsPointer[0] || null;
     return {
       op: 'remove',
       removeId: stack?.id != null ? String(stack.id) : null,
-      centerY: stack?.centerY != null ? Number(stack.centerY) : desiredCenterY,
+      centerY: stack?.centerY != null ? Number(stack.centerY) : pointerCenterY,
       range: stack,
     };
   }
 
-  const overlapsAny = (centerY: number, stackH: number) => {
+  const alignCenterWithinPointerSlot = (pointerY: number, stackH: number): number => {
+    if (args.snapToAvailableSlot !== true || !occupied.length) return pointerY;
+
+    const minCenter = args.clampCenter(Number.NEGATIVE_INFINITY, stackH);
+    const maxCenter = args.clampCenter(Number.POSITIVE_INFINITY, stackH);
+    if (!Number.isFinite(minCenter) || !Number.isFinite(maxCenter)) return pointerY;
+
+    const freeBottomY = Math.min(minCenter, maxCenter) - stackH / 2;
+    const freeTopY = Math.max(minCenter, maxCenter) + stackH / 2;
+    if (!(freeTopY > freeBottomY)) return pointerY;
+
+    const blockersByY = occupied
+      .filter(
+        stack =>
+          Number.isFinite(stack.minY) &&
+          Number.isFinite(stack.maxY) &&
+          Math.max(stack.minY, stack.maxY) > freeBottomY &&
+          Math.min(stack.minY, stack.maxY) < freeTopY
+      )
+      .slice()
+      .sort((a, b) => Math.min(a.minY, a.maxY) - Math.min(b.minY, b.maxY));
+
+    let slotBottomY = freeBottomY;
+    for (const stack of blockersByY) {
+      const stackMinY = Math.min(stack.minY, stack.maxY) - readStackGap(stack);
+      const stackMaxY = Math.max(stack.minY, stack.maxY) + readStackGap(stack);
+      if (pointerY >= stackMinY && pointerY <= stackMaxY) return pointerY;
+      if (pointerY < stackMinY) {
+        const slotTopY = stackMinY;
+        const lo = slotBottomY + stackH / 2;
+        const hi = slotTopY - stackH / 2;
+        return hi >= lo ? Math.max(lo, Math.min(hi, pointerY)) : pointerY;
+      }
+      slotBottomY = Math.max(slotBottomY, stackMaxY);
+    }
+
+    const lo = slotBottomY + stackH / 2;
+    const hi = freeTopY - stackH / 2;
+    return hi >= lo ? Math.max(lo, Math.min(hi, pointerY)) : pointerY;
+  };
+
+  const desiredCenterY = alignCenterWithinPointerSlot(pointerCenterY, args.selectedStackH);
+
+  const relocatableHardCollisionKinds = new Set(
+    (args.relocatableHardCollisionKinds || []).filter(kind => typeof kind === 'string')
+  );
+  const canResolveAroundHardCollision = (stack: VerticalOccupancyRange) =>
+    stack.kind != null && relocatableHardCollisionKinds.has(String(stack.kind));
+
+  const touchEpsilon = 1e-9;
+  const rangeOverlapsStack = (centerY: number, stackH: number, stack: VerticalOccupancyRange) => {
     const minY = centerY - stackH / 2;
     const maxY = centerY + stackH / 2;
-    return occupied.some(stack => maxY > stack.minY - gap && minY < stack.maxY + gap);
+    const stackGap = readStackGap(stack);
+    return maxY > stack.minY - stackGap + touchEpsilon && minY < stack.maxY + stackGap - touchEpsilon;
   };
+
+  const overlapsAny = (centerY: number, stackH: number) => {
+    return occupied.some(stack => rangeOverlapsStack(centerY, stackH, stack));
+  };
+
+  if (
+    occupied.some(
+      stack =>
+        stack.hardCollision === true &&
+        !canResolveAroundHardCollision(stack) &&
+        rangeOverlapsStack(desiredCenterY, args.selectedStackH, stack)
+    )
+  ) {
+    return { op: 'blocked', removeId: null, centerY: desiredCenterY, range: null };
+  }
 
   if (!overlapsAny(desiredCenterY, args.selectedStackH)) {
     return { op: 'add', removeId: null, centerY: desiredCenterY, range: null };
   }
 
+  if (!relocateOnCollision) {
+    return { op: 'blocked', removeId: null, centerY: desiredCenterY, range: null };
+  }
+
   const candidates = [desiredCenterY];
   for (const stack of occupied) {
-    candidates.push(stack.minY - gap - args.selectedStackH / 2);
-    candidates.push(stack.maxY + gap + args.selectedStackH / 2);
+    const stackGap = readStackGap(stack);
+    candidates.push(stack.minY - stackGap - args.selectedStackH / 2);
+    candidates.push(stack.maxY + stackGap + args.selectedStackH / 2);
   }
 
   let bestCenter: number | null = null;
@@ -133,7 +222,7 @@ export function resolveSketchVerticalStackPlacement(args: {
     };
   }
 
-  return { op: 'add', removeId: null, centerY: desiredCenterY, range: null };
+  return { op: 'blocked', removeId: null, centerY: desiredCenterY, range: null };
 }
 
 export function buildSketchInternalDrawerBlockers<T extends Record<string, unknown>>(args: {
@@ -157,9 +246,9 @@ export function buildSketchInternalDrawerBlockers<T extends Record<string, unkno
     .map((item, index) => {
       const metrics = resolveSketchInternalDrawerMetrics({
         drawerHeightM: readSketchDrawerHeightMFromItem(item, DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_M),
-        availableHeightM,
       });
       const stackH = metrics.stackH;
+      if (!sketchStackFitsAvailableHeight(stackH, availableHeightM)) return null;
       const halfH = args.boxHeight / 2;
       const centerY = args.readCenterY
         ? args.readCenterY(item, stackH)
@@ -199,7 +288,7 @@ export function buildSketchExternalDrawerBlockers<T extends Record<string, unkno
   const halfH = args.boxHeight / 2;
   const innerBottomY = args.boxCenterY - halfH + args.woodThick;
   const innerTopY = args.boxCenterY + halfH - args.woodThick;
-  const availableHeightM = Math.max(0, innerTopY - innerBottomY);
+  const availableHeightM = Math.max(0, args.boxHeight);
   const clampCenter = (centerY: number, stackH: number) => {
     const lo = innerBottomY + stackH / 2;
     const hi = innerTopY - stackH / 2;
@@ -212,10 +301,10 @@ export function buildSketchExternalDrawerBlockers<T extends Record<string, unkno
       const metrics = resolveSketchExternalDrawerMetrics({
         drawerCount: countRaw,
         drawerHeightM: readSketchDrawerHeightMFromItem(item, DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M),
-        availableHeightM,
       });
       const count = metrics.drawerCount;
       const stackH = metrics.stackH;
+      if (!sketchStackFitsAvailableHeight(stackH, availableHeightM)) return null;
       const halfH = args.boxHeight / 2;
       const centerY = args.readCenterY
         ? args.readCenterY(item, stackH)

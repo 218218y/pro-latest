@@ -5,6 +5,7 @@
 
 import type {
   DoorsCaptureLocalOpenOptionsLike,
+  DoorsCloseDrawerOptionsLike,
   DoorsReleaseEditHoldOptionsLike,
   DoorsSetOpenOptionsLike,
   DoorsSyncVisualsOptionsLike,
@@ -44,6 +45,7 @@ export type DoorsRuntimeState = UnknownRecord & {
 
 export type SetDoorsOptions = DoorsSetOpenOptionsLike;
 export type SyncVisualsOptions = DoorsSyncVisualsOptionsLike;
+export type CloseDrawerOptions = DoorsCloseDrawerOptionsLike;
 export type HoldEditOptions = UnknownRecord & { includeDrawers?: boolean };
 export type ReleaseEditHoldOptions = DoorsReleaseEditHoldOptionsLike;
 export type CaptureLocalOpenOptions = DoorsCaptureLocalOpenOptionsLike;

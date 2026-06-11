@@ -126,7 +126,7 @@ export const DEFAULT_COLOR_SWATCHES: SavedColor[] = [
   { id: 'default_#f2f0eb', name: 'שמנת', type: 'color', value: '#f2f0eb', textureData: null },
   { id: 'default_#eaddcf', name: 'אלון מבוקע', type: 'color', value: '#eaddcf', textureData: null },
   { id: 'default_#a08060', name: 'אגוז טבעי', type: 'color', value: '#a08060', textureData: null },
-  { id: 'default_#d0d4d8', name: 'אפור כהה', type: 'color', value: '#d0d4d8', textureData: null },
+  { id: 'default_#4a4b4f', name: 'וונגה', type: 'color', value: '#4a4b4f', textureData: null },
 ];
 
 export const MULTI_CURTAIN_LABELS: Record<CurtainPreset, string> = {

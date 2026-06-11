@@ -18,6 +18,7 @@ type UseNotesOverlayControllerCommitEffectsArgs = {
   setInteraction: Dispatch<SetStateAction<import('./notes_overlay_helpers.js').Interaction | null>>;
   setCreatingRect: Dispatch<SetStateAction<import('./notes_overlay_helpers.js').Rect | null>>;
   preExitDrawModeCommitRef: MutableRefObject<(() => void) | null>;
+  skipNextExitCleanupRef: MutableRefObject<boolean>;
   createLastPointRef: MutableRefObject<{ x: number; y: number } | null>;
   prevEditModeCleanupRef: MutableRefObject<boolean>;
   clearDomSelection: () => void;
@@ -37,6 +38,7 @@ export function useNotesOverlayControllerCommitEffects(
     setInteraction,
     setCreatingRect,
     preExitDrawModeCommitRef,
+    skipNextExitCleanupRef,
     createLastPointRef,
     prevEditModeCleanupRef,
     clearDomSelection,
@@ -74,6 +76,12 @@ export function useNotesOverlayControllerCommitEffects(
     setCreatingRect(null);
     createLastPointRef.current = null;
 
+    if (skipNextExitCleanupRef.current) {
+      skipNextExitCleanupRef.current = false;
+      setDraftNotes(prev => preserveEquivalentNoteSnapshot(prev, normalized));
+      return;
+    }
+
     const captured = captureEditorsIntoNotes(draftNotes);
     const cleaned = filterEmptyNotes(captured);
     if (!notesChanged(cleaned, normalized)) return;
@@ -86,6 +94,7 @@ export function useNotesOverlayControllerCommitEffects(
     commitNotes,
     clearDomSelection,
     createLastPointRef,
+    skipNextExitCleanupRef,
     prevEditModeCleanupRef,
     setActiveIndex,
     setInteraction,

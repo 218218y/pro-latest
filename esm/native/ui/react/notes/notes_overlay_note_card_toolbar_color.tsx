@@ -51,8 +51,9 @@ export function NoteCardToolbarColorControl(
   return (
     <div className="toolbar-color-container">
       <button
-        className="toolbar-btn toolbar-btn--square toolbar-color-btn"
+        className="toolbar-btn toolbar-btn--square toolbar-color-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-right"
         type="button"
+        data-tooltip="צבע טקסט"
         style={{
           backgroundColor: toolbarColor,
           borderColor: toolbarColor,

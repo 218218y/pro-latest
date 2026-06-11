@@ -140,6 +140,8 @@ export function loadInteriorTabWorkflowControllerModule(calls, options = {}) {
             Number(height) === 16.5 ? 'sketch_int_drawers' : `sketch_int_drawers@${height}`,
           mkSketchShelfTool: (variant, depth) =>
             depth ? `sketch_shelf:${variant}@${depth}` : `sketch_shelf:${variant}`,
+          mkSketchStorageTool: height => `sketch_storage:${height}`,
+          SKETCH_TOOL_ROD: 'sketch_rod',
         };
       }
       if (specifier === './interior_tab_view_state_shared.js') {
@@ -177,6 +179,7 @@ export function createInteriorWorkflowControllerHarness(stateOverrides = {}, opt
     doorTrimVerticalCustomCm: 18,
     doorTrimVerticalCrossCm: 4,
     sketchShelfDepthByVariant: { glass: 27 },
+    sketchStorageHeightCm: 50,
     sketchExtDrawerHeightCm: 22,
     sketchIntDrawerHeightCm: 16.5,
     setDoorTrimColor: color => colorCalls.push(color),

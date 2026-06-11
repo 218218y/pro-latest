@@ -80,7 +80,8 @@ export function createSketchPlacementPreviewContext(args: ApplySketchPlacementPr
   const kind = typeof input.kind === 'string' ? String(input.kind) : '';
   const variant = typeof input.variant === 'string' ? String(input.variant) : '';
   const op = typeof input.op === 'string' ? String(input.op) : '';
-  const isRemove = op === 'remove' || input.isRemove === true;
+  const isBlocked = op === 'blocked' || input.isBlocked === true || typeof input.blockedReason === 'string';
+  const isRemove = op === 'remove' || input.isRemove === true || isBlocked;
 
   const x = Number(input.x);
   const y = Number(input.y);
@@ -208,6 +209,7 @@ export function createSketchPlacementPreviewContext(args: ApplySketchPlacementPr
     kind,
     variant,
     op,
+    isBlocked,
     isRemove,
     x,
     y,

@@ -24,6 +24,7 @@ import {
 } from '../../../features/sketch_drawer_sizing.js';
 
 import type {
+  ManualToolId,
   SketchBoxBaseType,
   SketchBoxCorniceType,
   SketchBoxLegColor,
@@ -231,8 +232,20 @@ export function parseSketchStorageHeightCm(tool: string): number | null {
   return n;
 }
 
+export function mkSketchStorageTool(heightCm: number): string {
+  return `${SKETCH_TOOL_STORAGE_PREFIX}${clampSketch(heightCm, 5, 120)}`;
+}
+
 export const SKETCH_TOOL_SHELF_PREFIX = 'sketch_shelf:';
 const SKETCH_SHELF_DEPTH_SEP = '@';
+
+export function readSketchDivisionManualToolId(tool: string): ManualToolId | null {
+  if (!tool) return null;
+  if (tool.startsWith(SKETCH_TOOL_SHELF_PREFIX)) return 'shelf';
+  if (tool === SKETCH_TOOL_ROD) return 'rod';
+  if (tool.startsWith(SKETCH_TOOL_STORAGE_PREFIX)) return 'storage';
+  return null;
+}
 
 export function parseSketchShelfVariant(tool: string): string | null {
   if (!tool || !tool.startsWith(SKETCH_TOOL_SHELF_PREFIX)) return null;

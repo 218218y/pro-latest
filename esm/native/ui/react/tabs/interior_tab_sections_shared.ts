@@ -1,5 +1,6 @@
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 
+import { METAL_FINISH_PALETTE_BY_COLOR } from '../../../features/metal_finish_palette.js';
 import type { HandleFinishColor, HandleFinishPresetColor } from '../../../features/handle_finish_shared.js';
 import type {
   DoorTrimUiAxis,
@@ -17,10 +18,10 @@ export type LayoutTypeOption = { id: LayoutTypeId; label: string; icon: string }
 export type ManualToolOption = { id: ManualToolId; label: string };
 
 export const METAL_FINISH_SWATCH_BG_BY_COLOR: Record<HandleFinishPresetColor, string> = {
-  nickel: '#e5e9ef',
-  silver: '#cfd5dd',
-  gold: '#e5c66b',
-  black: '#15171a',
+  nickel: METAL_FINISH_PALETTE_BY_COLOR.nickel.cssHex,
+  silver: METAL_FINISH_PALETTE_BY_COLOR.silver.cssHex,
+  gold: METAL_FINISH_PALETTE_BY_COLOR.gold.cssHex,
+  black: METAL_FINISH_PALETTE_BY_COLOR.black.cssHex,
   pink: '#f3b6cb',
 };
 
@@ -35,7 +36,14 @@ export const METAL_FINISH_OPTIONS: Array<{
   label: string;
   style?: CSSProperties;
 }> = [
-  { id: 'nickel', label: 'ניקל', style: { background: '#e5e9ef', color: '#1f2933' } },
+  {
+    id: 'nickel',
+    label: 'ניקל',
+    style: {
+      background: METAL_FINISH_PALETTE_BY_COLOR.nickel.cssHex,
+      color: METAL_FINISH_PALETTE_BY_COLOR.nickel.swatchTextColor,
+    },
+  },
   { id: 'silver', label: 'כסף' },
   { id: 'gold', label: 'זהב' },
   { id: 'black', label: 'שחור', style: { background: '#15171a', color: '#fff' } },
@@ -47,7 +55,14 @@ export const DOOR_TRIM_COLORS: Array<{
   label: string;
   style?: CSSProperties;
 }> = [
-  { id: 'nickel', label: 'ניקל', style: { background: '#e5e9ef', color: '#1f2933' } },
+  {
+    id: 'nickel',
+    label: 'ניקל',
+    style: {
+      background: METAL_FINISH_PALETTE_BY_COLOR.nickel.cssHex,
+      color: METAL_FINISH_PALETTE_BY_COLOR.nickel.swatchTextColor,
+    },
+  },
   { id: 'silver', label: 'כסף' },
   { id: 'gold', label: 'זהב' },
   { id: 'black', label: 'שחור', style: { background: '#15171a', color: '#fff' } },
@@ -71,6 +86,7 @@ export type InteriorLayoutSectionProps = {
   isManualLayoutMode: boolean;
   isBraceShelvesMode: boolean;
   isSketchToolActive: boolean;
+  isSketchDivisionToolActive: boolean;
   layoutType: LayoutTypeId;
   manualTool: ManualToolId;
   manualToolRaw: string;
@@ -80,6 +96,7 @@ export type InteriorLayoutSectionProps = {
   gridShelfVariant: 'regular' | 'double' | 'glass' | 'brace';
   showManualRow: boolean;
   showGridControls: boolean;
+  showShelfVariantControls: boolean;
   sketchShelvesOpen: boolean;
   sketchRowOpen: boolean;
   sketchBoxHeightCm: number;
@@ -174,6 +191,7 @@ export type InteriorLayoutSectionProps = {
   exitManual: () => void;
   setGridDivisions: (count: number) => void;
   setGridShelfVariant: (variant: 'regular' | 'double' | 'glass' | 'brace') => void;
+  enterSketchDivision: (tool: ManualToolId, shelfVariant: 'regular' | 'double' | 'glass' | 'brace') => void;
   activateManualToolId: (toolId: string) => void;
   activateDoorTrimMode: (
     axis: DoorTrimUiAxis,

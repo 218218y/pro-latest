@@ -64,6 +64,9 @@ const uiScalarReaders: UiScalarReaderMap = {
   cellDimsWidth: readNullableNumber,
   cellDimsHeight: readNullableNumber,
   cellDimsDepth: readNullableNumber,
+  cellDimsHexMode: readBoolean,
+  cellDimsHexProtrusion: readNullableNumber,
+  cellDimsHexDoorWidth: readNullableNumber,
 };
 
 export function readUiScalarValue<K extends UiRawScalarKey>(

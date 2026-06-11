@@ -3,10 +3,7 @@ import {
   tryHandleDrawerDividerHoverPreview,
   tryHandleExtDrawersHoverPreview,
 } from './canvas_picking_hover_preview_modes.js';
-import {
-  tryHandleCanvasIntDrawerHover,
-  tryHandleCanvasLayoutFamilyHover,
-} from './canvas_picking_interior_hover_flow.js';
+import { tryHandleCanvasLayoutFamilyHover } from './canvas_picking_interior_hover_flow.js';
 import {
   __wp_estimateVisibleModuleFrontZ,
   __wp_measureObjectLocalBox,
@@ -19,7 +16,6 @@ import { __wp_getCellDimsHoverOp, __wp_readCellDimsDraft } from './canvas_pickin
 import type { HandleCanvasNonSplitHoverArgs } from './canvas_picking_hover_flow_nonsplit_contracts.js';
 
 export type NonSplitInteriorPreviewDeps = {
-  tryHandleCanvasIntDrawerHover: typeof tryHandleCanvasIntDrawerHover;
   tryHandleExtDrawersHoverPreview: typeof tryHandleExtDrawersHoverPreview;
   tryHandleDrawerDividerHoverPreview: typeof tryHandleDrawerDividerHoverPreview;
   tryHandleCanvasLayoutFamilyHover: typeof tryHandleCanvasLayoutFamilyHover;
@@ -27,7 +23,6 @@ export type NonSplitInteriorPreviewDeps = {
 };
 
 const DEFAULT_NON_SPLIT_INTERIOR_PREVIEW_DEPS: NonSplitInteriorPreviewDeps = {
-  tryHandleCanvasIntDrawerHover,
   tryHandleExtDrawersHoverPreview,
   tryHandleDrawerDividerHoverPreview,
   tryHandleCanvasLayoutFamilyHover,
@@ -53,23 +48,6 @@ export function tryHandleCanvasNonSplitInteriorPreviewRoutes(
     hideSketchPreview,
     setLayoutPreview,
   } = args;
-
-  if (
-    deps.tryHandleCanvasIntDrawerHover({
-      App,
-      ndcX,
-      ndcY,
-      primaryMode,
-      raycaster,
-      mouse,
-      previewRo: previewRo || null,
-      hideLayoutPreview,
-      hideSketchPreview,
-      setLayoutPreview,
-    })
-  ) {
-    return true;
-  }
 
   if (
     deps.tryHandleExtDrawersHoverPreview({

@@ -25,6 +25,7 @@ import {
 import {
   NORMAL_AMBIENT_DEFAULT,
   NORMAL_DIR_DEFAULT,
+  SKETCH_AMBIENT_DEFAULT,
   type SceneViewUpdateLightsOpts,
   type SceneViewUpdateModeOpts,
   updateCornerAutoLightShadowRefresh,
@@ -139,7 +140,7 @@ export function updateLightsInternal(App: AppContainer, opts?: SceneViewUpdateLi
     applyRendererLightingMode(App, sketchMode);
 
     if (sketchMode) {
-      ambient.intensity = 0.95;
+      ambient.intensity = SKETCH_AMBIENT_DEFAULT;
       directional.visible = false;
     } else {
       directional.visible = true;

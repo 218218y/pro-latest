@@ -17,7 +17,6 @@ export type InteriorCustomInput = InteriorValueRecord & {
   createBoard?: InteriorOpsCallable;
   createRod?: InteriorOpsCallable;
   addFoldedClothes?: InteriorOpsCallable;
-  checkAndCreateInternalDrawer?: InteriorOpsCallable;
   wardrobeGroup?: InteriorGroupLike | null;
   gridDivisions?: unknown;
   effectiveBottomY?: unknown;
@@ -33,10 +32,10 @@ export type InteriorCustomInput = InteriorValueRecord & {
   modulesLength?: unknown;
   moduleKey?: unknown;
   currentShelfMat?: unknown;
+  currentBraceShelfMat?: unknown;
   bodyMat?: unknown;
   braceShelves?: unknown;
   isInternalDrawersEnabled?: unknown;
-  intDrawersList?: unknown;
   cfg?: InteriorValueRecord;
   getPartMaterial?: InteriorOpsCallable;
   getPartColorValue?: InteriorOpsCallable;

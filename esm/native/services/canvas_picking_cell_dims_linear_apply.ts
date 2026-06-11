@@ -2,64 +2,56 @@ import type { UnknownRecord } from '../../../types';
 import type {
   EnsureOwnLinearModule,
   LinearCellDimsContext,
-  ModuleShape,
 } from './canvas_picking_cell_dims_linear_shared.js';
-
 import { requestBuilderStructuralRefresh } from '../runtime/builder_service_access.js';
 import { patchUiSoft } from '../runtime/ui_write_access.js';
 import { applyCellDimsConfigSnapshot } from './canvas_picking_config_actions.js';
-import { __wp_reportPickingIssue, __wp_commitHistoryTouch, __asInt } from './canvas_picking_core_helpers.js';
-import { sanitizeModulesConfigurationListLight } from '../features/modules_configuration/modules_config_api.js';
+import { __wp_reportPickingIssue, __wp_commitHistoryTouch } from './canvas_picking_core_helpers.js';
 import {
   applyOverrideToSpecialDims,
   assignSpecialDimsToConfig,
   cloneSpecialDims,
 } from '../features/special_dims/index.js';
 import {
-  asModuleShape,
-  cloneModuleRecord,
   createHistoryableNoBuildMeta,
   readSpecialDimsRecord,
   readToastFn,
 } from './canvas_picking_cell_dims_linear_shared.js';
+import { buildMutableLinearModules } from './canvas_picking_cell_dims_linear_mutable.js';
 import { applyLinearCellDimsWidthPolicy } from './canvas_picking_cell_dims_linear_width.js';
 import { promoteUniformLinearCellDim } from './canvas_picking_cell_dims_linear_normalize.js';
 
-function buildMutableModules(ctx: LinearCellDimsContext): {
-  nextModsCfg: UnknownRecord[];
-  ensureOwnModule: EnsureOwnLinearModule;
-} {
-  const prevModsList: unknown[] = Array.isArray(ctx.prevModsCfg) ? ctx.prevModsCfg : [];
-  let hasBadEntry = false;
-  for (let i = 0; i < ctx.moduleCount; i++) {
-    const value = prevModsList[i];
-    if (!(value && typeof value === 'object' && !Array.isArray(value))) {
-      hasBadEntry = true;
-      break;
-    }
-  }
+export type LinearCellDimsSelectedModuleMutationResult = {
+  toastMessage?: string;
+};
 
-  const nextModsCfg: UnknownRecord[] = (
-    hasBadEntry
-      ? sanitizeModulesConfigurationListLight('modulesConfiguration', prevModsList, prevModsList)
-      : prevModsList.slice(0, ctx.moduleCount)
-  ).map(item => cloneModuleRecord(item));
-  while (nextModsCfg.length < ctx.moduleCount) nextModsCfg.push({});
+export type LinearCellDimsApplyOptions = {
+  source?: string;
+  /**
+   * Hex-cell updates are additive geometry updates. Re-applying them while the
+   * width/height/depth draft matches the current special dimension must keep the
+   * existing override instead of using the normal "click same value to remove"
+   * cell-dims behavior.
+   */
+  disableToggleBack?: boolean;
+  skipDimensionMutations?: boolean;
+  mutateSelectedModule?: (
+    ctx: LinearCellDimsContext,
+    ensureOwnModule: EnsureOwnLinearModule
+  ) => LinearCellDimsSelectedModuleMutationResult | void;
+};
 
-  const ensureOwnModule = (i: number): ModuleShape => {
-    const out = cloneModuleRecord(nextModsCfg[i]);
-    nextModsCfg[i] = out;
-    return out;
+function withoutLinearToggleBack(ctx: LinearCellDimsContext): LinearCellDimsContext {
+  return {
+    ...ctx,
+    tgtW: ctx.applyW != null ? ctx.applyW : ctx.widthsCurr[ctx.idx],
+    tgtH: ctx.applyH != null ? ctx.applyH : ctx.heightsCurr[ctx.idx],
+    tgtD: ctx.applyD != null ? ctx.applyD : ctx.depthsCurr[ctx.idx],
+    didToggleBack: false,
+    toggledBackW: false,
+    toggledBackH: false,
+    toggledBackD: false,
   };
-
-  for (let i = 0; i < ctx.moduleCount; i++) {
-    const cur = asModuleShape(nextModsCfg[i]);
-    const wantDoors = ctx.doorsPerModule[i];
-    const curDoors = __asInt(cur.doors, wantDoors);
-    if (curDoors !== wantDoors) ensureOwnModule(i).doors = wantDoors;
-  }
-
-  return { nextModsCfg, ensureOwnModule };
 }
 
 function applySelectedLinearOverrides(
@@ -96,44 +88,63 @@ function applySelectedLinearOverrides(
   assignSpecialDimsToConfig(next, sd);
 }
 
-export function applyCanvasLinearCellDimsContext(ctx: LinearCellDimsContext): void {
-  const { App } = ctx;
-  const { nextModsCfg, ensureOwnModule } = buildMutableModules(ctx);
-  applySelectedLinearOverrides(ctx, ensureOwnModule);
+export function applyCanvasLinearCellDimsContextWithOptions(
+  ctx: LinearCellDimsContext,
+  options: LinearCellDimsApplyOptions = {}
+): void {
+  const source = options.source || 'cellDims.apply';
+  const applyCtx = options.disableToggleBack ? withoutLinearToggleBack(ctx) : ctx;
+  const { App } = applyCtx;
+  const { nextModsCfg, ensureOwnModule } = buildMutableLinearModules(applyCtx);
+  const skipDimensionMutations = options.skipDimensionMutations === true;
+  if (!skipDimensionMutations) applySelectedLinearOverrides(applyCtx, ensureOwnModule);
+  const mutationResult = options.mutateSelectedModule?.(applyCtx, ensureOwnModule);
+  const extraMutation: LinearCellDimsSelectedModuleMutationResult | undefined =
+    mutationResult && typeof mutationResult === 'object' ? mutationResult : undefined;
 
-  const { setManualWidth, unsetManualWidth, nextTotalW } = applyLinearCellDimsWidthPolicy(
-    ctx,
-    nextModsCfg,
-    ensureOwnModule
-  );
-  const heightPromotion = promoteUniformLinearCellDim(ctx, nextModsCfg, ensureOwnModule, 'height');
-  const depthPromotion = promoteUniformLinearCellDim(ctx, nextModsCfg, ensureOwnModule, 'depth');
+  const { setManualWidth, unsetManualWidth, nextTotalW } = skipDimensionMutations
+    ? { setManualWidth: false, unsetManualWidth: false, nextTotalW: applyCtx.totalW }
+    : applyLinearCellDimsWidthPolicy(applyCtx, nextModsCfg, ensureOwnModule);
+  const heightPromotion = skipDimensionMutations
+    ? { nextTotal: applyCtx.totalH, promoted: false }
+    : applyCtx.isBottomStack
+      ? { nextTotal: applyCtx.totalH, promoted: false }
+      : promoteUniformLinearCellDim(applyCtx, nextModsCfg, ensureOwnModule, 'height');
+  const depthPromotion = skipDimensionMutations
+    ? { nextTotal: applyCtx.totalD, promoted: false }
+    : promoteUniformLinearCellDim(applyCtx, nextModsCfg, ensureOwnModule, 'depth');
 
   const widthChanged =
-    ctx.applyW != null &&
+    applyCtx.applyW != null &&
     Number.isFinite(nextTotalW) &&
     nextTotalW > 0 &&
-    Math.abs(nextTotalW - ctx.totalW) > 1e-6;
+    Math.abs(nextTotalW - applyCtx.totalW) > 1e-6;
   const heightChanged =
     heightPromotion.promoted &&
     Number.isFinite(heightPromotion.nextTotal) &&
     heightPromotion.nextTotal > 0 &&
-    Math.abs(heightPromotion.nextTotal - ctx.totalH) > 1e-6;
+    Math.abs(heightPromotion.nextTotal - applyCtx.totalH) > 1e-6;
   const depthChanged =
     depthPromotion.promoted &&
     Number.isFinite(depthPromotion.nextTotal) &&
     depthPromotion.nextTotal > 0 &&
-    Math.abs(depthPromotion.nextTotal - ctx.totalD) > 1e-6;
+    Math.abs(depthPromotion.nextTotal - applyCtx.totalD) > 1e-6;
 
   try {
-    const metaCfg = createHistoryableNoBuildMeta(App, 'cellDims.apply');
+    const metaCfg = createHistoryableNoBuildMeta(App, source);
     applyCellDimsConfigSnapshot({
       App,
       modulesConfiguration: nextModsCfg,
-      manualWidth: setManualWidth ? true : unsetManualWidth ? false : undefined,
-      width: widthChanged ? nextTotalW : undefined,
-      height: heightChanged ? heightPromotion.nextTotal : undefined,
-      depth: depthChanged ? depthPromotion.nextTotal : undefined,
+      modulesBucket: applyCtx.configBucket,
+      manualWidth:
+        !applyCtx.isBottomStack && (setManualWidth || unsetManualWidth)
+          ? setManualWidth
+            ? true
+            : false
+          : undefined,
+      width: !applyCtx.isBottomStack && widthChanged ? nextTotalW : undefined,
+      height: !applyCtx.isBottomStack && heightChanged ? heightPromotion.nextTotal : undefined,
+      depth: !applyCtx.isBottomStack && depthChanged ? depthPromotion.nextTotal : undefined,
       meta: metaCfg,
     });
   } catch (err) {
@@ -145,23 +156,42 @@ export function applyCanvasLinearCellDimsContext(ctx: LinearCellDimsContext): vo
     );
   }
 
-  if (widthChanged || heightChanged || depthChanged) {
+  if (
+    widthChanged ||
+    heightChanged ||
+    depthChanged ||
+    (applyCtx.isBottomStack && (setManualWidth || unsetManualWidth))
+  ) {
     try {
       const rawPatch: UnknownRecord = {};
-      if (widthChanged) rawPatch.width = nextTotalW;
-      if (heightChanged) rawPatch.height = heightPromotion.nextTotal;
-      if (depthChanged) rawPatch.depth = depthPromotion.nextTotal;
-      patchUiSoft(App, { raw: rawPatch }, createHistoryableNoBuildMeta(App, 'cellDims.apply'));
+      if (applyCtx.isBottomStack) {
+        if (widthChanged) rawPatch.stackSplitLowerWidth = nextTotalW;
+        if (widthChanged || setManualWidth || unsetManualWidth) {
+          rawPatch.stackSplitLowerWidthManual = setManualWidth ? true : unsetManualWidth ? false : true;
+        }
+        if (depthChanged) {
+          rawPatch.stackSplitLowerDepth = depthPromotion.nextTotal;
+          rawPatch.stackSplitLowerDepthManual = true;
+        }
+      } else {
+        if (widthChanged) rawPatch.width = nextTotalW;
+        if (heightChanged) rawPatch.height = heightPromotion.nextTotal;
+        if (depthChanged) rawPatch.depth = depthPromotion.nextTotal;
+      }
+      if (Object.keys(rawPatch).length) {
+        patchUiSoft(App, { raw: rawPatch }, createHistoryableNoBuildMeta(App, source));
+      }
     } catch (err) {
       __wp_reportPickingIssue(App, err, { where: 'canvasPicking', op: 'cellDims.syncUiRaw' });
     }
   }
 
-  __wp_commitHistoryTouch(App, 'cellDims.apply');
+  if (source === 'cellDims.apply') __wp_commitHistoryTouch(App, 'cellDims.apply');
+  else __wp_commitHistoryTouch(App, source);
 
   try {
     requestBuilderStructuralRefresh(App, {
-      source: 'cellDims.apply',
+      source,
       immediate: true,
       force: true,
       triggerRender: true,
@@ -173,9 +203,17 @@ export function applyCanvasLinearCellDimsContext(ctx: LinearCellDimsContext): vo
 
   try {
     const fn = readToastFn(App);
-    const msg = ctx.didToggleBack ? `תא ${ctx.idx + 1} חזר למידות רגילות` : `הוחל על תא ${ctx.idx + 1}`;
+    const msg =
+      extraMutation?.toastMessage ||
+      (applyCtx.didToggleBack
+        ? `תא ${applyCtx.idx + 1} חזר למידות רגילות`
+        : `הוחל על תא ${applyCtx.idx + 1}`);
     if (typeof fn === 'function') fn(msg, true);
   } catch (err) {
     __wp_reportPickingIssue(App, err, { where: 'canvasPicking', op: 'cellDims.feedbackToast' });
   }
+}
+
+export function applyCanvasLinearCellDimsContext(ctx: LinearCellDimsContext): void {
+  applyCanvasLinearCellDimsContextWithOptions(ctx);
 }

@@ -64,6 +64,67 @@ test('manual-layout flow fills all shelves for a new brace layout through the ca
   assert.deepEqual(cfg.braceShelves, [1, 2, 3, 4, 5]);
 });
 
+test('manual-layout flow skips auto-filled shelves colliding with sketch drawers and warns once', () => {
+  const toasts: Array<[string, string | undefined]> = [];
+  const state = {
+    ui: {
+      currentGridDivisions: 5,
+      currentGridShelfVariant: 'regular',
+    },
+    mode: {
+      opts: {
+        manualTool: 'shelf',
+      },
+    },
+  };
+  const App = {
+    ...createApp(state),
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => toasts.push([message, type]),
+      },
+    },
+  } as any;
+  getInternalGridMap(App, false)['0'] = {
+    effectiveTopY: 1.2,
+    effectiveBottomY: 0,
+    gridDivisions: 5,
+    woodThick: 0.018,
+  };
+
+  const cfg: Record<string, unknown> = {
+    isCustom: false,
+    gridDivisions: 4,
+    sketchExtras: {
+      drawers: [{ id: 'internal-drawers', yNormC: 0.4, drawerHeightM: 0.18 }],
+      extDrawers: [{ id: 'external-drawers', yNormC: 0.6, count: 1, drawerHeightM: 0.18 }],
+    },
+  };
+
+  const handled = tryHandleCanvasManualLayoutClick({
+    App,
+    foundModuleIndex: 0,
+    __activeModuleKey: 0,
+    __isBottomStack: false,
+    __isLayoutEditMode: true,
+    __isManualLayoutMode: true,
+    __isBraceShelvesMode: false,
+    moduleHitY: 0.6,
+    intersects: [],
+    __patchConfigForKey: (_mk, patchFn) => {
+      patchFn(cfg as never);
+      return null;
+    },
+    __getActiveConfigRef: () => cfg as never,
+  });
+
+  const customData = cfg.customData as { shelves: boolean[]; shelfVariants: string[] };
+  assert.equal(handled, true);
+  assert.deepEqual(customData.shelves, [true, false, false, true]);
+  assert.deepEqual(customData.shelfVariants, ['', '', '', '']);
+  assert.deepEqual(toasts, [['2 מדפים לא נבנו בגלל התנגשות במגירות לפי סקיצה קיימות.', 'warning']]);
+});
+
 test('manual-layout flow toggles a rod off and removes only the matching exact preset rod metadata', () => {
   const state = {
     ui: {

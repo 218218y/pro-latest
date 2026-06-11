@@ -49,42 +49,6 @@ function computePresetOps(
   }
 }
 
-function applyPresetInternalDrawerLayout(
-  presetOps: InteriorPresetOpsLike,
-  input: InteriorLayoutParams,
-  gridDivisions: number,
-  effectiveBottomY: number,
-  effectiveTopY: number,
-  localGridStep: number
-): void {
-  const checkAndCreateInternalDrawer = input.checkAndCreateInternalDrawer;
-  if (typeof checkAndCreateInternalDrawer !== 'function') return;
-
-  const presetShelfSet: Record<number, true> = Object.create(null);
-  if (Array.isArray(presetOps.shelves)) {
-    for (let i = 0; i < presetOps.shelves.length; i += 1) {
-      const shelfIdx = parseInt(String(presetOps.shelves[i]), 10);
-      if (Number.isFinite(shelfIdx)) presetShelfSet[shelfIdx] = true;
-    }
-  }
-
-  for (let slot = 1; slot <= gridDivisions; slot += 1) {
-    let slotTopY = effectiveTopY;
-    for (let nextShelfIdx = slot; nextShelfIdx < gridDivisions; nextShelfIdx += 1) {
-      if (presetShelfSet[nextShelfIdx]) {
-        slotTopY = effectiveBottomY + nextShelfIdx * localGridStep;
-        break;
-      }
-    }
-    const slotBottomY = effectiveBottomY + (slot - 1) * localGridStep;
-    checkAndCreateInternalDrawer(slot, {
-      slotBottomY,
-      slotTopY,
-      slotAvailableHeight: slotTopY - slotBottomY,
-    });
-  }
-}
-
 export function applyPresetInteriorLayout(
   input: InteriorLayoutParams,
   config: InteriorLayoutConfig
@@ -92,19 +56,9 @@ export function applyPresetInteriorLayout(
   const renderOps = requirePresetRenderOps(input);
   const { layoutType, presetOps } = computePresetOps(input, config);
 
-  const gridDivisions = readNumber(input.gridDivisions, 6);
   const effectiveBottomY = readNumber(input.effectiveBottomY, 0);
   const effectiveTopY = readNumber(input.effectiveTopY, 0);
   const localGridStep = readNumber(input.localGridStep, 0);
-
-  applyPresetInternalDrawerLayout(
-    presetOps,
-    input,
-    gridDivisions,
-    effectiveBottomY,
-    effectiveTopY,
-    localGridStep
-  );
 
   let renderedPreset = false;
   try {
@@ -128,9 +82,8 @@ export function applyPresetInteriorLayout(
         moduleIndex: readNumber(input.moduleIndex, -1),
         modulesLength: readNumber(input.modulesLength, -1),
         currentShelfMat: input.currentShelfMat,
+        currentBraceShelfMat: input.currentBraceShelfMat,
         bodyMat: input.bodyMat,
-        isInternalDrawersEnabled: input.isInternalDrawersEnabled === true,
-        intDrawersSlot: config.intDrawersSlot,
         wardrobeGroup: input.wardrobeGroup,
         createBoard: input.createBoard,
         createRod: input.createRod,

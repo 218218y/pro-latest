@@ -32,6 +32,7 @@ export type SketchDrawersCatchReporter = (
 export type ApplySketchExternalDrawersArgs = {
   App: AppContainer;
   input: RenderInteriorSketchInput;
+  drawers: SketchDrawerExtra[];
   extDrawers: SketchExternalDrawerExtra[];
   THREE: InteriorTHREESurface | null;
   group: InteriorGroupLike;
@@ -42,11 +43,15 @@ export type ApplySketchExternalDrawersArgs = {
   moduleDepth: number;
   internalDepth: number;
   internalCenterX: number;
+  internalZ: number;
   moduleIndex: number;
   moduleKeyStr: string;
   woodThick: number;
   bodyMat: unknown;
+  currentBraceShelfMat?: unknown;
+  createBoard: InteriorOpsCallable;
   getPartMaterial?: InteriorOpsCallable;
+  getPartColorValue?: InteriorOpsCallable;
   moduleDoorFaceSpan: SketchModuleDoorFaceSpan | null;
   isFn: (value: unknown) => value is UnknownCallable;
   renderOpsHandleCatch: SketchDrawersCatchReporter;
@@ -56,6 +61,7 @@ export type ApplySketchInternalDrawersOwnerArgs = {
   App: AppContainer;
   input: RenderInteriorSketchInput;
   drawers: SketchDrawerExtra[];
+  extDrawers: SketchExternalDrawerExtra[];
   THREE: InteriorTHREESurface | null;
   group: InteriorGroupLike;
   effectiveBottomY: number;

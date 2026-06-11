@@ -5,8 +5,6 @@ import type {
   AppContainer,
   BuilderAddFoldedClothesFn,
   BuilderCreateBoardFn,
-  BuilderCreateInternalDrawerBoxFn,
-  BuilderInternalDrawerCreator,
   BuilderInteriorRodCreator,
   BuilderOutlineFn,
   BuilderPartColorResolver,
@@ -19,8 +17,6 @@ export type ValueRecord = Record<string, unknown>;
 export type InteriorLayoutConfig = ValueRecord & {
   isCustom?: boolean;
   customData?: unknown;
-  intDrawersList?: unknown[];
-  intDrawersSlot?: unknown;
   braceShelves?: unknown[];
   sketchExtras?: unknown;
   layout?: unknown;
@@ -36,7 +32,6 @@ export type InteriorLayoutParams = ValueRecord & {
   createBoard?: BuilderCreateBoardFn;
   createRod?: BuilderInteriorRodCreator | null;
   addFoldedClothes?: BuilderAddFoldedClothesFn | null;
-  checkAndCreateInternalDrawer?: BuilderInternalDrawerCreator | null;
   effectiveBottomY?: number;
   effectiveTopY?: number;
   localGridStep?: number;
@@ -47,8 +42,8 @@ export type InteriorLayoutParams = ValueRecord & {
   internalZ?: number;
   D?: number;
   currentShelfMat?: unknown;
+  currentBraceShelfMat?: unknown;
   bodyMat?: unknown;
-  isInternalDrawersEnabled?: boolean;
   moduleIndex?: number;
   modulesLength?: number;
   moduleKey?: unknown;
@@ -60,7 +55,6 @@ export type InteriorLayoutParams = ValueRecord & {
   externalCenterX?: number;
   getPartMaterial?: BuilderPartMaterialResolver | null;
   getPartColorValue?: BuilderPartColorResolver | null;
-  createInternalDrawerBox?: BuilderCreateInternalDrawerBoxFn | null;
   addOutlines?: BuilderOutlineFn | null;
   showContentsEnabled?: unknown;
   createDoorVisual?: unknown;
@@ -123,6 +117,7 @@ export function buildSketchExtrasArgs(
     createBoard: input.createBoard,
     createRod: input.createRod,
     currentShelfMat: input.currentShelfMat,
+    currentBraceShelfMat: input.currentBraceShelfMat,
     bodyMat: input.bodyMat,
     effectiveBottomY: readNumber(input.effectiveBottomY, 0),
     effectiveTopY: readNumber(input.effectiveTopY, 0),
@@ -149,6 +144,7 @@ export function buildSketchExtrasArgs(
     createInternalDrawerBox: input.createInternalDrawerBox,
     addOutlines: input.addOutlines,
     showContentsEnabled: input.showContentsEnabled,
+    addFoldedClothes: input.addFoldedClothes,
     sketchExtras: config.sketchExtras,
   };
 }
@@ -184,7 +180,6 @@ export function maybeApplySketchExtras(
   }
 }
 
-export function resolveActiveDrawerSlots(config: InteriorLayoutConfig): unknown[] {
-  if (Array.isArray(config.intDrawersList)) return config.intDrawersList;
-  return config.intDrawersSlot != null ? [config.intDrawersSlot] : [];
+export function resolveActiveDrawerSlots(_config: InteriorLayoutConfig): unknown[] {
+  return [];
 }

@@ -10,6 +10,9 @@ import { createSketchExternalDrawerGroupNode } from './render_interior_sketch_dr
 import { addSketchExternalDrawerFrontVisual } from './render_interior_sketch_drawers_external_visual.js';
 import { addSketchExternalDrawerBoxAndConnector } from './render_interior_sketch_drawers_external_box.js';
 import { registerSketchExternalDrawerMotionEntry } from './render_interior_sketch_drawers_external_motion.js';
+import { emitExternalDrawerBraceShelf } from './external_drawer_shelf.js';
+import { createSketchExternalDrawerBraceShelfPartId } from '../features/shelf_part_identity.js';
+import { resolveSketchExternalDrawerStackKey } from './render_interior_sketch_drawers_shared.js';
 
 export function applySketchExternalDrawers(args: ApplySketchExternalDrawersArgs): void {
   const context = createSketchExternalDrawerRenderContext(args);
@@ -18,7 +21,24 @@ export function applySketchExternalDrawers(args: ApplySketchExternalDrawersArgs)
   try {
     for (let i = 0; i < context.extDrawers.length; i++) {
       const stack = createSketchExternalDrawerStackPlan(context, context.extDrawers[i], i);
-      if (!stack) continue;
+      if (!stack || !stack.drawerOps.length) continue;
+
+      emitExternalDrawerBraceShelf({
+        createBoard: context.createBoard,
+        partId: createSketchExternalDrawerBraceShelfPartId(context.moduleKeyStr, stack.drawerId),
+        shelfIndex: `external_drawers_${stack.drawerId}`,
+        innerWidth: context.innerW,
+        woodThick: context.woodThick,
+        depth: context.internalDepth,
+        centerX: context.internalCenterX,
+        stackTopY: stack.baseY + stack.stackH,
+        centerZ: context.internalZ,
+        currentBraceShelfMat: context.currentBraceShelfMat || context.bodyMat,
+        getPartMaterial: context.getPartMaterial,
+        getPartColorValue: context.getPartColorValue,
+        moduleIndex: context.moduleKeyStr || context.moduleIndex,
+        stackKey: resolveSketchExternalDrawerStackKey(context.input, context.moduleKeyStr),
+      });
 
       for (let j = 0; j < stack.drawerOps.length; j++) {
         const opPlan = createSketchExternalDrawerOpPlan(context, stack, stack.drawerOps[j], j);
@@ -27,10 +47,18 @@ export function applySketchExternalDrawers(args: ApplySketchExternalDrawersArgs)
         const groupNode = createSketchExternalDrawerGroupNode(context, stack, opPlan);
         addSketchExternalDrawerFrontVisual(context, stack, opPlan, groupNode);
         addSketchExternalDrawerBoxAndConnector(context, stack, opPlan, groupNode);
-        applySketchModulePickMetaDeep(groupNode, opPlan.partId, context.moduleKeyStr, {
-          __wpSketchExtDrawer: true,
-          __wpSketchExtDrawerId: stack.drawerId,
-        });
+        applySketchModulePickMetaDeep(
+          groupNode,
+          opPlan.partId,
+          context.moduleKeyStr,
+          {
+            __wpSketchExtDrawer: true,
+            __wpSketchExtDrawerId: stack.drawerId,
+          },
+          {
+            preserveExistingPartId: true,
+          }
+        );
         context.group.add?.(groupNode);
         registerSketchExternalDrawerMotionEntry(context, opPlan, groupNode);
       }

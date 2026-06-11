@@ -1,5 +1,9 @@
 import { reportError, shouldFailFast } from '../runtime/api.js';
-import { DRAWER_DIMENSIONS, HANDLE_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import {
+  DOOR_SYSTEM_DIMENSIONS,
+  DRAWER_DIMENSIONS,
+  HANDLE_DIMENSIONS,
+} from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { AppendHingedDoorOpsParams, HingedDoorPipelineCfg } from './hinged_doors_shared.js';
 import { readFiniteNumber, readRecord, readTextMap, readUnknownArray } from './hinged_doors_shared.js';
 import type { HingedDoorModuleOpsContext, HingedDoorPivotSpec } from './hinged_doors_module_ops_contracts.js';
@@ -62,6 +66,13 @@ export function createHingedDoorModuleOpsContext(
     params && typeof params.moduleDoorFrontZ === 'number' && Number.isFinite(params.moduleDoorFrontZ)
       ? params.moduleDoorFrontZ
       : D / 2;
+  const isInsetDoorMount = String(cfg.doorMountMode || '') === 'inset';
+  const insetReveal = isInsetDoorMount
+    ? Math.min(DOOR_SYSTEM_DIMENSIONS.hinged.insetRevealM, Math.max(0, woodThick / 3))
+    : 0;
+  const doorOpZ = isInsetDoorMount
+    ? doorFrontZ - DOOR_SYSTEM_DIMENSIONS.hinged.visualThicknessM / 2 - insetReveal
+    : doorFrontZ + DOOR_SYSTEM_DIMENSIONS.hinged.opFrontZOffsetM;
   const splitLineY = params && typeof params.splitLineY === 'number' ? params.splitLineY : 0;
   const splitDoors = !!(params && params.splitDoors);
   const stackKey = typeof params.__wpStack === 'string' ? String(params.__wpStack) : 'top';
@@ -196,8 +207,10 @@ export function createHingedDoorModuleOpsContext(
 
   const gapAboveDrawer = drawerHeightTotal > 0 ? DRAWER_DIMENSIONS.external.doorTopGapM : 0;
   const drawerTopEdgeAbsolute = effectiveBottomY;
-  const doorBottomY = drawerTopEdgeAbsolute + gapAboveDrawer;
-  const effectiveTopLimit = startY + cabinetBodyHeight - woodThick / 2;
+  const doorBottomY = drawerTopEdgeAbsolute + gapAboveDrawer + insetReveal;
+  const effectiveTopLimit = isInsetDoorMount
+    ? startY + cabinetBodyHeight - woodThick - insetReveal
+    : startY + cabinetBodyHeight - woodThick / 2;
   const totalDoorSpace = effectiveTopLimit - doorBottomY;
   const singleDoorW = moduleDoors > 0 ? modWidth / moduleDoors : 0;
 
@@ -217,6 +230,9 @@ export function createHingedDoorModuleOpsContext(
     cabinetBodyHeight,
     D,
     doorFrontZ,
+    doorOpZ,
+    isInsetDoorMount,
+    insetReveal,
     splitLineY,
     splitDoors,
     stackKey,

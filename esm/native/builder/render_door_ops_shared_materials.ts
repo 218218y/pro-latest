@@ -6,26 +6,30 @@ import type {
   SlidingUiState,
 } from './render_door_ops_shared_contracts.js';
 import { readCloneableMaterial } from './render_door_ops_shared_core.js';
+import { METAL_FINISH_PALETTE_BY_COLOR } from '../features/metal_finish_palette.js';
 
 export function createSlidingTrackPalette(uiState: SlidingUiState): SlidingTrackPalette {
   const isBlackSlidingTracks = uiState.slidingTracksColor === 'black';
-  return isBlackSlidingTracks
-    ? {
-        hex: 0x333333,
-        lineHex: 0x000000,
-        metalness: 0.35,
-        roughness: 0.55,
-        emissiveHex: 0x000000,
-        emissiveIntensity: 0,
-      }
-    : {
-        hex: 0xe5e9ef,
-        lineHex: 0x7f8792,
-        metalness: 0.28,
-        roughness: 0.2,
-        emissiveHex: 0x20242b,
-        emissiveIntensity: 0.16,
-      };
+  if (isBlackSlidingTracks) {
+    return {
+      hex: 0x333333,
+      lineHex: 0x000000,
+      metalness: 0.35,
+      roughness: 0.55,
+      emissiveHex: 0x000000,
+      emissiveIntensity: 0,
+    };
+  }
+
+  const nickel = METAL_FINISH_PALETTE_BY_COLOR.nickel;
+  return {
+    hex: nickel.hex,
+    lineHex: nickel.lineHex ?? 0x7f8792,
+    metalness: nickel.metalness,
+    roughness: nickel.roughness,
+    emissiveHex: nickel.emissiveHex,
+    emissiveIntensity: nickel.emissiveIntensity,
+  };
 }
 
 export function createRailMaterial(

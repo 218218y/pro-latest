@@ -4,6 +4,7 @@
 // hit resolution, and door-specific config reads out of the runtime helper seam.
 
 import type { AppContainer } from '../../../types';
+import { isHexCellDiagonalPanelPartId } from '../features/hex_cell/index.js';
 import type { HitObjectLike } from './canvas_picking_engine.js';
 import { __wp_asHitObject, __wp_asRecord, __wp_map, __wp_str } from './canvas_picking_core_shared.js';
 
@@ -50,13 +51,19 @@ function __wp_isDrawerLikePartId(partId: unknown): boolean {
   const pid = typeof partId === 'string' ? partId : String(partId ?? '');
   if (!pid) return false;
   if (/^(?:lower_)?d\d+_draw_/.test(pid)) return true;
+  if (/^chest_drawer_\d+$/.test(pid)) return true;
+  if (pid === 'internal_drawer_accent_line') return false;
   if (pid.includes('_draw_')) return true;
-  if (pid.includes('drawer') || pid.includes('draw') || pid.includes('chest')) return true;
+  if (pid.includes('drawer') || pid.includes('draw')) return true;
   return false;
 }
 
 function __wp_isDoorOrDrawerLikePartId(partId: unknown): boolean {
   return __wp_isDoorLikePartId(partId) || __wp_isDrawerLikePartId(partId);
+}
+
+function __wp_isDoorActionPaintTargetPartId(partId: unknown): boolean {
+  return __wp_isDoorOrDrawerLikePartId(partId) || isHexCellDiagonalPanelPartId(partId);
 }
 
 // Segmented doors (hinged + corner doors) persist per-door maps using *_full/_top/_bot keys.
@@ -158,6 +165,7 @@ export {
   __wp_isDoorLikePartId,
   __wp_isDrawerLikePartId,
   __wp_isDoorOrDrawerLikePartId,
+  __wp_isDoorActionPaintTargetPartId,
   __wp_isSegmentedDoorBaseId,
   __wp_canonDoorPartKeyForMaps,
   __wp_scopeCornerPartKeyForStack,

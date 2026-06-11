@@ -30,13 +30,13 @@ export type InteriorPresetInput = InteriorValueRecord & {
   modulesLength?: unknown;
   moduleKey?: unknown;
   currentShelfMat?: unknown;
+  currentBraceShelfMat?: unknown;
   bodyMat?: unknown;
   braceShelves?: unknown;
   cfg?: InteriorValueRecord;
   getPartMaterial?: InteriorOpsCallable;
   getPartColorValue?: InteriorOpsCallable;
   isInternalDrawersEnabled?: unknown;
-  intDrawersSlot?: unknown;
 };
 
 export type InteriorWallMesh = InteriorMeshLike & {

@@ -6,6 +6,7 @@ import {
 } from '../features/door_trim.js';
 import { DOOR_TRIM_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { ensureDoorTrimMaterialCache } from '../runtime/door_trim_visuals_access.js';
+import { resolveMetalFinishPalette } from '../features/metal_finish_palette.js';
 
 type DoorTrimColorPalette = {
   hex: number;
@@ -60,17 +61,7 @@ function asMaterial(value: unknown): MaterialLike | null {
 }
 
 function resolveDoorTrimPalette(color: string): DoorTrimColorPalette {
-  switch (color) {
-    case 'silver':
-      return { hex: 0xcfd5dd, emissiveHex: 0x20252c, metalness: 0.42, roughness: 0.22 };
-    case 'gold':
-      return { hex: 0xe5c66b, emissiveHex: 0x3b2d09, metalness: 0.5, roughness: 0.2 };
-    case 'black':
-      return { hex: 0x1c1d20, emissiveHex: 0x000000, metalness: 0.32, roughness: 0.3 };
-    case 'nickel':
-    default:
-      return { hex: 0xe5e9ef, emissiveHex: 0x20242b, metalness: 0.28, roughness: 0.2 };
-  }
+  return resolveMetalFinishPalette(color);
 }
 
 function readRenderOrder(group: unknown): number {

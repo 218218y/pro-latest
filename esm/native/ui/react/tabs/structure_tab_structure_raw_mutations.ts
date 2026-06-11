@@ -6,6 +6,9 @@ import {
   applyUiRawScalarPatch,
   setUiCellDimsDepth,
   setUiCellDimsHeight,
+  setUiCellDimsHexDoorWidth,
+  setUiCellDimsHexMode,
+  setUiCellDimsHexProtrusion,
   setUiCellDimsWidth,
   setUiSingleDoorPos,
   setUiStackSplitLowerDoors,
@@ -118,14 +121,28 @@ export function commitStructureRawValue(args: {
     : Math.abs((Number(prevDisplayedValue) || 0) - (Number(value) || 0)) < 0.0001;
   if (unchanged) return;
 
-  if (key === 'cellDimsWidth' || key === 'cellDimsHeight' || key === 'cellDimsDepth') {
+  if (
+    key === 'cellDimsWidth' ||
+    key === 'cellDimsHeight' ||
+    key === 'cellDimsDepth' ||
+    key === 'cellDimsHexProtrusion' ||
+    key === 'cellDimsHexDoorWidth'
+  ) {
     try {
       if (key === 'cellDimsWidth') {
         setUiCellDimsWidth(app, value, meta.uiOnlyImmediate('react:structure:cellDimsWidth'));
       } else if (key === 'cellDimsHeight') {
         setUiCellDimsHeight(app, value, meta.uiOnlyImmediate('react:structure:cellDimsHeight'));
-      } else {
+      } else if (key === 'cellDimsDepth') {
         setUiCellDimsDepth(app, value, meta.uiOnlyImmediate('react:structure:cellDimsDepth'));
+      } else if (key === 'cellDimsHexProtrusion') {
+        const actionMeta = meta.uiOnlyImmediate('react:structure:cellDimsHexProtrusion');
+        setUiCellDimsHexProtrusion(app, value, actionMeta);
+        setUiCellDimsHexMode(app, true, actionMeta);
+      } else {
+        const actionMeta = meta.uiOnlyImmediate('react:structure:cellDimsHexDoorWidth');
+        setUiCellDimsHexDoorWidth(app, value, actionMeta);
+        setUiCellDimsHexMode(app, true, actionMeta);
       }
     } catch (err) {
       structureTabReportNonFatal(app, 'commitStructureRawValue.cellDims', err);

@@ -150,6 +150,7 @@ export function buildDefaultProjectDataSnapshot(
       customColor: ui.customColor,
       structureSelection: ui.structureSelect || '',
       wardrobeType: cfg.wardrobeType === 'sliding' ? 'sliding' : 'hinged',
+      doorMountMode: cfg.doorMountMode === 'inset' ? 'inset' : 'overlay',
       isManualWidth: !!cfg.isManualWidth,
       singleDoorPos: ui.singleDoorPos || 'left',
       globalHandleType: cfg.globalHandleType || 'standard',

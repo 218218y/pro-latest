@@ -23,13 +23,17 @@ export function getProp(obj: unknown, key: string): unknown {
   return obj[key];
 }
 
-function isFunctionSurface<T>(value: unknown): value is T {
+type CallableSurface = (...invokeArgs: readonly unknown[]) => unknown;
+
+function isFunctionSurface(value: unknown): value is CallableSurface {
   return typeof value === 'function';
 }
 
 export function getFn<T>(obj: unknown, key: string): T | null {
   const v = getProp(obj, key);
-  return isFunctionSurface<T>(v) ? v : null;
+  if (!isFunctionSurface(v)) return null;
+  const callWithOwner = (...invokeArgs: readonly unknown[]) => Reflect.apply(v, obj, invokeArgs);
+  return callWithOwner as T;
 }
 
 export function tryClearPdfTextField(f: unknown): void {

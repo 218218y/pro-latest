@@ -78,16 +78,16 @@ function createApp(primaryMode: string, initialOpenId: string | number | null = 
   return { App: App as never, drawer, otherDrawer, setOpenIdCalls, state };
 }
 
-test('drawer rebuild intent keeps the target drawer open only while divider mode is active', () => {
+test('drawer rebuild intent marks the target drawer open without snapping while divider mode is active', () => {
   const { App, drawer, otherDrawer, setOpenIdCalls, state } = createApp('divider', 'int_4');
 
   setDrawerRebuildIntent(App, 'int_4');
   runRebuildDrawerMeta(App);
 
   assert.equal(drawer.isOpen, true);
-  assert.equal(drawer.group.position.x, 5);
+  assert.equal(drawer.group.position.x, 0);
   assert.equal(otherDrawer.isOpen, false);
-  assert.equal(otherDrawer.group.position.x, 0);
+  assert.equal(otherDrawer.group.position.x, 8);
   assert.deepEqual(setOpenIdCalls, ['int_4']);
   assert.equal(state.runtime.drawersOpenId, 'int_4');
 });
@@ -126,4 +126,25 @@ test('stale rebuild intent does not clear a newer forced-open drawer selection',
   assert.equal(drawer.group.position.x, 0);
   assert.deepEqual(setOpenIdCalls, []);
   assert.equal(state.runtime.drawersOpenId, 'int_8');
+});
+
+test('drawer rebuild intent can mark an external drawer open by divider alias after rebuild without snapping', () => {
+  const { App, drawer, otherDrawer, setOpenIdCalls, state } = createApp('divider', 'div_ext_1_1');
+  drawer.id = 'd1_draw_1';
+  drawer.dividerKey = 'div_ext_1_1';
+  drawer.isInternal = false;
+  drawer.open = { x: 0, y: 0, z: 7 };
+  otherDrawer.id = 'd1_draw_2';
+  otherDrawer.dividerKey = 'div_ext_1_2';
+  otherDrawer.isInternal = false;
+
+  setDrawerRebuildIntent(App, 'div_ext_1_1');
+  runRebuildDrawerMeta(App);
+
+  assert.equal(drawer.isOpen, true);
+  assert.equal(drawer.group.position.z, 0);
+  assert.equal(otherDrawer.isOpen, false);
+  assert.equal(otherDrawer.group.position.x, 8);
+  assert.deepEqual(setOpenIdCalls, ['div_ext_1_1']);
+  assert.equal(state.runtime.drawersOpenId, 'div_ext_1_1');
 });

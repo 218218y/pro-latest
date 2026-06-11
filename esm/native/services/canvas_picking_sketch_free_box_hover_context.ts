@@ -3,6 +3,7 @@ import {
   clampSketchFreeBoxCenterYToWorkspace,
   getSketchFreePlacementRoomFloorY,
   isWithinSketchFreePlacementBounds,
+  isSketchFreeBoxUnderWardrobeColumn,
   resolveSketchFreeBoxGeometry,
   type ResolveSketchFreeBoxHoverPlacementArgs,
 } from './canvas_picking_sketch_free_box_shared.js';
@@ -22,6 +23,7 @@ export type SketchFreeBoxHoverContext = {
   workspacePad: number;
   gap: number;
   roomFloorY: number;
+  blocksFreeAddUnderWardrobe: boolean;
 };
 
 export function createSketchFreeBoxHoverContext(
@@ -82,6 +84,12 @@ export function createSketchFreeBoxHoverContext(
   const previewW = previewGeo.outerW;
   const previewD = previewGeo.outerD;
   const previewH = boxH;
+  const blocksFreeAddUnderWardrobe = isSketchFreeBoxUnderWardrobeColumn({
+    planeX,
+    planeY,
+    boxH: previewH,
+    wardrobeBox,
+  });
   const gap = resolveSketchFreeBoxPlacementGap({ boxW: previewW, boxH: previewH });
 
   return {
@@ -98,5 +106,6 @@ export function createSketchFreeBoxHoverContext(
     workspacePad,
     gap,
     roomFloorY: getSketchFreePlacementRoomFloorY(),
+    blocksFreeAddUnderWardrobe,
   };
 }

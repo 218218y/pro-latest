@@ -6,12 +6,38 @@ import type { DesignTabColorSectionModel } from './use_design_tab_controller_con
 
 export function DesignTabColorSection(props: { model: DesignTabColorSectionModel }): ReactElement {
   const model = props.model;
+  const isAllShelfInheritanceMode = model.frontColorShelfInheritanceMode === 'all';
 
   return (
     <div className="control-section" data-testid="design-color-section" data-draft-color={model.draftColor}>
       <span className="section-title">צבע ותוספות</span>
 
-      <div className="wp-r-label">צבע חזית ראשי</div>
+      <div className="wp-r-label-row wp-r-main-color-label-row">
+        <div className="wp-r-label">צבע חזית ראשי</div>
+        <button
+          type="button"
+          className={
+            'wp-r-mini-link-toggle wp-r-mini-link-toggle--manual wp-r-front-color-shelf-mode-toggle ' +
+            (isAllShelfInheritanceMode
+              ? 'wp-r-front-color-shelf-mode-toggle--all'
+              : 'wp-r-front-color-shelf-mode-toggle--brace')
+          }
+          onClick={model.toggleFrontColorShelfInheritanceMode}
+          aria-pressed={isAllShelfInheritanceMode}
+          title={
+            isAllShelfInheritanceMode
+              ? 'צביעת כל המדפים יחד עם צבע הארון'
+              : 'צביעת מדפי קושרת בלבד יחד עם צבע הארון'
+          }
+          data-testid="design-front-color-shelf-mode-toggle"
+        >
+          <i
+            className={'fas ' + (isAllShelfInheritanceMode ? 'fa-layer-group' : 'fa-grip-lines')}
+            aria-hidden="true"
+          />
+          <span>{isAllShelfInheritanceMode ? 'כל המדפים' : 'קושרת בלבד'}</span>
+        </button>
+      </div>
 
       <div
         className={

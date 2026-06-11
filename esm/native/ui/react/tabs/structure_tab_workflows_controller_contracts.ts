@@ -28,7 +28,8 @@ export type StructureWorkflowState = {
 export type StructureWorkflowOps = {
   getModulesConfiguration: () => ModuleConfigLike[];
   commitModulesConfiguration: (nextList: ModuleConfigLike[], source: string) => void;
-  clearCellDim: (key: 'width' | 'height' | 'depth') => void;
+  clearCellDim: (key: 'width' | 'height' | 'depth' | 'hexProtrusion' | 'hexDoorWidth') => void;
+  setCellDimsHexMode: (on: boolean) => void;
   setAutoWidth: (nextWidth: number) => void;
   reportNonFatal?: (op: string, err: unknown) => void;
 };
@@ -50,5 +51,8 @@ export type StructureTabWorkflowController = {
   clearCellDimsWidth: () => void;
   clearCellDimsHeight: () => void;
   clearCellDimsDepth: () => void;
+  clearCellDimsHexProtrusion: () => void;
+  clearCellDimsHexDoorWidth: () => void;
+  setCellDimsHexMode: (on: boolean) => void;
   resetAutoWidth: () => void;
 };

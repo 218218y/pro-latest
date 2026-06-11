@@ -17,18 +17,6 @@ export interface ModuleCustomDataLike extends UnknownRecord {
   storage: boolean;
 }
 
-export interface ModuleInternalDrawerItemLike extends UnknownRecord {
-  kind?: string;
-  height?: number;
-  slotIndex?: number;
-  drawerType?: string;
-}
-
-// Real runtime state currently stores internal drawers mostly as numeric slot indexes,
-// while a few migration paths may still materialize richer drawer objects.
-// Model both forms explicitly so call-sites can narrow instead of casting.
-export type ModuleInternalDrawerSlotLike = number | ModuleInternalDrawerItemLike;
-
 export interface ModuleSpecialDimsLike extends UnknownRecord {
   widthCm?: number;
   heightCm?: number;
@@ -44,13 +32,17 @@ export interface ModuleSavedDimsLike extends UnknownRecord {
   depthCm?: number;
 }
 
+export interface ModuleHexCellLike extends UnknownRecord {
+  enabled?: boolean;
+  protrusionCm?: number;
+  doorWidthCm?: number;
+}
+
 // Snapshot/legacy shape: keys may be missing, types may be wrong.
 export interface ModuleConfigLike extends UnknownRecord {
   layout?: string;
   extDrawersCount?: number;
   hasShoeDrawer?: boolean;
-  intDrawersSlot?: number;
-  intDrawersList?: ModuleInternalDrawerSlotLike[];
   isCustom?: boolean;
   customData?: ModuleCustomDataLike;
 
@@ -64,14 +56,13 @@ export interface ModuleConfigLike extends UnknownRecord {
   // Optional/known extensions used by other features.
   specialDims?: ModuleSpecialDimsLike;
   savedDims?: ModuleSavedDimsLike;
+  hexCell?: ModuleHexCellLike;
 }
 
 export interface ModuleConfigPatchLike extends UnknownRecord {
   layout?: string | null;
   extDrawersCount?: number | null;
   hasShoeDrawer?: boolean | null;
-  intDrawersSlot?: number | null;
-  intDrawersList?: ModuleInternalDrawerSlotLike[] | null;
   isCustom?: boolean | null;
   customData?: Partial<ModuleCustomDataLike> | null;
   doors?: number | null;
@@ -79,6 +70,7 @@ export interface ModuleConfigPatchLike extends UnknownRecord {
   gridDivisionsRow?: number | null;
   specialDims?: Partial<ModuleSpecialDimsLike> | null;
   savedDims?: Partial<ModuleSavedDimsLike> | null;
+  hexCell?: Partial<ModuleHexCellLike> | null;
 }
 
 // Normalized top-module config: required keys, stable for builder/pipelines.
@@ -86,8 +78,6 @@ export interface NormalizedTopModuleConfigLike extends ModuleConfigLike {
   layout: string;
   extDrawersCount: number;
   hasShoeDrawer: boolean;
-  intDrawersSlot: number;
-  intDrawersList: ModuleInternalDrawerSlotLike[];
   isCustom: boolean;
   customData: ModuleCustomDataLike;
   doors: number;
@@ -112,8 +102,6 @@ export interface NormalizedCornerCustomDataLike extends CornerCustomDataLike {
 
 export interface CornerStackSplitLowerLike extends UnknownRecord {
   modulesConfiguration?: ModuleConfigLike[];
-  intDrawersList?: ModuleInternalDrawerSlotLike[];
-  intDrawersSlot?: number;
   isCustom?: boolean;
   customData?: CornerCustomDataLike;
 }
@@ -125,8 +113,6 @@ export interface CornerConfigurationLike extends UnknownRecord {
   layout?: string;
   extDrawersCount?: number;
   hasShoeDrawer?: boolean;
-  intDrawersList?: ModuleInternalDrawerSlotLike[];
-  intDrawersSlot?: number;
   isCustom?: boolean;
   gridDivisions?: number;
   customData?: CornerCustomDataLike;
@@ -138,8 +124,6 @@ export interface CornerConfigurationPatchLike extends UnknownRecord {
   layout?: string | null;
   extDrawersCount?: number | null;
   hasShoeDrawer?: boolean | null;
-  intDrawersList?: ModuleInternalDrawerSlotLike[] | null;
-  intDrawersSlot?: number | null;
   isCustom?: boolean | null;
   gridDivisions?: number | null;
   customData?: Partial<CornerCustomDataLike> | null;
@@ -152,8 +136,6 @@ export interface NormalizedCornerConfigurationLike extends CornerConfigurationLi
   layout: string;
   extDrawersCount: number;
   hasShoeDrawer: boolean;
-  intDrawersList: ModuleInternalDrawerSlotLike[];
-  intDrawersSlot: number;
   isCustom: boolean;
   gridDivisions: number;
   customData: NormalizedCornerCustomDataLike;

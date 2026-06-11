@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-05-01T04:03:25.723Z",
+  "generatedAt": "2026-06-02T09:07:44.372Z",
   "totals": {
-    "tests": 947,
-    "packageTestReferences": 436
+    "tests": 1042,
+    "packageTestReferences": 494
   },
   "categories": {
-    "contract": 289,
-    "runtime-unit": 233,
-    "integration": 378,
-    "e2e-smoke": 5,
-    "perf-smoke": 6,
-    "legacy-migration": 36
+    "contract": 333,
+    "runtime-unit": 258,
+    "integration": 397,
+    "e2e-smoke": 7,
+    "perf-smoke": 7,
+    "legacy-migration": 40
   },
   "failures": {
     "missingPackageRefs": [],
@@ -131,6 +131,10 @@
       "category": "contract"
     },
     {
+      "file": "tests/bootstrap_drawer_meta_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/browser_adapter_healing_runtime.test.ts",
       "category": "runtime-unit"
     },
@@ -227,6 +231,14 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/build_stack_shift_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/build_stack_split_decorative_separator_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
       "file": "tests/build_state_resolver_config_runtime.test.ts",
       "category": "runtime-unit"
     },
@@ -315,6 +327,10 @@
       "category": "contract"
     },
     {
+      "file": "tests/builder_service_owner_rejection_visibility_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/builder_store_access_canonical_runtime.test.ts",
       "category": "integration"
     },
@@ -323,8 +339,8 @@
       "category": "contract"
     },
     {
-      "file": "tests/cabinet_door_drawer_layout_fixture_runtime.test.js",
-      "category": "integration"
+      "file": "tests/cache_access_hybrid_migration_runtime.test.js",
+      "category": "legacy-migration"
     },
     {
       "file": "tests/cache_pruning_runtime.test.ts",
@@ -333,6 +349,14 @@
     {
       "file": "tests/camera_access_runtime.test.ts",
       "category": "runtime-unit"
+    },
+    {
+      "file": "tests/camera_motion_mode_front_presets_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/camera_motion_render_wakeup_guard.test.cjs",
+      "category": "contract"
     },
     {
       "file": "tests/camera_scene_access_cleanup_guard.test.js",
@@ -359,7 +383,15 @@
       "category": "integration"
     },
     {
+      "file": "tests/canvas_picking_cell_dims_corner_stack_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/canvas_picking_cell_dims_linear_runtime.test.ts",
+      "category": "integration"
+    },
+    {
+      "file": "tests/canvas_picking_cell_dims_post_click_hover_runtime.test.ts",
       "category": "integration"
     },
     {
@@ -395,6 +427,10 @@
       "category": "integration"
     },
     {
+      "file": "tests/canvas_picking_door_groove_click_refresh_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/canvas_picking_door_split_click_runtime.test.ts",
       "category": "integration"
     },
@@ -403,7 +439,7 @@
       "category": "contract"
     },
     {
-      "file": "tests/canvas_picking_drawer_mode_flow_runtime.test.ts",
+      "file": "tests/canvas_picking_external_drawer_cross_hover_runtime.test.ts",
       "category": "integration"
     },
     {
@@ -448,6 +484,14 @@
     },
     {
       "file": "tests/canvas_picking_hover_targets_runtime.test.ts",
+      "category": "integration"
+    },
+    {
+      "file": "tests/canvas_picking_interior_hover_brace_runtime.test.ts",
+      "category": "integration"
+    },
+    {
+      "file": "tests/canvas_picking_layout_edit_flow_brace_runtime.test.ts",
       "category": "integration"
     },
     {
@@ -543,6 +587,10 @@
       "category": "integration"
     },
     {
+      "file": "tests/canvas_picking_shelf_hit_targets_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/canvas_picking_sketch_box_content_commit_runtime.test.ts",
       "category": "integration"
     },
@@ -617,6 +665,10 @@
     {
       "file": "tests/canvas_picking_sketch_workflow_contracts.test.js",
       "category": "contract"
+    },
+    {
+      "file": "tests/carcass_cornice_segmented_runtime.test.ts",
+      "category": "runtime-unit"
     },
     {
       "file": "tests/cell_dims_hover_preview_guard.test.js",
@@ -823,6 +875,10 @@
       "category": "integration"
     },
     {
+      "file": "tests/cloud_sync_offline_reconnect_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/cloud_sync_operation_status_runtime.test.ts",
       "category": "integration"
     },
@@ -1011,6 +1067,10 @@
       "category": "contract"
     },
     {
+      "file": "tests/cloud_sync_show_contents_sync_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/cloud_sync_site2_sketch_behavior_runtime.test.ts",
       "category": "integration"
     },
@@ -1131,10 +1191,6 @@
       "category": "contract"
     },
     {
-      "file": "tests/corner_configuration_snapshot_runtime.test.ts",
-      "category": "runtime-unit"
-    },
-    {
       "file": "tests/corner_configuration_stack_patch_runtime.test.ts",
       "category": "runtime-unit"
     },
@@ -1163,6 +1219,10 @@
       "category": "contract"
     },
     {
+      "file": "tests/corner_external_drawer_box_identity_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/corner_helper_type_hardening_guard.test.js",
       "category": "contract"
     },
@@ -1179,16 +1239,16 @@
       "category": "contract"
     },
     {
-      "file": "tests/corner_stack_lower_snapshot_guard.test.js",
-      "category": "contract"
-    },
-    {
       "file": "tests/corner_stack_paint_material_refresh_guard.test.js",
       "category": "contract"
     },
     {
       "file": "tests/corner_stack_split_scope_guard.test.js",
       "category": "contract"
+    },
+    {
+      "file": "tests/corner_stack_split_visual_scope_runtime.test.ts",
+      "category": "runtime-unit"
     },
     {
       "file": "tests/corner_state_normalize_runtime.test.ts",
@@ -1199,12 +1259,24 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/corner_wing_cornice_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
       "file": "tests/corner_zero_doors_pentagon_only_guard.test.js",
       "category": "contract"
     },
     {
       "file": "tests/cornice_wave_front_alignment_runtime.test.ts",
       "category": "runtime-unit"
+    },
+    {
+      "file": "tests/cornice_wave_individual_paint_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/css_shadow_tokens_contract.test.js",
+      "category": "contract"
     },
     {
       "file": "tests/debug_console_surface_guard.test.js",
@@ -1399,7 +1471,7 @@
       "category": "integration"
     },
     {
-      "file": "tests/doors_runtime_visuals_int_drawer_runtime.test.ts",
+      "file": "tests/doors_runtime_visuals_sketch_internal_drawers_runtime.test.ts",
       "category": "integration"
     },
     {
@@ -1412,6 +1484,14 @@
     },
     {
       "file": "tests/e2e/authoring_builds.spec.ts",
+      "category": "e2e-smoke"
+    },
+    {
+      "file": "tests/e2e/canvas_pointer_parity.spec.ts",
+      "category": "e2e-smoke"
+    },
+    {
+      "file": "tests/e2e/cloud_sync_reconnect.spec.ts",
       "category": "e2e-smoke"
     },
     {
@@ -1491,7 +1571,15 @@
       "category": "integration"
     },
     {
+      "file": "tests/export_canvas_delivery_options_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/export_canvas_viewport_runtime.test.ts",
+      "category": "integration"
+    },
+    {
+      "file": "tests/export_canvas_workflow_notes_transform_regression.test.ts",
       "category": "integration"
     },
     {
@@ -1545,6 +1633,38 @@
     {
       "file": "tests/export_overlay_errors_family_contracts.test.js",
       "category": "contract"
+    },
+    {
+      "file": "tests/settings_visual_display_controller_runtime.test.js",
+      "category": "integration"
+    },
+    {
+      "file": "tests/settings_visual_library_preset_contracts.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/settings_visual_lighting_controller_runtime.test.js",
+      "category": "integration"
+    },
+    {
+      "file": "tests/settings_visual_room_design_controller_runtime.test.js",
+      "category": "integration"
+    },
+    {
+      "file": "tests/settings_visual_sections_runtime.test.js",
+      "category": "integration"
+    },
+    {
+      "file": "tests/settings_visual_sections_shared_runtime.test.ts",
+      "category": "integration"
+    },
+    {
+      "file": "tests/settings_visual_shared_room_runtime.test.ts",
+      "category": "integration"
+    },
+    {
+      "file": "tests/settings_visual_view_state_runtime.test.js",
+      "category": "integration"
     },
     {
       "file": "tests/ext_drawers_hover_preview_guard.test.js",
@@ -1619,16 +1739,20 @@
       "category": "runtime-unit"
     },
     {
-      "file": "tests/int_drawer_keep_drawers_closed_guard.test.cjs",
-      "category": "contract"
-    },
-    {
       "file": "tests/interior_custom_ops_exact_preset_rods_runtime.test.ts",
       "category": "runtime-unit"
     },
     {
       "file": "tests/interior_pipeline_runtime.test.ts",
       "category": "runtime-unit"
+    },
+    {
+      "file": "tests/interior_pipeline_shared_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/interior_sketch_box_validation_source_guard.test.js",
+      "category": "contract"
     },
     {
       "file": "tests/interior_tab_local_state_runtime.test.js",
@@ -1759,11 +1883,19 @@
       "category": "contract"
     },
     {
+      "file": "tests/local_motion_toggle_wakeup_guard.test.cjs",
+      "category": "contract"
+    },
+    {
       "file": "tests/maps_access_known_map_normalization_runtime.test.ts",
       "category": "runtime-unit"
     },
     {
       "file": "tests/maps_access_normalizers_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/maps_access_owner_rejection_visibility_runtime.test.ts",
       "category": "runtime-unit"
     },
     {
@@ -1809,6 +1941,10 @@
     {
       "file": "tests/meta_profile_contract_runtime.test.ts",
       "category": "contract"
+    },
+    {
+      "file": "tests/meta_profile_owner_rejection_runtime.test.ts",
+      "category": "runtime-unit"
     },
     {
       "file": "tests/mirror_center_and_box_controls_guard.test.js",
@@ -1867,15 +2003,23 @@
       "category": "contract"
     },
     {
+      "file": "tests/models_service_owner_rejection_visibility_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/models_service_runtime.test.ts",
       "category": "integration"
+    },
+    {
+      "file": "tests/module_layout_pipeline_runtime.test.ts",
+      "category": "runtime-unit"
     },
     {
       "file": "tests/module_loop_pipeline_runtime_runtime.test.ts",
       "category": "runtime-unit"
     },
     {
-      "file": "tests/modules_configuration_patch_runtime.test.ts",
+      "file": "tests/module_loop_rear_clearance_runtime.test.ts",
       "category": "runtime-unit"
     },
     {
@@ -1927,6 +2071,10 @@
       "category": "integration"
     },
     {
+      "file": "tests/notes_overlay_css_cascade_contract.test.js",
+      "category": "contract"
+    },
+    {
       "file": "tests/notes_overlay_editor_async_runtime.test.ts",
       "category": "integration"
     },
@@ -1952,6 +2100,10 @@
     },
     {
       "file": "tests/notes_overlay_pointer_runtime.test.ts",
+      "category": "integration"
+    },
+    {
+      "file": "tests/notes_overlay_render_boundary_runtime.test.ts",
       "category": "integration"
     },
     {
@@ -2191,6 +2343,10 @@
       "category": "integration"
     },
     {
+      "file": "tests/order_pdf_toolbar_visual_contracts.test.js",
+      "category": "contract"
+    },
+    {
       "file": "tests/order_pdf_verify_split_contracts.test.js",
       "category": "contract"
     },
@@ -2255,6 +2411,14 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/platform_ops_owner_rejection_visibility_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/platform_render_kick_next_raf_guard.test.cjs",
+      "category": "contract"
+    },
+    {
       "file": "tests/platform_render_state_runtime.test.ts",
       "category": "integration"
     },
@@ -2271,6 +2435,10 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/post_build_extras_pipeline_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
       "file": "tests/post_build_finalize_runtime.test.ts",
       "category": "runtime-unit"
     },
@@ -2283,6 +2451,10 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/post_build_sketch_door_cuts_modules_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/post_build_sketch_door_cuts_rebuild_runtime.test.ts",
       "category": "integration"
     },
@@ -2293,6 +2465,10 @@
     {
       "file": "tests/preset_stack_runtime_hardening.test.ts",
       "category": "runtime-unit"
+    },
+    {
+      "file": "tests/private_owner_import_boundary_audit_runtime.test.js",
+      "category": "legacy-migration"
     },
     {
       "file": "tests/profile_door_paint_material_refresh_guard.test.cjs",
@@ -2347,6 +2523,10 @@
       "category": "integration"
     },
     {
+      "file": "tests/project_import_fixtures_runtime.test.ts",
+      "category": "legacy-migration"
+    },
+    {
       "file": "tests/project_io_access_runtime.test.ts",
       "category": "legacy-migration"
     },
@@ -2380,6 +2560,10 @@
     },
     {
       "file": "tests/project_io_orchestrator_shared_runtime.test.ts",
+      "category": "legacy-migration"
+    },
+    {
+      "file": "tests/project_io_owner_rejection_visibility_runtime.test.ts",
       "category": "legacy-migration"
     },
     {
@@ -2587,7 +2771,59 @@
       "category": "contract"
     },
     {
+      "file": "tests/refactor_stage47_models_service_surface_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage48_preset_models_data_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage49_slice_write_dispatch_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
       "file": "tests/refactor_stage4_public_api_and_type_hardening_runtime.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage50_order_pdf_export_actions_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage51_scheduler_shared_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage52_interior_tab_helpers_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage53_room_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage54_render_preview_measurements_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage55_order_pdf_sketch_toolbar_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage56_order_pdf_text_layer_session_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage57_order_pdf_text_box_runtime_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage58_order_pdf_sketch_preview_controller_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage59_order_pdf_sketch_canvas_runtime_ownership_guard.test.js",
       "category": "contract"
     },
     {
@@ -2595,12 +2831,96 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/refactor_stage60_order_pdf_sketch_panel_controller_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage61_order_pdf_card_text_layer_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage62_order_pdf_sketch_preview_runtime_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage63_order_pdf_sketch_panel_measurement_hooks_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage64_order_pdf_sketch_panel_view_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage65_render_carcass_cornice_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage66_render_interior_sketch_shared_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage67_render_preview_marker_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage68_render_preview_sketch_ops_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage69_render_interior_sketch_external_drawers_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
       "file": "tests/refactor_stage6_ui_effect_cleanup_runtime.test.js",
       "category": "runtime-unit"
     },
     {
+      "file": "tests/refactor_stage70_render_interior_sketch_ops_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage71_render_interior_sketch_boxes_shell_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage72_render_interior_sketch_boxes_fronts_drawers_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage73_render_interior_sketch_boxes_contents_parts_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage74_refactor_next_stage_plan_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage75_sketch_box_door_visual_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage76_drawer_shared_contract_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage77_sketch_box_controls_runtime_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage78_runtime_access_surfaces_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/refactor_stage79_order_pdf_export_commands_ownership_guard.test.js",
+      "category": "contract"
+    },
+    {
       "file": "tests/refactor_stage7_canvas_hit_identity_runtime.test.js",
       "category": "integration"
+    },
+    {
+      "file": "tests/refactor_stage80_measurement_perf_closeout_guard.test.js",
+      "category": "perf-smoke"
     },
     {
       "file": "tests/refactor_stage8_cloud_sync_and_perf_runtime.test.js",
@@ -2667,11 +2987,19 @@
       "category": "integration"
     },
     {
+      "file": "tests/render_interior_contents_clearance_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/render_interior_custom_ops_exact_preset_rods_runtime.test.ts",
       "category": "integration"
     },
     {
       "file": "tests/render_interior_custom_ops_storage_barrier_runtime.test.ts",
+      "category": "integration"
+    },
+    {
+      "file": "tests/render_interior_preset_wall_faces_runtime.test.ts",
       "category": "integration"
     },
     {
@@ -2707,6 +3035,10 @@
       "category": "integration"
     },
     {
+      "file": "tests/render_loop_idle_one_shot_guard.test.cjs",
+      "category": "contract"
+    },
+    {
       "file": "tests/render_loop_mirror_driver_runtime.test.ts",
       "category": "integration"
     },
@@ -2720,6 +3052,10 @@
     },
     {
       "file": "tests/render_loop_visual_effects_runtime.test.ts",
+      "category": "integration"
+    },
+    {
+      "file": "tests/render_ops_extras_dimensions_runtime.test.ts",
       "category": "integration"
     },
     {
@@ -2751,6 +3087,10 @@
       "category": "integration"
     },
     {
+      "file": "tests/render_preview_sketch_pipeline_linear_runtime.test.ts",
+      "category": "integration"
+    },
+    {
       "file": "tests/render_runtime_primitives_runtime.test.ts",
       "category": "integration"
     },
@@ -2765,38 +3105,6 @@
     {
       "file": "tests/render_surface_ui_decoupling_guard.test.js",
       "category": "contract"
-    },
-    {
-      "file": "tests/render_tab_display_controller_runtime.test.js",
-      "category": "integration"
-    },
-    {
-      "file": "tests/render_tab_library_preset_contracts.test.js",
-      "category": "contract"
-    },
-    {
-      "file": "tests/render_tab_lighting_controller_runtime.test.js",
-      "category": "integration"
-    },
-    {
-      "file": "tests/render_tab_room_design_controller_runtime.test.js",
-      "category": "integration"
-    },
-    {
-      "file": "tests/render_tab_sections_runtime.test.js",
-      "category": "integration"
-    },
-    {
-      "file": "tests/render_tab_sections_shared_runtime.test.ts",
-      "category": "integration"
-    },
-    {
-      "file": "tests/render_tab_shared_room_runtime.test.ts",
-      "category": "integration"
-    },
-    {
-      "file": "tests/render_tab_view_state_runtime.test.js",
-      "category": "integration"
     },
     {
       "file": "tests/residual_root_bag_bridge_cleanup_guard.test.js",
@@ -2895,6 +3203,10 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/scene_view_owner_rejection_visibility_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
       "file": "tests/scene_view_shared_runtime.test.ts",
       "category": "runtime-unit"
     },
@@ -2959,6 +3271,10 @@
       "category": "contract"
     },
     {
+      "file": "tests/settings_backup_file_read_diagnostics_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
       "file": "tests/settings_backup_import_models_runtime.test.ts",
       "category": "legacy-migration"
     },
@@ -2995,12 +3311,24 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/shelf_individual_paint_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/shelf_paint_proximity_click_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
       "file": "tests/sidebar_background_exit_runtime.test.ts",
       "category": "runtime-unit"
     },
     {
       "file": "tests/site2_camera_boot_default_guard.test.js",
       "category": "contract"
+    },
+    {
+      "file": "tests/site_profiles_runtime.test.js",
+      "category": "runtime-unit"
     },
     {
       "file": "tests/site_variant_runtime.test.ts",
@@ -3095,7 +3423,7 @@
       "category": "contract"
     },
     {
-      "file": "tests/sketch_free_box_int_drawers_open_guard.test.js",
+      "file": "tests/sketch_free_box_internal_drawers_open_guard.test.js",
       "category": "contract"
     },
     {
@@ -3121,6 +3449,10 @@
     {
       "file": "tests/sketch_front_visual_state_runtime.test.ts",
       "category": "integration"
+    },
+    {
+      "file": "tests/sketch_internal_drawers_keep_doors_closed_guard.test.cjs",
+      "category": "contract"
     },
     {
       "file": "tests/sketch_manual_tool_host_runtime.test.ts",
@@ -3181,6 +3513,10 @@
     {
       "file": "tests/stage3_orchestration_boundary_cleanup_guard.test.js",
       "category": "contract"
+    },
+    {
+      "file": "tests/stage4_ui_build_reactivity_behavior_runtime.test.ts",
+      "category": "runtime-unit"
     },
     {
       "file": "tests/stage4_ui_build_reactivity_guard.test.js",
@@ -3339,6 +3675,10 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/storage_commands_access_diagnostics_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
       "file": "tests/store_actions_config_runtime.test.ts",
       "category": "runtime-unit"
     },
@@ -3415,12 +3755,24 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/structure_tab_dimensions_cell_dims_reset_buttons_runtime.test.tsx",
+      "category": "runtime-unit"
+    },
+    {
       "file": "tests/structure_tab_dimensions_section_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/structure_tab_dimensions_stack_split_layout_runtime.test.tsx",
       "category": "runtime-unit"
     },
     {
       "file": "tests/structure_tab_family_contracts.test.js",
       "category": "contract"
+    },
+    {
+      "file": "tests/structure_tab_library_glass_edit_runtime.test.ts",
+      "category": "runtime-unit"
     },
     {
       "file": "tests/structure_tab_owner_contracts.test.js",
@@ -3539,6 +3891,10 @@
       "category": "contract"
     },
     {
+      "file": "tests/ui_ephemeral_defaults_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
       "file": "tests/ui_feedback_prompt_cancel_runtime.test.ts",
       "category": "runtime-unit"
     },
@@ -3561,6 +3917,10 @@
     {
       "file": "tests/ui_manifest_order.test.js",
       "category": "runtime-unit"
+    },
+    {
+      "file": "tests/ui_modern_pressed_states_contracts.test.js",
+      "category": "contract"
     },
     {
       "file": "tests/ui_modes_runtime_state_runtime.test.ts",
@@ -3611,6 +3971,10 @@
       "category": "runtime-unit"
     },
     {
+      "file": "tests/viewer_notes_controls_contract.test.js",
+      "category": "contract"
+    },
+    {
       "file": "tests/viewport_layout_runtime.test.ts",
       "category": "runtime-unit"
     },
@@ -3645,6 +4009,18 @@
     {
       "file": "tests/visuals_contents_runtime.test.ts",
       "category": "runtime-unit"
+    },
+    {
+      "file": "tests/wardrobe_construction_validation_shared_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/wardrobe_dimension_tokens_runtime.test.ts",
+      "category": "runtime-unit"
+    },
+    {
+      "file": "tests/wardrobe_dimension_tokens_source_guard.test.js",
+      "category": "contract"
     },
     {
       "file": "tests/wave1_write_access_cleanup_guard.test.js",
@@ -3716,6 +4092,10 @@
     },
     {
       "file": "tests/wp_refactor_closeout_audit_runtime.test.js",
+      "category": "contract"
+    },
+    {
+      "file": "tests/wp_release_clean_audit_runtime.test.js",
       "category": "contract"
     },
     {

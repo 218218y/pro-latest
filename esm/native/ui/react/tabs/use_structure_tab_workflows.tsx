@@ -10,6 +10,7 @@ import type {
 import {
   STRUCTURE_CELL_DIMS_MODE_FALLBACK_ID,
   STRUCTURE_CELL_DIMS_MODE_MESSAGE,
+  STRUCTURE_HEX_CELL_DIMS_MODE_MESSAGE,
 } from './use_structure_tab_workflows_shared.js';
 import { useStructureTabWorkflowControllers } from './use_structure_tab_workflows_controllers.js';
 import { useStructureTabWorkflowControllerEffects } from './use_structure_tab_workflows_effects.js';
@@ -31,6 +32,7 @@ export function useStructureTabWorkflows(args: UseStructureTabWorkflowsArgs): Us
 
   const enterCellDimsMode = useCallback(
     (source: string) => {
+      workflowController.setCellDimsHexMode(false);
       enterStructureEditMode({
         app,
         fb,
@@ -39,18 +41,40 @@ export function useStructureTabWorkflows(args: UseStructureTabWorkflowsArgs): Us
         message: STRUCTURE_CELL_DIMS_MODE_MESSAGE,
       });
     },
-    [app, fb, state.cellDimsModeId]
+    [app, fb, state.cellDimsModeId, workflowController]
   );
 
   const exitCellDimsMode = useCallback(
     (source: string) => {
+      workflowController.setCellDimsHexMode(false);
       exitStructureEditMode({
         app,
         modeId: String(state.cellDimsModeId || STRUCTURE_CELL_DIMS_MODE_FALLBACK_ID),
         source,
       });
     },
-    [app, state.cellDimsModeId]
+    [app, state.cellDimsModeId, workflowController]
+  );
+
+  const enterHexCellDimsMode = useCallback(
+    (source: string) => {
+      workflowController.setCellDimsHexMode(true);
+      enterStructureEditMode({
+        app,
+        fb,
+        modeId: String(state.cellDimsModeId || STRUCTURE_CELL_DIMS_MODE_FALLBACK_ID),
+        source,
+        message: STRUCTURE_HEX_CELL_DIMS_MODE_MESSAGE,
+      });
+    },
+    [app, fb, state.cellDimsModeId, workflowController]
+  );
+
+  const exitHexCellDimsMode = useCallback(
+    (_source: string) => {
+      workflowController.setCellDimsHexMode(false);
+    },
+    [workflowController]
   );
 
   const getUpperDoorsCount = useCallback((): number => {
@@ -155,6 +179,14 @@ export function useStructureTabWorkflows(args: UseStructureTabWorkflowsArgs): Us
     workflowController.clearCellDimsDepth();
   }, [workflowController]);
 
+  const clearCellDimsHexProtrusion = useCallback(() => {
+    workflowController.clearCellDimsHexProtrusion();
+  }, [workflowController]);
+
+  const clearCellDimsHexDoorWidth = useCallback(() => {
+    workflowController.clearCellDimsHexDoorWidth();
+  }, [workflowController]);
+
   const resetAutoWidth = useCallback(() => {
     workflowController.resetAutoWidth();
   }, [workflowController]);
@@ -164,6 +196,8 @@ export function useStructureTabWorkflows(args: UseStructureTabWorkflowsArgs): Us
     setRaw: structuralController.setRaw,
     enterCellDimsMode,
     exitCellDimsMode,
+    enterHexCellDimsMode,
+    exitHexCellDimsMode,
     renderStackLinkBadge,
     toggleStackSplit: structuralController.toggleStackSplit,
     toggleStackSplitDecorativeSeparator: structuralController.toggleStackSplitDecorativeSeparator,
@@ -174,6 +208,8 @@ export function useStructureTabWorkflows(args: UseStructureTabWorkflowsArgs): Us
     clearCellDimsWidth,
     clearCellDimsHeight,
     clearCellDimsDepth,
+    clearCellDimsHexProtrusion,
+    clearCellDimsHexDoorWidth,
     resetAutoWidth,
     setBaseType: structuralController.setBaseType,
     setBaseLegStyle: structuralController.setBaseLegStyle,

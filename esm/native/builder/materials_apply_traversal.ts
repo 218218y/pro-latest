@@ -27,7 +27,7 @@ export function shouldKeepMaterialsApplyMeshMaterial(obj: WardrobeMeshLike | nul
 
 export function applyMaterialsToWardrobeTree(args: {
   wardrobeGroup: WardrobeMeshLike;
-  getPartMat: (partId: string, stackKey: PartStackKey) => unknown;
+  getPartMat: (partId: string, stackKey: PartStackKey, userData?: ValueRecord | null) => unknown;
   readPartId: (value: unknown) => string | null;
   readStackKey: (value: unknown) => PartStackKey;
 }): boolean {
@@ -64,9 +64,14 @@ export function applyMaterialsToWardrobeTree(args: {
         !userData.__keepMaterial &&
         !Array.isArray(obj.material)
       ) {
-        const cacheKey = `${ownPartId}::${ownStackKey || ''}`;
+        const shelfDefaultKey = userData.__wpShelfGroupPartId
+          ? userData.__wpShelfIsBrace === true || userData.__wpShelfVariant === 'brace'
+            ? 'brace'
+            : 'regular'
+          : '';
+        const cacheKey = `${ownPartId}::${ownStackKey || ''}::${shelfDefaultKey}`;
         if (!materialCache.has(cacheKey)) {
-          const material = getPartMat(ownPartId, ownStackKey);
+          const material = getPartMat(ownPartId, ownStackKey, userData);
           materialCache.set(cacheKey, material);
           if (material && obj.material !== material) {
             obj.material = material;

@@ -24,6 +24,7 @@ export type SketchDrawerStackBounds = {
 };
 
 export type SketchDoorCutsRuntime = {
+  App: AppContainer;
   THREE: ThreeLike;
   bodyMat: unknown;
   globalFrontMat: unknown;
@@ -32,6 +33,7 @@ export type SketchDoorCutsRuntime = {
   getPartMaterial: BoundUnknownMethod | null;
   getMirrorMaterial: (() => unknown) | null;
   resolveHandleType: (partId: string) => string;
+  resolveEdgeHandleVariant: (partId: string) => 'short' | 'long';
   resolveHandleColor: (partId: string) => string;
   resolveCurtain: (partId: string) => string | null;
   resolveSpecial: (partId: string, curtain: string | null) => 'mirror' | 'glass' | null;
@@ -48,6 +50,7 @@ export type SketchDoorCutSelection = {
 };
 
 export type SketchDoorCutsRuntimeArgs = {
+  App: AppContainer;
   THREE: ThreeLike;
   ctx: BuildContextLike;
   cfg: ValueRecord;
@@ -61,6 +64,7 @@ export type ApplySketchDrawerDoorCutsArgs = {
   App: AppContainer;
   runtime: SketchDoorCutsRuntime;
   selectDoorCuts: (entry: ValueRecord, g: Object3DLike, ud: ValueRecord) => SketchDoorCutSelection | null;
+  collectSuppressedHandlePartIds?: (partIds: string[]) => void;
 };
 
 export type RebuildSketchSegmentedDoorArgs = {
@@ -69,4 +73,5 @@ export type RebuildSketchSegmentedDoorArgs = {
   ud: ValueRecord;
   visibleSegments: SketchDrawerCutSegment[];
   basePartId: string;
+  collectSuppressedHandlePartIds?: (partIds: string[]) => void;
 };

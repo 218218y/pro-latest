@@ -222,8 +222,6 @@ test('kernel_state_kernel_config corner-cell patch reuses the previous canonical
     doors: 2,
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersSlot: 0,
-    intDrawersList: [],
     isCustom: false,
     customData: {
       shelves: [false, false, false, false, false, false],
@@ -236,8 +234,6 @@ test('kernel_state_kernel_config corner-cell patch reuses the previous canonical
       layout: 'shelves',
       extDrawersCount: 0,
       hasShoeDrawer: false,
-      intDrawersList: [],
-      intDrawersSlot: 0,
       isCustom: false,
       gridDivisions: 6,
       customData: {
@@ -257,8 +253,6 @@ test('kernel_state_kernel_config corner-cell patch reuses the previous canonical
       doors: current.doors,
       extDrawersCount: current.extDrawersCount,
       hasShoeDrawer: current.hasShoeDrawer,
-      intDrawersSlot: current.intDrawersSlot,
-      intDrawersList: current.intDrawersList,
       isCustom: current.isCustom,
       customData: current.customData,
     }),

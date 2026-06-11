@@ -72,8 +72,8 @@ export function normalizeTabId(v: unknown): WardrobeProTabId | null {
     case 'structure':
     case 'design':
     case 'interior':
-    case 'render':
-    case 'export':
+    case 'sketch':
+    case 'settings':
       return low;
     default:
       return null;

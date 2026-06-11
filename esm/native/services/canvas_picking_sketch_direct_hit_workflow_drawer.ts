@@ -18,11 +18,69 @@ import {
   sameModuleKey,
 } from './canvas_picking_drawer_cross_family.js';
 import {
-  removeInternalDrawerSlot,
   removeSketchDrawerById,
   removeSketchExternalDrawerById,
 } from './canvas_picking_sketch_direct_hit_workflow_drawers_shared.js';
 
+function readSketchInternalDrawerIdFromPartId(partId: string, moduleKey: unknown): string {
+  const prefix = `div_int_sketch_${String(moduleKey)}_`;
+  if (partId.startsWith(prefix)) return partId.slice(prefix.length);
+  const shortPrefix = 'div_int_sketch_';
+  if (!partId.startsWith(shortPrefix)) return '';
+  const suffix = partId.slice(shortPrefix.length);
+  const splitAt = suffix.indexOf('_');
+  return splitAt >= 0 ? suffix.slice(splitAt + 1) : suffix;
+}
+
+function hoverAllowsSketchExternalRemoval(args: {
+  hoverOk: boolean;
+  hoverKind: string;
+  hoverOp: string;
+  hoverRec: unknown;
+  drawerId: string;
+  boxId?: string;
+}): boolean {
+  if (!args.hoverOk) return true;
+  if (args.hoverOp !== 'remove') return false;
+
+  const hoverRemoveId = readRecordString(args.hoverRec, 'removeId');
+  if (!hoverRemoveId || hoverRemoveId !== args.drawerId) return false;
+
+  if (args.hoverKind === 'ext_drawers') return true;
+  if (args.hoverKind !== 'box_content') return false;
+
+  const hoverContentKind = readRecordString(args.hoverRec, 'contentKind');
+  if (hoverContentKind !== 'ext_drawers') return false;
+
+  const hoverBoxId = readRecordString(args.hoverRec, 'boxId');
+  return !args.boxId || !hoverBoxId || hoverBoxId === args.boxId;
+}
+
+function hoverAllowsSketchInternalRemoval(args: {
+  hoverOk: boolean;
+  hoverKind: string;
+  hoverOp: string;
+  hoverRec: unknown;
+  drawerId: string;
+}): boolean {
+  if (!args.hoverOk) return true;
+  if (args.hoverOp !== 'remove') return false;
+  if (args.hoverKind !== 'drawers') return false;
+  return readRecordString(args.hoverRec, 'removeId') === args.drawerId;
+}
+
+function hoverAllowsStandardExternalRemoval(args: {
+  hoverOk: boolean;
+  hoverKind: string;
+  hoverOp: string;
+  hoverRec: unknown;
+  partId: string;
+}): boolean {
+  if (!args.hoverOk) return true;
+  if (args.hoverOp !== 'remove') return false;
+  if (args.hoverKind !== 'ext_drawers') return false;
+  return readRecordString(args.hoverRec, 'removePid') === args.partId;
+}
 export function tryApplySketchDirectHitDrawerActions(args: ManualLayoutSketchDirectHitContext): boolean {
   const {
     App,
@@ -39,10 +97,44 @@ export function tryApplySketchDirectHitDrawerActions(args: ManualLayoutSketchDir
 
   if (isSketchInternalDrawersTool(__mt)) {
     try {
-      const drawerHit = findDirectCrossDrawerHitInIntersects(App, intersects, [
-        'sketch_internal',
-        'standard_internal',
-      ]);
+      const sketchExternalHit = findDirectCrossDrawerHitInIntersects(App, intersects, 'sketch_external');
+      if (
+        sketchExternalHit &&
+        (!sketchExternalHit.moduleIndex || sameModuleKey(sketchExternalHit.moduleIndex, __activeModuleKey))
+      ) {
+        const drawerGroup = sketchExternalHit.object ?? null;
+        const drawerId =
+          sketchExternalHit.sketchExtDrawerId ||
+          readRecordString(drawerGroup?.userData, '__wpSketchExtDrawerId');
+        const boxId = sketchExternalHit.sketchBoxId || readSketchBoxId(drawerGroup);
+        if (
+          drawerId &&
+          hoverAllowsSketchExternalRemoval({
+            hoverOk: __hoverOk,
+            hoverKind: __hoverKind,
+            hoverOp: __hoverOp,
+            hoverRec: __hoverRec,
+            drawerId,
+            boxId: boxId || undefined,
+          })
+        ) {
+          __patchConfigForKey(
+            __activeModuleKey,
+            cfg0 => {
+              const cfg = asConfig(cfg0);
+              removeSketchExternalDrawerById(cfg, drawerId, boxId || undefined);
+            },
+            { source: 'sketch.removeExternalDrawerByCrossHit', immediate: true }
+          );
+          return true;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      const drawerHit = findDirectCrossDrawerHitInIntersects(App, intersects, ['sketch_internal']);
       const drawerGroup = drawerHit?.object ?? null;
       const pid = readPartId(drawerGroup);
       const moduleIndex = readModuleIndex(drawerGroup);
@@ -83,24 +175,26 @@ export function tryApplySketchDirectHitDrawerActions(args: ManualLayoutSketchDir
         if (!Number.isFinite(centerY)) centerY = Number(hitY0);
         if (!Number.isFinite(halfH)) halfH = 0.12;
 
+        const removeId = readSketchInternalDrawerIdFromPartId(pid, __activeModuleKey);
+        const hoverAllowsRemove = removeId
+          ? hoverAllowsSketchInternalRemoval({
+              hoverOk: __hoverOk,
+              hoverKind: __hoverKind,
+              hoverOp: __hoverOp,
+              hoverRec: __hoverRec,
+              drawerId: removeId,
+            })
+          : false;
         const dy = Math.abs(Number(hitY0) - centerY);
-        const allowRemove = dy <= halfH + 0.02;
+        const directHitAllowsRemove = dy <= halfH + 0.02;
+        const allowRemove = __hoverOk ? hoverAllowsRemove : directHitAllowsRemove;
 
-        if (allowRemove) {
+        if (allowRemove && removeId) {
           __patchConfigForKey(
             __activeModuleKey,
             cfg0 => {
               const cfg = asConfig(cfg0);
-              const prefix = `div_int_sketch_${String(__activeModuleKey)}_`;
-              if (pid.startsWith(prefix)) {
-                removeSketchDrawerById(cfg, pid.slice(prefix.length));
-                return;
-              }
-
-              const match = pid.match(/_slot_(\d+)/);
-              const slot = match ? Number(match[1]) : NaN;
-              if (!Number.isFinite(slot)) return;
-              removeInternalDrawerSlot(cfg, slot);
+              removeSketchDrawerById(cfg, removeId);
             },
             { source: 'sketch.removeInternalDrawerByHit.guardY', immediate: true }
           );
@@ -113,10 +207,52 @@ export function tryApplySketchDirectHitDrawerActions(args: ManualLayoutSketchDir
   }
 
   if (__mt.startsWith('sketch_ext_drawers:')) {
+    try {
+      const sketchInternalHit = findDirectCrossDrawerHitInIntersects(App, intersects, 'sketch_internal');
+      if (
+        sketchInternalHit &&
+        (!sketchInternalHit.moduleIndex || sameModuleKey(sketchInternalHit.moduleIndex, __activeModuleKey))
+      ) {
+        const drawerGroup = sketchInternalHit.object ?? null;
+        const pid = sketchInternalHit.partId || readPartId(drawerGroup);
+        const removeId = pid ? readSketchInternalDrawerIdFromPartId(pid, __activeModuleKey) : '';
+        if (
+          removeId &&
+          hoverAllowsSketchInternalRemoval({
+            hoverOk: __hoverOk,
+            hoverKind: __hoverKind,
+            hoverOp: __hoverOp,
+            hoverRec: __hoverRec,
+            drawerId: removeId,
+          })
+        ) {
+          __patchConfigForKey(
+            __activeModuleKey,
+            cfg0 => {
+              const cfg = asConfig(cfg0);
+              removeSketchDrawerById(cfg, removeId);
+            },
+            { source: 'sketch.removeInternalDrawerByCrossHit', immediate: true }
+          );
+          return true;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     const standardExternalHit = findDirectCrossDrawerHitInIntersects(App, intersects, 'standard_external');
     if (
       standardExternalHit &&
-      (!standardExternalHit.moduleIndex || sameModuleKey(standardExternalHit.moduleIndex, __activeModuleKey))
+      (!standardExternalHit.moduleIndex ||
+        sameModuleKey(standardExternalHit.moduleIndex, __activeModuleKey)) &&
+      hoverAllowsStandardExternalRemoval({
+        hoverOk: __hoverOk,
+        hoverKind: __hoverKind,
+        hoverOp: __hoverOp,
+        hoverRec: __hoverRec,
+        partId: standardExternalHit.partId,
+      })
     ) {
       __patchConfigForKey(
         __activeModuleKey,

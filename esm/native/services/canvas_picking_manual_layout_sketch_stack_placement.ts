@@ -7,57 +7,47 @@ import {
 import {
   DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M,
   DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_M,
-  resolveSketchExternalDrawerMetrics,
-  resolveSketchInternalDrawerMetrics,
+  resolveSketchExternalDrawerFit,
+  resolveSketchInternalDrawerFit,
 } from '../features/sketch_drawer_sizing.js';
+import { resolveSketchStackCenterYFromNormalizedItem } from '../features/sketch_stack_positioning.js';
 
 type UnknownRecord = Record<string, unknown>;
 export type ManualLayoutSketchCenterReader = (item: UnknownRecord, stackH: number) => number | null;
 
-function isRecord(value: unknown): value is UnknownRecord {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function readNumber(value: unknown): number | null {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  if (value == null || value === '') return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function readRecordValue(record: unknown, key: string): unknown {
-  return isRecord(record) ? record[key] : null;
-}
-
-function readRecordNumber(record: unknown, key: string): number | null {
-  return readNumber(readRecordValue(record, key));
-}
-
 export function readManualLayoutSketchNormalizedCenterY(args: {
   item: UnknownRecord;
   bottomY: number;
+  topY?: number;
   totalHeight: number;
   stackH: number;
+  pad?: number;
 }): number | null {
-  const yNormC = readRecordNumber(args.item, 'yNormC');
-  const yNormBase = readRecordNumber(args.item, 'yNorm');
-  if (yNormC != null) return args.bottomY + Math.max(0, Math.min(1, yNormC)) * args.totalHeight;
-  if (yNormBase != null) {
-    return args.bottomY + Math.max(0, Math.min(1, yNormBase)) * args.totalHeight + args.stackH / 2;
-  }
-  return null;
+  const topY = args.topY ?? args.bottomY + args.totalHeight;
+  return resolveSketchStackCenterYFromNormalizedItem({
+    item: args.item,
+    bottomY: args.bottomY,
+    topY,
+    totalHeight: args.totalHeight,
+    stackH: args.stackH,
+    pad: args.pad,
+  });
 }
 
 export function createManualLayoutSketchNormalizedCenterReader(args: {
   bottomY: number;
+  topY?: number;
   totalHeight: number;
+  pad?: number;
 }): ManualLayoutSketchCenterReader {
   return (item, stackH) =>
     readManualLayoutSketchNormalizedCenterY({
       item,
       bottomY: args.bottomY,
+      topY: args.topY,
       totalHeight: args.totalHeight,
       stackH,
+      pad: args.pad,
     });
 }
 
@@ -93,6 +83,20 @@ export function buildManualLayoutSketchExternalDrawerBlockers(args: {
   });
 }
 
+export function buildManualLayoutStandardInternalDrawerBlockers(_args: {
+  cfgRef: UnknownRecord | null;
+  bottomY: number;
+  topY: number;
+  totalHeight: number;
+  gridDivisions?: unknown;
+  localGridStep?: unknown;
+  drawerSizingGridStep?: unknown;
+  keyPrefix?: unknown;
+  moduleIndex?: unknown;
+}): VerticalOccupancyRange[] {
+  return [];
+}
+
 export function resolveManualLayoutSketchInternalDrawerPlacement(args: {
   desiredCenterY: number;
   bottomY: number;
@@ -105,17 +109,19 @@ export function resolveManualLayoutSketchInternalDrawerPlacement(args: {
   blockers?: VerticalOccupancyRange[];
   gap?: number;
 }): {
-  op: 'add' | 'remove';
+  op: 'add' | 'remove' | 'blocked';
   removeId: string | null;
   yCenter: number;
   stackH: number;
   drawerH: number;
   drawerGap: number;
+  fitsAvailable: boolean;
 } {
-  const metrics = resolveSketchInternalDrawerMetrics({
+  const fit = resolveSketchInternalDrawerFit({
     drawerHeightM: args.drawerHeightM ?? DEFAULT_SKETCH_INTERNAL_DRAWER_HEIGHT_M,
     availableHeightM: Math.max(0, args.topY - args.bottomY - args.pad * 2),
   });
+  const metrics = fit.metrics;
   const stackH = metrics.stackH;
   const clampCenter = (centerY: number, selectedStackH: number) => {
     const lo = args.bottomY + args.pad + selectedStackH / 2;
@@ -136,6 +142,8 @@ export function resolveManualLayoutSketchInternalDrawerPlacement(args: {
     }),
     blockers: args.blockers,
     gap: args.gap,
+    relocateOnCollision: false,
+    snapToAvailableSlot: true,
   });
   return {
     op: placement.op,
@@ -144,6 +152,7 @@ export function resolveManualLayoutSketchInternalDrawerPlacement(args: {
     stackH,
     drawerH: metrics.drawerH,
     drawerGap: metrics.drawerGap,
+    fitsAvailable: fit.fits,
   };
 }
 
@@ -160,23 +169,25 @@ export function resolveManualLayoutSketchExternalDrawerPlacement(args: {
   regH?: number;
   gap?: number;
 }): {
-  op: 'add' | 'remove';
+  op: 'add' | 'remove' | 'blocked';
   removeId: string | null;
   yCenter: number;
   drawerCount: number;
   drawerH: number;
   stackH: number;
+  fitsAvailable: boolean;
 } {
   const preferredDrawerH =
     args.drawerHeightM ??
     (typeof args.regH === 'number' && Number.isFinite(args.regH) && args.regH > 0
       ? args.regH
       : DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M);
-  const metrics = resolveSketchExternalDrawerMetrics({
+  const fit = resolveSketchExternalDrawerFit({
     drawerCount: args.selectedDrawerCount,
     drawerHeightM: preferredDrawerH,
     availableHeightM: Math.max(0, args.topY - args.bottomY),
   });
+  const metrics = fit.metrics;
   const clampCenter = (yCenter: number, stackH: number) => {
     const lo = args.bottomY + stackH / 2;
     const hi = args.topY - stackH / 2;
@@ -196,6 +207,8 @@ export function resolveManualLayoutSketchExternalDrawerPlacement(args: {
     }),
     blockers: args.blockers,
     gap: args.gap,
+    relocateOnCollision: false,
+    snapToAvailableSlot: true,
   });
   const match = placement.range;
   const drawerCount =
@@ -209,5 +222,6 @@ export function resolveManualLayoutSketchExternalDrawerPlacement(args: {
     drawerCount,
     drawerH,
     stackH,
+    fitsAvailable: placement.op === 'remove' ? true : fit.fits,
   };
 }

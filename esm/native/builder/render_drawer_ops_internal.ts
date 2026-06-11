@@ -1,3 +1,4 @@
+import { DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { BuilderRenderDrawerDeps } from './render_drawer_ops_shared.js';
 import {
   isRecord,
@@ -49,7 +50,14 @@ export function createApplyInternalDrawersOps(deps: BuilderRenderDrawerDeps) {
         drawerOp.hasDivider,
         false
       );
-      intBox.userData = { partId, moduleIndex: drawerOp.moduleIndex };
+      intBox.userData = {
+        ...(intBox.userData || {}),
+        partId,
+        drawerId: partId,
+        moduleIndex: drawerOp.moduleIndex,
+        __wpDrawerId: partId,
+        __wpDrawerOwnerPartId: partId,
+      };
       __reg(App, partId, intBox, 'intDrawer');
 
       const closedPos = new THREE.Vector3(drawerOp.x || 0, drawerOp.y || 0, drawerOp.z || 0);
@@ -69,18 +77,20 @@ export function createApplyInternalDrawersOps(deps: BuilderRenderDrawerDeps) {
           closed: closedPos,
           open: openPos,
           id: partId,
+          partId,
           dividerKey: drawerOp.dividerKey || partId,
+          isInternal: true,
         });
       }
 
       if (showContentsEnabled && addFoldedClothes) {
         addFoldedClothes(
           0,
-          -(drawerOp.height || 0) / 2 + 0.015,
+          -(drawerOp.height || 0) / 2 + DRAWER_DIMENSIONS.internal.contentsBottomInsetM,
           0,
-          (drawerOp.width || 0) - 0.05,
+          (drawerOp.width || 0) - DRAWER_DIMENSIONS.internal.contentsWidthClearanceM,
           intBox,
-          Math.max(0, (drawerOp.height || 0) - 0.03),
+          Math.max(0, (drawerOp.height || 0) - DRAWER_DIMENSIONS.internal.contentsHeightClearanceM),
           drawerOp.depth
         );
       }

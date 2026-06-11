@@ -100,8 +100,6 @@ export function defaultCornerConfiguration(): NormalizedCornerConfigurationLike 
     layout: 'shelves',
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersList: [],
-    intDrawersSlot: 0,
     isCustom: false,
     gridDivisions: 6,
     customData: {

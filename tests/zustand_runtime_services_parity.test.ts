@@ -92,6 +92,32 @@ test('runtime services parity: history service debounced push flushes once and i
   cancelPendingPush(App as any);
 });
 
+test('runtime services parity: immediate history pushes bypass the debounce timer', () => {
+  const pushes: AnyRecord[] = [];
+  let timerCount = 0;
+  const App: AnyRecord = {
+    deps: {
+      browser: {
+        setTimeout(fn: () => void) {
+          timerCount += 1;
+          return timerCount;
+        },
+        clearTimeout() {},
+      },
+    },
+    services: { history: { system: { pushState: (a: AnyRecord) => pushes.push(a) } } },
+    store: makeStore({ runtime: { restoring: false }, ui: {}, config: {}, mode: {}, meta: {} }),
+  };
+
+  installHistoryService(App as any);
+
+  schedulePush(App as any, { source: 'notes:save', immediate: true });
+
+  assert.equal(timerCount, 0);
+  assert.equal(pushes.length, 1);
+  assert.equal(pushes[0].source, 'notes:save');
+});
+
 test('runtime services parity: autosave captures project snapshot + pdf draft and writes via storage', () => {
   const writes: AnyRecord[] = [];
   const App: AnyRecord = {

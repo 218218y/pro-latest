@@ -160,6 +160,54 @@ test('build wardrobe context runtime: carcass metrics compute split line from sh
   );
 });
 
+test('build wardrobe context runtime: unified stack split renders one full carcass with a shared divider board', () => {
+  let receivedArgs: any = null;
+  const metrics = resolveBuildWardrobeCarcassMetrics({
+    App: {},
+    THREE: {},
+    cfg: {},
+    plan: {
+      noMainWardrobe: false,
+      stackSplitUnifiedFrame: true,
+      lowerHeightCm: 90,
+      carcassH: 2.4,
+      woodThick: 0.018,
+      totalW: 1.8,
+      carcassD: 0.6,
+      baseTypeTop: 'legs',
+      doorsCount: 3,
+      hasCornice: false,
+      corniceType: 'flat',
+      moduleInternalWidths: [0.58, 0.58, 0.58],
+      moduleHeightsTotal: [1.518, 1.518, 1.518],
+      moduleDepthsTotal: [0.6, 0.6, 0.6],
+      moduleCfgList: [{}, {}, {}],
+      legMat: null,
+      masoniteMat: null,
+      whiteMat: null,
+      bodyMat: null,
+      getPartColorValue: null,
+      getPartMaterial: null,
+    } as any,
+    sketchMode: false,
+    addOutlinesMesh: null,
+    applyCarcassAndGetCabinetMetricsFn: ((args: any) => {
+      receivedArgs = args;
+      return {
+        startY: 0.12,
+        cabinetBodyHeight: 2.28,
+        cabinetTopY: 2.4,
+      };
+    }) as any,
+  });
+
+  assert.equal(metrics.cabinetTopY, 2.4);
+  assert.equal(receivedArgs.H, 2.4);
+  assert.equal(receivedArgs.baseType, 'legs');
+  assert.equal(receivedArgs.stackSplitDividerY, 0.9);
+  assert.equal(receivedArgs.moduleHeightsTotal, null);
+});
+
 test('build wardrobe context runtime: hinged context throws on missing ops and lifts global handle for tall drawers', () => {
   assert.throws(
     () =>

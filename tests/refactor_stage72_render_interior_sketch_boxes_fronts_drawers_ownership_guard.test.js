@@ -101,8 +101,11 @@ test('stage 72 render interior sketch box external drawers ownership split is an
 
   assert.match(box, /export function addSketchBoxExternalDrawerBoxAndConnector\(/);
   assert.match(box, /context\.createInternalDrawerBox\(/);
-  assert.match(box, /applySketchBoxPickMetaDeep\(drawerBoxObj, opPlan\.partId, context\.moduleKeyStr, bid/);
-  assert.match(box, /applySketchBoxPickMeta\(connector, opPlan\.partId, context\.moduleKeyStr, bid\)/);
+  assert.match(
+    box,
+    /applySketchBoxPickMetaDeep\(drawerBoxObj, opPlan\.boxPartId, context\.moduleKeyStr, bid/
+  );
+  assert.match(box, /applySketchBoxPickMeta\(connector, opPlan\.boxPartId, context\.moduleKeyStr, bid\)/);
   assert.doesNotMatch(box, /resolveSketchFrontVisualState|drawersArray\.push/);
 
   assert.match(motion, /export function registerSketchBoxExternalDrawerMotionEntry\(/);

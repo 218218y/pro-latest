@@ -18,10 +18,10 @@ export function registerModuleHitBox(
           THREE: runtime.THREE,
           modWidth: frame.modWidth,
           cabinetBodyHeight: frame.moduleCabinetBodyHeight,
-          D: frame.moduleTotalDepth,
+          D: frame.moduleHitDepth,
           x: frame.moduleCenterX,
           y: runtime.startY + frame.moduleCabinetBodyHeight / 2,
-          z: frame.moduleOuterZ,
+          z: frame.moduleHitZ,
           moduleIndex: index,
           __wpStack: runtime.stackKey,
         })

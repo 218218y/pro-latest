@@ -52,8 +52,9 @@ export function NoteCardToolbarSizeControl(
   return (
     <div className="toolbar-size-container" data-notes-ui="1">
       <button
-        className="toolbar-btn toolbar-btn--square toolbar-size-btn"
+        className="toolbar-btn toolbar-btn--square toolbar-size-btn wp-pdf-ui-hint wp-pdf-ui-hint--side-right"
         type="button"
+        data-tooltip="גודל טקסט"
         onMouseDown={(e: import('react').MouseEvent<HTMLButtonElement>) => {
           try {
             saveSelectionForIndex(i);

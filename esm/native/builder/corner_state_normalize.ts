@@ -33,8 +33,16 @@ export function normalizeCornerWingState(args: {
   const uiAny = asCornerBuildUI(getBuildUIFromPlatform(App));
   const __sketchMode = !!readRuntimeScalarOrDefaultFromApp(App, 'sketchMode', false);
   const stackMeta = resolveCornerWingStackMeta(meta);
+  const configState = createCornerNormalizedConfigState({
+    App,
+    uiAny,
+    __stackKey: stackMeta.__stackKey,
+    __stackSplitEnabled: stackMeta.__stackSplitEnabled,
+  });
   const metrics = resolveCornerWingMetrics({
     uiAny,
+    config: configState.config,
+    rootConfig: configState.__cfg,
     mainH,
     mainD,
     woodThick,
@@ -51,15 +59,9 @@ export function normalizeCornerWingState(args: {
 
   getDrawersArray(App);
   getDoorsArray(App);
-
-  const configState = createCornerNormalizedConfigState({
-    App,
-    uiAny,
-    __stackKey: stackMeta.__stackKey,
-    __stackSplitEnabled: stackMeta.__stackSplitEnabled,
-  });
   const placement = resolveCornerWingPlacement({
     uiAny,
+    config: configState.config,
     mainW,
     mainD,
     startY,
@@ -96,7 +98,7 @@ export function normalizeCornerWingState(args: {
     doorStyle: flags.doorStyle,
     splitDoors: flags.splitDoors,
     groovesEnabled: flags.groovesEnabled,
-    internalDrawersEnabled: flags.internalDrawersEnabled,
+    internalDrawersEnabled: false,
     showHangerEnabled: flags.showHangerEnabled,
     showContentsEnabled: flags.showContentsEnabled,
     hasCorniceEnabled: flags.hasCorniceEnabled,

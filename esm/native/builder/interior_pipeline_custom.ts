@@ -8,7 +8,6 @@ import {
   readNumber,
   reportInteriorLayoutError,
   requireApp,
-  resolveActiveDrawerSlots,
   type BuilderRenderOpsLocal,
   type InteriorLayoutConfig,
   type InteriorLayoutParams,
@@ -51,8 +50,6 @@ export function applyCustomInteriorLayout(
   const customOps = computeCustomOps(input, config);
 
   const gridDivisions = readNumber(input.gridDivisions, 6);
-  const activeSlots = resolveActiveDrawerSlots(config);
-
   let renderedCustom = false;
   try {
     renderedCustom =
@@ -69,7 +66,6 @@ export function applyCustomInteriorLayout(
         createBoard: input.createBoard,
         createRod: input.createRod,
         addFoldedClothes: input.addFoldedClothes,
-        checkAndCreateInternalDrawer: input.checkAndCreateInternalDrawer,
         effectiveBottomY: readNumber(input.effectiveBottomY, 0),
         effectiveTopY: readNumber(input.effectiveTopY, 0),
         localGridStep: readNumber(input.localGridStep, 0),
@@ -82,9 +78,8 @@ export function applyCustomInteriorLayout(
         moduleIndex: readNumber(input.moduleIndex, -1),
         modulesLength: readNumber(input.modulesLength, -1),
         currentShelfMat: input.currentShelfMat,
+        currentBraceShelfMat: input.currentBraceShelfMat,
         bodyMat: input.bodyMat,
-        isInternalDrawersEnabled: input.isInternalDrawersEnabled === true,
-        intDrawersList: activeSlots,
       }) === true;
   } catch (error) {
     reportInteriorLayoutError(input.App, error, {

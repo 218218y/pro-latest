@@ -1,9 +1,27 @@
-import { resolveModuleDepthProfile } from './module_loop_pipeline_module_depth.js';
+import {
+  resolveModuleDepthProfile,
+  resolveRearClearedPanelDepth,
+} from './module_loop_pipeline_module_depth.js';
 
 import type { ModuleLoopRuntime } from './module_loop_pipeline_runtime.js';
 import type { ModuleConfigLike } from '../../../types/index.js';
 import type { ModuleLoopMutableState } from './module_loop_pipeline_module_contracts.js';
 import type { ResolvedModuleFrame } from './module_loop_pipeline_module_frame.js';
+
+function isInsetHingedDoorMount(runtime: ModuleLoopRuntime): boolean {
+  return runtime.cfg?.wardrobeType === 'hinged' && String(runtime.cfg?.doorMountMode || '') === 'inset';
+}
+
+function resolveInsetDividerPanel(
+  runtime: ModuleLoopRuntime,
+  panelDepth: number
+): { depth: number; z: number } {
+  return resolveRearClearedPanelDepth({
+    cabinetDepth: runtime.D,
+    panelDepth,
+    woodThick: runtime.woodThick,
+  });
+}
 
 export function createInterDivider(
   runtime: ModuleLoopRuntime,
@@ -25,27 +43,34 @@ export function createInterDivider(
       runtime.moduleBodyHeights[index + 1] || runtime.cabinetBodyHeight
     );
     const divBodyH2 = Math.max(runtime.woodThick, divBodyH - 2 * runtime.woodThick);
+    const useInsetFullFrontDivider = isInsetHingedDoorMount(runtime);
 
     if (Math.abs(frame.moduleInternalDepth - nextDepth.moduleInternalDepth) > 1e-6) {
       const leftId = `divider_inter_depthL_${index}`;
       const rightId = `divider_inter_depthR_${index}`;
+      const leftPanel = useInsetFullFrontDivider
+        ? resolveInsetDividerPanel(runtime, frame.moduleTotalDepth)
+        : { depth: frame.moduleInternalDepth, z: frame.moduleInternalZ };
+      const rightPanel = useInsetFullFrontDivider
+        ? resolveInsetDividerPanel(runtime, nextDepth.moduleTotalDepth)
+        : { depth: nextDepth.moduleInternalDepth, z: nextDepth.moduleInternalZ };
       createBoard(
         runtime.woodThick / 2,
         divBodyH2,
-        frame.moduleInternalDepth,
+        leftPanel.depth,
         boundaryX + runtime.woodThick / 4,
         runtime.startY + divBodyH / 2,
-        frame.moduleInternalZ,
+        leftPanel.z,
         runtime.getPartMaterial(leftId),
         leftId
       );
       createBoard(
         runtime.woodThick / 2,
         divBodyH2,
-        nextDepth.moduleInternalDepth,
+        rightPanel.depth,
         boundaryX + (3 * runtime.woodThick) / 4,
         runtime.startY + divBodyH / 2,
-        nextDepth.moduleInternalZ,
+        rightPanel.z,
         runtime.getPartMaterial(rightId),
         rightId
       );
@@ -53,13 +78,16 @@ export function createInterDivider(
     }
 
     const divId = `divider_inter_${index}`;
+    const dividerPanel = useInsetFullFrontDivider
+      ? resolveInsetDividerPanel(runtime, Math.max(frame.moduleTotalDepth, nextDepth.moduleTotalDepth))
+      : { depth: frame.moduleInternalDepth, z: frame.moduleInternalZ };
     createBoard(
       runtime.woodThick,
       divBodyH2,
-      frame.moduleInternalDepth,
+      dividerPanel.depth,
       boundaryX + runtime.woodThick / 2,
       runtime.startY + divBodyH / 2,
-      frame.moduleInternalZ,
+      dividerPanel.z,
       runtime.getPartMaterial(divId),
       divId
     );
@@ -68,26 +96,36 @@ export function createInterDivider(
 
   const leftH = runtime.moduleBodyHeights[index] || runtime.cabinetBodyHeight;
   const leftId = `divider_inter_fullL_${index}`;
+  const leftPanel = resolveRearClearedPanelDepth({
+    cabinetDepth: runtime.D,
+    panelDepth: frame.moduleTotalDepth,
+    woodThick: runtime.woodThick,
+  });
   createBoard(
     runtime.woodThick,
     Math.max(runtime.woodThick, leftH - 2 * runtime.woodThick),
-    frame.moduleTotalDepth,
+    leftPanel.depth,
     boundaryX + runtime.woodThick / 2,
     runtime.startY + leftH / 2,
-    frame.moduleOuterZ,
+    leftPanel.z,
     runtime.getPartMaterial(leftId),
     leftId
   );
 
   const rightH = runtime.moduleBodyHeights[index + 1] || runtime.cabinetBodyHeight;
   const rightId = `divider_inter_fullR_${index}`;
+  const rightPanel = resolveRearClearedPanelDepth({
+    cabinetDepth: runtime.D,
+    panelDepth: nextDepth.moduleTotalDepth,
+    woodThick: runtime.woodThick,
+  });
   createBoard(
     runtime.woodThick,
     Math.max(runtime.woodThick, rightH - 2 * runtime.woodThick),
-    nextDepth.moduleTotalDepth,
+    rightPanel.depth,
     boundaryX + runtime.woodThick + runtime.woodThick / 2,
     runtime.startY + rightH / 2,
-    nextDepth.moduleOuterZ,
+    rightPanel.z,
     runtime.getPartMaterial(rightId),
     rightId
   );

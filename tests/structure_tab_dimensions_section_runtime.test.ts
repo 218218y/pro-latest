@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 import {
   STRUCTURE_CELL_DIMS_MODE_BUTTON_TEST_ID,
+  STRUCTURE_CELL_DIMS_RESET_DEPTH_BUTTON_TEST_ID,
+  STRUCTURE_CELL_DIMS_RESET_HEIGHT_BUTTON_TEST_ID,
   STRUCTURE_CELL_DIMS_RESET_BUTTON_TEST_ID,
+  STRUCTURE_CELL_DIMS_RESET_WIDTH_BUTTON_TEST_ID,
   STRUCTURE_CELL_DIMS_SECTION_TEST_ID,
   STRUCTURE_STACK_SPLIT_MODE_BUTTON_TEST_ID,
   STRUCTURE_STACK_SPLIT_SECTION_TEST_ID,
@@ -17,6 +20,9 @@ test('structure dimensions contracts expose stable stack-split and cell-dims tes
       STRUCTURE_CELL_DIMS_SECTION_TEST_ID,
       STRUCTURE_CELL_DIMS_MODE_BUTTON_TEST_ID,
       STRUCTURE_CELL_DIMS_RESET_BUTTON_TEST_ID,
+      STRUCTURE_CELL_DIMS_RESET_WIDTH_BUTTON_TEST_ID,
+      STRUCTURE_CELL_DIMS_RESET_HEIGHT_BUTTON_TEST_ID,
+      STRUCTURE_CELL_DIMS_RESET_DEPTH_BUTTON_TEST_ID,
     ],
     [
       'structure-stack-split-section',
@@ -24,6 +30,9 @@ test('structure dimensions contracts expose stable stack-split and cell-dims tes
       'structure-cell-dims-section',
       'structure-cell-dims-mode-button',
       'structure-cell-dims-reset-button',
+      'structure-cell-dims-reset-width-button',
+      'structure-cell-dims-reset-height-button',
+      'structure-cell-dims-reset-depth-button',
     ]
   );
 });

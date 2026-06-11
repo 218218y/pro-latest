@@ -86,7 +86,7 @@ const structureBundle = bundleSources(
 const handlesActions = readSource('../esm/native/ui/react/actions/handles_actions.ts', import.meta.url);
 const sketchActions = readSource('../esm/native/ui/react/actions/sketch_actions.ts', import.meta.url);
 const projectPanel = readSource('../esm/native/ui/react/panels/ProjectPanel.tsx', import.meta.url);
-const exportTab = readSource('../esm/native/ui/react/tabs/ExportTab.tsx', import.meta.url);
+const settingsTab = readSource('../esm/native/ui/react/tabs/SettingsTab.tsx', import.meta.url);
 const sidebarApp = bundleSources(
   [
     '../esm/native/ui/react/sidebar_app.tsx',
@@ -110,7 +110,7 @@ const pdfBundle = bundleSources(
   ],
   import.meta.url
 );
-const renderTab = readSource('../esm/native/ui/react/tabs/RenderTab.view.tsx', import.meta.url);
+const settingsVisual = readSource('../esm/native/ui/react/tabs/SettingsTab.tsx', import.meta.url);
 
 test('[stageF] React write hotspots use canonical wrapper sweep for common ui/config writes', () => {
   assertMatchesAll(
@@ -118,6 +118,7 @@ test('[stageF] React write hotspots use canonical wrapper sweep for common ui/co
     storeActions,
     [
       /function setCfgBoardMaterial\(/,
+      /function setCfgDoorMountMode\(/,
       /function setCfgGlobalHandleType\(/,
       /function applyUiRawScalarPatch\(/,
       /function applyUiSoftScalarPatch\(/,
@@ -141,6 +142,8 @@ test('[stageF] React write hotspots use canonical wrapper sweep for common ui/co
     [
       /applyImmediateStructuralConfigMutation\(app, 'react:boardMaterial', \{ boardMaterial: option\.id \},/,
       /setCfgBoardMaterial\(app, option\.id, \{ source: 'react:boardMaterial', immediate: true, noBuild: true,? \}\)/,
+      /applyImmediateStructuralConfigMutation\(\s*app,\s*'react:doorMountMode',\s*\{ doorMountMode: option\.id \},/,
+      /setCfgDoorMountMode\(app, option\.id, \{\s*source: 'react:doorMountMode',\s*immediate: true,\s*noBuild: true,\s*\}\)/,
       /setUiSelectedModelId\(app, nextSelectedId, meta\.uiOnlyImmediate\('react:models:selection:clear'\)\)/,
       /applyUiRawScalarPatch\(app, (?:rawPatch|readRawPatch\(uiPatch\)), m\)/,
       /applyUiSoftScalarPatch\((?:args\.)?app, softPatch, actionMeta\)/,
@@ -180,7 +183,7 @@ test('[stageF] React write hotspots use canonical wrapper sweep for common ui/co
   assert.match(projectPanel, /setUiProjectName\(app, next, m\)/);
   assert.doesNotMatch(projectPanel, /setUiScalarSoft\(app, 'projectName'/);
 
-  assert.match(exportTab, /setUiOrderPdfEditorOpen\(app, true, exportMeta\)/);
+  assert.match(settingsTab, /setUiOrderPdfEditorOpen\(app, true, settingsMeta\)/);
   assert.match(
     sidebarApp,
     /setUiOrderPdfEditorOpen\(app, true, meta\.uiOnly\(undefined, 'react:header:pdf'\)\)/
@@ -201,5 +204,5 @@ test('[stageF] React write hotspots use canonical wrapper sweep for common ui/co
     'pdfBundle'
   );
 
-  assert.doesNotMatch(renderTab, /function setCfgScalar\(app: AppContainer/);
+  assert.doesNotMatch(settingsVisual, /function setCfgScalar\(app: AppContainer/);
 });

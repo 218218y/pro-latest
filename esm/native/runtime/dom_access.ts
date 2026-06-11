@@ -27,6 +27,15 @@ type ImageElementShape = {
   naturalHeight?: unknown;
 };
 
+export type ToastContainerHostPreference = {
+  /**
+   * Keep regular viewer toasts anchored to the 3D/PDF viewer, but allow full-screen
+   * overlays (for example the in-place PDF editor) to pin the shared toast host to
+   * the document body so notifications are centered against the viewport.
+   */
+  preferBody?: boolean;
+};
+
 export function hasDom(App: unknown): boolean {
   try {
     const doc = getDocumentMaybe(App);
@@ -106,13 +115,23 @@ export function getReactMountRootMaybe(App: unknown, id: string): HTMLElement | 
   return cleanId ? getHtmlElementById(App, cleanId) : null;
 }
 
-function getToastContainerHostMaybe(App: unknown, doc: Document): HTMLElement | null {
-  const viewer = getViewerContainerMaybe(App);
-  if (viewer) return viewer;
-
+function getDocumentBodyToastHostMaybe(doc: Document): HTMLElement | null {
   if (isHTMLElementLike(doc.body)) return doc.body;
   if (isHTMLElementLike(doc.documentElement)) return doc.documentElement;
   return null;
+}
+
+function getToastContainerHostMaybe(
+  App: unknown,
+  doc: Document,
+  preference?: ToastContainerHostPreference | null
+): HTMLElement | null {
+  if (preference?.preferBody) return getDocumentBodyToastHostMaybe(doc);
+
+  const viewer = getViewerContainerMaybe(App);
+  if (viewer) return viewer;
+
+  return getDocumentBodyToastHostMaybe(doc);
 }
 
 function syncToastContainerClass(container: HTMLElement, host: HTMLElement): void {
@@ -129,12 +148,15 @@ function syncToastContainerClass(container: HTMLElement, host: HTMLElement): voi
   }
 }
 
-export function ensureToastContainerMaybe(App: unknown): HTMLElement | null {
+export function ensureToastContainerMaybe(
+  App: unknown,
+  preference?: ToastContainerHostPreference | null
+): HTMLElement | null {
   try {
     const doc = getDocumentMaybe(App);
     if (!doc || typeof doc.createElement !== 'function') return null;
 
-    const host = getToastContainerHostMaybe(App, doc);
+    const host = getToastContainerHostMaybe(App, doc, preference);
     if (!host) return null;
 
     const existing = getHtmlElementById(App, 'toastContainer');

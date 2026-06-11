@@ -55,6 +55,9 @@ export type StructureTabViewState = {
   cellDimsWidth: number | '';
   cellDimsHeight: number | '';
   cellDimsDepth: number | '';
+  cellDimsHexMode: boolean;
+  cellDimsHexProtrusion: number | '';
+  cellDimsHexDoorWidth: number | '';
   patterns: StructurePattern[];
   structureSelect: string;
   structureIsDefault: boolean;

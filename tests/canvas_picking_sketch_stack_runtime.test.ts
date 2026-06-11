@@ -114,7 +114,7 @@ test('sketch free stack preview routes ext drawers through the canonical box-sta
         outerD: 0.536,
       },
       targetCenterY: 1,
-      targetHeight: 0.9,
+      targetHeight: 1.4,
       pointerX: 0.31,
       pointerY: 1.08,
     },
@@ -134,14 +134,253 @@ test('sketch free stack preview routes ext drawers through the canonical box-sta
   assert.equal(result.preview.drawers.length, 4);
   assert.deepEqual(
     (result.preview.clearanceMeasurements as { label: string }[]).map(entry => entry.label),
-    ['6 ס"מ']
+    ['16 ס"מ']
   );
+});
+
+test('manual-layout module sketch external drawer preview keeps exact size and marks no-room hover red when it cannot fit', () => {
+  const { ctx, calls } = createModuleStackContext({
+    tool: 'sketch_ext_drawers:4@30',
+    isDrawers: false,
+    isExtDrawers: true,
+    topY: 0.9,
+    spanH: 0.9,
+    yClamped: 0.45,
+  });
+
+  const handled = tryHandleManualLayoutSketchHoverModuleStackPreview(ctx);
+
+  assert.equal(handled, true);
+  assert.equal(calls.previews.length, 1);
+  assert.equal(calls.hides, 0);
+  assert.equal(calls.hover.length, 1);
+  assert.equal(calls.hover[0]?.kind, 'ext_drawers');
+  assert.equal(calls.hover[0]?.op, 'add');
+  assert.equal(calls.hover[0]?.drawerCount, 4);
+  assert.equal(calls.hover[0]?.drawerH, 0.3);
+  assert.equal(calls.hover[0]?.stackH, 1.2);
+  assert.equal(calls.hover[0]?.__wpBlockedReason, 'no-room');
+  assert.equal(calls.previews[0]?.kind, 'ext_drawers');
+  assert.equal(calls.previews[0]?.op, 'blocked');
+  assert.equal(calls.previews[0]?.blockedReason, 'no-room');
+  assert.equal(calls.previews[0]?.drawers.length, 4);
+});
+
+test('manual-layout module sketch internal drawer preview snaps into the crossed shelf cell without jumping to another cell', () => {
+  const { ctx, calls } = createModuleStackContext({
+    tool: 'sketch_int_drawers',
+    isDrawers: true,
+    isExtDrawers: false,
+    topY: 2.4,
+    spanH: 2.4,
+    pad: 0.006,
+    woodThick: 0.018,
+    yClamped: 0.45,
+    info: { gridDivisions: 6 },
+    cfgRef: { layout: 'shelves', isCustom: false, gridDivisions: 6 },
+  });
+
+  const handled = tryHandleManualLayoutSketchHoverModuleStackPreview(ctx);
+
+  assert.equal(handled, true);
+  assert.equal(calls.previews.length, 1);
+  assert.equal(calls.hides, 0);
+  assert.equal(calls.hover.length, 1);
+  assert.equal(calls.hover[0]?.kind, 'drawers');
+  assert.equal(calls.hover[0]?.op, 'add');
+  assert.equal(calls.hover[0]?.__wpBlockedReason, undefined);
+  assert.ok(Math.abs(Number(calls.hover[0]?.yCenter) - 0.589) < 1e-9);
+  assert.equal(calls.previews[0]?.kind, 'drawers');
+  assert.equal(calls.previews[0]?.op, 'add');
+  assert.equal(calls.previews[0]?.blockedReason, undefined);
+});
+
+test('manual-layout module sketch internal drawer preview marks no-room hover red when it cannot fit', () => {
+  const { ctx, calls } = createModuleStackContext({
+    tool: 'sketch_int_drawers@30',
+    isDrawers: true,
+    isExtDrawers: false,
+    topY: 0.55,
+    spanH: 0.55,
+    yClamped: 0.25,
+  });
+
+  const handled = tryHandleManualLayoutSketchHoverModuleStackPreview(ctx);
+
+  assert.equal(handled, true);
+  assert.equal(calls.previews.length, 1);
+  assert.equal(calls.hides, 0);
+  assert.equal(calls.hover.length, 1);
+  assert.equal(calls.hover[0]?.kind, 'drawers');
+  assert.equal(calls.hover[0]?.op, 'add');
+  assert.equal(calls.hover[0]?.drawerH, 0.3);
+  assert.equal(calls.hover[0]?.__wpBlockedReason, 'no-room');
+  assert.equal(calls.previews[0]?.kind, 'drawers');
+  assert.equal(calls.previews[0]?.op, 'blocked');
+  assert.equal(calls.previews[0]?.blockedReason, 'no-room');
+  assert.equal(calls.previews[0]?.drawerH, 0.3);
+});
+
+test('manual-layout module sketch external drawer preview allows clear cell placement', () => {
+  const { ctx, calls } = createModuleStackContext({
+    tool: 'sketch_ext_drawers:2@30',
+    isDrawers: false,
+    isExtDrawers: true,
+    topY: 0.9,
+    spanH: 0.9,
+    yClamped: 0.45,
+    cfgRef: { gridDivisions: 3 },
+  });
+
+  const handled = tryHandleManualLayoutSketchHoverModuleStackPreview(ctx);
+
+  assert.equal(handled, true);
+  assert.equal(calls.previews.length, 1);
+  assert.equal(calls.hides, 0);
+  assert.equal(calls.hover.length, 1);
+  assert.equal(calls.hover[0]?.kind, 'ext_drawers');
+  assert.equal(calls.hover[0]?.op, 'add');
+  assert.equal(calls.hover[0]?.__wpBlockedReason, undefined);
+  assert.equal(calls.previews[0]?.kind, 'ext_drawers');
+  assert.notEqual(calls.previews[0]?.op, 'blocked');
+  assert.equal(calls.previews[0]?.blockedReason, undefined);
+});
+
+test('manual-layout module sketch external drawer preview marks collision with shelves red', () => {
+  const { ctx, calls } = createModuleStackContext({
+    tool: 'sketch_ext_drawers:2@30',
+    isDrawers: false,
+    isExtDrawers: true,
+    topY: 0.9,
+    spanH: 0.9,
+    yClamped: 0.45,
+    shelves: [{ yNorm: 0.5, variant: 'regular' }],
+  });
+
+  const handled = tryHandleManualLayoutSketchHoverModuleStackPreview(ctx);
+
+  assert.equal(handled, true);
+  assert.equal(calls.hover[0]?.kind, 'ext_drawers');
+  assert.equal(calls.hover[0]?.op, 'add');
+  assert.equal(calls.hover[0]?.__wpBlockedReason, 'collision');
+  assert.equal(calls.previews[0]?.kind, 'ext_drawers');
+  assert.equal(calls.previews[0]?.op, 'blocked');
+  assert.equal(calls.previews[0]?.blockedReason, 'collision');
+});
+
+test('manual-layout module sketch external drawer preview uses the same crossed-cell snap as internal drawers', () => {
+  const { ctx, calls } = createModuleStackContext({
+    tool: 'sketch_ext_drawers:2@16.5',
+    isDrawers: false,
+    isExtDrawers: true,
+    topY: 2.4,
+    spanH: 2.4,
+    pad: 0.006,
+    woodThick: 0.018,
+    yClamped: 0.45,
+    info: { gridDivisions: 6 },
+    cfgRef: { layout: 'shelves', isCustom: false, gridDivisions: 6 },
+  });
+
+  const handled = tryHandleManualLayoutSketchHoverModuleStackPreview(ctx);
+
+  assert.equal(handled, true);
+  assert.equal(calls.hover[0]?.kind, 'ext_drawers');
+  assert.equal(calls.hover[0]?.op, 'add');
+  assert.equal(calls.hover[0]?.__wpBlockedReason, undefined);
+  assert.ok(Math.abs(Number(calls.hover[0]?.yCenter) - 0.574) < 1e-9);
+  assert.equal(calls.previews[0]?.kind, 'ext_drawers');
+  assert.equal(calls.previews[0]?.op, 'add');
+  assert.equal(calls.previews[0]?.blockedReason, undefined);
+});
+
+test('manual-layout module sketch external drawer preview marks collision with sketch rods red', () => {
+  const { ctx, calls } = createModuleStackContext({
+    tool: 'sketch_ext_drawers:2@30',
+    isDrawers: false,
+    isExtDrawers: true,
+    topY: 0.9,
+    spanH: 0.9,
+    yClamped: 0.45,
+    rods: [{ yNorm: 0.5 }],
+  });
+
+  const handled = tryHandleManualLayoutSketchHoverModuleStackPreview(ctx);
+
+  assert.equal(handled, true);
+  assert.equal(calls.hover[0]?.kind, 'ext_drawers');
+  assert.equal(calls.hover[0]?.op, 'add');
+  assert.equal(calls.hover[0]?.__wpBlockedReason, 'collision');
+  assert.equal(calls.previews[0]?.kind, 'ext_drawers');
+  assert.equal(calls.previews[0]?.op, 'blocked');
+  assert.equal(calls.previews[0]?.blockedReason, 'collision');
+});
+
+test('manual-layout module sketch internal drawer preview marks collision with base storage red', () => {
+  const { ctx, calls } = createModuleStackContext({
+    tool: 'sketch_int_drawers@20',
+    isDrawers: true,
+    isExtDrawers: false,
+    topY: 0.9,
+    spanH: 0.9,
+    yClamped: 0.25,
+    cfgRef: { layout: 'storage', isCustom: false },
+  });
+
+  const handled = tryHandleManualLayoutSketchHoverModuleStackPreview(ctx);
+
+  assert.equal(handled, true);
+  assert.equal(calls.hover[0]?.kind, 'drawers');
+  assert.equal(calls.hover[0]?.op, 'add');
+  assert.equal(calls.hover[0]?.__wpBlockedReason, 'collision');
+  assert.equal(calls.previews[0]?.kind, 'drawers');
+  assert.equal(calls.previews[0]?.op, 'blocked');
+  assert.equal(calls.previews[0]?.blockedReason, 'collision');
+});
+
+test('manual-layout focused box sketch internal drawer preview marks no-room hover red when it cannot fit', () => {
+  const { ctx, calls } = createModuleStackContext({
+    tool: 'sketch_int_drawers@30',
+    isDrawers: true,
+    isExtDrawers: false,
+    yClamped: 0.25,
+    activeModuleBox: {
+      boxId: 'box-small',
+      box: { id: 'box-small', drawers: [] },
+      geo: {
+        centerX: 0,
+        innerW: 0.8,
+        innerD: 0.5,
+        innerBackZ: -0.25,
+        outerW: 0.836,
+        centerZ: 0,
+        outerD: 0.536,
+      },
+      centerY: 0.275,
+      height: 0.55,
+    },
+  });
+
+  const handled = tryHandleManualLayoutSketchHoverModuleStackPreview(ctx);
+
+  assert.equal(handled, true);
+  assert.equal(calls.previews.length, 1);
+  assert.equal(calls.hides, 0);
+  assert.equal(calls.hover.length, 1);
+  assert.equal(calls.hover[0]?.kind, 'box_content');
+  assert.equal(calls.hover[0]?.contentKind, 'drawers');
+  assert.equal(calls.hover[0]?.boxId, 'box-small');
+  assert.equal(calls.hover[0]?.op, 'add');
+  assert.equal(calls.hover[0]?.__wpBlockedReason, 'no-room');
+  assert.equal(calls.previews[0]?.kind, 'drawers');
+  assert.equal(calls.previews[0]?.op, 'blocked');
+  assert.equal(calls.previews[0]?.blockedReason, 'no-room');
 });
 
 test('stack tool toggles focused box drawers through the box-content owner', () => {
   const cfg: Record<string, unknown> = {
     sketchExtras: {
-      boxes: [{ id: 'box-1', drawers: [] }],
+      boxes: [{ id: 'box-1', heightM: 0.9, drawers: [] }],
     },
   };
   let nextHover: Record<string, unknown> | null = null;
@@ -190,7 +429,7 @@ test('stack tool toggles focused box drawers through the box-content owner', () 
 test('stack tool toggles focused box ext drawers through the box-content owner', () => {
   const cfg: Record<string, unknown> = {
     sketchExtras: {
-      boxes: [{ id: 'box-1', extDrawers: [] }],
+      boxes: [{ id: 'box-1', heightM: 1.2, extDrawers: [] }],
     },
   };
   let nextHover: Record<string, unknown> | null = null;
@@ -240,6 +479,116 @@ test('stack tool toggles focused box ext drawers through the box-content owner',
   assert.equal(nextHover?.drawerHeightM, 0.3);
 });
 
+test('stack tool remove hover for focused box ext drawers never falls back to add or collision toast', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      boxes: [
+        {
+          id: 'box-1',
+          heightM: 1.2,
+          extDrawers: [{ id: 'sed-existing', yNormC: 0.5, count: 4, drawerHeightM: 0.3 }],
+        },
+      ],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  let nextHover: Record<string, unknown> | null = null;
+
+  const handled = tryCommitSketchModuleStackTool({
+    App: {
+      services: {
+        uiFeedback: {
+          toast: (message: string, type?: string) => toasts.push([message, type]),
+        },
+      },
+    } as any,
+    cfg,
+    tool: 'sketch_ext_drawers:4@30',
+    hoverOk: true,
+    hoverRec: {
+      kind: 'box_content',
+      contentKind: 'ext_drawers',
+      boxId: 'box-1',
+      op: 'remove',
+      removeId: 'sed-existing',
+      blockedReason: 'collision',
+      drawerCount: 4,
+      drawerHeightM: 0.3,
+      drawerH: 0.3,
+      yCenter: 0.9,
+      baseY: 0.3,
+      stackH: 1.2,
+    },
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.02,
+    hitYClamped: 0.9,
+    hoverHost: { tool: 'sketch_ext_drawers:4@30', moduleKey: 2, isBottom: false },
+    writeSketchHover: (_app, hover) => {
+      nextHover = hover as Record<string, unknown> | null;
+    },
+  });
+
+  assert.equal(handled, true);
+  const box = ((cfg.sketchExtras as any).boxes as any[])[0];
+  assert.equal(box.extDrawers.length, 0);
+  assert.equal(toasts.length, 0);
+  assert.equal(nextHover?.kind, 'box_content');
+  assert.equal(nextHover?.contentKind, 'ext_drawers');
+  assert.equal(nextHover?.op, 'add');
+});
+
+test('stack tool remove hover for module ext drawers never falls back to collision placement', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      extDrawers: [{ id: 'sed-existing', yNormC: 0.5, count: 4, drawerHeightM: 0.3 }],
+      drawers: [{ id: 'internal-blocker', yNormC: 0.5, yNorm: 0.15, drawerHeightM: 0.3 }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  let nextHover: Record<string, unknown> | null = null;
+
+  const handled = tryCommitSketchModuleStackTool({
+    App: {
+      services: {
+        uiFeedback: {
+          toast: (message: string, type?: string) => toasts.push([message, type]),
+        },
+      },
+    } as any,
+    cfg,
+    tool: 'sketch_ext_drawers:4@30',
+    hoverOk: true,
+    hoverRec: {
+      kind: 'ext_drawers',
+      op: 'remove',
+      removeId: 'sed-existing',
+      blockedReason: 'collision',
+      yCenter: 0.9,
+      drawerCount: 4,
+      drawerHeightM: 0.3,
+      drawerH: 0.3,
+      stackH: 1.2,
+    },
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.02,
+    hitYClamped: 0.9,
+    hoverHost: { tool: 'sketch_ext_drawers:4@30', moduleKey: 2, isBottom: false },
+    writeSketchHover: (_app, hover) => {
+      nextHover = hover as Record<string, unknown> | null;
+    },
+  });
+
+  assert.equal(handled, true);
+  assert.equal(((cfg.sketchExtras as any).extDrawers as any[]).length, 0);
+  assert.equal(toasts.length, 0);
+  assert.equal(nextHover?.kind, 'ext_drawers');
+  assert.equal(nextHover?.op, 'add');
+});
+
 test('stack tool commits module ext drawers through the canonical stack owner when no focused box hover exists', () => {
   const cfg: Record<string, unknown> = {};
   let nextHover: Record<string, unknown> | null = null;
@@ -270,6 +619,460 @@ test('stack tool commits module ext drawers through the canonical stack owner wh
   assert.equal(nextHover?.op, 'remove');
   assert.equal(nextHover?.drawerCount, 4);
   assert.equal(nextHover?.drawerHeightM, 0.3);
+});
+
+test('stack tool rejects module sketch external drawers instead of shrinking exact custom heights', () => {
+  const cfg: Record<string, unknown> = {};
+  const toasts: Array<[string, string | undefined]> = [];
+  const hoverWrites: Array<Record<string, unknown> | null> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_ext_drawers:4@30',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 0.9,
+    totalHeight: 0.9,
+    pad: 0.02,
+    hitYClamped: 0.45,
+    hoverHost: { tool: 'sketch_ext_drawers:4@30', moduleKey: 2, isBottom: false },
+    writeSketchHover: (_app, hover) => {
+      hoverWrites.push(hover as Record<string, unknown> | null);
+    },
+  });
+
+  assert.equal(handled, true);
+  assert.equal(cfg.sketchExtras, undefined);
+  assert.equal(hoverWrites.length, 1);
+  assert.equal(hoverWrites[0], null);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /אין מקום בארון זה ל-4 מגירות חיצוניות לפי סקיצה בגובה 30 ס"מ/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('stack tool commits module sketch internal drawers snapped inside the crossed shelf cell', () => {
+  const cfg: Record<string, unknown> = { layout: 'shelves', isCustom: false, gridDivisions: 6 };
+  const toasts: Array<[string, string | undefined]> = [];
+  let nextHover: Record<string, unknown> | null = null;
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_int_drawers',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.006,
+    woodThick: 0.018,
+    hitYClamped: 0.45,
+    hoverHost: { tool: 'sketch_int_drawers', moduleKey: 2, isBottom: false },
+    writeSketchHover: (_app, hover) => {
+      nextHover = hover as Record<string, unknown> | null;
+    },
+  });
+
+  assert.equal(handled, true);
+  const extras = cfg.sketchExtras as Record<string, unknown>;
+  assert.equal(Array.isArray(extras?.drawers), true);
+  const drawer = (extras.drawers as Record<string, unknown>[])[0];
+  assert.ok(Math.abs(Number(drawer.yNormC) - 0.24541666666666667) < 1e-9);
+  assert.equal(nextHover?.kind, 'drawers');
+  assert.equal(nextHover?.op, 'remove');
+  assert.equal(toasts.length, 0);
+});
+
+test('stack tool rejects module sketch internal drawers instead of shrinking exact custom heights', () => {
+  const cfg: Record<string, unknown> = {};
+  const toasts: Array<[string, string | undefined]> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_int_drawers@30',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 0.55,
+    totalHeight: 0.55,
+    pad: 0.02,
+    hitYClamped: 0.25,
+    hoverHost: { tool: 'sketch_int_drawers@30', moduleKey: 2, isBottom: true },
+    writeSketchHover: () => {},
+  });
+
+  assert.equal(handled, true);
+  assert.equal(cfg.sketchExtras, undefined);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /אין מקום בארון זה ל-2 מגירות פנימיות בגובה 30 ס"מ/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('stack tool rejects focused box sketch external drawers without falling back to module placement', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      boxes: [{ id: 'box-1', heightM: 0.9, extDrawers: [] }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_ext_drawers:4@30',
+    hoverOk: true,
+    hoverRec: {
+      kind: 'box_content',
+      contentKind: 'ext_drawers',
+      boxId: 'box-1',
+      op: 'add',
+      freePlacement: false,
+      drawerCount: 4,
+      drawerHeightM: 0.3,
+      drawerH: 0.3,
+      stackH: 1.2,
+    },
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.02,
+    hitYClamped: 1,
+    hoverHost: { tool: 'sketch_ext_drawers:4@30', moduleKey: 2, isBottom: false },
+    writeSketchHover: () => {},
+  });
+
+  assert.equal(handled, true);
+  const boxes = (cfg.sketchExtras as any).boxes;
+  assert.equal(boxes[0].extDrawers.length, 0);
+  assert.equal((cfg.sketchExtras as any).extDrawers, undefined);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /אין מקום בארון זה ל-4 מגירות חיצוניות לפי סקיצה בגובה 30 ס"מ/);
+});
+
+test('stack tool rejects module sketch external drawers that collide with existing internal sketch drawers', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      drawers: [{ id: 'internal', yNormC: 0.5, yNorm: 0.15, drawerHeightM: 0.3 }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const hoverWrites: Array<Record<string, unknown> | null> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_ext_drawers:2@30',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 0.9,
+    totalHeight: 0.9,
+    pad: 0.02,
+    hitYClamped: 0.45,
+    hoverHost: { tool: 'sketch_ext_drawers:2@30', moduleKey: 2, isBottom: true },
+    writeSketchHover: (_app, hover) => {
+      hoverWrites.push(hover as Record<string, unknown> | null);
+    },
+  });
+
+  assert.equal(handled, true);
+  assert.equal(Array.isArray((cfg.sketchExtras as any).extDrawers), false);
+  assert.equal(hoverWrites.length, 1);
+  assert.equal(hoverWrites[0], null);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /מתנגשות במגירות קיימות/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('stack tool commits module sketch external drawers into an empty cell', () => {
+  const cfg: Record<string, unknown> = {
+    gridDivisions: 3,
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const hoverWrites: Array<Record<string, unknown> | null> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_ext_drawers:2@30',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 0.9,
+    totalHeight: 0.9,
+    pad: 0.02,
+    hitYClamped: 0.45,
+    hoverHost: { tool: 'sketch_ext_drawers:2@30', moduleKey: 2, isBottom: true },
+    writeSketchHover: (_app, hover) => {
+      hoverWrites.push(hover as Record<string, unknown> | null);
+    },
+  });
+
+  assert.equal(handled, true);
+  const extras = cfg.sketchExtras as Record<string, unknown> | undefined;
+  assert.equal(Array.isArray(extras?.extDrawers), true);
+  assert.equal((extras?.extDrawers as unknown[]).length, 1);
+  assert.equal(toasts.length, 0);
+});
+
+test('stack tool rejects module sketch external drawers that collide with existing shelves', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      shelves: [{ id: 'shelf-blocker', yNorm: 0.5, variant: 'regular' }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const hoverWrites: Array<Record<string, unknown> | null> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_ext_drawers:2@30',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 0.9,
+    totalHeight: 0.9,
+    pad: 0.02,
+    hitYClamped: 0.45,
+    hoverHost: { tool: 'sketch_ext_drawers:2@30', moduleKey: 2, isBottom: true },
+    writeSketchHover: (_app, hover) => {
+      hoverWrites.push(hover as Record<string, unknown> | null);
+    },
+  });
+
+  assert.equal(handled, true);
+  assert.equal(Array.isArray((cfg.sketchExtras as any).extDrawers), false);
+  assert.equal(hoverWrites[0], null);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /פריטים קיימים/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('stack tool rejects module sketch internal drawers that collide with existing external sketch drawers', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      extDrawers: [{ id: 'external', yNormC: 0.5, yNorm: 0.17, count: 2, drawerHeightM: 0.3 }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_int_drawers@30',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 0.9,
+    totalHeight: 0.9,
+    pad: 0.02,
+    hitYClamped: 0.45,
+    hoverHost: { tool: 'sketch_int_drawers@30', moduleKey: 2, isBottom: true },
+    writeSketchHover: () => {},
+  });
+
+  assert.equal(handled, true);
+  assert.equal(Array.isArray((cfg.sketchExtras as any).drawers), false);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /מתנגשות במגירות קיימות/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('stack tool rejects module sketch internal drawers that collide with base storage', () => {
+  const cfg: Record<string, unknown> = {
+    layout: 'storage',
+    isCustom: false,
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_int_drawers@20',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 0.9,
+    totalHeight: 0.9,
+    pad: 0.02,
+    hitYClamped: 0.25,
+    hoverHost: { tool: 'sketch_int_drawers@20', moduleKey: 2, isBottom: true },
+    writeSketchHover: () => {},
+  });
+
+  assert.equal(handled, true);
+  assert.equal(Array.isArray(((cfg.sketchExtras as any) || {}).drawers), false);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /פריטים קיימים/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('stack tool rejects module sketch internal drawers that collide with existing sketch rods', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      rods: [{ id: 'rod-blocker', yNorm: 0.5 }],
+    },
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_int_drawers@20',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 0.9,
+    totalHeight: 0.9,
+    pad: 0.02,
+    hitYClamped: 0.45,
+    hoverHost: { tool: 'sketch_int_drawers@20', moduleKey: 2, isBottom: true },
+    writeSketchHover: () => {},
+  });
+
+  assert.equal(handled, true);
+  assert.equal(Array.isArray(((cfg.sketchExtras as any) || {}).drawers), false);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /פריטים קיימים/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('stack tool rejects module sketch external drawers that collide with a base hanging rod', () => {
+  const cfg: Record<string, unknown> = {
+    layout: 'hanging_top2',
+    isCustom: false,
+    gridDivisions: 6,
+  };
+  const toasts: Array<[string, string | undefined]> = [];
+  const hoverWrites: Array<Record<string, unknown> | null> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_ext_drawers:2@30',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.02,
+    hitYClamped: 1.52,
+    hoverHost: { tool: 'sketch_ext_drawers:2@30', moduleKey: 2, isBottom: false },
+    writeSketchHover: (_app, hover) => {
+      hoverWrites.push(hover as Record<string, unknown> | null);
+    },
+  });
+
+  assert.equal(handled, true);
+  assert.equal(cfg.sketchExtras, undefined);
+  assert.equal(hoverWrites.length, 1);
+  assert.equal(hoverWrites[0], null);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /פריטים קיימים/);
+  assert.equal(toasts[0]![1], 'error');
 });
 
 test('stack tool commits module internal drawers with a custom sketch drawer height', () => {
@@ -334,4 +1137,82 @@ test('sketch free stack preview emits vertical clearance labels for external dra
     (result.preview.clearanceMeasurements as { label: string }[]).map(entry => entry.label),
     ['18 ס"מ', '22 ס"מ']
   );
+});
+
+test('stack tool rejects sketch external drawers in a hex cell with a clear toast', () => {
+  const cfg: Record<string, unknown> = { hexCell: { enabled: true } };
+  const toasts: Array<[string, string | undefined]> = [];
+  const hoverWrites: Array<Record<string, unknown> | null> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_ext_drawers:2@30',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.02,
+    hitYClamped: 0.45,
+    hoverHost: { tool: 'sketch_ext_drawers:2@30', moduleKey: 2, isBottom: false },
+    writeSketchHover: (_app, hover) => {
+      hoverWrites.push(hover as Record<string, unknown> | null);
+    },
+  });
+
+  assert.equal(handled, true);
+  assert.equal(cfg.sketchExtras, undefined);
+  assert.deepEqual(hoverWrites, [null]);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /אי אפשר לבנות מגירות בתא משושה/);
+  assert.equal(toasts[0]![1], 'error');
+});
+
+test('stack tool rejects sketch internal drawers in a hex cell with a clear toast', () => {
+  const cfg: Record<string, unknown> = { hexCell: { enabled: true } };
+  const toasts: Array<[string, string | undefined]> = [];
+  const hoverWrites: Array<Record<string, unknown> | null> = [];
+  const App: any = {
+    services: {
+      uiFeedback: {
+        toast: (message: string, type?: string) => {
+          toasts.push([message, type]);
+        },
+      },
+    },
+  };
+
+  const handled = tryCommitSketchModuleStackTool({
+    App,
+    cfg,
+    tool: 'sketch_int_drawers@30',
+    hoverOk: false,
+    hoverRec: {},
+    bottomY: 0,
+    topY: 2.4,
+    totalHeight: 2.4,
+    pad: 0.02,
+    hitYClamped: 0.45,
+    hoverHost: { tool: 'sketch_int_drawers@30', moduleKey: 2, isBottom: false },
+    writeSketchHover: (_app, hover) => {
+      hoverWrites.push(hover as Record<string, unknown> | null);
+    },
+  });
+
+  assert.equal(handled, true);
+  assert.equal(cfg.sketchExtras, undefined);
+  assert.deepEqual(hoverWrites, [null]);
+  assert.equal(toasts.length, 1);
+  assert.match(toasts[0]![0], /אי אפשר לבנות מגירות בתא משושה/);
+  assert.equal(toasts[0]![1], 'error');
 });

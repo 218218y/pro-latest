@@ -6,6 +6,10 @@ import {
   drawExportHeader,
   fillExportCanvasBackground,
 } from './export_canvas_workflow_shared.js';
+import {
+  createLiveViewportNotesTransform,
+  shouldPreserveLiveViewportForSketchImageExport,
+} from './export_canvas_workflow_viewport_policy.js';
 
 export function createExportDualImageWorkflow(
   deps: ExportCanvasWorkflowDeps
@@ -52,6 +56,7 @@ export function createExportDualImageWorkflow(
     const restoreExportWall = _applyExportWallColorOverride(App);
     const { width, height } = _getRendererSize(renderer);
     const notesEnabled = _isNotesEnabled(App);
+    const preserveLiveViewport = shouldPreserveLiveViewportForSketchImageExport(App);
     const titleHeight = 120;
     const gap = 20;
 
@@ -99,12 +104,20 @@ export function createExportDualImageWorkflow(
         _setDoorsOpenForExport(App, open);
         _setBodyDoorStatusForNotes(App, open);
         restoreOriginalCameraForPanel();
-        const notesTransform = captureNotesTransformForCurrentFrame();
+        const notesTransform = preserveLiveViewport ? null : captureNotesTransformForCurrentFrame();
         _renderSceneForExport(App, renderer, scene, camera);
-        ctx.drawImage(_getRendererCanvasSource(renderer), 0, imageY);
+        const rendererSource = _getRendererCanvasSource(renderer);
+        ctx.drawImage(rendererSource, 0, imageY);
 
         if (notesEnabled) {
-          await _renderAllNotesToCanvas(App, ctx, width, height, imageY, notesTransform);
+          await _renderAllNotesToCanvas(
+            App,
+            ctx,
+            width,
+            height,
+            imageY,
+            preserveLiveViewport ? createLiveViewportNotesTransform(rendererSource) : notesTransform
+          );
         }
       };
 

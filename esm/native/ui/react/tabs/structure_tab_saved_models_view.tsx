@@ -9,10 +9,7 @@ import {
 
 export function StructureTabSavedModelsView(props: StructureTabSavedModelsViewProps): ReactElement {
   return (
-    <div
-      className="control-section wp-r-savedmodels"
-      style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}
-    >
+    <div className="control-section wp-r-savedmodels">
       <SavedModelsPresetSection {...props} />
       <SavedModelsUserSection {...props} />
       <SavedModelsPrimaryActions

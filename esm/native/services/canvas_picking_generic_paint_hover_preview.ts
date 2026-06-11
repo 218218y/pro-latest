@@ -1,5 +1,7 @@
 import type { AppContainer, UnknownRecord } from '../../../types';
 
+import { isDrawerBoxPartId } from '../features/drawer_box_identity.js';
+import { isShelfBoardPartId } from '../features/shelf_part_identity.js';
 import type { PaintPreviewGroupBox } from './canvas_picking_generic_paint_hover_shared.js';
 import { collectPaintPreviewPartObjects } from './canvas_picking_generic_paint_hover_preview_objects.js';
 import {
@@ -9,10 +11,35 @@ import {
 import {
   resolvePaintPreviewGroupBoxFromFallback,
   resolvePaintPreviewGroupBoxFromObjects,
+  resolvePaintPreviewObjectBoxesFromAnchor,
 } from './canvas_picking_generic_paint_hover_preview_bounds.js';
 
-function isStackSplitDecorativeSeparatorPreview(partKeys: string[]): boolean {
-  return partKeys.some(key => key === 'stack_split_separator');
+function unscopedPaintPreviewPartKey(partKey: string): string {
+  return partKey.startsWith('lower_') ? partKey.slice('lower_'.length) : partKey;
+}
+
+function isCornerPentagonThinBoardPaintKey(partKey: string): boolean {
+  const key = unscopedPaintPreviewPartKey(partKey);
+  return key === 'corner_pent_floor' || key === 'corner_pent_ceil';
+}
+
+function isCornerPlinthPaintKey(partKey: string): boolean {
+  const key = unscopedPaintPreviewPartKey(partKey);
+  return key === 'corner_plinth' || key === 'corner_pent_plinth';
+}
+
+function shouldUseObjectBoxesPaintPreview(partKeys: string[]): boolean {
+  return partKeys.some(
+    key =>
+      key === 'stack_split_separator' ||
+      key === 'body_stack_split_divider' ||
+      key === 'plinth_color' ||
+      key === 'lower_plinth_color' ||
+      isDrawerBoxPartId(key) ||
+      isShelfBoardPartId(key) ||
+      isCornerPentagonThinBoardPaintKey(key) ||
+      isCornerPlinthPaintKey(key)
+  );
 }
 
 export function resolvePaintPreviewGroupBox(args: {
@@ -42,7 +69,17 @@ export function resolvePaintPreviewGroupBox(args: {
   });
   if (cornerCorniceFrontPreview) return cornerCorniceFrontPreview;
 
+  const useObjectBoxesPreview = shouldUseObjectBoxesPaintPreview(partKeys);
+
   if (!objects.length) {
+    if (useObjectBoxesPreview) {
+      const anchorObjectBoxesPreview = resolvePaintPreviewObjectBoxesFromAnchor({
+        wardrobeGroup,
+        anchorObject: fallbackObject,
+        anchorParent: fallbackParent,
+      });
+      if (anchorObjectBoxesPreview) return anchorObjectBoxesPreview;
+    }
     return resolvePaintPreviewGroupBoxFromFallback({
       App,
       wardrobeGroup,
@@ -57,7 +94,7 @@ export function resolvePaintPreviewGroupBox(args: {
     objects,
   });
 
-  if (objectGroupPreview && isStackSplitDecorativeSeparatorPreview(partKeys)) {
+  if (objectGroupPreview && useObjectBoxesPreview) {
     return {
       ...objectGroupPreview,
       kind: 'object_boxes',

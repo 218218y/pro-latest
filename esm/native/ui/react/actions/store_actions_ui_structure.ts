@@ -7,6 +7,7 @@ import {
   normalizeBaseLegStyle,
 } from '../../../features/base_leg_support.js';
 import { normalizeBasePlinthHeightCm } from '../../../features/base_plinth_support.js';
+import { normalizeFrontColorShelfInheritanceMode } from '../../../features/front_color_shelf_inheritance.js';
 import { asStringValue, getUiNamespace } from './store_actions_state.js';
 import { setUiFlag, setUiRawScalar, setUiScalar, setUiScalarSoft } from './store_actions_ui_writes.js';
 
@@ -134,6 +135,18 @@ function setUiCellDimsDepth(app: AppContainer, value: unknown, meta?: ActionMeta
   setUiRawScalar(app, 'cellDimsDepth', value, meta);
 }
 
+function setUiCellDimsHexMode(app: AppContainer, on: unknown, meta?: ActionMetaLike): void {
+  setUiRawScalar(app, 'cellDimsHexMode', !!on, meta);
+}
+
+function setUiCellDimsHexProtrusion(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
+  setUiRawScalar(app, 'cellDimsHexProtrusion', value, meta);
+}
+
+function setUiCellDimsHexDoorWidth(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
+  setUiRawScalar(app, 'cellDimsHexDoorWidth', value, meta);
+}
+
 function setUiStackSplitLowerDoors(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
   setUiRawScalar(app, 'stackSplitLowerDoors', value, meta);
 }
@@ -209,6 +222,10 @@ function setUiColorChoice(app: AppContainer, value: unknown, meta?: ActionMetaLi
   setUiScalar(app, 'colorChoice', next, meta);
 }
 
+function setUiFrontColorShelfInheritanceMode(app: AppContainer, value: unknown, meta?: ActionMetaLike): void {
+  setUiScalar(app, 'frontColorShelfInheritanceMode', normalizeFrontColorShelfInheritanceMode(value), meta);
+}
+
 export {
   setUiBaseLegColor,
   setUiBaseLegHeightCm,
@@ -218,6 +235,9 @@ export {
   setUiBaseType,
   setUiCellDimsDepth,
   setUiCellDimsHeight,
+  setUiCellDimsHexDoorWidth,
+  setUiCellDimsHexMode,
+  setUiCellDimsHexProtrusion,
   setUiCellDimsWidth,
   setUiChestCommodeEnabled,
   setUiChestCommodeMirrorHeightCm,
@@ -226,6 +246,7 @@ export {
   setUiChestDrawersCount,
   setUiChestMode,
   setUiColorChoice,
+  setUiFrontColorShelfInheritanceMode,
   setUiCornerDepth,
   setUiCornerDoors,
   setUiCornerHeight,

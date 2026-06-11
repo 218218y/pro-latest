@@ -1,4 +1,5 @@
 import type {
+  CloudSyncContentsTogglePayload,
   CloudSyncSketchPayload,
   CloudSyncSyncPinPayload,
   CloudSyncTabsGatePayload,
@@ -30,6 +31,18 @@ export function readCloudSyncSyncPinPayloadLike(payload: unknown): CloudSyncSync
     syncPinEnabled: readCloudSyncScalarField(rec.syncPinEnabled),
     syncPinRev: readCloudSyncNumberOrStringField(rec.syncPinRev),
     syncPinBy: readCloudSyncStringField(rec.syncPinBy),
+  };
+}
+
+export function readCloudSyncContentsTogglePayloadLike(
+  payload: unknown
+): CloudSyncContentsTogglePayload | null {
+  const rec = asRecord(payload);
+  if (!rec) return null;
+  return {
+    showContentsEnabled: readCloudSyncScalarField(rec.showContentsEnabled),
+    showContentsRev: readCloudSyncNumberOrStringField(rec.showContentsRev),
+    showContentsBy: readCloudSyncStringField(rec.showContentsBy),
   };
 }
 

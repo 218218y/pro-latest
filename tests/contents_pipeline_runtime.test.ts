@@ -28,7 +28,7 @@ test('contents pipeline runtime: createRod forwards normalized config and attach
     App,
     THREE: { Group: function Group() {} },
     cfg: { foo: 1 },
-    config: { intDrawersList: ['a'], intDrawersSlot: { id: 'slot' } },
+    config: { layout: 'shelves' },
     moduleIndex: 3,
     innerW: 77,
     showContentsEnabled: true,
@@ -38,8 +38,6 @@ test('contents pipeline runtime: createRod forwards normalized config and attach
   assert.equal(calls.length, 1);
   assert.equal(reported.length, 1);
   assert.equal((calls[0] as any).yPos, 1.25);
-  assert.deepEqual((calls[0] as any).intDrawersList, ['a']);
-  assert.deepEqual((calls[0] as any).intDrawersSlot, { id: 'slot' });
   assert.equal((reported[0][1] as any).moduleIndex, 3);
   assert.equal(((reported[0][0] as any).context as any).op, 'createRodWithContents');
 });

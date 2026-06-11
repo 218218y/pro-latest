@@ -24,6 +24,7 @@ type ManualLayoutSketchBoxHoverArgs = {
   xCenter: number;
   xNorm?: number | null;
   removeId?: string | null;
+  blockedReason?: string | null;
 };
 
 type ManualLayoutSketchBoxContentHoverArgs = {
@@ -54,6 +55,7 @@ type ManualLayoutSketchBoxContentHoverArgs = {
   doorId?: string | null;
   doorLeftId?: string | null;
   doorRightId?: string | null;
+  blockedReason?: string | null;
 };
 
 type ManualLayoutSketchStackHoverArgs = {
@@ -75,6 +77,7 @@ type ManualLayoutSketchStackHoverArgs = {
   doorId?: string | null;
   doorLeftId?: string | null;
   doorRightId?: string | null;
+  blockedReason?: string | null;
 };
 
 function withDefined(target: RecordMap, patch: Record<string, unknown>): RecordMap {
@@ -107,6 +110,7 @@ export function createManualLayoutSketchBoxHoverRecord(args: ManualLayoutSketchB
     xCenter: args.xCenter,
     xNorm: args.xNorm ?? undefined,
     removeId: args.removeId ?? undefined,
+    __wpBlockedReason: args.blockedReason ?? undefined,
   });
 }
 
@@ -141,6 +145,7 @@ export function createManualLayoutSketchBoxContentHoverRecord(
       doorId: args.doorId ?? undefined,
       doorLeftId: args.doorLeftId ?? undefined,
       doorRightId: args.doorRightId ?? undefined,
+      __wpBlockedReason: args.blockedReason ?? undefined,
     }
   );
 }
@@ -162,5 +167,6 @@ export function createManualLayoutSketchStackHoverRecord(args: ManualLayoutSketc
     doorId: args.doorId ?? undefined,
     doorLeftId: args.doorLeftId ?? undefined,
     doorRightId: args.doorRightId ?? undefined,
+    __wpBlockedReason: args.blockedReason ?? undefined,
   });
 }

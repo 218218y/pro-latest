@@ -12,6 +12,25 @@ import type {
   MeshLike,
 } from './corner_wing_cornice_contracts.js';
 import { asBufferAttr, getThreeCornice, readCornicePoints } from './corner_wing_cornice_contracts.js';
+import {
+  buildCornerWingCorniceRuns,
+  clampCornerMiterTrimForSegment,
+  cornerCornicePathSegmentLength,
+  cornerExteriorSideNormal,
+  cornerMiterExtensionForPathJoint,
+  cornerMutualPathJointMiterTrim,
+  cornerProfileRotationForPathSegment,
+  extendCornerCornicePath,
+  filterCornerCornicePath,
+  leftCornerExteriorMiterTrim,
+  leftCornerSideConnectionPath,
+  resolveCornerProfileSideEndZ,
+  rightCornerExteriorMiterTrim,
+  rightCornerSideConnectionPath,
+  shouldExtendCornerExteriorProfilePath,
+  shouldUseCornerOuterMiterForPath,
+  type CornerCorniceRun,
+} from './corner_wing_cornice_path.js';
 
 export function applyCornerWingProfileCornice(args: {
   ctx: CorniceCtxLike;
@@ -124,63 +143,39 @@ export function applyCornerWingProfileCornice(args: {
 
   const profileFront = makeCorniceProfile(overhangZ);
   const profileSide = makeCorniceProfile(overhangX);
+  const profileSideInternal = makeInternalBoundaryCorniceProfile(profileSide);
 
   // Material - classic corner cornice uses the same grouped base material as the wave variant,
   // while still allowing the visible front/side segments to advertise their own part ids.
   const baseCorniceMat = getCornerMat('corner_cornice', bodyMat);
   const corniceMatFor = (pid: CornicePartId) => getCornerMat(pid, baseCorniceMat);
 
-  // Build 3 segments (front + left + right), with mitered ends like the main wardrobe.
-  const frontLen = Math.max(corniceCommon.minBoxDimensionM, wingW + 2 * overhangX);
-  const sideStartZ = backTrimZ;
-  const sideEndZ = frontPlaneZ + overhangZ;
-  const sideLen = Math.max(corniceCommon.minBoxDimensionM, sideEndZ - sideStartZ);
-  const sideCenterZ = (sideStartZ + sideEndZ) / 2;
-
-  const segs: CorniceSegment[] = [
-    {
-      length: frontLen,
-      profile: profileFront,
-      partId: 'corner_cornice_front',
-      rotationY: -Math.PI / 2, // extrude(Z)->X and profileX->+Z
-      flipX: false,
-      miterStartTrim: overhangX + seamEps,
-      miterEndTrim: overhangX + seamEps,
-      x: wingW / 2,
-      y: yPlace,
-      z: frontPlaneZ, // align profile x=0 to the wing FRONT plane
-    },
-
-    // Omit the "attach side" piece when the corner connector (pentagon) exists:
-    // that side is not exposed and would clash with the connector cornice.
-    ...(cornerConnectorEnabled
-      ? []
-      : ([
-          {
-            length: sideLen,
-            profile: profileSide,
-            partId: 'corner_cornice_side_left',
-            rotationY: 0,
-            flipX: true, // outward -> -X
-            miterEndTrim: overhangZ + seamEps, // miter front end
-            x: 0, // left side plane
-            y: yPlace,
-            z: sideCenterZ,
-          },
-        ] satisfies CorniceSegment[])),
-
-    {
-      length: sideLen,
-      profile: profileSide,
-      partId: 'corner_cornice_side_right',
-      rotationY: 0,
-      flipX: false, // outward -> +X
-      miterEndTrim: overhangZ + seamEps, // miter front end
-      x: wingW, // right side plane
-      y: yPlace,
-      z: sideCenterZ,
-    },
-  ];
+  const segmentedRuns = buildCornerWingCorniceRuns(ctx, locals);
+  const segs: CorniceSegment[] = segmentedRuns.length
+    ? buildSegmentedCornerWingProfileSegments({
+        runs: segmentedRuns,
+        profileFront,
+        profileSide,
+        profileSideInternal,
+        backTrimZ,
+        overhangX,
+        overhangZ,
+        seamEps,
+        minBoxDimension: corniceCommon.minBoxDimensionM,
+      })
+    : buildFlatCornerWingProfileSegments({
+        wingW,
+        cornerConnectorEnabled,
+        profileFront,
+        profileSide,
+        frontPlaneZ,
+        backTrimZ,
+        yPlace,
+        overhangX,
+        overhangZ,
+        seamEps,
+        minBoxDimension: corniceCommon.minBoxDimensionM,
+      });
 
   const threeCornice = getThreeCornice(THREE);
   if (!threeCornice) return;
@@ -227,25 +222,47 @@ export function applyCornerWingProfileCornice(args: {
       const zNeg = -segLen / 2;
       const epsZ = corniceProfile.miterEpsilonZM;
 
+      const miterMode = seg.miterMode === 'outer_extend' ? 'outer_extend' : 'inner_trim';
+      const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+      const profileBaseY = (() => {
+        let minPositiveY = Infinity;
+        for (let pi = 0; pi < profile.length; pi += 1) {
+          const py = Number(profile[pi].y);
+          if (Number.isFinite(py) && py > 0) minPositiveY = Math.min(minPositiveY, py);
+        }
+        return Number.isFinite(minPositiveY) ? minPositiveY + corniceProfile.baseBandEpsilonM : 1e-6;
+      })();
+
       for (let vi = 0; vi < pos.count; vi++) {
         const vx = Number(pos.getX(vi));
+        const vy = typeof pos.getY === 'function' ? Number(pos.getY(vi)) : NaN;
         const vz = Number(pos.getZ(vi));
+        const innerTrimT = clamp01(1 - vx / xOuter);
+        const outerExtendT = clamp01(vx / xOuter);
+        const sealBase = Number.isFinite(vy) && vy <= profileBaseY && Number.isFinite(vx) && vx <= 0;
 
-        // Positive end (z = +segLen/2) -> trim inward (toward -Z).
         if (Number.isFinite(miterEndTrim) && miterEndTrim > 0 && Math.abs(vz - zPos) < epsZ) {
-          const t = Math.min(1, Math.max(0, 1 - vx / xOuter)); // clamp so negative x doesn't over-trim
-          pos.setZ(vi, vz - miterEndTrim * t);
+          if (miterMode === 'outer_extend') {
+            pos.setZ(vi, vz + miterEndTrim * outerExtendT);
+          } else {
+            let zNew = vz - miterEndTrim * innerTrimT;
+            if (sealBase) zNew = Math.min(zPos, zNew + corniceProfile.baseSealEpsilonM);
+            pos.setZ(vi, zNew);
+          }
         }
 
-        // Negative end (z = -segLen/2) -> trim inward (toward +Z).
         if (Number.isFinite(miterStartTrim) && miterStartTrim > 0 && Math.abs(vz - zNeg) < epsZ) {
-          const t = Math.min(1, Math.max(0, 1 - vx / xOuter));
-          pos.setZ(vi, vz + miterStartTrim * t);
+          if (miterMode === 'outer_extend') {
+            pos.setZ(vi, vz - miterStartTrim * outerExtendT);
+          } else {
+            let zNew = vz + miterStartTrim * innerTrimT;
+            if (sealBase) zNew = Math.max(zNeg, zNew - corniceProfile.baseSealEpsilonM);
+            pos.setZ(vi, zNew);
+          }
         }
       }
 
       pos.needsUpdate = true;
-      geo.computeVertexNormals();
     }
 
     geo.computeVertexNormals();
@@ -268,4 +285,268 @@ export function applyCornerWingProfileCornice(args: {
     const mesh = buildProfileSegMesh(segs[i]);
     if (mesh) wingGroup.add(mesh);
   }
+}
+
+type FlatCornerWingProfileSegmentsArgs = {
+  wingW: number;
+  cornerConnectorEnabled: boolean;
+  profileFront: CornicePoint[];
+  profileSide: CornicePoint[];
+  frontPlaneZ: number;
+  backTrimZ: number;
+  yPlace: number;
+  overhangX: number;
+  overhangZ: number;
+  seamEps: number;
+  minBoxDimension: number;
+};
+
+function buildFlatCornerWingProfileSegments(args: FlatCornerWingProfileSegmentsArgs): CorniceSegment[] {
+  const frontLen = Math.max(args.minBoxDimension, args.wingW + 2 * args.overhangX);
+  const sideStartZ = args.backTrimZ;
+  const sideEndZ = args.frontPlaneZ + args.overhangZ;
+  const sideLen = Math.max(args.minBoxDimension, sideEndZ - sideStartZ);
+  const sideCenterZ = (sideStartZ + sideEndZ) / 2;
+
+  return [
+    {
+      length: frontLen,
+      profile: args.profileFront,
+      partId: 'corner_cornice_front',
+      rotationY: -Math.PI / 2,
+      flipX: false,
+      miterStartTrim: args.overhangX + args.seamEps,
+      miterEndTrim: args.overhangX + args.seamEps,
+      x: args.wingW / 2,
+      y: args.yPlace,
+      z: args.frontPlaneZ,
+    },
+    ...(args.cornerConnectorEnabled
+      ? []
+      : ([
+          {
+            length: sideLen,
+            profile: args.profileSide,
+            partId: 'corner_cornice_side_left',
+            rotationY: 0,
+            flipX: true,
+            miterEndTrim: args.overhangZ + args.seamEps,
+            x: 0,
+            y: args.yPlace,
+            z: sideCenterZ,
+          },
+        ] satisfies CorniceSegment[])),
+    {
+      length: sideLen,
+      profile: args.profileSide,
+      partId: 'corner_cornice_side_right',
+      rotationY: 0,
+      flipX: false,
+      miterEndTrim: args.overhangZ + args.seamEps,
+      x: args.wingW,
+      y: args.yPlace,
+      z: sideCenterZ,
+    },
+  ];
+}
+
+type SegmentedCornerWingProfileSegmentsArgs = {
+  runs: CornerCorniceRun[];
+  profileFront: CornicePoint[];
+  profileSide: CornicePoint[];
+  profileSideInternal: CornicePoint[];
+  backTrimZ: number;
+  overhangX: number;
+  overhangZ: number;
+  seamEps: number;
+  minBoxDimension: number;
+};
+
+function buildSegmentedCornerWingProfileSegments(
+  args: SegmentedCornerWingProfileSegmentsArgs
+): CorniceSegment[] {
+  const segments: CorniceSegment[] = [];
+
+  for (const run of args.runs) {
+    const defaultSideEndZ = run.frontPath.reduce((max, seg) => Math.max(max, seg.az, seg.bz), -Infinity);
+    const sourcePath = filterCornerCornicePath(run.frontPath.map(seg => ({ ...seg })));
+    const startExtension = shouldExtendCornerExteriorProfilePath(sourcePath[0])
+      ? run.leftSide != null && !run.leftSide.internal
+        ? args.overhangX
+        : 0
+      : 0;
+    const endExtension = shouldExtendCornerExteriorProfilePath(sourcePath[sourcePath.length - 1])
+      ? run.rightSide != null && !run.rightSide.internal
+        ? args.overhangX
+        : 0
+      : 0;
+    const renderPath = extendCornerCornicePath(sourcePath, startExtension, endExtension);
+    const useOuterMiter = shouldUseCornerOuterMiterForPath(renderPath);
+
+    for (let i = 0; i < renderPath.length; i += 1) {
+      const pathSeg = renderPath[i];
+      const len = cornerCornicePathSegmentLength(pathSeg);
+      if (len <= args.minBoxDimension) continue;
+
+      const startJointTrim =
+        i > 0
+          ? useOuterMiter
+            ? cornerMiterExtensionForPathJoint(renderPath[i - 1], pathSeg, args.overhangZ, args.overhangZ)
+                .bStart
+            : cornerMutualPathJointMiterTrim(renderPath[i - 1], pathSeg, args.overhangZ)
+          : 0;
+      const endJointTrim =
+        i < renderPath.length - 1
+          ? useOuterMiter
+            ? cornerMiterExtensionForPathJoint(pathSeg, renderPath[i + 1], args.overhangZ, args.overhangZ)
+                .aEnd
+            : cornerMutualPathJointMiterTrim(pathSeg, renderPath[i + 1], args.overhangZ)
+          : 0;
+      const leftExteriorTrim =
+        run.leftSide != null && !run.leftSide.internal
+          ? useOuterMiter
+            ? cornerMiterExtensionForPathJoint(
+                leftCornerSideConnectionPath(pathSeg),
+                pathSeg,
+                args.overhangX,
+                args.overhangZ,
+                cornerExteriorSideNormal('left')
+              ).bStart
+            : leftCornerExteriorMiterTrim(pathSeg, args.overhangX)
+          : 0;
+      const rightExteriorTrim =
+        run.rightSide != null && !run.rightSide.internal
+          ? useOuterMiter
+            ? cornerMiterExtensionForPathJoint(
+                pathSeg,
+                rightCornerSideConnectionPath(pathSeg),
+                args.overhangZ,
+                args.overhangX,
+                null,
+                cornerExteriorSideNormal('right')
+              ).aEnd
+            : rightCornerExteriorMiterTrim(pathSeg, args.overhangX)
+          : 0;
+
+      segments.push({
+        length: Math.max(args.minBoxDimension, len),
+        profile: args.profileFront,
+        partId: 'corner_cornice_front',
+        rotationY: cornerProfileRotationForPathSegment(pathSeg),
+        flipX: false,
+        miterStartTrim:
+          i < renderPath.length - 1
+            ? clampCornerMiterTrimForSegment(endJointTrim, len)
+            : run.rightSide != null && !run.rightSide.internal
+              ? clampCornerMiterTrimForSegment(rightExteriorTrim, len)
+              : 0,
+        miterEndTrim:
+          i > 0
+            ? clampCornerMiterTrimForSegment(startJointTrim, len)
+            : run.leftSide != null && !run.leftSide.internal
+              ? clampCornerMiterTrimForSegment(leftExteriorTrim, len)
+              : 0,
+        ...(useOuterMiter ? { miterMode: 'outer_extend' as const } : null),
+        x: (pathSeg.ax + pathSeg.bx) / 2,
+        y: run.topY + CARCASS_CORNICE_DIMENSIONS.common.yLiftM,
+        z: (pathSeg.az + pathSeg.bz) / 2,
+      });
+    }
+
+    if (run.leftSide != null && renderPath.length) {
+      const sideStartZ = run.leftSide.startZ;
+      const sideEndZ = run.leftSide.connectorSeam
+        ? renderPath[0].az
+        : resolveCornerProfileSideEndZ({
+            pathSeg: renderPath[0],
+            end: 'start',
+            defaultEndZ: defaultSideEndZ + args.overhangZ,
+            useOuterMiter,
+            profileOverhangZ: args.overhangZ,
+          });
+      const sideLen = Math.max(args.minBoxDimension, Math.abs(sideEndZ - sideStartZ));
+      const sideCenterZ = (sideStartZ + sideEndZ) / 2;
+      const sideMiterTrim = run.leftSide.connectorSeam
+        ? 0
+        : !run.leftSide.internal && renderPath.length
+          ? clampCornerMiterTrimForSegment(
+              useOuterMiter
+                ? cornerMiterExtensionForPathJoint(
+                    leftCornerSideConnectionPath(renderPath[0]),
+                    renderPath[0],
+                    args.overhangX,
+                    args.overhangZ,
+                    cornerExteriorSideNormal('left')
+                  ).aEnd
+                : leftCornerExteriorMiterTrim(renderPath[0], args.overhangZ),
+              sideLen
+            )
+          : args.overhangZ + args.seamEps;
+      segments.push({
+        length: sideLen,
+        profile: run.leftSide.internal ? args.profileSideInternal : args.profileSide,
+        partId: run.leftSide.internal ? 'corner_cornice_front' : 'corner_cornice_side_left',
+        rotationY: 0,
+        flipX: !run.leftSide.internal,
+        ...(sideEndZ >= sideStartZ ? { miterEndTrim: sideMiterTrim } : { miterStartTrim: sideMiterTrim }),
+        ...(useOuterMiter && sideMiterTrim > 0 ? { miterMode: 'outer_extend' as const } : null),
+        x: run.left,
+        y: run.topY + CARCASS_CORNICE_DIMENSIONS.common.yLiftM,
+        z: sideCenterZ,
+      });
+    }
+
+    if (run.rightSide != null && renderPath.length) {
+      const sideStartZ = run.rightSide.startZ;
+      const sideEndZ = run.rightSide.connectorSeam
+        ? renderPath[renderPath.length - 1].bz
+        : resolveCornerProfileSideEndZ({
+            pathSeg: renderPath[renderPath.length - 1],
+            end: 'end',
+            defaultEndZ: defaultSideEndZ + args.overhangZ,
+            useOuterMiter,
+            profileOverhangZ: args.overhangZ,
+          });
+      const sideLen = Math.max(args.minBoxDimension, Math.abs(sideEndZ - sideStartZ));
+      const sideCenterZ = (sideStartZ + sideEndZ) / 2;
+      const sideMiterTrim = run.rightSide.connectorSeam
+        ? 0
+        : !run.rightSide.internal && renderPath.length
+          ? clampCornerMiterTrimForSegment(
+              useOuterMiter
+                ? cornerMiterExtensionForPathJoint(
+                    renderPath[renderPath.length - 1],
+                    rightCornerSideConnectionPath(renderPath[renderPath.length - 1]),
+                    args.overhangZ,
+                    args.overhangX,
+                    null,
+                    cornerExteriorSideNormal('right')
+                  ).bStart
+                : rightCornerExteriorMiterTrim(renderPath[renderPath.length - 1], args.overhangZ),
+              sideLen
+            )
+          : args.overhangZ + args.seamEps;
+      segments.push({
+        length: sideLen,
+        profile: run.rightSide.internal ? args.profileSideInternal : args.profileSide,
+        partId: run.rightSide.internal ? 'corner_cornice_front' : 'corner_cornice_side_right',
+        rotationY: 0,
+        flipX: run.rightSide.internal,
+        ...(sideEndZ >= sideStartZ ? { miterEndTrim: sideMiterTrim } : { miterStartTrim: sideMiterTrim }),
+        ...(useOuterMiter && sideMiterTrim > 0 ? { miterMode: 'outer_extend' as const } : null),
+        x: run.right,
+        y: run.topY + CARCASS_CORNICE_DIMENSIONS.common.yLiftM,
+        z: sideCenterZ,
+      });
+    }
+  }
+
+  return segments;
+}
+
+function makeInternalBoundaryCorniceProfile(profile: CornicePoint[]): CornicePoint[] {
+  return profile.map(point => ({
+    ...point,
+    x: Math.max(0, point.x),
+  }));
 }

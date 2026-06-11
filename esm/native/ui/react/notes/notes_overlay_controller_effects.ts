@@ -30,6 +30,7 @@ type UseNotesOverlayControllerEffectsArgs = {
   setToolbarColor: Dispatch<SetStateAction<string>>;
   setToolbarFontSize: Dispatch<SetStateAction<string>>;
   preExitDrawModeCommitRef: MutableRefObject<(() => void) | null>;
+  skipNextExitCleanupRef: MutableRefObject<boolean>;
   createLastPointRef: MutableRefObject<{ x: number; y: number } | null>;
   prevEditModeRef: MutableRefObject<boolean>;
   prevEditModeCleanupRef: MutableRefObject<boolean>;
@@ -49,6 +50,7 @@ export function useNotesOverlayControllerEffects(args: UseNotesOverlayController
     setInteraction: args.setInteraction,
     setCreatingRect: args.setCreatingRect,
     preExitDrawModeCommitRef: args.preExitDrawModeCommitRef,
+    skipNextExitCleanupRef: args.skipNextExitCleanupRef,
     createLastPointRef: args.createLastPointRef,
     prevEditModeCleanupRef: args.prevEditModeCleanupRef,
     clearDomSelection: args.clearDomSelection,

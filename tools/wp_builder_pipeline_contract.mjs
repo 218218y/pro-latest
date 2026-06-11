@@ -54,10 +54,6 @@ requirePattern(
   'esm/native/builder/external_drawers_pipeline.ts',
   /export function applyExternalDrawersForModule\(\n  params: ApplyExternalDrawersForModuleParams \| null \| undefined\n\): boolean/
 );
-requirePattern(
-  'esm/native/builder/internal_drawers_pipeline.ts',
-  /export function makeInternalDrawerCreator\(params: InternalDrawerCreatorParams\): BuilderInternalDrawerCreator/
-);
 
 // Deps resolver owns fail-fast dependency validation and should not use broad `args && args.*` probing.
 requirePattern('esm/native/builder/builder_deps_resolver.ts', /export type ResolveBuilderDepsRequest/);

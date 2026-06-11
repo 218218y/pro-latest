@@ -7,6 +7,7 @@ import {
   type CellDimsHoverPreviewArgs,
 } from './canvas_picking_hover_preview_modes_shared.js';
 import { resolveCellDimsTargetBox } from './canvas_picking_hover_preview_modes_cell_dims_target.js';
+import { resolveCellDimsPostClickHoverTarget } from './canvas_picking_cell_dims_post_click_hover.js';
 
 export function tryHandleCellDimsHoverPreview(args: CellDimsHoverPreviewArgs): boolean {
   if (!args.isCellDimsMode) return false;
@@ -27,15 +28,20 @@ export function tryHandleCellDimsHoverPreview(args: CellDimsHoverPreviewArgs): b
     } = args;
     const THREE = getThreeMaybe(App);
     const setPreview = __readPreviewSetSketchPlacementPreview(previewRo);
-    const target = resolveInteriorHoverTarget(App, raycaster, mouse, ndcX, ndcY);
-    if (!target || target.isBottom || !setPreview) {
+    const target =
+      resolveCellDimsPostClickHoverTarget({ App, ndcX, ndcY, measureObjectLocalBox }) ||
+      resolveInteriorHoverTarget(App, raycaster, mouse, ndcX, ndcY);
+    if (!target || !setPreview) {
       __callMaybe(hideSketchPreview, __withAppThree(App, THREE));
       __callMaybe(hideLayoutPreview, __withAppThree(App, THREE));
       return false;
     }
 
-    const { applyW, applyH, applyD } = readCellDimsDraft(App);
-    if (applyW == null && applyH == null && applyD == null) {
+    const draft = readCellDimsDraft(App);
+    const { applyW, applyD } = draft;
+    const applyH = target.isBottom ? null : draft.applyH;
+    const hexCellMode = draft.hexCellMode === true;
+    if (!hexCellMode && applyW == null && applyH == null && applyD == null) {
       __callMaybe(hideSketchPreview, __withAppThree(App, THREE));
       __callMaybe(hideLayoutPreview, __withAppThree(App, THREE));
       return false;

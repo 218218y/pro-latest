@@ -19,6 +19,7 @@ const ORDER_PDF_SKETCH_TOOL_SET: ReadonlySet<string> = new Set([
 ]);
 
 export const ORDER_PDF_SKETCH_ANNOTATION_PAGE_KEYS = Object.freeze([
+  'orderPdfPage1',
   'renderSketch',
   'openClosed',
 ] satisfies readonly OrderPdfSketchAnnotationPageKey[]);
@@ -70,7 +71,7 @@ export function isOrderPdfSketchStrokeTool(value: unknown): value is OrderPdfSke
 }
 
 export function isOrderPdfSketchAnnotationPageKey(value: unknown): value is OrderPdfSketchAnnotationPageKey {
-  return value === 'renderSketch' || value === 'openClosed';
+  return value === 'orderPdfPage1' || value === 'renderSketch' || value === 'openClosed';
 }
 
 export function isOrderPdfSketchShapeTool(tool: OrderPdfSketchTool | null | undefined): boolean {

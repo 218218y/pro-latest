@@ -10,18 +10,18 @@ const viewStatePath = path.join(
   'ui',
   'react',
   'tabs',
-  'use_interior_tab_view_state.ts'
+  'interior_tab_view_state_runtime.ts'
 );
 const viewState = fs.readFileSync(viewStatePath, 'utf8');
 
 assert.match(
   viewState,
-  /const showManualRow = manualRowOpen \|\| \(isManualLayoutMode && !isSketchToolActive\);/,
-  'Sketch tools such as add-box must not auto-open the generic manual-layout drawer just because they reuse MANUAL_LAYOUT mode.'
+  /const usesManualDivisionControls =\s*isManualLayoutMode && \(!isSketchToolActive \|\| isSketchDivisionToolActive\);/,
+  'Only canonical sketch division tools may reuse the generic manual-layout chooser while sketch tools such as add-box stay separate.'
 );
 
 assert.match(
   viewState,
-  /const activeManualToolForUi = isManualLayoutMode && !isSketchToolActive \? manualTool : manualUiTool;/,
-  'While a sketch tool is active, the generic manual-layout UI must keep its own selection instead of mirroring sketch mode as shelf\/rod.'
+  /const activeManualToolForUi = usesManualDivisionControls \? manualTool : manualUiTool;/,
+  'Unrelated sketch tools must keep the generic manual-layout UI selection, while sketch division tools project their canonical shelf\/rod\/storage choice.'
 );

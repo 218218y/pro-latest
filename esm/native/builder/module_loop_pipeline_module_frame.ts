@@ -1,7 +1,5 @@
-import {
-  DRAWER_DIMENSIONS,
-  CARCASS_SHELL_DIMENSIONS,
-} from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { CARCASS_SHELL_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { resolveExternalDrawerFitFromBody } from '../../shared/wardrobe_construction_validation_shared.js';
 import { resolveModuleDepthProfile } from './module_loop_pipeline_module_depth.js';
 
 import type { ModuleLoopRuntime } from './module_loop_pipeline_runtime.js';
@@ -17,6 +15,10 @@ export interface ResolvedModuleFrame {
   moduleInternalZ: number;
   moduleOuterZ: number;
   moduleFrontZ: number;
+  moduleDoorDepth: number;
+  moduleDoorFrontZ: number;
+  moduleHitDepth: number;
+  moduleHitZ: number;
   moduleCabinetBodyHeight: number;
   moduleCabinetTopY: number;
   moduleCenterX: number;
@@ -44,8 +46,6 @@ const DEFAULT_MODULE_CONFIG: ModuleConfigLike = {
   extDrawers: 0,
   extDrawersCount: 0,
   hasShoeDrawer: false,
-  intDrawersSlot: 0,
-  intDrawersList: [],
   isCustom: false,
 };
 
@@ -75,6 +75,10 @@ export function resolveModuleFrame(
     moduleInternalZ: depth.moduleInternalZ,
     moduleOuterZ: depth.moduleOuterZ,
     moduleFrontZ: depth.moduleFrontZ,
+    moduleDoorDepth: depth.moduleDoorDepth,
+    moduleDoorFrontZ: depth.moduleDoorFrontZ,
+    moduleHitDepth: depth.moduleHitDepth,
+    moduleHitZ: depth.moduleHitZ,
     moduleCabinetBodyHeight,
     moduleCabinetTopY,
     moduleCenterX,
@@ -90,16 +94,19 @@ export function resolveModuleVerticalMetrics(
   const externalW = frame.modWidth;
   const externalCenterX = frame.moduleCenterX;
   const internalStartY = runtime.startY + runtime.woodThick;
-  const shoeDrawerHeight = DRAWER_DIMENSIONS.external.shoeHeightM;
-  const regDrawerHeight = DRAWER_DIMENSIONS.external.regularHeightM;
-  const hasShoe = !!frame.config.hasShoeDrawer;
-  const regCount = Number(frame.config.extDrawersCount || 0);
-
-  let drawerHeightTotal = 0;
-  if (runtime.cfg.wardrobeType === 'hinged') {
-    if (hasShoe) drawerHeightTotal += shoeDrawerHeight;
-    if (regCount > 0) drawerHeightTotal += regCount * regDrawerHeight;
-  }
+  const drawerFit =
+    runtime.cfg.wardrobeType === 'hinged'
+      ? resolveExternalDrawerFitFromBody({
+          startY: runtime.startY,
+          cabinetBodyHeight: frame.moduleCabinetBodyHeight,
+          woodThick: runtime.woodThick,
+          hasShoe: frame.config.hasShoeDrawer,
+          regCount: frame.config.extDrawersCount,
+        })
+      : null;
+  const hasShoe = drawerFit ? drawerFit.hasShoe : false;
+  const regCount = drawerFit ? drawerFit.regCount : 0;
+  const drawerHeightTotal = drawerFit ? drawerFit.drawerHeightTotal : 0;
 
   const effectiveBottomY = internalStartY + drawerHeightTotal;
   const effectiveTopY = runtime.startY + frame.moduleCabinetBodyHeight - runtime.woodThick;

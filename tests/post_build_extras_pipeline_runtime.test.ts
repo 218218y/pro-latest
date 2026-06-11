@@ -54,6 +54,45 @@ test('post-build extras: global click mode uses drawer snap only as a narrow mis
   assert.deepEqual(calls, [{ op: 'snapDrawersToTargets' }]);
 });
 
+test('post-build extras: pending drawer rebuild intent defers drawer snapping to render-loop animation', () => {
+  const calls: any[] = [];
+  const App: any = {
+    services: {
+      drawer: { runtime: { snapAfterBuildId: 'int_4', openAfterBuildId: 'int_4' } },
+      doors: {
+        syncVisualsNow(opts?: unknown) {
+          calls.push({ op: 'syncVisualsNow', opts });
+        },
+        snapDrawersToTargets() {
+          calls.push({ op: 'snapDrawersToTargets' });
+        },
+      },
+    },
+  };
+
+  applyPostBuildExtras(createPostBuildContext(App));
+
+  assert.deepEqual(calls, [{ op: 'syncVisualsNow', opts: { open: true, includeDrawers: false } }]);
+});
+
+test('post-build extras: pending drawer rebuild intent suppresses fallback drawer snap when door sync is missing', () => {
+  const calls: any[] = [];
+  const App: any = {
+    services: {
+      drawer: { runtime: { snapAfterBuildId: 'int_4', openAfterBuildId: 'int_4' } },
+      doors: {
+        snapDrawersToTargets() {
+          calls.push({ op: 'snapDrawersToTargets' });
+        },
+      },
+    },
+  };
+
+  applyPostBuildExtras(createPostBuildContext(App));
+
+  assert.deepEqual(calls, []);
+});
+
 test('post-build extras: local click mode applies local state before edit-hold restoration', () => {
   const calls: any[] = [];
   const App: any = {

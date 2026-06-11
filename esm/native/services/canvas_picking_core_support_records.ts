@@ -47,7 +47,6 @@ export function __wp_isDefaultCornerCellCfgLike(cfg0: unknown): boolean {
     const layout = __wp_readRecordString(cfg, 'layout') || 'shelves';
     const ext = __parseIntSafe(__wp_readRecordValue(cfg, 'extDrawersCount'), 0);
     const shoe = __wp_readRecordBoolean(cfg, 'hasShoeDrawer');
-    const list = __wp_readRecordArray(cfg, 'intDrawersList');
     const isCustom = __wp_readRecordBoolean(cfg, 'isCustom');
     const gd = __parseIntSafe(__wp_readRecordValue(cfg, 'gridDivisions'), 6);
 
@@ -65,7 +64,6 @@ export function __wp_isDefaultCornerCellCfgLike(cfg0: unknown): boolean {
       (layout === 'shelves' || layout === '' || layout == null) &&
       ext === 0 &&
       shoe === false &&
-      list.length === 0 &&
       isCustom === false &&
       gd === 6 &&
       storage === false &&

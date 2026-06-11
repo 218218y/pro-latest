@@ -1,11 +1,15 @@
 import { tryHandleCanvasDoorEditClick } from './canvas_picking_door_edit_flow.js';
+import { readSplitVariant } from './canvas_picking_door_edit_shared.js';
+import { tryHandleCanvasDoorCustomSplitScreenRemoveClick } from './canvas_picking_door_split_click_custom.js';
 import { tryHandleCanvasPaintClick } from './canvas_picking_paint_flow.js';
 import { tryHandleCanvasHandleAssignClick } from './canvas_picking_handle_assign_flow.js';
+import { resolveNearbyShelfPaintTarget } from './canvas_picking_shelf_paint_proximity.js';
 import { handleCanvasDoorToggleClick } from './canvas_picking_toggle_flow.js';
+import { getCamera, getWardrobeGroup } from '../runtime/render_access.js';
 import type { CanvasPickingClickRouteArgs } from './canvas_picking_click_route_shared.js';
 
 export function tryHandleCanvasPickingActionRoute(args: CanvasPickingClickRouteArgs): boolean {
-  const { App, hitState, modeState, moduleRefs } = args;
+  const { App, hitState, modeState, moduleRefs, ndcX, ndcY, raycaster, mouse } = args;
   const {
     foundPartId,
     effectiveDoorId,
@@ -16,6 +20,7 @@ export function tryHandleCanvasPickingActionRoute(args: CanvasPickingClickRouteA
     primaryHitPoint,
     doorHitPoint,
     doorHitY,
+    doorHitGroup,
     hitIdentity,
     primaryHitY: _primaryHitY,
   } = hitState;
@@ -32,6 +37,14 @@ export function tryHandleCanvasPickingActionRoute(args: CanvasPickingClickRouteA
   const { __activeStack } = moduleRefs;
 
   if (
+    __isSplitEditMode &&
+    readSplitVariant(App) === 'custom' &&
+    tryHandleCanvasDoorCustomSplitScreenRemoveClick({ App, ndcX, ndcY, camera: getCamera(App) })
+  ) {
+    return true;
+  }
+
+  if (
     tryHandleCanvasDoorEditClick({
       App,
       foundPartId,
@@ -39,6 +52,11 @@ export function tryHandleCanvasPickingActionRoute(args: CanvasPickingClickRouteA
       activeStack: __activeStack,
       foundModuleStack,
       doorHitY,
+      ndcX,
+      ndcY,
+      raycaster,
+      mouse,
+      camera: getCamera(App),
       isSplitEditMode: __isSplitEditMode,
       isRemoveDoorMode: __isRemoveDoorMode,
       isHingeEditMode: __isHingeEditMode,
@@ -46,19 +64,32 @@ export function tryHandleCanvasPickingActionRoute(args: CanvasPickingClickRouteA
       isDoorTrimMode: __isDoorTrimMode,
       doorHitPoint: doorHitPoint && typeof doorHitPoint === 'object' ? doorHitPoint : null,
       doorHitObject,
+      doorHitGroup: doorHitGroup && typeof doorHitGroup === 'object' ? doorHitGroup : null,
     })
   ) {
     return true;
   }
 
+  const wardrobeGroup = __isPaintMode ? getWardrobeGroup(App) : null;
+  const nearbyShelfPaintTarget =
+    __isPaintMode && !foundPartId && wardrobeGroup
+      ? resolveNearbyShelfPaintTarget({
+          App,
+          wardrobeGroup: wardrobeGroup as never,
+          intersects: hitState.intersects,
+          primaryHitPoint: primaryHitPoint || null,
+        })
+      : null;
+  const paintFoundPartId = nearbyShelfPaintTarget?.partId || foundPartId;
+
   if (
     tryHandleCanvasPaintClick({
       App,
-      foundPartId,
+      foundPartId: paintFoundPartId,
       effectiveDoorId,
-      activeStack: __activeStack,
+      activeStack: nearbyShelfPaintTarget?.stackKey || __activeStack,
       isPaintMode: __isPaintMode,
-      primaryHitObject,
+      primaryHitObject: nearbyShelfPaintTarget?.object || primaryHitObject,
       doorHitObject,
       primaryHitPoint,
       doorHitPoint,

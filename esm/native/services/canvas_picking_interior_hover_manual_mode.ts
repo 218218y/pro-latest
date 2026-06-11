@@ -29,6 +29,7 @@ import {
   readExistingShelfVariant,
   readSavedGridDivisions,
 } from './canvas_picking_interior_hover_layout_family_shared.js';
+import { resolveManualLayoutShelfFillPlan } from './canvas_picking_manual_layout_config_ops.js';
 
 export function tryHandleCanvasManualLayoutHover(args: CanvasInteriorHoverFlowArgs): boolean {
   const {
@@ -84,13 +85,20 @@ export function tryHandleCanvasManualLayoutHover(args: CanvasInteriorHoverFlowAr
 
     if (manualTool === 'shelf' && isNewLayout && setLayoutPreview) {
       hideSketchPreview({ App, hideSketchPreview: hideSketchPreviewFn });
-      const shelfYs: number[] = [];
-      for (let i = 1; i < currentToolDivs; i++) shelfYs.push(target.bottomY + i * step);
+      const shelfPlan = resolveManualLayoutShelfFillPlan({
+        cfgRef,
+        divs: currentToolDivs,
+        shelfVariant,
+        topY: target.topY,
+        bottomY: target.bottomY,
+        pad,
+        woodThick: target.woodThick,
+      });
       setLayoutPreview(
         buildLayoutPreviewPayload({
           App,
           target,
-          shelfYs,
+          shelfYs: shelfPlan.shelfYs,
           rodYs: [],
           storageBarrier: null,
           shelfVariant,

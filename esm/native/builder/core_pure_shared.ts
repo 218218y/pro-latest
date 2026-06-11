@@ -3,7 +3,6 @@
 import type {
   InteriorCustomOpsLike,
   InteriorRodOpLike,
-  InternalDrawerOpLike,
   ModulesStructureItemLike,
   NormalizedTopModuleConfigLike,
   UnknownRecord,
@@ -27,7 +26,7 @@ export type HingedDoorPivotSpec = {
 
 export type MutableRecord = UnknownRecord & { [key: string]: unknown };
 
-export type { InteriorCustomOpsLike, InteriorRodOpLike, InternalDrawerOpLike, UnknownRecord };
+export type { InteriorCustomOpsLike, InteriorRodOpLike, UnknownRecord };
 
 export function _asObject(x: unknown): UnknownRecord | null {
   return asRecord(x);
@@ -75,8 +74,6 @@ export function __defaultModuleCfg(doors: number): ModuleConfig {
     layout: 'shelves',
     extDrawersCount: 0,
     hasShoeDrawer: false,
-    intDrawersSlot: 0,
-    intDrawersList: [],
     isCustom: false,
     customData: {
       shelves: [false, false, false, false, false, false],

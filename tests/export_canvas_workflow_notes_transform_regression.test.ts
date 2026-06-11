@@ -7,6 +7,7 @@ type MutableApp = {
   sketchMode: boolean;
   doorsOpen: boolean;
   renderLog: unknown[];
+  ui?: Record<string, unknown>;
 };
 
 function createVec3(x: number, y: number, z: number) {
@@ -80,11 +81,16 @@ function createFakeCanvas() {
   };
 }
 
-function createWorkflowHarness(initial: { sketchMode: boolean; doorsOpen: boolean }) {
+function createWorkflowHarness(initial: {
+  sketchMode: boolean;
+  doorsOpen: boolean;
+  ui?: Record<string, unknown>;
+}) {
   const App: MutableApp = {
     sketchMode: initial.sketchMode,
     doorsOpen: initial.doorsOpen,
     renderLog: [],
+    ui: initial.ui,
   };
 
   const viewerRect = { left: 0, top: 0, width: 200, height: 100 } as DOMRectReadOnly;
@@ -106,6 +112,7 @@ function createWorkflowHarness(initial: { sketchMode: boolean; doorsOpen: boolea
   const scene = {} as any;
 
   const notesTransforms: unknown[] = [];
+  const cameraWorkflowCalls = { snap: 0, autoZoom: 0, scale: 0 };
 
   const makeTransformTag = (input?: any) => ({
     panel: App.doorsOpen ? 'open' : 'closed',
@@ -158,14 +165,17 @@ function createWorkflowHarness(initial: { sketchMode: boolean; doorsOpen: boolea
     _setBodyDoorStatusForNotes: () => undefined,
     _confirmOrProceed: () => true,
     autoZoomCamera: () => {
+      cameraWorkflowCalls.autoZoom += 1;
       camera.position.y = 4.5;
       controls.target.y = 4.25;
     },
     _snapCameraToFrontPreset: () => {
+      cameraWorkflowCalls.snap += 1;
       camera.position.y = 2.2;
       controls.target.y = 1.4;
     },
     scaleViewportCameraDistance: () => {
+      cameraWorkflowCalls.scale += 1;
       camera.position.y += 0.5;
     },
     _captureExportRefPoints: () => ({
@@ -198,31 +208,81 @@ function createWorkflowHarness(initial: { sketchMode: boolean; doorsOpen: boolea
     },
   });
 
-  return { App, ops, notesTransforms };
+  return { App, ops, notesTransforms, cameraWorkflowCalls };
 }
 
 test('render/sketch export recalculates note transform after switching each viewport mode', async () => {
-  const { App, ops, notesTransforms } = createWorkflowHarness({ sketchMode: true, doorsOpen: false });
+  const { App, ops, notesTransforms, cameraWorkflowCalls } = createWorkflowHarness({
+    sketchMode: true,
+    doorsOpen: false,
+  });
 
   await ops.exportRenderAndSketch(App as any);
 
   assert.equal(notesTransforms.length, 2);
   assert.equal((notesTransforms[0] as any)?.mode, 'render');
   assert.equal((notesTransforms[1] as any)?.mode, 'sketch');
-  assert.equal((notesTransforms[0] as any)?.preCamY, 8.75);
-  assert.equal((notesTransforms[1] as any)?.preCamY, 8.75);
+  assert.equal((notesTransforms[0] as any)?.preCamY, 2.2);
+  assert.equal((notesTransforms[1] as any)?.preCamY, 2.2);
   assert.equal((notesTransforms[0] as any)?.postPvY, 5);
   assert.equal((notesTransforms[1] as any)?.postPvY, 5);
+  assert.deepEqual(cameraWorkflowCalls, { snap: 2, autoZoom: 2, scale: 2 });
 });
 
 test('open/closed export recalculates note transform after switching each door state', async () => {
-  const { App, ops, notesTransforms } = createWorkflowHarness({ sketchMode: false, doorsOpen: true });
+  const { App, ops, notesTransforms, cameraWorkflowCalls } = createWorkflowHarness({
+    sketchMode: false,
+    doorsOpen: true,
+  });
 
   await ops.exportDualImage(App as any);
 
   assert.equal(notesTransforms.length, 2);
   assert.equal((notesTransforms[0] as any)?.panel, 'closed');
   assert.equal((notesTransforms[1] as any)?.panel, 'open');
-  assert.equal((notesTransforms[0] as any)?.preCamY, 8.75);
-  assert.equal((notesTransforms[1] as any)?.preCamY, 8.75);
+  assert.equal((notesTransforms[0] as any)?.preCamY, 2.2);
+  assert.equal((notesTransforms[1] as any)?.preCamY, 2.2);
+  assert.deepEqual(cameraWorkflowCalls, { snap: 2, autoZoom: 2, scale: 2 });
+});
+
+test('chest render/sketch export preserves the live viewport and uses screenshot note mapping', async () => {
+  const { App, ops, notesTransforms, cameraWorkflowCalls } = createWorkflowHarness({
+    sketchMode: true,
+    doorsOpen: false,
+    ui: { isChestMode: true },
+  });
+
+  await ops.exportRenderAndSketch(App as any);
+
+  assert.deepEqual(cameraWorkflowCalls, { snap: 0, autoZoom: 0, scale: 0 });
+  assert.equal(notesTransforms.length, 2);
+  for (const transform of notesTransforms as any[]) {
+    assert.equal(transform?.sx, 1);
+    assert.equal(transform?.sy, 1);
+    assert.equal(transform?.dx, 0);
+    assert.equal(transform?.dy, 0);
+    assert.deepEqual(transform?.sourceRect, { left: 0, top: 0, width: 200, height: 100 });
+    assert.equal(transform?.kind, undefined);
+  }
+});
+
+test('corner open/closed export preserves the live viewport and uses screenshot note mapping', async () => {
+  const { App, ops, notesTransforms, cameraWorkflowCalls } = createWorkflowHarness({
+    sketchMode: false,
+    doorsOpen: true,
+    ui: { cornerMode: true },
+  });
+
+  await ops.exportDualImage(App as any);
+
+  assert.deepEqual(cameraWorkflowCalls, { snap: 0, autoZoom: 0, scale: 0 });
+  assert.equal(notesTransforms.length, 2);
+  for (const transform of notesTransforms as any[]) {
+    assert.equal(transform?.sx, 1);
+    assert.equal(transform?.sy, 1);
+    assert.equal(transform?.dx, 0);
+    assert.equal(transform?.dy, 0);
+    assert.deepEqual(transform?.sourceRect, { left: 0, top: 0, width: 200, height: 100 });
+    assert.equal(transform?.kind, undefined);
+  }
 });

@@ -111,12 +111,12 @@ test('[ui-write-access] setUiScalarSoft skips identical values but still routes 
 
   assert.equal(setUiScalarSoft(App, 'activeTab', 'design', { source: 'same' }), undefined);
 
-  const out = setUiScalarSoft(App, 'activeTab', 'render', { source: 'changed' });
-  assert.deepEqual(out, { via: 'ui.setScalarSoft', key: 'activeTab', value: 'render' });
+  const out = setUiScalarSoft(App, 'activeTab', 'settings', { source: 'changed' });
+  assert.deepEqual(out, { via: 'ui.setScalarSoft', key: 'activeTab', value: 'settings' });
   assert.equal(calls.length, 1);
   assert.equal(calls[0]?.op, 'ui.setScalarSoft');
   assert.equal(calls[0]?.key, 'activeTab');
-  assert.equal(calls[0]?.value, 'render');
+  assert.equal(calls[0]?.value, 'settings');
   assert.match(String(calls[0]?.meta?.source || ''), /changed/);
 });
 

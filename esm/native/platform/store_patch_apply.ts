@@ -205,10 +205,17 @@ export function applyConfigPatch(
   const { clean, replace, snapshot } = cleanConfigPatchInput(configPatch);
   const prevRec = asRecordOrEmpty(prevConfig);
   const useLight = !!(actionMeta && actionMeta.noHistory === true && actionMeta.noAutosave === true);
+  const isReplaceKey = (key: string): boolean => !!(replace && hasOwn(replace, key) && replace[key]);
+  const readSanitizePrev = (key: string, previousValue: unknown, nextValue: unknown): unknown =>
+    isReplaceKey(key) ? nextValue : previousValue;
   const comparableCfgSnapshot = buildComparableCfgSnapshot(prevRec, clean);
 
   if (hasOwn(clean, 'modulesConfiguration')) {
-    const prevMods = prevRec.modulesConfiguration;
+    const prevMods = readSanitizePrev(
+      'modulesConfiguration',
+      prevRec.modulesConfiguration,
+      clean.modulesConfiguration
+    );
     const nextMods = clean.modulesConfiguration;
     clean.modulesConfiguration = sanitizeComparableModulesEntry(
       'modulesConfiguration',
@@ -221,7 +228,11 @@ export function applyConfigPatch(
   }
 
   if (hasOwn(clean, 'stackSplitLowerModulesConfiguration')) {
-    const prevLower = prevRec.stackSplitLowerModulesConfiguration;
+    const prevLower = readSanitizePrev(
+      'stackSplitLowerModulesConfiguration',
+      prevRec.stackSplitLowerModulesConfiguration,
+      clean.stackSplitLowerModulesConfiguration
+    );
     const nextLower = clean.stackSplitLowerModulesConfiguration;
     clean.stackSplitLowerModulesConfiguration = sanitizeComparableModulesEntry(
       'stackSplitLowerModulesConfiguration',
@@ -234,8 +245,8 @@ export function applyConfigPatch(
   }
 
   if (hasOwn(clean, 'cornerConfiguration')) {
-    const prevCorner = prevRec.cornerConfiguration;
     const nextCorner = clean.cornerConfiguration;
+    const prevCorner = readSanitizePrev('cornerConfiguration', prevRec.cornerConfiguration, nextCorner);
     clean.cornerConfiguration = useLight
       ? sanitizeCornerConfigurationListsOnly(nextCorner, prevCorner)
       : sanitizeCornerConfigurationForPatch(nextCorner, prevCorner);

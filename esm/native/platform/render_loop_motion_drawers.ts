@@ -1,12 +1,126 @@
 import type { AppContainer } from '../../../types';
 
 import { readConfigScalarOrDefaultFromApp } from '../runtime/config_selectors.js';
-import { getDrawersArray, getRenderSlot, setRenderSlot } from '../runtime/render_access.js';
+import {
+  getDrawersArray,
+  getRenderSlot,
+  readRenderCacheValue,
+  setRenderSlot,
+} from '../runtime/render_access.js';
 import { readFiniteNumber, readFiniteNumberOrNull } from '../runtime/render_runtime_primitives.js';
 import { getDrawerModuleKey } from '../runtime/doors_runtime_support.js';
+import { drawerVisualMatchesId, isExplicitExternalDrawerVisual } from '../runtime/drawer_visual_identity.js';
 
 import type { DebugLogFn, MotionFrameState } from './render_loop_motion_shared.js';
 import { asDrawerMotion, moveDrawerGroupPosition } from './render_loop_motion_shared.js';
+
+type PreviewMeshMotionLike = {
+  visible?: boolean;
+  position?: { x?: number; y?: number; z?: number; set?: (x: number, y: number, z: number) => unknown };
+};
+
+type DrawerDividerMotionPreviewState = {
+  drawerId: string | number;
+  closedX: number;
+  closedY: number;
+  closedZ: number;
+  boxBaseX: number;
+  boxBaseY: number;
+  boxBaseZ: number;
+  shelfBaseX: number;
+  shelfBaseY: number;
+  shelfBaseZ: number;
+};
+
+function readMotionPreviewNumber(rec: Record<string, unknown> | null, key: string): number | null {
+  const n = Number(rec?.[key]);
+  return Number.isFinite(n) ? n : null;
+}
+
+function readDrawerDividerMotionPreviewState(value: unknown): DrawerDividerMotionPreviewState | null {
+  const rec = value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+  if (!rec) return null;
+  const drawerId = rec.drawerId;
+  if (typeof drawerId !== 'string' && typeof drawerId !== 'number') return null;
+  const closedX = readMotionPreviewNumber(rec, 'closedX');
+  const closedY = readMotionPreviewNumber(rec, 'closedY');
+  const closedZ = readMotionPreviewNumber(rec, 'closedZ');
+  const boxBaseX = readMotionPreviewNumber(rec, 'boxBaseX');
+  const boxBaseY = readMotionPreviewNumber(rec, 'boxBaseY');
+  const boxBaseZ = readMotionPreviewNumber(rec, 'boxBaseZ');
+  const shelfBaseX = readMotionPreviewNumber(rec, 'shelfBaseX');
+  const shelfBaseY = readMotionPreviewNumber(rec, 'shelfBaseY');
+  const shelfBaseZ = readMotionPreviewNumber(rec, 'shelfBaseZ');
+  if (
+    closedX == null ||
+    closedY == null ||
+    closedZ == null ||
+    boxBaseX == null ||
+    boxBaseY == null ||
+    boxBaseZ == null ||
+    shelfBaseX == null ||
+    shelfBaseY == null ||
+    shelfBaseZ == null
+  ) {
+    return null;
+  }
+  return {
+    drawerId,
+    closedX,
+    closedY,
+    closedZ,
+    boxBaseX,
+    boxBaseY,
+    boxBaseZ,
+    shelfBaseX,
+    shelfBaseY,
+    shelfBaseZ,
+  };
+}
+
+function setPreviewMeshPosition(mesh: PreviewMeshMotionLike | null, x: number, y: number, z: number): void {
+  if (!mesh || !mesh.position) return;
+  if (typeof mesh.position.set === 'function') {
+    mesh.position.set(x, y, z);
+    return;
+  }
+  mesh.position.x = x;
+  mesh.position.y = y;
+  mesh.position.z = z;
+}
+
+function syncDrawerDividerMotionPreview(App: AppContainer, drawer: ReturnType<typeof asDrawerMotion>): void {
+  if (!drawer || !drawer.group?.position) return;
+  try {
+    const preview = readRenderCacheValue<Record<string, unknown>>(App, 'sketchPlacementPreview');
+    const userData =
+      preview && typeof preview.userData === 'object' ? (preview.userData as Record<string, unknown>) : null;
+    const state = readDrawerDividerMotionPreviewState(userData?.__drawerDividerMotionPreview);
+    if (!state || !drawerVisualMatchesId(drawer, state.drawerId)) return;
+
+    const pos = drawer.group.position;
+    const offsetX = readFiniteNumber(pos.x, state.closedX) - state.closedX;
+    const offsetY = readFiniteNumber(pos.y, state.closedY) - state.closedY;
+    const offsetZ = readFiniteNumber(pos.z, state.closedZ) - state.closedZ;
+
+    const boxTop = userData?.__boxTop as PreviewMeshMotionLike | null;
+    const shelfA = userData?.__shelfA as PreviewMeshMotionLike | null;
+    setPreviewMeshPosition(
+      boxTop,
+      state.boxBaseX + offsetX,
+      state.boxBaseY + offsetY,
+      state.boxBaseZ + offsetZ
+    );
+    setPreviewMeshPosition(
+      shelfA,
+      state.shelfBaseX + offsetX,
+      state.shelfBaseY + offsetY,
+      state.shelfBaseZ + offsetZ
+    );
+  } catch {
+    // Preview syncing is visual-only; drawer motion must never fail because of it.
+  }
+}
 
 export function updateRenderLoopDrawerMotions(
   App: AppContainer,
@@ -43,8 +157,13 @@ export function updateRenderLoopDrawerMotions(
     const group = d.group;
     let isInternal = typeof wardrobeType !== 'undefined' && wardrobeType === 'sliding';
     if (!isInternal) {
-      if (typeof d.isInternal === 'undefined') d.isInternal = !!(d.id && String(d.id).includes('int'));
-      isInternal = !!d.isInternal;
+      if (isExplicitExternalDrawerVisual(d)) {
+        d.isInternal = false;
+        isInternal = false;
+      } else {
+        if (typeof d.isInternal === 'undefined') d.isInternal = !!(d.id && String(d.id).includes('int'));
+        isInternal = !!d.isInternal;
+      }
     }
 
     let shouldOpen = frame.globalClickMode
@@ -69,7 +188,7 @@ export function updateRenderLoopDrawerMotions(
       }
     }
 
-    if (frame.sketchIntDrawersEditActive || frame.intDrawerEditActive) {
+    if (frame.sketchIntDrawersEditActive) {
       shouldOpen = false;
       try {
         d.isOpen = false;
@@ -86,7 +205,7 @@ export function updateRenderLoopDrawerMotions(
     } else if (
       !forceClosedBySketchExternalDrawerEdit &&
       frame.forcedOpenDrawerId != null &&
-      d.id === frame.forcedOpenDrawerId
+      drawerVisualMatchesId(d, frame.forcedOpenDrawerId)
     ) {
       shouldOpen = true;
     }
@@ -96,6 +215,7 @@ export function updateRenderLoopDrawerMotions(
     if (moveDrawerGroupPosition(group, target)) {
       hasActiveDrawerMotion = true;
     }
+    syncDrawerDividerMotionPreview(App, d);
 
     if (frame.sketchEditActive && isInternal && target === d.closed) {
       try {

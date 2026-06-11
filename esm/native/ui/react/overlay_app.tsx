@@ -9,10 +9,10 @@ import { OverlayPdfHost } from './overlay_pdf_host.js';
 import { QuickActionsDock } from './overlay_quick_actions_dock.js';
 import { OverlayTopControls } from './overlay_top_controls.js';
 
-function useOverlayFeedbackBridge(): OverlayFeedbackHostBridge {
+function useOverlayFeedbackBridge(pdfOpen: boolean): OverlayFeedbackHostBridge {
   const app = useApp();
   const doc = getDocumentMaybe(app);
-  const toastContainer = ensureToastContainerMaybe(app);
+  const toastContainer = ensureToastContainerMaybe(app, { preferBody: pdfOpen });
 
   return useMemo(
     () => ({
@@ -26,7 +26,7 @@ function useOverlayFeedbackBridge(): OverlayFeedbackHostBridge {
 
 export function ReactOverlayApp() {
   const pdfOpen = useUiSelector(ui => !!ui.orderPdfEditorOpen);
-  const feedbackBridge = useOverlayFeedbackBridge();
+  const feedbackBridge = useOverlayFeedbackBridge(pdfOpen);
 
   return (
     <>

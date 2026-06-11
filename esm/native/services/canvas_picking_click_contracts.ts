@@ -18,6 +18,7 @@ export type CanvasPickingClickHitState = {
   foundDrawerId: string | null;
   primaryHitObject: HitObjectLike | null;
   doorHitObject: HitObjectLike | null;
+  doorHitGroup: HitObjectLike | null;
   primaryHitPoint: { x?: number; y?: number; z?: number } | null;
   doorHitPoint: { x?: number; y?: number; z?: number } | null;
   moduleHitY: number | null;

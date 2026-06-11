@@ -26,6 +26,7 @@ export {
 export {
   readCloudSyncSketchPayloadLike,
   readCloudSyncSyncPinPayloadLike,
+  readCloudSyncContentsTogglePayloadLike,
   readCloudSyncTabsGatePayloadFields,
 } from './cloud_sync_support_payload.js';
 

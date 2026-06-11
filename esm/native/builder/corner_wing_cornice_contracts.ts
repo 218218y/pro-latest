@@ -3,7 +3,7 @@
 // Keep the public wing cornice owner focused on flow routing while the heavier
 // profile builders consume one canonical set of contracts.
 
-import type { BufferAttrLike } from './corner_geometry_plan.js';
+import type { BufferAttrLike, CornerCell } from './corner_geometry_plan.js';
 
 export type UnknownRecord = Record<string, unknown>;
 
@@ -19,6 +19,7 @@ export type CorniceSegment = {
   flipX?: boolean;
   miterStartTrim?: number;
   miterEndTrim?: number;
+  miterMode?: 'inner_trim' | 'outer_extend';
   x: number;
   y: number;
   z: number;
@@ -63,6 +64,7 @@ export type CorniceCtxLike = {
   wingH: number;
   wingD: number;
   wingW: number;
+  blindWidth: number;
   cornerConnectorEnabled: boolean;
   hasCorniceEnabled: boolean;
   __corniceAllowedForThisStack: boolean;
@@ -77,6 +79,7 @@ export type CorniceCtxLike = {
 export type CorniceLocalsLike = {
   __wingBackPanelThick: number;
   __wingBackPanelCenterZ: number;
+  cornerCells?: CornerCell[];
 };
 
 export type CorniceHelpersLike = {
@@ -95,9 +98,11 @@ export type CorniceParamsLike = {
 
 export function asObject(value: unknown): UnknownRecord | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const out: UnknownRecord = {};
-  for (const key of Object.keys(value)) out[key] = Reflect.get(value, key);
-  return out;
+  // Do not clone with Object.keys(): THREE.Group/Mesh and the THREE namespace expose
+  // important API members such as add(), Shape, Mesh, and ExtrudeGeometry through
+  // prototypes or module accessors.  Returning the original record keeps the runtime
+  // contract checks aligned with the actual render objects.
+  return value as UnknownRecord;
 }
 
 export function isThreeCorniceLike(value: unknown): value is ThreeCorniceLike {

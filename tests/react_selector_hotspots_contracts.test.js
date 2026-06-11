@@ -47,9 +47,9 @@ const designMultiColor = readFirstExisting(
   ['../esm/native/ui/react/tabs/design_tab_multicolor_panel.tsx'],
   import.meta.url
 );
-const renderTab = [
-  readFirstExisting(['../esm/native/ui/react/tabs/use_render_tab_controller.ts'], import.meta.url),
-  readFirstExisting(['../esm/native/ui/react/tabs/use_render_tab_controller_state.ts'], import.meta.url),
+const settingsVisual = [
+  readFirstExisting(['../esm/native/ui/react/tabs/use_settings_visual_controller.ts'], import.meta.url),
+  readFirstExisting(['../esm/native/ui/react/tabs/use_settings_visual_controller_state.ts'], import.meta.url),
 ].join('\n');
 const libraryPresetIndexUrl = '../esm/native/features/library_preset/index.ts';
 
@@ -79,10 +79,10 @@ test('[react-hotspots] grouped shallow selectors remain the canonical pattern in
   assert.doesNotMatch(orderPdfOverlay, /const zoomFromUi = useUiSelector\(/);
 });
 
-test('[react-hotspots] StructureTab, DesignTab, and RenderTab keep grouped selector boundaries', () => {
+test('[react-hotspots] StructureTab, DesignTab, and SettingsVisual keep grouped selector boundaries', () => {
   assert.match(
     structureTabControls,
-    /const \{ wardrobeType, boardMaterial \} = useCfgSelectorShallow\(cfg => \(\{/
+    /const \{ wardrobeType, boardMaterial, doorMountMode \} = useCfgSelectorShallow\(cfg => \(\{/
   );
   assert.doesNotMatch(structureTabControls, /const wardrobeType = useCfgSelector\(/);
   assert.doesNotMatch(structureTabControls, /const boardMaterial = useCfgSelector\(/);
@@ -128,13 +128,13 @@ test('[react-hotspots] StructureTab, DesignTab, and RenderTab keep grouped selec
   );
   assert.doesNotMatch(designMultiColor, /useStoreSelectorShallow\(st => \{/);
 
-  assert.match(renderTab, /useCfgSelectorShallow\(cfg => readRenderTabCfgState\(cfg\)\)/);
-  assert.match(renderTab, /useUiSelectorShallow\(ui => readRenderTabUiState\(ui\)\)/);
-  assert.match(renderTab, /useRuntimeSelectorShallow\(rt => readRenderTabRuntimeState\(rt\)\)/);
-  assert.doesNotMatch(renderTab, /const lightAmb = useUiSelector\(/);
-  assert.doesNotMatch(renderTab, /const globalClickRt = useRuntimeSelector\(/);
-  assert.doesNotMatch(renderTab, /selectSavedNotesCount\(cfg\),/);
-  assert.doesNotMatch(renderTab, /readConfigArrayFromSnapshot\(cfg, 'savedNotes'/);
+  assert.match(settingsVisual, /useCfgSelectorShallow\(cfg => readSettingsVisualCfgState\(cfg\)\)/);
+  assert.match(settingsVisual, /useUiSelectorShallow\(ui => readSettingsVisualUiState\(ui\)\)/);
+  assert.match(settingsVisual, /useRuntimeSelectorShallow\(rt => readSettingsVisualRuntimeState\(rt\)\)/);
+  assert.doesNotMatch(settingsVisual, /const lightAmb = useUiSelector\(/);
+  assert.doesNotMatch(settingsVisual, /const globalClickRt = useRuntimeSelector\(/);
+  assert.doesNotMatch(settingsVisual, /selectSavedNotesCount\(cfg\),/);
+  assert.doesNotMatch(settingsVisual, /readConfigArrayFromSnapshot\(cfg, 'savedNotes'/);
 });
 
 test('[react-hotspots] StructureTab and PDF/library preset surfaces stay on the cleaned architecture', () => {

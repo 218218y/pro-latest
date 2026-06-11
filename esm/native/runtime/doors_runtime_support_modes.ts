@@ -1,4 +1,3 @@
-import { MODES } from './api.js';
 import { getTools } from './service_access.js';
 import { readRootState } from './root_state_access.js';
 import {
@@ -107,16 +106,4 @@ export function isSketchEditActive(App: AppLike): boolean {
   if (!isManualLayoutEditActive(App)) return false;
   const tool = getSketchManualTool(App);
   return typeof tool === 'string' && tool.startsWith('sketch_');
-}
-
-export function isIntDrawerEditActive(App: AppLike): boolean {
-  try {
-    const INT_DRAWER = readRecord(MODES)?.INT_DRAWER;
-    const modeId = typeof INT_DRAWER === 'string' && INT_DRAWER ? INT_DRAWER : 'int_drawer';
-    const ms = getModeSlice(App);
-    const cur = ms && typeof ms.primary === 'string' ? ms.primary : null;
-    return typeof cur === 'string' && cur === modeId;
-  } catch {
-    return false;
-  }
 }

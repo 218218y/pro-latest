@@ -7,6 +7,7 @@ import type {
 
 import {
   setCfgBoardMaterial as setCfgBoardMaterialApi,
+  setCfgDoorMountMode as setCfgDoorMountModeApi,
   setCfgColorSwatchesOrder as setCfgColorSwatchesOrderApi,
   setCfgGlobalHandleType as setCfgGlobalHandleTypeApi,
   setCfgLibraryMode as setCfgLibraryModeApi,
@@ -37,6 +38,14 @@ function setCfgBoardMaterial(
   meta?: ActionMetaLike
 ): void {
   void setCfgBoardMaterialApi(app, value, meta);
+}
+
+function setCfgDoorMountMode(
+  app: AppContainer,
+  value: ConfigScalarValueMap['doorMountMode'] | unknown,
+  meta?: ActionMetaLike
+): void {
+  void setCfgDoorMountModeApi(app, value, meta);
 }
 
 function setCfgGlobalHandleType(
@@ -90,6 +99,7 @@ function setCfgMultiColorMode(app: AppContainer, on: boolean | unknown, meta?: A
 export {
   runHistoryBatch,
   setCfgBoardMaterial,
+  setCfgDoorMountMode,
   setCfgColorSwatchesOrder,
   setCfgGlobalHandleType,
   setCfgLibraryMode,

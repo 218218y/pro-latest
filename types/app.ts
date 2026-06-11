@@ -213,6 +213,7 @@ export interface StorageKeysLike extends UnknownRecord {
   SAVED_COLORS?: string;
   SAVED_MODELS?: string;
   AUTOSAVE_LATEST?: string;
+  PRIVATE_ROOM?: string;
   [k: string]: unknown;
 }
 

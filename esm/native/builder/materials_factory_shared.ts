@@ -57,25 +57,14 @@ export type MaterialLike = ValueRecord & {
   userData?: ValueRecord;
 };
 
-export type ThreeColorLike = {
-  setStyle: (style: string) => void;
-  getHSL: (target: { h: number; s: number; l: number }) => void;
-  setHSL: (h: number, s: number, l: number) => void;
-  getHexString: () => string;
-};
-
 export type ThreeFactoryLike = ThreeLike & {
   Texture: new () => TextureLike;
   CanvasTexture: new (canvas: CanvasLike) => TextureLike;
   MeshBasicMaterial: new (opts: Record<string, unknown>) => MaterialLike;
   MeshStandardMaterial: new (opts: Record<string, unknown>) => MaterialLike;
-  Color: new () => ThreeColorLike;
   RepeatWrapping: unknown;
   SRGBColorSpace?: unknown;
 };
-
-export const FRONT_SATURATION_BOOST: number = 0.18;
-export const FRONT_LIGHTNESS_BOOST: number = -0.02;
 
 export function isValueRecord(value: unknown): value is ValueRecord {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -160,7 +149,6 @@ function isThreeFactoryLike(value: unknown): value is ThreeFactoryLike {
     typeof value.CanvasTexture === 'function' &&
     typeof value.MeshBasicMaterial === 'function' &&
     typeof value.MeshStandardMaterial === 'function' &&
-    typeof value.Color === 'function' &&
     'RepeatWrapping' in value
   );
 }

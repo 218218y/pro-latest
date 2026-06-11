@@ -6,6 +6,7 @@ import {
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
 
 import { readBaseLegOptions } from '../features/base_leg_support.js';
+import { readModuleConfig } from './build_flow_readers.js';
 import { getBasePlinthHeightM } from '../features/base_plinth_support.js';
 import { _asObject, __asArray, __asInt, __asNum } from './core_pure_shared.js';
 import type { MutableRecord } from './core_pure_shared.js';
@@ -32,6 +33,7 @@ export type PreparedCarcassInput = {
   moduleWidths: number[] | null;
   moduleHeightsRaw: unknown[] | null;
   moduleDepths: number[] | null;
+  moduleConfigs: unknown[] | null;
   hasStepData: boolean;
   hasDepthData: boolean;
   isStepped: boolean;
@@ -108,6 +110,11 @@ export function prepareCarcassInput(input: unknown): PreparedCarcassInput {
     : null;
   const moduleHeightsRaw = Array.isArray(inp.moduleHeightsTotal) ? __asArray(inp.moduleHeightsTotal) : null;
   const moduleDepthsRaw = Array.isArray(inp.moduleDepthsTotal) ? __asArray(inp.moduleDepthsTotal) : null;
+  const moduleConfigsRaw = Array.isArray(inp.moduleCfgList)
+    ? __asArray(inp.moduleCfgList)
+    : Array.isArray(inp.moduleConfigs)
+      ? __asArray(inp.moduleConfigs)
+      : null;
 
   const hasStepData =
     !!moduleWidthsRaw &&
@@ -145,6 +152,10 @@ export function prepareCarcassInput(input: unknown): PreparedCarcassInput {
           return Math.max(woodThick, n);
         })
       : null;
+  const moduleConfigs =
+    moduleConfigsRaw && moduleWidths && moduleConfigsRaw.length === moduleWidths.length
+      ? moduleConfigsRaw.map(cfgMod => readModuleConfig(cfgMod))
+      : null;
 
   if (
     isDepthStepped &&
@@ -172,6 +183,7 @@ export function prepareCarcassInput(input: unknown): PreparedCarcassInput {
     moduleWidths,
     moduleHeightsRaw,
     moduleDepths,
+    moduleConfigs,
     hasStepData,
     hasDepthData,
     isStepped,

@@ -3,6 +3,13 @@ import assert from 'node:assert/strict';
 
 import { readRendererCompatDefaults } from '../esm/native/runtime/render_access.ts';
 import { applyViewMode } from '../esm/native/services/scene_view_lighting.ts';
+import { LIGHT_PRESETS } from '../esm/native/ui/react/tabs/settings_visual_shared_lighting.ts';
+import {
+  NORMAL_AMBIENT_DEFAULT,
+  NORMAL_DIR_DEFAULT,
+  NORMAL_EXPOSURE,
+  SKETCH_AMBIENT_DEFAULT,
+} from '../esm/native/services/scene_view_lighting_shared.ts';
 
 type AnyRecord = Record<string, unknown>;
 
@@ -106,6 +113,14 @@ function makeApp() {
   return { App, state, floor, smartFloor, renderCalls };
 }
 
+test('scene view normal lighting matches the default advanced-lighting preset', () => {
+  assert.equal(LIGHT_PRESETS.default.amb, NORMAL_AMBIENT_DEFAULT);
+  assert.equal(LIGHT_PRESETS.default.dir, NORMAL_DIR_DEFAULT);
+  assert.equal(LIGHT_PRESETS.default.x, 5);
+  assert.equal(LIGHT_PRESETS.default.y, 8);
+  assert.equal(LIGHT_PRESETS.default.z, 8);
+});
+
 test('scene view lighting keeps renderer compat defaults detached and restores them in sketch mode', () => {
   const { App, state, floor, smartFloor, renderCalls } = makeApp();
 
@@ -113,16 +128,16 @@ test('scene view lighting keeps renderer compat defaults detached and restores t
 
   assert.equal(App.render.renderer.outputColorSpace, 'srgb');
   assert.equal(App.render.renderer.toneMapping, 'neutral');
-  assert.equal(App.render.renderer.toneMappingExposure, 1.5);
-  assert.equal(App.render.renderer.useLegacyLights, true);
+  assert.equal(App.render.renderer.toneMappingExposure, NORMAL_EXPOSURE);
+  assert.equal(App.render.renderer.useLegacyLights, false);
   assert.deepEqual(readRendererCompatDefaults(App), {
     outputColorSpace: 'initialSpace',
     toneMapping: 'initialTone',
     toneMappingExposure: 0.75,
     useLegacyLights: false,
   });
-  assert.equal(App.render.ambLightObj.intensity, 0.7);
-  assert.equal(App.render.dirLightObj.intensity, 1.45);
+  assert.equal(App.render.ambLightObj.intensity, NORMAL_AMBIENT_DEFAULT);
+  assert.equal(App.render.dirLightObj.intensity, NORMAL_DIR_DEFAULT);
   assert.equal(App.render.dirLightObj.visible, true);
   assert.equal(App.render.dirLightObj.position.x, -5);
   assert.equal(App.render.dirLightObj.position.y, 8);
@@ -141,7 +156,7 @@ test('scene view lighting keeps renderer compat defaults detached and restores t
   assert.equal(App.render.renderer.toneMapping, 'initialTone');
   assert.equal(App.render.renderer.toneMappingExposure, 0.75);
   assert.equal(App.render.renderer.useLegacyLights, false);
-  assert.equal(App.render.ambLightObj.intensity, 0.95);
+  assert.equal(App.render.ambLightObj.intensity, SKETCH_AMBIENT_DEFAULT);
   assert.equal(App.render.dirLightObj.visible, false);
   assert.equal(App.render.renderer.shadowMap.needsUpdate, false);
   assert.equal(floor.visible, false);

@@ -143,60 +143,6 @@ function EmbeddedExternalDrawerSketchControls(props: {
   );
 }
 
-function EmbeddedInternalDrawerSketchControls(props: {
-  sketchControls: EmbeddedSketchInternalDrawersControlsProps;
-  isSketchInternalDrawersToolActive: boolean;
-}): ReactElement {
-  const { sketchControls, isSketchInternalDrawersToolActive } = props;
-  const heightController = createEmbeddedInternalDrawerHeightController(
-    sketchControls,
-    isSketchInternalDrawersToolActive
-  );
-
-  return (
-    <div className="wp-r-embedded-sketch-drawers">
-      <ModeToggleButton
-        active={isSketchInternalDrawersToolActive}
-        className="wp-r-editmode-toggle--fullrow"
-        icon={
-          <i
-            className={isSketchInternalDrawersToolActive ? 'fas fa-check' : 'fas fa-pencil-ruler'}
-            aria-hidden="true"
-          />
-        }
-        onClick={() => {
-          sketchControls.setSketchShelvesOpen(false);
-          sketchControls.setSketchRowOpen(false);
-          if (isSketchInternalDrawersToolActive) {
-            sketchControls.exitManual();
-            return;
-          }
-          sketchControls.enterSketchIntDrawersTool(sketchControls.sketchIntDrawerHeightCm);
-        }}
-        data-testid="interior-internal-drawers-sketch-button"
-      >
-        מגירות פנימיות לפי סקיצה
-      </ModeToggleButton>
-
-      <div className={cx(isSketchInternalDrawersToolActive ? '' : 'hidden')}>
-        <SketchDrawerHeightField
-          label={'גובה מגירה פנימית (ס"מ)'}
-          value={sketchControls.sketchIntDrawerHeightDraft}
-          onChange={raw => {
-            updateSketchDrawerHeightDraft(heightController, raw);
-          }}
-          onBlur={() => {
-            commitSketchDrawerHeightDraft(heightController);
-          }}
-          onReset={() => {
-            resetSketchDrawerHeightDraft(heightController);
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
 export function InteriorExternalDrawersSection(
   props: InteriorExternalDrawersSectionProps
 ): ReactElement | null {
@@ -294,6 +240,9 @@ export function InteriorExternalDrawersSection(
 
 export function InteriorInternalDrawersSection(props: InteriorInternalDrawersSectionProps): ReactElement {
   const isSketchInternalDrawersToolActive = isEmbeddedSketchInternalDrawersActive(props.sketchControls);
+  const heightController = props.sketchControls
+    ? createEmbeddedInternalDrawerHeightController(props.sketchControls, isSketchInternalDrawersToolActive)
+    : null;
 
   return (
     <>
@@ -310,30 +259,62 @@ export function InteriorInternalDrawersSection(props: InteriorInternalDrawersSec
           className={cx(
             'wp-tool-card',
             'wp-tool-card--intdrawer',
-            (props.isIntDrawerMode || isSketchInternalDrawersToolActive) && 'is-active'
+            isSketchInternalDrawersToolActive && 'is-active'
           )}
           data-testid="interior-internal-drawers-card"
         >
-          <InteriorToolCardHeader title="📦 מיקום מגירות פנימיות" />
+          <InteriorToolCardHeader
+            title="📦 מיקום מגירות פנימיות"
+            active={isSketchInternalDrawersToolActive}
+            onExit={
+              isSketchInternalDrawersToolActive && props.sketchControls
+                ? () => props.sketchControls?.exitManual()
+                : null
+            }
+            exitButtonTestId="interior-internal-drawers-exit-button"
+          />
 
           <ModeToggleButton
-            active={props.isIntDrawerMode}
-            onClick={() => props.toggleIntDrawerMode()}
+            active={isSketchInternalDrawersToolActive}
+            onClick={() => {
+              if (!props.sketchControls) {
+                props.toggleIntDrawerMode();
+                return;
+              }
+              props.sketchControls.setSketchShelvesOpen(false);
+              props.sketchControls.setSketchRowOpen(false);
+              if (isSketchInternalDrawersToolActive) {
+                props.sketchControls.exitManual();
+                return;
+              }
+              props.sketchControls.enterSketchIntDrawersTool(props.sketchControls.sketchIntDrawerHeightCm);
+            }}
             data-testid="interior-internal-drawers-mode-button"
           >
-            {props.isIntDrawerMode ? 'סיום עריכה' : 'הוסף/הסר מגירות פנימיות'}
+            {isSketchInternalDrawersToolActive ? 'סיום עריכה' : 'הוסף/הסר מגירות פנימיות'}
           </ModeToggleButton>
 
-          <div className={cx('wp-hint', 'wp-hint--intdrawer', !props.isIntDrawerMode && 'hidden')}>
-            לחץ בתוך הארון בגובה הרצוי כדי למקם או להסיר מגירות.
-          </div>
-
-          {props.sketchControls ? (
-            <EmbeddedInternalDrawerSketchControls
-              sketchControls={props.sketchControls}
-              isSketchInternalDrawersToolActive={isSketchInternalDrawersToolActive}
+          {heightController && props.sketchControls ? (
+            <SketchDrawerHeightField
+              label={'גובה מגירה פנימית (ס"מ)'}
+              value={props.sketchControls.sketchIntDrawerHeightDraft}
+              onChange={raw => {
+                updateSketchDrawerHeightDraft(heightController, raw);
+              }}
+              onBlur={() => {
+                commitSketchDrawerHeightDraft(heightController);
+              }}
+              onReset={() => {
+                resetSketchDrawerHeightDraft(heightController);
+              }}
             />
           ) : null}
+
+          <div
+            className={cx('wp-hint', 'wp-hint--intdrawer', !isSketchInternalDrawersToolActive && 'hidden')}
+          >
+            לחץ בתוך הארון בגובה הרצוי כדי למקם או להסיר מגירות.
+          </div>
         </div>
       ) : (
         <InlineNotice>הפעל כדי לבחור מיקום מגירות פנימיות בתוך התאים.</InlineNotice>

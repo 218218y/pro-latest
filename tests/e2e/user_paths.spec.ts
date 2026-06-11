@@ -58,7 +58,11 @@ import {
   setRenderSketchMode,
   setStructureDimension,
   setStructureType,
+  toggleHeaderSketchMode,
   toggleCloudSyncFloatingPin,
+  toggleViewerContentsVisibility,
+  toggleViewerNoteDrawMode,
+  toggleViewerNotesVisibility,
   toggleSwitchByTestId,
   triggerClipboardExportAction,
 } from './helpers/project_flows';
@@ -74,9 +78,11 @@ const primaryJourneyMetrics = [
   'export.copy',
   'export.renderSketch',
   'export.dual',
-  'render.globalClick.toggle',
-  'render.sketchMode.toggle',
-  'render.notes.toggle',
+  'settingsVisual.globalClick.toggle',
+  'ui.header.sketch.toggle',
+  'viewer.notes.drawMode.toggle',
+  'viewer.notes.visibility.toggle',
+  'viewer.contents.visibility.toggle',
   'cloudSync.floatingSync.toggle',
   'orderPdf.open',
   'orderPdf.close',
@@ -116,12 +122,19 @@ test.describe('Playwright real user paths', () => {
     await installClipboardCapture(page);
     await gotoSmokeApp(page);
 
-    await openMainTab(page, 'render');
-    const renderPanel = page.locator('.tab-content[data-tab="render"]');
-    await toggleSwitchByTestId(renderPanel, 'toggle-global-click');
-    await toggleSwitchByTestId(renderPanel, 'toggle-sketch-mode');
-    await toggleSwitchByTestId(renderPanel, 'toggle-notes');
-    await toggleSwitchByTestId(renderPanel, 'toggle-notes');
+    await openMainTab(page, 'settings');
+    const settingsPanel = page.locator('.tab-content[data-tab="settings"]');
+    await toggleSwitchByTestId(settingsPanel, 'toggle-global-click');
+    await expect(settingsPanel.locator('input[data-testid="toggle-sketch-mode"]')).toHaveCount(0);
+    await expect(settingsPanel.locator('input[data-testid="toggle-notes"]')).toHaveCount(0);
+    await toggleViewerNoteDrawMode(page);
+    await toggleViewerNoteDrawMode(page);
+    await toggleViewerNotesVisibility(page);
+    await toggleViewerNotesVisibility(page);
+    await toggleViewerContentsVisibility(page);
+    await toggleViewerContentsVisibility(page);
+    await toggleHeaderSketchMode(page);
+    await toggleHeaderSketchMode(page);
 
     await expectExportSurface(page);
     await expectCloudSyncPanel(page);
@@ -185,7 +198,7 @@ test.describe('Playwright real user paths', () => {
     await fillProjectName(page, stableName);
     const expectedState = await readUiStateFingerprint(page);
 
-    await openMainTab(page, 'export');
+    await openMainTab(page, 'settings');
     for (let i = 0; i < 3; i += 1) {
       await triggerClipboardExportAction(page, 'export-copy-button', 'export.copy');
       await triggerClipboardExportAction(page, 'export-render-sketch-button', 'export.renderSketch');
@@ -253,7 +266,7 @@ test.describe('Playwright real user paths', () => {
     await expectPerfMetricCount(page, 'structure.dimensions.depth.commit', 2);
     await expectPerfMetricCount(page, 'design.savedColor.add', 1);
     await expectPerfMetricCount(page, 'design.savedColor.delete', 1);
-    await expectPerfMetricCount(page, 'render.sketchMode.toggle', 2);
+    await expectPerfMetricCount(page, 'ui.header.sketch.toggle', 2);
 
     expectNoRuntimeIssues(issues);
   });
@@ -409,7 +422,7 @@ test.describe('Playwright real user paths', () => {
     expect(await countSavedDesignColorSwatches(page)).toBe(beforeSavedColorCount + 1);
     await expect(getSavedDesignColorSwatch(page, savedColorValue)).toHaveCount(1);
 
-    await openMainTab(page, 'export');
+    await openMainTab(page, 'settings');
     const backupDownload = await exportSettingsBackup(page);
     const backupPath = await backupDownload.path();
     expect(backupPath).toBeTruthy();

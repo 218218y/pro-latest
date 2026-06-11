@@ -17,19 +17,21 @@ export function resolveManualLayoutSketchHoverPointerX(pointerX: unknown, fallba
 
 export function writeManualLayoutSketchHoverPreview(
   ctx: ManualLayoutSketchHoverModuleContext,
-  args: { hoverRecord?: Record<string, unknown>; preview: Record<string, unknown> }
+  args: { hoverRecord?: Record<string, unknown>; preview: Record<string, unknown> | null }
 ): boolean {
-  const { App, hitSelectorObj, setPreview, __wp_writeSketchHover } = ctx;
+  const { App, hitSelectorObj, hidePreview, setPreview, __wp_writeSketchHover } = ctx;
   if (args.hoverRecord) {
     __wp_writeSketchHover(App, args.hoverRecord);
   }
-  if (setPreview) {
+  if (args.preview && setPreview) {
     setPreview({
       App,
       THREE: getThreeMaybe(App),
       anchor: hitSelectorObj,
       ...args.preview,
     });
+  } else if (!args.preview && hidePreview) {
+    hidePreview({ App, THREE: getThreeMaybe(App) });
   }
   return true;
 }

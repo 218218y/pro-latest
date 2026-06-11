@@ -8,7 +8,10 @@ import { createOrderPdfCaptureCanvasOps } from './export_order_pdf_capture_canva
 import { createOrderPdfCaptureOpenClosedOp } from './export_order_pdf_capture_open_closed.js';
 import { createOrderPdfCaptureRenderSketchOp } from './export_order_pdf_capture_render_sketch.js';
 import { createOrderPdfCaptureViewerOp } from './export_order_pdf_capture_viewer.js';
-import { createOrderPdfApplySketchAnnotationsToCompositePngOp } from './export_order_pdf_sketch_annotations.js';
+import {
+  createOrderPdfApplySketchAnnotationsToCompositePngOp,
+  createOrderPdfRenderAnnotationLayerPngOp,
+} from './export_order_pdf_sketch_annotations.js';
 
 export type ExportOrderPdfCaptureOps = {
   applySketchAnnotationsToCompositePngBytes: (args: {
@@ -16,6 +19,13 @@ export type ExportOrderPdfCaptureOps = {
     draft: OrderPdfDraftLike | null | undefined;
     key: 'renderSketch' | 'openClosed';
     pngBytes: Uint8Array | null | undefined;
+  }) => Promise<Uint8Array | null>;
+  renderSketchAnnotationLayerPngBytes: (args: {
+    app: AppContainer;
+    draft: OrderPdfDraftLike | null | undefined;
+    key: 'orderPdfPage1' | 'renderSketch' | 'openClosed';
+    width: number;
+    height: number;
   }) => Promise<Uint8Array | null>;
   canvasToPngBytes: (canvas: HTMLCanvasElement) => Promise<Uint8Array>;
   captureCompositeOpenClosedPngBytes: (
@@ -39,6 +49,10 @@ export function createExportOrderPdfCaptureOps(deps: ExportOrderPdfDeps): Export
   return {
     ...canvasOps,
     applySketchAnnotationsToCompositePngBytes: createOrderPdfApplySketchAnnotationsToCompositePngOp(
+      deps,
+      canvasOps.canvasToPngBytes
+    ),
+    renderSketchAnnotationLayerPngBytes: createOrderPdfRenderAnnotationLayerPngOp(
       deps,
       canvasOps.canvasToPngBytes
     ),

@@ -1,7 +1,8 @@
 import type { AppContainer } from '../../../../types/app.js';
-import type { OrderPdfBuildResultLike } from '../../../../types/build.js';
+import type { OrderPdfBuildResultLike, OrderPdfDraftLike } from '../../../../types/build.js';
 import type { ExportOrderPdfDeps } from './export_order_pdf_types.js';
 import type { ExportOrderPdfTextOps } from './export_order_pdf_text_contracts.js';
+import type { ExportOrderPdfCaptureOps } from './export_order_pdf_capture.js';
 import { splitOrderPdfDetailsOverflow } from './export_order_pdf_builder_layout.js';
 import {
   ORDER_PDF_REQUIRED_TEMPLATE_FIELDS,
@@ -18,6 +19,8 @@ import type {
   OrderPdfBuilderRuntimeLike,
   OrderPdfResolvedDraftLike,
 } from './export_order_pdf_builder_shared.js';
+
+const ORDER_PDF_PRIMARY_PAGE_ANNOTATION_RASTER_SCALE = 3;
 
 function setPrimaryDocumentFields(input: {
   fieldOps: OrderPdfBuilderFieldOps;
@@ -45,17 +48,51 @@ function setPrimaryDocumentFields(input: {
   }
 }
 
+async function addPrimaryPageAnnotationLayer(input: {
+  App: AppContainer;
+  deps: ExportOrderPdfDeps;
+  runtime: OrderPdfBuilderRuntimeLike;
+  draft: OrderPdfDraftLike;
+  captureOps: Pick<ExportOrderPdfCaptureOps, 'renderSketchAnnotationLayerPngBytes'>;
+}): Promise<void> {
+  const { App, deps, runtime, draft, captureOps } = input;
+  try {
+    const pngBytes = await captureOps.renderSketchAnnotationLayerPngBytes({
+      app: App,
+      draft,
+      key: 'orderPdfPage1',
+      width: runtime.pageWidth * ORDER_PDF_PRIMARY_PAGE_ANNOTATION_RASTER_SCALE,
+      height: runtime.pageHeight * ORDER_PDF_PRIMARY_PAGE_ANNOTATION_RASTER_SCALE,
+    });
+    if (!pngBytes?.byteLength) return;
+    const img = await runtime.pdfDoc.embedPng(pngBytes);
+    runtime.firstPage.drawImage(img, {
+      x: 0,
+      y: 0,
+      width: runtime.pageWidth,
+      height: runtime.pageHeight,
+    });
+  } catch (error) {
+    deps._exportReportThrottled(App, 'buildOrderPdfInteractive.primaryPageAnnotations', error, {
+      throttleMs: 1000,
+    });
+  }
+}
+
 export async function buildOrderPdfDocumentResult(input: {
   App: AppContainer;
   deps: ExportOrderPdfDeps;
   textOps: ExportOrderPdfTextOps;
   runtime: OrderPdfBuilderRuntimeLike;
   fieldOps: OrderPdfBuilderFieldOps;
+  draft: OrderPdfDraftLike;
   resolvedDraft: OrderPdfResolvedDraftLike;
   compositeImageSlotBytes: OrderPdfCompositeImageSlotBytes;
+  captureOps: Pick<ExportOrderPdfCaptureOps, 'renderSketchAnnotationLayerPngBytes'>;
   buildOrderPdfFileName: (input: { orderNumber: string; projectName: string }) => string;
 }): Promise<OrderPdfBuildResultLike | null> {
-  const { App, deps, textOps, runtime, fieldOps, resolvedDraft, compositeImageSlotBytes } = input;
+  const { App, deps, textOps, runtime, fieldOps, draft, resolvedDraft, compositeImageSlotBytes, captureOps } =
+    input;
 
   const detailsSplit = splitOrderPdfDetailsOverflow({
     App,
@@ -72,6 +109,8 @@ export async function buildOrderPdfDocumentResult(input: {
     resolvedDraft,
     detailsPage1Text: detailsSplit.page1Text,
   });
+
+  await addPrimaryPageAnnotationLayer({ App, deps, runtime, draft, captureOps });
 
   await fieldOps.addOverflowDetailsPage(detailsSplit.overflowText, runtime.TextAlignment.Right);
   for (const pngBytes of listOrderPdfCompositeImagePageBytes({

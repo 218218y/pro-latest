@@ -153,7 +153,7 @@ test('loadOrderPdfFirstPage clears doc/task refs when cancellation arrives after
 
   assert.equal(loaded, false);
   assert.equal(docTaskDestroyed, 1);
-  assert.equal(docDestroyed, 1);
+  assert.equal(docDestroyed, 0);
   assert.equal(pdfDocTaskRef.current, null);
   assert.equal(pdfDocRef.current, null);
   assert.equal(pageRef.current, null);

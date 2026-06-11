@@ -49,9 +49,12 @@ export interface ModuleLoopRuntime {
   doorStyle: string;
   splitDoors: boolean;
   bodyMat: unknown;
+  whiteMat: unknown;
   globalFrontMat: unknown;
   shadowMat: unknown;
   legMat: unknown;
+  defaultShelfMat: unknown;
+  braceShelfMat: unknown;
   isGroovesEnabled: boolean;
   isInternalDrawersEnabled: boolean;
   showHangerEnabled: boolean;

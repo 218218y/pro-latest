@@ -24,6 +24,9 @@ export type HingedDoorModuleOpsContext = {
   cabinetBodyHeight: number;
   D: number;
   doorFrontZ: number;
+  doorOpZ: number;
+  isInsetDoorMount: boolean;
+  insetReveal: number;
   splitLineY: number;
   splitDoors: boolean;
   stackKey: string;

@@ -19,6 +19,7 @@ export function computeExternalDrawersOpsForModule(input: unknown) {
   let D = __asNum(inp.depth, __asNum(inp.D, 0));
   let startY = __asNum(inp.startY, 0);
   let woodThick = __asNum(inp.woodThick, MATERIAL_DIMENSIONS.wood.thicknessM);
+  const doorMountMode = String(inp.doorMountMode || '') === 'inset' ? 'inset' : 'overlay';
 
   let shoeDrawerHeight = __asNum(inp.shoeDrawerHeight, DRAWER_DIMENSIONS.external.shoeHeightM);
   let regDrawerHeight = __asNum(inp.regDrawerHeight, DRAWER_DIMENSIONS.external.regularHeightM);
@@ -43,6 +44,7 @@ export function computeExternalDrawersOpsForModule(input: unknown) {
     woodThicknessM: woodThick,
     frontZM: frontZ,
     drawerHeightM: regDrawerHeight,
+    doorMountMode,
   });
   const zClosed = geom.zClosed;
   const zOpen = geom.zOpen;

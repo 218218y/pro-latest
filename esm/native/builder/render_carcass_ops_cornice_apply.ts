@@ -24,7 +24,7 @@ export function createApplyCarcassCorniceOps() {
 
     const { ctx, getPartMaterial } = runtime;
     const pid = __asString(cornice.partId, 'cornice_color');
-    const corniceMat = ctx.corniceMat || (getPartMaterial ? getPartMaterial(pid) : null) || ctx.bodyMat;
+    const corniceMat = (getPartMaterial ? getPartMaterial(pid) : null) || ctx.corniceMat || ctx.bodyMat;
     const segments = __readArray(cornice.segments, __isCorniceSegment);
 
     if (segments && segments.length) {
@@ -48,17 +48,15 @@ export function applyCorniceSegment(
   corniceMat: unknown,
   runtime: RenderCarcassRuntime
 ): void {
-  const { THREE, ctx } = runtime;
+  const { THREE, ctx, getPartMaterial } = runtime;
   if (!seg || typeof seg !== 'object') return;
 
   const x = __asFinite(seg.x);
   const y = __asFinite(seg.y);
   const z = __asFinite(seg.z);
   const segPid = __asString(seg.partId, pid);
-  // Main wardrobe cornice now paints as one canonical group.
-  // All classic/wave cornice segments inherit the shared corniceMat
-  // instead of resolving per-segment part colors.
   const segMat = corniceMat || ctx.bodyMat;
+  const segmentArgs = { THREE, seg, segMat, getPartMaterial, segPid };
   const profile = __profilePoints(seg.profile);
   const segLen = __asFinite(seg.length);
   const rotY = __asFinite(seg.rotationY);
@@ -70,7 +68,7 @@ export function applyCorniceSegment(
     typeof THREE.Shape === 'function' &&
     typeof THREE.ExtrudeGeometry === 'function'
   ) {
-    const mesh = createWaveFrontSegment({ THREE, seg, segMat });
+    const mesh = createWaveFrontSegment(segmentArgs);
     if (!mesh) return;
     finalizeCorniceMesh(mesh, { x, y, z, flipX, rotY, segPid }, runtime);
     return;
@@ -81,7 +79,7 @@ export function applyCorniceSegment(
     typeof THREE.Shape === 'function' &&
     typeof THREE.ExtrudeGeometry === 'function'
   ) {
-    const mesh = createWaveSideSegment({ THREE, seg, segMat });
+    const mesh = createWaveSideSegment(segmentArgs);
     if (!mesh) return;
     finalizeCorniceMesh(mesh, { x, y, z, flipX, rotY, segPid }, runtime);
     return;
@@ -95,7 +93,7 @@ export function applyCorniceSegment(
     typeof THREE.Shape === 'function' &&
     typeof THREE.ExtrudeGeometry === 'function'
   ) {
-    const mesh = createProfileSegment({ THREE, seg, segMat, profile, segLen }, runtime);
+    const mesh = createProfileSegment({ ...segmentArgs, profile, segLen }, runtime);
     if (!mesh) return;
     finalizeCorniceMesh(mesh, { x, y, z, flipX, rotY, segPid }, runtime);
     return;

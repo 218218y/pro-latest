@@ -149,9 +149,14 @@ export function useStructureTabViewStateState(app: AppContainer): StructureTabVi
     [modulesCount, width]
   );
 
-  const { cellDimsWidth, cellDimsHeight, cellDimsDepth } = useUiSelectorShallow(ui =>
-    readStructureTabCellDimsState(ui)
-  );
+  const {
+    cellDimsWidth,
+    cellDimsHeight,
+    cellDimsDepth,
+    cellDimsHexMode,
+    cellDimsHexProtrusion,
+    cellDimsHexDoorWidth,
+  } = useUiSelectorShallow(ui => readStructureTabCellDimsState(ui));
 
   const {
     patterns,
@@ -225,6 +230,9 @@ export function useStructureTabViewStateState(app: AppContainer): StructureTabVi
     cellDimsWidth,
     cellDimsHeight,
     cellDimsDepth,
+    cellDimsHexMode,
+    cellDimsHexProtrusion,
+    cellDimsHexDoorWidth,
     patterns,
     structureSelect,
     structureIsDefault,

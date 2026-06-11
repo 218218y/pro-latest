@@ -5,7 +5,7 @@ import { setDoorsOpenViaService, setDrawerRebuildIntent } from '../runtime/doors
 import { toggleDivider } from '../runtime/maps_access.js';
 import { toggleDividerViaActions } from '../runtime/actions_access_mutations.js';
 import { readRuntimeScalarOrDefaultFromApp } from '../runtime/runtime_selectors.js';
-import { hasPartId, readDrawerId, readDrawerIsInternal } from './canvas_picking_drawer_mode_flow_shared.js';
+import { hasPartId, readDrawerIsInternal } from './canvas_picking_drawer_mode_flow_shared.js';
 
 export function tryHandleDrawerDividerModeClick(args: {
   App: AppContainer;
@@ -24,18 +24,12 @@ export function tryHandleDrawerDividerModeClick(args: {
   }
   if (!targetDrawerId) return true;
 
-  let clickedDrawer = drawersArray.find(
-    (d: DrawerVisualEntryLike) => readDrawerId(d) === String(targetDrawerId)
-  );
+  let clickedDrawer = drawersArray.find((d: DrawerVisualEntryLike) => hasPartId(d, String(targetDrawerId)));
   if (!clickedDrawer && foundPartId) {
     clickedDrawer = drawersArray.find((d: DrawerVisualEntryLike) => hasPartId(d, foundPartId));
   }
 
   const dividerKey = clickedDrawer && clickedDrawer.dividerKey ? clickedDrawer.dividerKey : targetDrawerId;
-  if (!toggleDividerViaActions(App, dividerKey, { immediate: true, source: 'divider:click' })) {
-    toggleDivider(App, dividerKey, { immediate: true });
-  }
-
   const explicitIsInternal = readDrawerIsInternal(clickedDrawer);
   const isInternal =
     explicitIsInternal != null
@@ -50,5 +44,10 @@ export function tryHandleDrawerDividerModeClick(args: {
   if (typeof tools.setDrawersOpenId === 'function') tools.setDrawersOpenId(targetDrawerId);
   if (clickedDrawer) clickedDrawer.isOpen = true;
   setDrawerRebuildIntent(App, targetDrawerId);
+
+  if (!toggleDividerViaActions(App, dividerKey, { immediate: true, source: 'divider:click' })) {
+    toggleDivider(App, dividerKey, { immediate: true });
+  }
+
   return true;
 }

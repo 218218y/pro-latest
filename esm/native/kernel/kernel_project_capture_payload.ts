@@ -83,6 +83,7 @@ function buildProjectCaptureSettings(
     color: asString(uiRec.colorChoice, '') || asString(uiRec.color, ''),
     structureSelection: asString(uiRec.structureSelect, ''),
     wardrobeType: cfgRec.wardrobeType !== undefined ? asString(cfgRec.wardrobeType, 'hinged') : 'hinged',
+    doorMountMode: cfgRec.doorMountMode === 'inset' ? 'inset' : 'overlay',
     boardMaterial:
       cfgRec.boardMaterial !== undefined ? asString(cfgRec.boardMaterial, 'sandwich') : 'sandwich',
     isManualWidth: cfgRec.isManualWidth !== undefined ? !!cfgRec.isManualWidth : false,

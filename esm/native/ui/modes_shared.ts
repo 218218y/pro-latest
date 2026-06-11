@@ -16,7 +16,6 @@ export type ModesMap = Record<string, string> &
     LAYOUT: string;
     MANUAL_LAYOUT: string;
     EXT_DRAWER: string;
-    INT_DRAWER: string;
     DIVIDER: string;
     REMOVE_DOOR: string;
     BRACE_SHELVES: string;

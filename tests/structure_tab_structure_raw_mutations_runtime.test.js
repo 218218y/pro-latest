@@ -69,7 +69,7 @@ function loadTsModule(relPath, calls, cache = new Map()) {
         WARDROBE_CHEST_DRAWERS_MIN: 2,
         WARDROBE_CHEST_DRAWERS_MAX: 8,
         WARDROBE_CELL_DIM_MIN: 20,
-        WARDROBE_CELL_WIDTH_MIN: 40,
+        WARDROBE_CELL_WIDTH_MIN: 20,
         WARDROBE_CELL_WIDTH_MAX: 560,
         WARDROBE_CELL_HEIGHT_MIN: 100,
         WARDROBE_CELL_HEIGHT_MAX: 300,
@@ -303,7 +303,7 @@ test('[structure-dimension-constraints] per-cell bounds use canonical dimension 
 
   assert.equal(
     JSON.stringify(mod.readStructureDimensionBounds({ key: 'cellDimsWidth', width: 240 })),
-    JSON.stringify({ min: 40, max: 560 })
+    JSON.stringify({ min: 20, max: 560 })
   );
   assert.equal(
     JSON.stringify(mod.readStructureDimensionBounds({ key: 'cellDimsHeight', height: 240 })),

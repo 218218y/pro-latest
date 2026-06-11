@@ -21,7 +21,7 @@ export {
   ensureRenderMetaMap,
 } from './render_access_state_bags.js';
 
-export type { RenderRuntimeStateLike } from './render_access_state_runtime.js';
+export type { MirrorRefreshNowResult, RenderRuntimeStateLike } from './render_access_state_runtime.js';
 
 export {
   ensureRenderRuntimeState,
@@ -35,6 +35,7 @@ export {
   trackMirrorSurface,
   getMirrorCubeCamera,
   getMirrorHideScratch,
+  refreshTrackedMirrorSurfacesNow,
   invalidateMirrorTracking,
   readAutoHideFloorCache,
   writeAutoHideFloorCache,

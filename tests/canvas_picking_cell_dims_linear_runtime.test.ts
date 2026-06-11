@@ -42,6 +42,7 @@ function createAppHarness() {
 
   const calls = {
     snapshots: [] as Array<{ snapshot: any; meta: any }>,
+    lowerModules: [] as Array<{ next: any; meta: any }>,
     uiPatches: [] as Array<{ patch: any; meta: any }>,
     touches: [] as any[],
     builds: [] as any[],
@@ -68,6 +69,11 @@ function createAppHarness() {
         touch(meta?: unknown) {
           calls.touches.push(cloneJson(meta));
           return meta;
+        },
+      },
+      history: {
+        batch<T>(fn: () => T, _meta?: unknown): T {
+          return fn();
         },
       },
     },
@@ -161,4 +167,101 @@ test('linear cell-dims seam promotes uniform height through the canonical snapsh
   assert.equal(snapshot.height, 250);
   assert.deepEqual(snapshot.modulesConfiguration, [{ doors: 1 }, { doors: 1 }]);
   assert.deepEqual(calls.uiPatches[0].patch, { raw: { height: 250 } });
+});
+
+test('linear cell-dims allows a 20cm width target instead of clamping to 40cm', () => {
+  const { App, state, calls } = createAppHarness();
+  state.ui.doors = 2;
+  state.ui.raw = {
+    width: 160,
+    height: 220,
+    depth: 55,
+    doors: 2,
+  };
+  state.config.modulesConfiguration = [{ doors: 2 }];
+  state.build.modulesStructure = [{ doors: 2 }];
+
+  handleCanvasLinearCellDimsClick({
+    App,
+    ui: state.ui,
+    cfg: state.config,
+    raw: state.ui.raw,
+    applyW: 20,
+    applyH: null,
+    applyD: null,
+    foundModuleIndex: 0,
+  });
+
+  assert.equal(calls.snapshots.length, 1);
+  assert.equal(calls.snapshots[0].snapshot.width, 20);
+  assert.deepEqual(calls.snapshots[0].snapshot.modulesConfiguration[0].specialDims, {
+    baseWidthCm: 160,
+    widthCm: 20,
+  });
+  assert.deepEqual(calls.uiPatches[0].patch, { raw: { width: 20 } });
+});
+
+test('linear cell-dims applies lower-stack width/depth through lower configuration and ignores height', () => {
+  const { App, state, calls } = createAppHarness();
+  state.ui.doors = 2;
+  state.ui.raw = {
+    width: 160,
+    height: 220,
+    depth: 55,
+    doors: 2,
+    stackSplitLowerHeight: 80,
+    stackSplitLowerWidth: 160,
+    stackSplitLowerWidthManual: false,
+    stackSplitLowerDepth: 55,
+    stackSplitLowerDepthManual: false,
+  };
+  state.config.modulesConfiguration = [{ doors: 1 }, { doors: 1 }];
+  state.config.stackSplitLowerModulesConfiguration = [{ doors: 1 }, { doors: 1 }];
+  calls.lowerModules.length = 0;
+  App.actions.config.setLowerModulesConfiguration = function setLowerModulesConfiguration(
+    next: unknown,
+    meta?: unknown
+  ) {
+    calls.lowerModules.push({ next: cloneJson(next), meta: cloneJson(meta) });
+    state.config.stackSplitLowerModulesConfiguration = cloneJson(next);
+    return next;
+  };
+
+  handleCanvasLinearCellDimsClick({
+    App,
+    ui: state.ui,
+    cfg: state.config,
+    raw: state.ui.raw,
+    isBottomStack: true,
+    applyW: 90,
+    applyH: 120,
+    applyD: 50,
+    foundModuleIndex: 1,
+  });
+
+  assert.equal(calls.snapshots.length, 0);
+  assert.equal(calls.lowerModules.length, 1);
+  assert.equal(calls.uiPatches.length, 1);
+  assert.equal(calls.builds.length, 1);
+  assert.equal(calls.toasts.length, 1);
+
+  const lowerModules = calls.lowerModules[0].next;
+  assert.equal(lowerModules.length, 2);
+  assert.deepEqual(lowerModules[0], { doors: 1 });
+  assert.deepEqual(lowerModules[1].specialDims, {
+    baseDepthCm: 55,
+    baseWidthCm: 80,
+    depthCm: 50,
+    widthCm: 90,
+  });
+  assert.equal(lowerModules[1].specialDims.heightCm, undefined);
+  assert.equal(lowerModules[1].specialDims.baseHeightCm, undefined);
+
+  assert.deepEqual(calls.uiPatches[0].patch, {
+    raw: {
+      stackSplitLowerWidth: 170,
+      stackSplitLowerWidthManual: true,
+    },
+  });
+  assert.match(calls.toasts[0]?.message || '', /הוחל על תא 2/);
 });

@@ -8,6 +8,7 @@ import type {
 import { asRecord as asUnknownRecord } from './record.js';
 
 export type BoardMaterialValue = ConfigScalarValueMap['boardMaterial'];
+export type DoorMountModeValue = ConfigScalarValueMap['doorMountMode'];
 export type WardrobeTypeValue = ConfigScalarValueMap['wardrobeType'];
 export type GlobalHandleTypeValue = ConfigScalarValueMap['globalHandleType'];
 export type ConfigScalarState = ConfigStateLike & { [K in ConfigScalarKey]?: ConfigScalarValueMap[K] };
@@ -60,11 +61,16 @@ export const DEFAULTS: ConfigScalarDefaults = {
   customUploadedDataURL: null,
   grooveLinesCount: null,
   boardMaterial: 'sandwich',
+  doorMountMode: 'overlay',
   dirty: false,
 };
 
 export function isBoardMaterialKey(key: ConfigScalarKey): key is 'boardMaterial' {
   return key === 'boardMaterial';
+}
+
+export function isDoorMountModeKey(key: ConfigScalarKey): key is 'doorMountMode' {
+  return key === 'doorMountMode';
 }
 
 export function isWardrobeTypeKey(key: ConfigScalarKey): key is 'wardrobeType' {
@@ -123,6 +129,11 @@ export function normalizeBoardMaterial(value: unknown, defaultValue: BoardMateri
   return s === 'sandwich' || s === 'melamine' ? s : defaultValue;
 }
 
+export function normalizeDoorMountMode(value: unknown, defaultValue: DoorMountModeValue): DoorMountModeValue {
+  const s = String(value ?? '').trim();
+  return s === 'inset' || s === 'overlay' ? s : defaultValue;
+}
+
 export function normalizeWardrobeType(value: unknown, defaultValue: WardrobeTypeValue): WardrobeTypeValue {
   const s = String(value ?? '').trim();
   return s === 'hinged' || s === 'sliding' ? s : defaultValue;
@@ -149,6 +160,10 @@ export function normalizeNullableGrooveLinesCount(
 
 export function readBoardMaterialDefault(value: unknown): BoardMaterialValue {
   return normalizeBoardMaterial(value, 'sandwich');
+}
+
+export function readDoorMountModeDefault(value: unknown): DoorMountModeValue {
+  return normalizeDoorMountMode(value, 'overlay');
 }
 
 export function readWardrobeTypeDefault(value: unknown): WardrobeTypeValue {

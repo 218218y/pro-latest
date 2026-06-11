@@ -177,7 +177,7 @@ test('order pdf overlay export ops build image attachments through the canonical
     calls.filter(call => Array.isArray(call) && call[0] === 'drawImage'),
     [['drawImage', { x: 0, y: 0, width: 300, height: 400 }]]
   );
-  assert.ok(calls.includes('pdfDoc.destroy'));
+  assert.equal(calls.includes('pdfDoc.destroy'), false);
   assert.ok(calls.includes('pdfTask.destroy'));
 });
 
@@ -356,4 +356,174 @@ test('order pdf overlay image rasterization does not repaint sketch annotations 
   });
 
   assert.equal(annotationStrokeCalls, 0);
+});
+
+test('order pdf overlay image rasterization restores first-page annotations clipped inside repainted PDF text boxes', async () => {
+  let annotationStrokeCalls = 0;
+  let clipped = false;
+  const drawImageCalls: unknown[] = [];
+
+  function makeCtx() {
+    return {
+      save() {},
+      restore() {},
+      fillRect() {},
+      beginPath() {},
+      rect() {},
+      clip() {
+        clipped = true;
+      },
+      fillText() {},
+      measureText(text: string) {
+        return { width: String(text).length * 6 };
+      },
+      moveTo() {
+        annotationStrokeCalls += 1;
+      },
+      lineTo() {
+        annotationStrokeCalls += 1;
+      },
+      arc() {
+        annotationStrokeCalls += 1;
+      },
+      stroke() {
+        annotationStrokeCalls += 1;
+      },
+      fill() {
+        annotationStrokeCalls += 1;
+      },
+      drawImage(source: unknown, x: number, y: number, width: number, height: number) {
+        drawImageCalls.push({ source, x, y, width, height });
+      },
+      textAlign: 'right',
+      textBaseline: 'top',
+      fillStyle: 'black',
+      font: '12px Arial',
+      lineCap: 'round',
+      lineJoin: 'round',
+      lineWidth: 1,
+      strokeStyle: '#000000',
+      globalAlpha: 1,
+      globalCompositeOperation: 'source-over',
+      direction: 'rtl',
+    } as unknown as CanvasRenderingContext2D;
+  }
+
+  const baseCtx = makeCtx();
+  const layerCtx = makeCtx();
+  const canvases = [
+    {
+      width: 0,
+      height: 0,
+      getContext(kind: string) {
+        return kind === '2d' ? baseCtx : null;
+      },
+    },
+    {
+      width: 0,
+      height: 0,
+      getContext(kind: string) {
+        return kind === '2d' ? layerCtx : null;
+      },
+    },
+  ] as unknown as HTMLCanvasElement[];
+
+  const ops = createOrderPdfOverlayExportOps({
+    docMaybe: {
+      fonts: {
+        check() {
+          return true;
+        },
+      },
+      createElement(tag: string) {
+        assert.equal(tag, 'canvas');
+        return canvases.shift() || canvases[0];
+      },
+    } as unknown as Document,
+    winMaybe: { Blob } as Window,
+    ensurePdfJs: async () =>
+      ({
+        VerbosityLevel: { ERRORS: 0 },
+        getDocument() {
+          return {
+            promise: Promise.resolve({
+              numPages: 1,
+              async getPage(_index: number) {
+                return {
+                  getViewport({ scale }: { scale: number }) {
+                    return { width: 300 * scale, height: 400 * scale };
+                  },
+                  render() {
+                    return { promise: Promise.resolve() };
+                  },
+                };
+              },
+              destroy() {},
+            }),
+            destroy() {},
+          };
+        },
+      }) as any,
+    loadPdfLib: async () => ({
+      PDFDocument: {
+        create: async () => ({
+          async embedPng(_bytes: Uint8Array) {
+            return { kind: 'png' };
+          },
+          addPage(_size: [number, number]) {
+            return {
+              drawImage() {},
+            };
+          },
+          async save() {
+            return Uint8Array.from([1, 2]);
+          },
+        }),
+      },
+    }),
+    _buildInteractivePdfBlobForEditorDraft: async () => ({
+      blob: new Blob([Uint8Array.from([1, 2, 3])], { type: 'application/pdf' }),
+      fileName: 'order.pdf',
+      projectName: 'Demo Project',
+    }),
+    getFn: (obj: unknown, key: string) => {
+      const candidate = (obj as Record<string, unknown> | null)?.[key];
+      return typeof candidate === 'function' ? (candidate as any).bind(obj) : null;
+    },
+    getProp: (obj: unknown, key: string) => (obj as Record<string, unknown> | null)?.[key],
+    isPromiseLike: (value: unknown): value is Promise<unknown> =>
+      !!value && typeof (value as Promise<unknown>).then === 'function',
+    isRecord: (value: unknown): value is Record<string, unknown> =>
+      !!value && typeof value === 'object' && !Array.isArray(value),
+    orderPdfOverlayReportNonFatal: () => undefined,
+    canvasToPngBytes: async () => Uint8Array.from([4, 5, 6]),
+  });
+
+  await ops.rasterizeInteractivePdfBytesToImagePdfBytes({
+    inBytes: Uint8Array.from([1, 2, 3]),
+    baseFileName: 'order.pdf',
+    draft: {
+      ...createDraft(),
+      sketchAnnotations: {
+        orderPdfPage1: {
+          strokes: [
+            {
+              tool: 'pen',
+              color: '#ff0000',
+              width: 3,
+              points: [
+                { x: 0.1, y: 0.1 },
+                { x: 0.8, y: 0.8 },
+              ],
+            },
+          ],
+          textBoxes: [],
+        },
+      },
+    },
+  });
+
+  assert.equal(clipped, true);
+  assert.ok(annotationStrokeCalls > 0);
+  assert.equal(drawImageCalls.length, 1);
 });

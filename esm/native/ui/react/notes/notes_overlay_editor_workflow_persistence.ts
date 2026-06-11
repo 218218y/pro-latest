@@ -7,6 +7,7 @@ import { notesOverlayReportNonFatal } from './notes_overlay_helpers_shared.js';
 import { readInnerHtml } from '../../dom_helpers.js';
 import {
   applyStylePatchToNote,
+  filterEmptyNotes,
   notesChanged,
   preserveEquivalentNoteSnapshot,
   type SelectionOffsets,
@@ -62,12 +63,27 @@ export function useNotesOverlayEditorWorkflowPersistence(
 
   const captureAndCommitDraft = useCallback(
     (source: string) => {
-      const captured = preserveEquivalentNoteSnapshot(draftNotes, captureEditorsIntoNotes(draftNotes));
-      if (!notesChanged(draftNotes, captured)) return;
-      setDraftNotes(captured);
-      commitNotes(captured, source);
+      clearTypingCommitTimer();
+      const base = draftNotesRef.current || draftNotes;
+      const captured = preserveEquivalentNoteSnapshot(base, captureEditorsIntoNotes(base));
+      const cleaned = preserveEquivalentNoteSnapshot(captured, filterEmptyNotes(captured));
+      if (notesChanged(base, cleaned)) {
+        draftNotesRef.current = cleaned;
+        setDraftNotes(cleaned);
+      }
+      if (cleaned !== captured && activeIndex != null) setActive(null);
+      commitNotes(cleaned, source);
     },
-    [captureEditorsIntoNotes, draftNotes, commitNotes, setDraftNotes]
+    [
+      activeIndex,
+      captureEditorsIntoNotes,
+      clearTypingCommitTimer,
+      draftNotes,
+      draftNotesRef,
+      commitNotes,
+      setActive,
+      setDraftNotes,
+    ]
   );
 
   const scheduleSelectionRestore = useCallback(
@@ -97,21 +113,16 @@ export function useNotesOverlayEditorWorkflowPersistence(
         const el = editorRefs.current[index];
         if (!el) return;
 
-        const captured = captureEditorsIntoNotes(draftNotes);
-        const prevText = String((draftNotes && draftNotes[index] && draftNotes[index].text) || '');
+        const base = draftNotesRef.current || draftNotes;
+        const captured = preserveEquivalentNoteSnapshot(base, captureEditorsIntoNotes(base));
+        const prevText = String((base && base[index] && base[index].text) || '');
         const nextText = String((captured && captured[index] && captured[index].text) || '');
         if (nextText === prevText) return;
 
         const off = getSelectionOffsetsForIndex(index) || selectionOffsetsRef.current[index] || null;
 
-        setDraftNotes(prev => {
-          const next = preserveEquivalentNoteSnapshot(prev, captureEditorsIntoNotes(prev));
-          const cur = prev[index];
-          const nxt = next[index];
-          if (!cur || !nxt) return prev;
-          if (String(cur.text || '') === String(nxt.text || '')) return prev;
-          return next;
-        });
+        draftNotesRef.current = captured;
+        setDraftNotes(captured);
 
         scheduleSelectionRestore(index, off, 'CTRL_captureActiveDraftRestore');
       } catch (__wpErr) {
@@ -120,6 +131,7 @@ export function useNotesOverlayEditorWorkflowPersistence(
     },
     [
       draftNotes,
+      draftNotesRef,
       editorRefs,
       captureEditorsIntoNotes,
       getSelectionOffsetsForIndex,
@@ -158,12 +170,19 @@ export function useNotesOverlayEditorWorkflowPersistence(
   const captureDraftOnly = useCallback(
     (index: number) => {
       const off = getSelectionOffsetsForIndex(index) || selectionOffsetsRef.current[index] || null;
-      setDraftNotes(prev => preserveEquivalentNoteSnapshot(prev, captureEditorsIntoNotes(prev)));
+      const base = draftNotesRef.current || draftNotes;
+      const captured = preserveEquivalentNoteSnapshot(base, captureEditorsIntoNotes(base));
+      if (captured !== base) {
+        draftNotesRef.current = captured;
+        setDraftNotes(captured);
+      }
 
       scheduleSelectionRestore(index, off, 'CTRL_captureDraftOnlyRestore');
     },
     [
       captureEditorsIntoNotes,
+      draftNotes,
+      draftNotesRef,
       getSelectionOffsetsForIndex,
       selectionOffsetsRef,
       setDraftNotes,
@@ -172,29 +191,30 @@ export function useNotesOverlayEditorWorkflowPersistence(
   );
 
   const persistActiveNote = useCallback(
-    (index: number, stylePatch: Partial<SavedNoteStyle> | null, source: string) => {
+    (index: number, stylePatch: Partial<SavedNoteStyle> | null, _source: string) => {
       suppressNextClickRef.current = true;
       ignoreOutsideClickUntilRef.current = Date.now() + 1200;
 
       const off = getSelectionOffsetsForIndex(index) || selectionOffsetsRef.current[index] || null;
-      const captured = preserveEquivalentNoteSnapshot(draftNotes, captureEditorsIntoNotes(draftNotes));
+      const base = draftNotesRef.current || draftNotes;
+      const captured = preserveEquivalentNoteSnapshot(base, captureEditorsIntoNotes(base));
       const next = stylePatch
         ? captured.map((note, noteIndex) =>
             noteIndex === index ? applyStylePatchToNote(note, stylePatch) : note
           )
         : captured;
 
-      if (notesChanged(draftNotes, next)) {
+      if (notesChanged(base, next)) {
+        draftNotesRef.current = next;
         setDraftNotes(next);
-        commitNotes(next, source);
       }
 
       scheduleSelectionRestore(index, off, 'CTRL_persistActiveRestore');
     },
     [
       draftNotes,
+      draftNotesRef,
       captureEditorsIntoNotes,
-      commitNotes,
       getSelectionOffsetsForIndex,
       selectionOffsetsRef,
       setDraftNotes,
@@ -245,6 +265,7 @@ export function useNotesOverlayEditorWorkflowPersistence(
         });
         deleted = shouldDelete;
         if (deleted) {
+          draftNotesRef.current = next;
           setDraftNotes(next);
           commitNotes(next, 'react:notes:delete');
         }
@@ -276,6 +297,7 @@ export function useNotesOverlayEditorWorkflowPersistence(
       activeIndex,
       clearTypingCommitTimer,
       draftNotes,
+      draftNotesRef,
       captureEditorsIntoNotes,
       commitNotes,
       setDraftNotes,

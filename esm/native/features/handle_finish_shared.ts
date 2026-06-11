@@ -1,3 +1,5 @@
+import { METAL_FINISH_PALETTE_BY_COLOR } from './metal_finish_palette.js';
+
 export type HandleFinishPresetColor = 'nickel' | 'silver' | 'gold' | 'black' | 'pink';
 export type HandleFinishColor = HandleFinishPresetColor | `#${string}`;
 
@@ -71,15 +73,15 @@ export function resolveHandleFinishPalette(color: unknown): HandleFinishPalette 
   if (isHandleFinishCustomHexColor(normalized)) return buildCustomHandleFinishPalette(normalized);
   switch (normalized) {
     case 'silver':
-      return { hex: 0xcfd5dd, emissiveHex: 0x20252c, metalness: 0.42, roughness: 0.22 };
+      return METAL_FINISH_PALETTE_BY_COLOR.silver;
     case 'gold':
-      return { hex: 0xe5c66b, emissiveHex: 0x3b2d09, metalness: 0.5, roughness: 0.2 };
+      return METAL_FINISH_PALETTE_BY_COLOR.gold;
     case 'black':
-      return { hex: 0x1c1d20, emissiveHex: 0x000000, metalness: 0.32, roughness: 0.3 };
+      return METAL_FINISH_PALETTE_BY_COLOR.black;
     case 'pink':
       return { hex: 0xf3b6cb, emissiveHex: 0x2d1820, metalness: 0.3, roughness: 0.24 };
     case 'nickel':
     default:
-      return { hex: 0xe5e9ef, emissiveHex: 0x20242b, metalness: 0.28, roughness: 0.2 };
+      return METAL_FINISH_PALETTE_BY_COLOR.nickel;
   }
 }

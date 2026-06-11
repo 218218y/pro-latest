@@ -2,6 +2,12 @@ import {
   INTERIOR_FITTINGS_DIMENSIONS,
   MATERIAL_DIMENSIONS,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import {
+  SHELF_GROUP_PART_ID,
+  createSketchShelfPartId,
+  markShelfBoardUserData,
+  resolveShelfPartMaterial,
+} from '../features/shelf_part_identity.js';
 import type { InteriorValueRecord } from './render_interior_ops_contracts.js';
 import type { ApplySketchShelvesArgs } from './render_interior_sketch_support_contracts.js';
 
@@ -49,13 +55,59 @@ export function applySketchShelves(args: ApplySketchShelvesArgs): void {
     regularDepth,
     backZ,
     woodThick,
+    effectiveTopY,
+    showContentsEnabled,
+    addFoldedClothes,
     currentShelfMat,
+    currentBraceShelfMat,
+    moduleKeyStr,
+    getPartMaterial,
+    getPartColorValue,
     glassMat,
     createBoard,
+    group,
     THREE,
     addBraceDarkSeams,
     addShelfPins,
   } = args;
+
+  function shelfHeightForVariant(variant: ReturnType<typeof normalizeSketchShelfVariant>): number {
+    if (variant === 'glass') return MATERIAL_DIMENSIONS.glassShelf.thicknessM;
+    if (variant === 'double') {
+      return Math.max(woodThick, woodThick * INTERIOR_FITTINGS_DIMENSIONS.shelves.doubleThicknessMultiplier);
+    }
+    return woodThick;
+  }
+
+  function resolveNextShelfBottomY(currentY: number): number {
+    let topLimitY = effectiveTopY;
+    for (let j = 0; j < shelves.length; j++) {
+      const nextShelf = shelves[j] || null;
+      if (!nextShelf) continue;
+
+      const nextY = yFromNorm(nextShelf.yNorm);
+      if (
+        nextY == null ||
+        !(nextY > currentY + INTERIOR_FITTINGS_DIMENSIONS.shelves.contentsHeightClearanceM)
+      ) {
+        continue;
+      }
+
+      const nextBottomY = nextY - shelfHeightForVariant(normalizeSketchShelfVariant(nextShelf.variant)) / 2;
+      if (nextBottomY < topLimitY) topLimitY = nextBottomY;
+    }
+    return topLimitY;
+  }
+
+  function resolveShelfContentsMaxHeight(shelfY: number, shelfH: number): number {
+    const shelfTopY = shelfY + shelfH / 2;
+    return Math.max(
+      0,
+      resolveNextShelfBottomY(shelfY) -
+        shelfTopY -
+        INTERIOR_FITTINGS_DIMENSIONS.shelves.contentsHeightClearanceM
+    );
+  }
 
   for (let i = 0; i < shelves.length; i++) {
     const shelf = shelves[i] || null;
@@ -90,16 +142,18 @@ export function applySketchShelves(args: ApplySketchShelvesArgs): void {
 
     const backZ0 = boxHere ? boxHere.innerBackZ : internalDepth > 0 ? backZ : internalZ;
     const shelfZ = backZ0 + shelfDepth / 2;
-    const GLASS_THICK_M = MATERIAL_DIMENSIONS.glassShelf.thicknessM;
-    const shelfH = isGlass
-      ? GLASS_THICK_M
-      : isDouble
-        ? Math.max(woodThick, woodThick * shelfDims.doubleThicknessMultiplier)
-        : woodThick;
-    const mat = isGlass && glassMat ? glassMat : currentShelfMat;
-    const mesh = createBoard(shelfW, shelfH, shelfDepth, shelfX, y, shelfZ, mat, 'all_shelves');
-
-    if (isBrace) addBraceDarkSeams(y, shelfZ, shelfDepth, true, THREE);
+    const shelfH = shelfHeightForVariant(variant);
+    const shelfPartId = createSketchShelfPartId(moduleKeyStr, i + 1);
+    const mat =
+      isGlass && glassMat
+        ? glassMat
+        : resolveShelfPartMaterial({
+            partId: shelfPartId,
+            currentShelfMat: isBrace ? currentBraceShelfMat || currentShelfMat : currentShelfMat,
+            getPartColorValue,
+            getPartMaterial,
+          });
+    const mesh = createBoard(shelfW, shelfH, shelfDepth, shelfX, y, shelfZ, mat, shelfPartId);
 
     const meshRec = readObject<{
       userData?: InteriorValueRecord;
@@ -107,6 +161,18 @@ export function applySketchShelves(args: ApplySketchShelvesArgs): void {
       receiveShadow?: boolean;
       renderOrder?: number;
     }>(mesh);
+    if (meshRec && typeof meshRec === 'object') {
+      meshRec.userData = meshRec.userData || {};
+      markShelfBoardUserData(meshRec.userData, {
+        groupPartId: SHELF_GROUP_PART_ID,
+        shelfIndex: i + 1,
+        variant,
+        isBrace,
+      });
+    }
+
+    if (isBrace) addBraceDarkSeams(y, shelfZ, shelfDepth, true, THREE, null, null, shelfPartId);
+
     if (isGlass && meshRec && typeof meshRec === 'object') {
       meshRec.userData = meshRec.userData || {};
       meshRec.userData.__keepMaterial = true;
@@ -122,7 +188,16 @@ export function applySketchShelves(args: ApplySketchShelvesArgs): void {
       shelfW,
       shelfH,
       shelfDepth,
-      !isBrace && (isDouble || isGlass || isRegular)
+      !isBrace && (isDouble || isGlass || isRegular),
+      shelfPartId
     );
+
+    if (showContentsEnabled && typeof addFoldedClothes === 'function') {
+      const contentsWidth = shelfW - INTERIOR_FITTINGS_DIMENSIONS.shelves.contentsWidthClearanceM;
+      const maxHeight = resolveShelfContentsMaxHeight(y, shelfH);
+      if (contentsWidth > 0 && maxHeight > 0) {
+        addFoldedClothes(shelfX, y + shelfH / 2, shelfZ, contentsWidth, group, maxHeight, shelfDepth);
+      }
+    }
   }
 }

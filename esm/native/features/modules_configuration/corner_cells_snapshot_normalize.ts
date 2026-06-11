@@ -96,8 +96,6 @@ export function sanitizeCornerConfigurationForPatch(
   out.hasShoeDrawer = !!out.hasShoeDrawer;
   out.isCustom = !!out.isCustom;
   out.gridDivisions = toIntMin(out.gridDivisions, 6, 1);
-  out.intDrawersList = Array.isArray(out.intDrawersList) ? cloneMutableCornerValue(out.intDrawersList) : [];
-  out.intDrawersSlot = toIntMin(out.intDrawersSlot, 0, 0);
   out.customData = sanitizeCornerCustomDataForPatch(out.customData);
 
   if (hasOwn(src, 'modulesConfiguration') || hasOwn(prev, 'modulesConfiguration')) {
@@ -128,8 +126,6 @@ export function sanitizeLowerCornerConfigurationForPatch(
   if (typeof out.layout !== 'string' || !out.layout) out.layout = 'shelves';
   out.extDrawersCount = toIntMin(out.extDrawersCount, 0, 0);
   out.hasShoeDrawer = !!out.hasShoeDrawer;
-  out.intDrawersList = Array.isArray(out.intDrawersList) ? cloneMutableCornerValue(out.intDrawersList) : [];
-  out.intDrawersSlot = toIntMin(out.intDrawersSlot, 0, 0);
   out.isCustom = typeof out.isCustom === 'undefined' ? true : !!out.isCustom;
   out.gridDivisions = toIntMin(out.gridDivisions, 6, 1);
   out.customData = sanitizeCornerCustomDataForPatch(out.customData);

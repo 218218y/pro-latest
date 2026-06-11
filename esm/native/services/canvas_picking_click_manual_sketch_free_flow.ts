@@ -58,6 +58,7 @@ export function tryHandleCanvasManualSketchFreeClick(args: CanvasPickingManualSk
         tool: mt,
         ndcX,
         ndcY,
+        foundModuleIndex,
         host,
         wardrobeBox,
         raycaster,

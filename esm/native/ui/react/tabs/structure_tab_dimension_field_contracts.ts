@@ -18,8 +18,11 @@ export type StructureDimFieldProps = {
 
 export type StructureOptionalDimFieldProps = {
   label: string;
+  inputAddon?: ReactNode;
+  reserveInputAddon?: boolean;
   value: number | '';
   placeholder?: number;
+  placeholderText?: string;
   onCommit: (n: number | null) => void;
   step: number;
   buttonsStep: number;

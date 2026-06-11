@@ -1,4 +1,5 @@
 import { INTERIOR_FITTINGS_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { SHELF_GROUP_PART_ID, markShelfBoardUserData } from '../features/shelf_part_identity.js';
 import type {
   InteriorGroupLike,
   InteriorMaterialLike,
@@ -19,7 +20,7 @@ export function createShelfPinAdder(args: {
 }): SketchPlacementSupport['addShelfPins'] {
   const { group, THREE, pinGeo, pinMat, pinRadius, pinLen, pinEdgeOffsetDefault } = args;
 
-  return (shelfX, shelfY, shelfZ, shelfW, shelfH, shelfDepth, enabled) => {
+  return (shelfX, shelfY, shelfZ, shelfW, shelfH, shelfDepth, enabled, shelfPartId) => {
     if (!enabled) return;
     if (!THREE || !pinGeo || !pinMat) return;
     if (!(shelfW > 0) || !(shelfDepth > 0)) return;
@@ -41,7 +42,8 @@ export function createShelfPinAdder(args: {
       if (mesh.rotation) mesh.rotation.z = Math.PI / 2;
       mesh.position?.set?.(x, yPin, z);
       mesh.userData = mesh.userData || {};
-      mesh.userData.partId = 'all_shelves';
+      mesh.userData.partId = shelfPartId || SHELF_GROUP_PART_ID;
+      markShelfBoardUserData(mesh.userData, { groupPartId: SHELF_GROUP_PART_ID });
       mesh.userData.__kind = 'shelf_pin';
       try {
         const pinMaterial = asMaterial(mesh.material);

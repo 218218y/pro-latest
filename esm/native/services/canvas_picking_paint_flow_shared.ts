@@ -13,12 +13,15 @@ import type {
 
 import { getBuilderMaterialsService } from '../runtime/builder_service_access.js';
 import { isGlassPaintSelection, readDoorStyleMap } from '../features/door_style_overrides.js';
+import { isHexCellDiagonalPanelPartId } from '../features/hex_cell/index.js';
 import { __wp_map, __wp_ui } from './canvas_picking_core_helpers.js';
 import {
   CHEST_BODY_PARTS,
   CORNICE_PARTS,
+  LOWER_MAIN_BODY_PARTS,
   MAIN_BODY_PARTS,
   __isAnyCornicePart,
+  __isCorniceWavePart,
 } from './canvas_picking_paint_targets.js';
 import {
   cloneMirrorLayoutList,
@@ -202,6 +205,7 @@ export function sameMirrorLayoutMap(a: MirrorLayoutMap, b: MirrorLayoutMap): boo
 
 export function isSpecialPart(__paintPartKey: string): boolean {
   if (!__paintPartKey) return false;
+  if (isHexCellDiagonalPanelPartId(__paintPartKey)) return true;
   if (/^d\d+_/.test(__paintPartKey)) return true;
   if (__paintPartKey.startsWith('sliding') || __paintPartKey.startsWith('slide')) return true;
   if (__paintPartKey.startsWith('corner_door') || __paintPartKey.startsWith('corner_pent_door')) return true;
@@ -228,8 +232,9 @@ export function getPaintSourceTag(paint: string, foundPartId: string): string {
   if (
     foundPartId &&
     (MAIN_BODY_PARTS.includes(foundPartId) ||
+      LOWER_MAIN_BODY_PARTS.includes(foundPartId) ||
       CHEST_BODY_PARTS.includes(foundPartId) ||
-      __isAnyCornicePart(foundPartId))
+      (__isAnyCornicePart(foundPartId) && !__isCorniceWavePart(foundPartId)))
   ) {
     return 'paint.apply:group';
   }

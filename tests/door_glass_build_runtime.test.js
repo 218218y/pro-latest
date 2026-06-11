@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { createApplyHingedDoorsOps } from '../esm/native/builder/render_door_ops_hinged.ts';
 import { createBuilderRenderDrawerOps } from '../esm/native/builder/render_drawer_ops.ts';
+import { makeDrawerBoxPartId } from '../esm/native/features/drawer_box_identity.ts';
 
 function createThreeStub() {
   class Group {
@@ -263,4 +264,116 @@ test('external drawer build treats glass specials like real glass fronts, keeps 
     2,
     'glass drawer should not keep a wood connector behind the glass'
   );
+});
+
+test('external drawer build keeps drawer boxes as independent paint targets', () => {
+  const THREE = createThreeStub();
+  const wardrobeGroup = new THREE.Group();
+  const renderDrawerOps = createBuilderRenderDrawerOps({
+    __app: input => input.App,
+    __ops: () => undefined,
+    __wardrobeGroup: () => wardrobeGroup,
+    __reg: () => undefined,
+    __drawers: () => [],
+    getMirrorMaterial: () => ({ kind: 'mirror' }),
+  });
+
+  const firstBoxId = makeDrawerBoxPartId('drawer_1');
+  const secondBoxId = makeDrawerBoxPartId('drawer_2');
+  const colorMap = {
+    drawer_1: '#884422',
+    [secondBoxId]: '#226688',
+  };
+
+  const didApply = renderDrawerOps.applyExternalDrawersOps({
+    App: {},
+    THREE,
+    ops: {
+      drawers: [
+        {
+          partId: 'drawer_1',
+          visualW: 0.6,
+          visualH: 0.25,
+          boxW: 0.56,
+          boxH: 0.18,
+          boxD: 0.5,
+          connectW: 0.5,
+          connectH: 0.16,
+          connectD: 0.02,
+        },
+        {
+          partId: 'drawer_2',
+          visualW: 0.6,
+          visualH: 0.25,
+          boxW: 0.56,
+          boxH: 0.18,
+          boxD: 0.5,
+          connectW: 0.5,
+          connectH: 0.16,
+          connectD: 0.02,
+        },
+      ],
+    },
+    cfg: { isMultiColorMode: true },
+    bodyMat: { kind: 'body' },
+    whiteMat: { kind: 'white' },
+    getPartColorValue: partId => colorMap[partId],
+    getPartMaterial: partId => ({ kind: 'paint', partId }),
+  });
+
+  assert.equal(didApply, true);
+  const firstDrawer = wardrobeGroup.children[0];
+  const secondDrawer = wardrobeGroup.children[1];
+
+  assert.deepEqual(firstDrawer.children[0].material, { kind: 'white' });
+  assert.deepEqual(firstDrawer.children[1].material, { kind: 'paint', partId: 'drawer_1' });
+  assert.deepEqual(firstDrawer.children[2].material, { kind: 'white' });
+  assert.equal(firstDrawer.children[0].userData.partId, firstBoxId);
+  assert.equal(firstDrawer.children[2].userData.partId, firstBoxId);
+  assert.equal(firstDrawer.children[0].userData.__wpDrawerBox, true);
+
+  assert.deepEqual(secondDrawer.children[0].material, { kind: 'paint', partId: secondBoxId });
+  assert.deepEqual(secondDrawer.children[2].material, { kind: 'paint', partId: secondBoxId });
+  assert.equal(secondDrawer.children[0].userData.partId, secondBoxId);
+});
+test('external drawer build emits folded contents inside drawer boxes when contents are enabled', () => {
+  const foldedCalls = [];
+  const THREE = createThreeStub();
+  const wardrobeGroup = new THREE.Group();
+  const renderDrawerOps = createBuilderRenderDrawerOps({
+    __app: input => input.App,
+    __ops: () => undefined,
+    __wardrobeGroup: () => wardrobeGroup,
+    __reg: () => undefined,
+    __drawers: () => [],
+    getMirrorMaterial: () => ({ kind: 'mirror' }),
+  });
+
+  const didApply = renderDrawerOps.applyExternalDrawersOps({
+    App: {},
+    THREE,
+    ops: {
+      drawers: [
+        {
+          partId: 'drawer_contents_1',
+          visualW: 0.6,
+          visualH: 0.25,
+          boxW: 0.56,
+          boxH: 0.18,
+          boxD: 0.5,
+        },
+      ],
+    },
+    cfg: {},
+    bodyMat: { kind: 'body' },
+    showContentsEnabled: true,
+    addFoldedClothes: (...call) => foldedCalls.push(call),
+  });
+
+  assert.equal(didApply, true);
+  assert.equal(foldedCalls.length, 1);
+  assert.equal(foldedCalls[0][4], wardrobeGroup.children[0].children[0]);
+  assert.equal(Number(foldedCalls[0][3].toFixed(3)), 0.51);
+  assert.equal(Number(foldedCalls[0][5].toFixed(3)), 0.15);
+  assert.equal(foldedCalls[0][6], 0.5);
 });

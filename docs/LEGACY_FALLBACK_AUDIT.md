@@ -1,21 +1,21 @@
 # Legacy / fallback audit
 
-Generated at: 2026-05-11T04:28:41.597Z
+Generated at: 2026-06-02T08:59:37.127Z
 
 ## Summary
 
 - Source root: `esm`
-- Total categorized occurrences: **515**
-- Files with occurrences: **167**
+- Total categorized occurrences: **513**
+- Files with occurrences: **165**
 - Category counts:
   - `runtime-default`: **0**
-  - `domain-default`: **184**
+  - `domain-default`: **190**
   - `error-message-default`: **29**
   - `framework-default`: **2**
   - `browser-adapter`: **40**
   - `project-migration`: **49**
   - `external-api-compat`: **12**
-  - `compat-boundary`: **193**
+  - `compat-boundary`: **185**
   - `test-fixture`: **6**
   - `legacy-runtime-risk`: **0**
   - `unknown`: **0**
@@ -54,14 +54,14 @@ Generated at: 2026-05-11T04:28:41.597Z
 - `esm/native/kernel/domain_api_surface_sections_bindings_doors.ts` - **6** (compat-boundary: 3, domain-default: 3)
 - `esm/native/kernel/domain_api_surface_sections_map_writes.ts` - **6** (compat-boundary: 3, domain-default: 3)
 - `esm/native/kernel/domain_module_stack_patch.ts` - **6** (compat-boundary: 5, project-migration: 1)
-- `esm/native/ui/react/tabs/render_tab_shared_room.ts` - **6** (domain-default: 6)
-- `esm/shared/wardrobe_dimension_tokens_shared.ts` - **6** (compat-boundary: 3, domain-default: 3)
+- `esm/native/ui/react/tabs/settings_visual_shared_room.ts` - **6** (domain-default: 6)
 - `esm/native/io/project_schema_migrations_settings.ts` - **5** (project-migration: 5)
 - `esm/native/kernel/cfg_meta.ts` - **5** (domain-default: 5)
 - `esm/native/services/canvas_picking_hover_targets_interior_scan.ts` - **5** (domain-default: 5)
 - `esm/native/services/canvas_picking_selector_internal_metrics.ts` - **5** (domain-default: 5)
 - `esm/native/services/cloud_sync_panel_api_snapshots_shared.ts` - **5** (domain-default: 5)
 - `esm/native/ui/export/export_order_pdf_composite_image_slots_runtime.ts` - **5** (compat-boundary: 5)
+- `esm/shared/wardrobe_dimension_tokens_shared.ts` - **5** (compat-boundary: 2, domain-default: 3)
 - `esm/test_no_side_effects_on_import.mjs` - **5** (test-fixture: 5)
 - `esm/native/builder/visuals_and_contents.ts` - **4** (compat-boundary: 4)
 - `esm/native/features/door_trim_map.ts` - **4** (domain-default: 4)

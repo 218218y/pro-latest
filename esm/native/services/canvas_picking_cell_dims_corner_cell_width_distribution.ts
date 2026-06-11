@@ -48,13 +48,13 @@ export function createCornerCellWidthDistribution(ctx: CornerCellDimsContext): C
   if (!Number.isFinite(remainingW) || remainingW < 0) remainingW = 0;
   const denom = missingUnits > 0 ? missingUnits : 1;
 
-  const minDoorWcm = 20;
+  const minSpecialCellWcm = 20;
   const widthsCurr: number[] = [];
   const minW: number[] = [];
 
   for (let ci = 0; ci < cellCount; ci++) {
     const doorsUnits = Math.max(1, doorsInCell[ci]);
-    const minWidth = Math.max(5, doorsUnits * minDoorWcm);
+    const minWidth = minSpecialCellWcm;
     minW[ci] = minWidth;
 
     const fixedWidth = fixedWidths[ci];

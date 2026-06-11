@@ -16,6 +16,7 @@ export {
   readCloudSyncErrorMessage,
   readCloudSyncSketchPayloadLike,
   readCloudSyncSyncPinPayloadLike,
+  readCloudSyncContentsTogglePayloadLike,
   readCloudSyncTabsGatePayloadFields,
   readCloudSyncScalarField,
   readCloudSyncNumberOrStringField,

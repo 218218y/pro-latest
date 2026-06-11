@@ -7,6 +7,10 @@ import {
   fillExportCanvasBackground,
   readSketchModeForWorkflow,
 } from './export_canvas_workflow_shared.js';
+import {
+  createLiveViewportNotesTransform,
+  shouldPreserveLiveViewportForSketchImageExport,
+} from './export_canvas_workflow_viewport_policy.js';
 
 export function createExportRenderAndSketchWorkflow(
   deps: ExportCanvasWorkflowDeps
@@ -46,6 +50,7 @@ export function createExportRenderAndSketchWorkflow(
     const originalTarget = controls.target.clone();
     const originalSketchMode = readSketchModeForWorkflow(deps, App);
     const notesEnabled = _isNotesEnabled(App);
+    const preserveLiveViewport = shouldPreserveLiveViewportForSketchImageExport(App);
     const titleHeight = 120;
     const gap = 20;
 
@@ -122,12 +127,20 @@ export function createExportRenderAndSketchWorkflow(
         const renderPanel = async (sketchMode: boolean, imageY: number, reason: string) => {
           setSketchModeForExport(sketchMode, reason);
           restoreOriginalCameraForPanel();
-          const notesTransform = captureNotesTransformForCurrentFrame();
+          const notesTransform = preserveLiveViewport ? null : captureNotesTransformForCurrentFrame();
           _renderSceneForExport(App, renderer, scene, camera);
-          ctx.drawImage(_getRendererCanvasSource(renderer), 0, imageY);
+          const rendererSource = _getRendererCanvasSource(renderer);
+          ctx.drawImage(rendererSource, 0, imageY);
 
           if (notesEnabled) {
-            await _renderAllNotesToCanvas(App, ctx, width, height, imageY, notesTransform);
+            await _renderAllNotesToCanvas(
+              App,
+              ctx,
+              width,
+              height,
+              imageY,
+              preserveLiveViewport ? createLiveViewportNotesTransform(rendererSource) : notesTransform
+            );
           }
         };
 

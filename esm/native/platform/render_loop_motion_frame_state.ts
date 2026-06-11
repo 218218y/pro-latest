@@ -25,7 +25,6 @@ import {
   getVisibleOpenInternalDrawerModuleKeys,
   hasAnyOpenDoor,
   hasOpenInternalDrawers,
-  isIntDrawerEditActive,
   isSketchEditActive,
   isSketchExtDrawersEditActive,
   isSketchIntDrawersEditActive,
@@ -112,7 +111,6 @@ export function readRenderLoopMotionFrameState(App: AppContainer, report: Report
   const sketchEditActive = isSketchEditActive(App);
   const sketchIntDrawersEditActive = isSketchIntDrawersEditActive(App);
   const sketchExtDrawersEditActive = isSketchExtDrawersEditActive(App);
-  const intDrawerEditActive = isIntDrawerEditActive(App);
   const forcedOpenDrawerId =
     typeof tools['getDrawersOpenId'] === 'function' ? call0m(tools, tools['getDrawersOpenId']) : null;
 
@@ -135,7 +133,6 @@ export function readRenderLoopMotionFrameState(App: AppContainer, report: Report
     sketchEditActive,
     sketchIntDrawersEditActive,
     sketchExtDrawersEditActive,
-    intDrawerEditActive,
     forcedOpenDrawerId,
     manualTool,
     delayTime,

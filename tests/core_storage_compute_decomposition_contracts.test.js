@@ -9,30 +9,17 @@ const externalOwner = readSource(
   import.meta.url
 );
 const customOwner = readSource('../esm/native/builder/core_storage_compute_custom.ts', import.meta.url);
-const internalOwner = readSource(
-  '../esm/native/builder/core_storage_compute_internal_drawers.ts',
-  import.meta.url
-);
-
-test('[core-storage-compute] storage facade stays thin while focused owners keep drawer/custom math isolated', () => {
+test('[core-storage-compute] storage facade stays thin while focused owners keep external drawer/custom math isolated', () => {
   assertMatchesAll(
     assert,
     storageFacade,
-    [
-      /core_storage_compute_external_drawers\.js/,
-      /core_storage_compute_custom\.js/,
-      /core_storage_compute_internal_drawers\.js/,
-    ],
+    [/core_storage_compute_external_drawers\.js/, /core_storage_compute_custom\.js/],
     'storageFacade'
   );
   assertLacksAll(
     assert,
     storageFacade,
-    [
-      /export function computeExternalDrawersOpsForModule\(/,
-      /export function computeInteriorCustomOps\(/,
-      /export function computeInternalDrawersOpsForSlot\(/,
-    ],
+    [/export function computeExternalDrawersOpsForModule\(/, /export function computeInteriorCustomOps\(/],
     'storageFacade'
   );
   assertMatchesAll(
@@ -42,10 +29,4 @@ test('[core-storage-compute] storage facade stays thin while focused owners keep
     'externalOwner'
   );
   assertMatchesAll(assert, customOwner, [/export function computeInteriorCustomOps\(/], 'customOwner');
-  assertMatchesAll(
-    assert,
-    internalOwner,
-    [/export function computeInternalDrawersOpsForSlot\(/],
-    'internalOwner'
-  );
 });

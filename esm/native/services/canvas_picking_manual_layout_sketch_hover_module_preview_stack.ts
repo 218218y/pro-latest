@@ -1,4 +1,5 @@
 import type { ManualLayoutSketchHoverModuleContext } from './canvas_picking_manual_layout_sketch_hover_module_contracts.js';
+import { shouldBlockDrawerBuildInHexCell } from '../features/hex_cell/index.js';
 import {
   parseSketchExtDrawerCount,
   parseSketchExtDrawerHeightM,
@@ -8,9 +9,20 @@ import { resolveSketchBoxStackPreview } from './canvas_picking_sketch_box_stack_
 import { resolveSketchModuleStackPreview } from './canvas_picking_sketch_module_stack_preview.js';
 import {
   createManualLayoutSketchHoverHost,
+  hideManualLayoutSketchHoverPreview,
   resolveManualLayoutSketchHoverPointerX,
   writeManualLayoutSketchHoverPreview,
 } from './canvas_picking_manual_layout_sketch_hover_module_preview_shared.js';
+
+function markSketchDrawerPreviewBlockedByHexCell(
+  cfgRef: unknown,
+  stackPreview: { hoverRecord?: Record<string, unknown>; preview?: Record<string, unknown> | null } | null
+): void {
+  if (!stackPreview || !shouldBlockDrawerBuildInHexCell(cfgRef)) return;
+  if (stackPreview.hoverRecord?.op === 'remove') return;
+  stackPreview.hoverRecord = { ...stackPreview.hoverRecord, blockedReason: 'hex-cell' };
+  stackPreview.preview = { ...stackPreview.preview, op: 'blocked', blockedReason: 'hex-cell' };
+}
 
 function resolveSketchDrawerContentKind(
   ctx: ManualLayoutSketchHoverModuleContext
@@ -41,6 +53,8 @@ export function tryHandleManualLayoutSketchHoverModuleStackPreview(
     cfgRef,
     info,
     shelves,
+    rods,
+    storageBarriers,
     bottomY,
     topY,
     spanH,
@@ -51,6 +65,7 @@ export function tryHandleManualLayoutSketchHoverModuleStackPreview(
     internalZ,
     drawers,
     extDrawers,
+    boxes,
     hitSelectorObj,
     __wp_isCornerKey,
     __wp_readSketchBoxDividers,
@@ -83,6 +98,11 @@ export function tryHandleManualLayoutSketchHoverModuleStackPreview(
       resolveSketchBoxSegments: __wp_resolveSketchBoxSegments,
       pickSketchBoxSegment: __wp_pickSketchBoxSegment,
     });
+    if (!stackPreview) {
+      ctx.__wp_writeSketchHover(ctx.App, null);
+      return hideManualLayoutSketchHoverPreview(ctx);
+    }
+    markSketchDrawerPreviewBlockedByHexCell(cfgRef, stackPreview);
     return writeManualLayoutSketchHoverPreview(ctx, stackPreview);
   }
 
@@ -93,6 +113,8 @@ export function tryHandleManualLayoutSketchHoverModuleStackPreview(
     cfgRef,
     info,
     shelves,
+    rods,
+    storageBarriers,
     bottomY,
     topY,
     totalHeight: spanH,
@@ -104,11 +126,17 @@ export function tryHandleManualLayoutSketchHoverModuleStackPreview(
     internalZ,
     drawers,
     extDrawers,
+    boxes,
     woodThick,
     selectedDrawerCount,
     drawerHeightM,
     hitSelectorObj,
     isCornerKey: __wp_isCornerKey,
   });
+  if (!stackPreview) {
+    ctx.__wp_writeSketchHover(ctx.App, null);
+    return hideManualLayoutSketchHoverPreview(ctx);
+  }
+  markSketchDrawerPreviewBlockedByHexCell(cfgRef, stackPreview);
   return writeManualLayoutSketchHoverPreview(ctx, stackPreview);
 }

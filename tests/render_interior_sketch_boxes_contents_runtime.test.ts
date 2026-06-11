@@ -180,12 +180,39 @@ test('render sketch box contents emits paired internal drawer ops with clamped s
   assert.equal(drawerRuns.length, 1);
   const payload: any = drawerRuns[0];
   assert.equal(payload.ops.length, 2);
-  assert.equal(payload.ops[0].partId, 'box_0_int_drawers_d1');
-  assert.equal(payload.ops[1].partId, 'box_0_int_drawers_d1');
+  assert.equal(payload.ops[0].partId, 'box_0_int_drawers_d1_lower');
+  assert.equal(payload.ops[1].partId, 'box_0_int_drawers_d1_upper');
+  assert.equal(payload.ops[0].dividerKey, 'box_0_int_drawers_d1_lower');
+  assert.equal(payload.ops[1].dividerKey, 'box_0_int_drawers_d1_upper');
   assert.equal(payload.ops[0].moduleIndex, 'm1');
   assert.ok(Math.abs(payload.ops[0].x - 0.2) < 1e-9);
   assert.ok(Math.abs(payload.ops[1].x - 0.2) < 1e-9);
   assert.ok(payload.ops[1].y > payload.ops[0].y);
   assert.ok(payload.ops[0].height > 0);
   assert.ok(payload.ops[0].depth > 0.05);
+  assert.equal(typeof payload.addFoldedClothes, 'function');
+  assert.equal(payload.showContentsEnabled, true);
+});
+
+test('render sketch box shelves emit folded contents inside divider-aware shelf spans', () => {
+  const { args } = createBaseArgs();
+  const folded: any[] = [];
+  args.args.input.addFoldedClothes = (...call: any[]) => folded.push(call);
+  args.shell.box = {
+    shelves: [
+      { id: 's1', yNorm: 0.2, variant: 'regular', xNorm: 0.75 },
+      { id: 's2', yNorm: 0.55, variant: 'double', xNorm: 0.75 },
+    ],
+    storageBarriers: [],
+    rods: [],
+    drawers: [],
+  };
+
+  renderSketchBoxContents(args);
+
+  assert.equal(folded.length, 2);
+  assert.equal(folded[0][4], args.args.group);
+  assert.ok(folded[0][3] < 0.8, 'contents width should follow the resolved shelf segment');
+  assert.ok(folded[0][5] > 0);
+  assert.ok(folded[1][5] > folded[0][5]);
 });

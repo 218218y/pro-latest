@@ -13,7 +13,7 @@ export function applySketchModulePickMeta(
   partId: string,
   moduleKey: string,
   extraUserData?: InteriorValueRecord,
-  opts?: { door?: boolean }
+  opts?: { door?: boolean; preserveExistingPartId?: boolean }
 ): void {
   if (!mesh) return;
   const userData = readObject<InteriorValueRecord>(mesh.userData) || {};
@@ -32,13 +32,18 @@ export function applySketchModulePickMetaDeep(
   partId: string,
   moduleKey: string,
   extraUserData?: InteriorValueRecord,
-  opts?: { door?: boolean }
+  opts?: { door?: boolean; preserveExistingPartId?: boolean }
 ): void {
-  const applyMeta = (node: unknown) => {
+  const applyMeta = (node: unknown, isRoot = false) => {
     const rec = readObject<InteriorGroupLike>(node) || asMesh(node);
     if (!rec) return;
     const userData = readObject<InteriorValueRecord>(rec.userData) || {};
-    userData.partId = partId;
+    const keepExistingPartId =
+      opts?.preserveExistingPartId === true &&
+      !isRoot &&
+      typeof userData.partId === 'string' &&
+      userData.partId.trim() !== '';
+    if (!keepExistingPartId) userData.partId = partId;
     userData.__wpSketchModuleKey = moduleKey;
     if (moduleKey) userData.moduleIndex = moduleKey;
     if (opts?.door === true) userData.__wpSketchBoxDoor = true;
@@ -50,7 +55,7 @@ export function applySketchModulePickMetaDeep(
 
   const rootRec = readObject<InteriorGroupLike>(root) || asMesh(root);
   if (!rootRec) return;
-  applyMeta(rootRec);
+  applyMeta(rootRec, true);
   rootRec.traverse?.((node: unknown) => {
     if (node !== rootRec) applyMeta(node);
   });
@@ -61,7 +66,7 @@ export function applySketchBoxPickMeta(
   partId: string,
   moduleKey: string,
   boxId: string,
-  opts?: { door?: boolean }
+  opts?: { door?: boolean; preserveExistingPartId?: boolean }
 ): void {
   if (!mesh) return;
   const userData = readObject<InteriorValueRecord>(mesh.userData) || {};
@@ -79,7 +84,7 @@ export function applySketchBoxPickMetaDeep(
   moduleKey: string,
   boxId: string,
   extraUserData?: InteriorValueRecord,
-  opts?: { door?: boolean }
+  opts?: { door?: boolean; preserveExistingPartId?: boolean }
 ): void {
   const applyMeta = (node: unknown) => {
     const rec = readObject<InteriorGroupLike>(node) || asMesh(node);

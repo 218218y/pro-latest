@@ -14,6 +14,8 @@ import type {
 import { asRecord } from '../runtime/record.js';
 import { getBuilderRenderOps } from '../runtime/builder_service_access.js';
 import { computeCarcassOps } from './pure_api.js';
+import { CARCASS_SHELL_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { CARCASS_BACK_INSET_Z, CARCASS_FRONT_INSET_Z } from './core_carcass_shared.js';
 
 function asFiniteNumber(v: unknown, name: string): number {
   const n = typeof v === 'number' ? v : Number(v);
@@ -58,8 +60,12 @@ type ApplyCarcassAndGetCabinetMetricsArgs = {
   moduleInternalWidths?: number[] | null;
   moduleHeightsTotal?: number[] | null;
   moduleDepthsTotal?: number[] | null;
+  moduleCfgList?: unknown[] | null;
+  moduleConfigs?: unknown[] | null;
   // Optional prefix for partIds (used for stack-split bottom stack)
   partIdPrefix?: string;
+  renderCarcass?: boolean;
+  stackSplitDividerY?: number | null;
 };
 
 function getRequiredPartId(node: unknown, path: string): string {
@@ -94,6 +100,37 @@ function applyPartIdPrefixToCarcassOps(carcassOps: CarcassOpsLike, prefix: strin
     if (typeof pid !== 'string' || !pid) continue;
     if (pid.startsWith('body_')) board.partId = pfx + pid;
   }
+}
+
+function appendStackSplitDividerBoardIfNeeded(
+  carcassOps: CarcassOpsLike,
+  args: Required<Pick<ApplyCarcassAndGetCabinetMetricsArgs, 'totalW' | 'D' | 'woodThick'>> & {
+    stackSplitDividerY?: number | null;
+  }
+): void {
+  const dividerTopY = Number(args.stackSplitDividerY);
+  if (!Number.isFinite(dividerTopY) || dividerTopY <= args.woodThick) return;
+
+  const boards = Array.isArray(carcassOps.boards) ? carcassOps.boards : null;
+  if (!boards) return;
+
+  const dividerDepth = Math.max(
+    CARCASS_SHELL_DIMENSIONS.boardMinDepthM,
+    args.D - (CARCASS_BACK_INSET_Z + CARCASS_FRONT_INSET_Z)
+  );
+  boards.push({
+    kind: 'board',
+    partId: 'body_stack_split_divider',
+    width: Math.max(
+      CARCASS_SHELL_DIMENSIONS.boardMinDimensionM,
+      args.totalW - 2 * args.woodThick - CARCASS_SHELL_DIMENSIONS.floorCeilWidthClearanceM
+    ),
+    height: args.woodThick,
+    depth: dividerDepth,
+    x: 0,
+    y: dividerTopY - args.woodThick / 2,
+    z: (CARCASS_BACK_INSET_Z - CARCASS_FRONT_INSET_Z) / 2,
+  });
 }
 
 function readApplyCarcassOps(renderOps: RenderOpsLike | null): RenderOpsLike['applyCarcassOps'] | null {
@@ -197,6 +234,8 @@ export function applyCarcassAndGetCabinetMetrics(
     moduleInternalWidths: safeArgs.moduleInternalWidths,
     moduleHeightsTotal: safeArgs.moduleHeightsTotal,
     moduleDepthsTotal: safeArgs.moduleDepthsTotal,
+    moduleCfgList: safeArgs.moduleCfgList,
+    moduleConfigs: safeArgs.moduleConfigs,
   });
 
   if (!isCarcassOpsLike(carcassOpsRaw)) {
@@ -204,6 +243,13 @@ export function applyCarcassAndGetCabinetMetrics(
   }
 
   const carcassOps = carcassOpsRaw;
+
+  appendStackSplitDividerBoardIfNeeded(carcassOps, {
+    totalW: totalWn,
+    D: Dn,
+    woodThick: woodThickN,
+    stackSplitDividerY: safeArgs.stackSplitDividerY,
+  });
 
   if (safeArgs.partIdPrefix && typeof safeArgs.partIdPrefix === 'string') {
     applyPartIdPrefixToCarcassOps(carcassOps, safeArgs.partIdPrefix);
@@ -214,6 +260,10 @@ export function applyCarcassAndGetCabinetMetrics(
 
   const cabinetBodyHeight = Hn - baseHeight;
   const cabinetTopY = startY + cabinetBodyHeight;
+
+  if (safeArgs.renderCarcass === false) {
+    return { baseHeight, startY, cabinetBodyHeight, cabinetTopY, carcassOps };
+  }
 
   const applyCarcassOps = readApplyCarcassOps(getBuilderRenderOps(app));
   if (!applyCarcassOps) {

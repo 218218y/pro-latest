@@ -388,7 +388,7 @@ async function waitForUiSettledAfterProjectAction(page: Page): Promise<void> {
   await waitForTwoAnimationFrames(page);
 }
 
-type MainTabId = 'structure' | 'design' | 'interior' | 'render' | 'export';
+type MainTabId = 'structure' | 'design' | 'interior' | 'sketch' | 'settings';
 
 function getMainTabButton(page: Page, id: MainTabId): Locator {
   return page.locator(`#reactSidebarRoot .tab[role="button"][data-tab="${id}"]:visible`).last();
@@ -406,11 +406,9 @@ function getActiveTabPanelAnchor(page: Page, id: MainTabId): Locator {
       return page.locator('#reactSidebarRoot [data-testid="design-color-section"]:visible').first();
     case 'interior':
       return page.locator('#reactSidebarRoot .wp-r-intdrawer-toggle:visible').last();
-    case 'render':
-      return page
-        .locator('#reactSidebarRoot .control-section:has(input[data-testid="toggle-sketch-mode"]):visible')
-        .last();
-    case 'export':
+    case 'sketch':
+      return page.locator('#reactSidebarRoot .tab-content[data-tab="sketch"] .wp-sketch-row:visible').last();
+    case 'settings':
       return page.locator('#reactSidebarRoot button[data-testid="export-snapshot-button"]:visible').last();
   }
 }
@@ -732,6 +730,30 @@ async function setButtonSelectedState(button: Locator, selected: boolean): Promi
     await button.click();
   }
   await expect.poll(async () => await isButtonSelected(button)).toBe(selected);
+}
+
+function getHeaderSketchToggle(page: Page): Locator {
+  return page.locator('button[data-testid="header-sketch-toggle-button"]').first();
+}
+
+function getViewerNoteDrawModeButton(page: Page): Locator {
+  return page.locator('button[data-testid="viewer-note-draw-mode-button"]').first();
+}
+
+function getViewerNotesVisibilityButton(page: Page): Locator {
+  return page.locator('button[data-testid="viewer-notes-visibility-button"]').first();
+}
+
+function getViewerContentsToggleButton(page: Page): Locator {
+  return page.locator('button[data-testid="viewer-contents-toggle-button"]').first();
+}
+
+async function readButtonPressed(button: Locator): Promise<boolean> {
+  return (await button.getAttribute('aria-pressed')) === 'true';
+}
+
+async function expectButtonPressed(button: Locator, expected: boolean): Promise<void> {
+  await expect(button).toHaveAttribute('aria-pressed', expected ? 'true' : 'false');
 }
 
 async function clickButtonAndExpectSelected(button: Locator): Promise<void> {
@@ -1088,7 +1110,6 @@ export async function expectOrderPdfOverlayToolbar(page: Page): Promise<void> {
     'order-pdf-download-button',
     'order-pdf-print-button',
     'order-pdf-gmail-button',
-    'order-pdf-download-gmail-button',
     'order-pdf-toggle-render-sketch',
     'order-pdf-toggle-open-closed',
     'order-pdf-close-button',
@@ -1100,7 +1121,7 @@ export async function expectOrderPdfOverlayToolbar(page: Page): Promise<void> {
 }
 
 export async function expectExportSurface(page: Page): Promise<void> {
-  await openMainTab(page, 'export');
+  await openMainTab(page, 'settings');
 
   const ids = [
     'export-snapshot-button',
@@ -1137,26 +1158,69 @@ export async function expectCloudSyncPanel(page: Page): Promise<void> {
     'cloud-sync-sync-sketch-button',
     'cloud-sync-delete-models-button',
     'cloud-sync-delete-colors-button',
-    'cloud-sync-floating-pin-toggle',
   ] as const;
 
   for (const id of ids) {
     await expect(page.locator(`[data-testid="${id}"]`)).toBeVisible();
   }
+  await expect(page.locator('[data-testid="cloud-sync-floating-pin-toggle"]')).toHaveCount(0);
 }
 
 export async function toggleCloudSyncFloatingPin(page: Page): Promise<void> {
-  const input = page.locator('input[data-testid="cloud-sync-floating-pin-toggle"]');
-  await expect(input).toHaveCount(1);
-  const before = await input.isChecked();
-  const label = input.locator('xpath=..');
-  await expect(label).toBeVisible();
-  await label.click();
-  await expectCheckboxState(input, !before);
+  const pinButton = page.locator('button[data-testid="quick-actions-sync-pin-button"]').first();
+  if ((await pinButton.count()) === 0 || !(await pinButton.isVisible())) {
+    const dockToggle = page.locator('button[data-testid="quick-actions-toggle-button"]').first();
+    await expect(dockToggle).toBeVisible();
+    await dockToggle.click();
+  }
+  await expect(pinButton).toBeVisible();
+  const before = await readButtonPressed(pinButton);
+  await pinButton.click();
+  if (before) {
+    await expect(pinButton).toHaveCount(0);
+  } else {
+    await expectButtonPressed(pinButton, true);
+  }
+}
+
+export async function toggleHeaderSketchMode(page: Page): Promise<void> {
+  const button = getHeaderSketchToggle(page);
+  await expect(button).toBeVisible();
+  const before = await readButtonPressed(button);
+  await button.click();
+  await expectButtonPressed(button, !before);
+}
+
+export async function toggleViewerNoteDrawMode(page: Page): Promise<void> {
+  const button = getViewerNoteDrawModeButton(page);
+  await expect(button).toBeVisible();
+  const before = await readButtonPressed(button);
+  await button.click();
+  await expectButtonPressed(button, !before);
+  if (!before) {
+    await expect(page.locator('#notes-overlay')).toBeVisible();
+    await expectButtonPressed(getViewerNotesVisibilityButton(page), true);
+  }
+}
+
+export async function toggleViewerNotesVisibility(page: Page): Promise<void> {
+  const button = getViewerNotesVisibilityButton(page);
+  await expect(button).toBeVisible();
+  const before = await readButtonPressed(button);
+  await button.click();
+  await expectButtonPressed(button, !before);
+}
+
+export async function toggleViewerContentsVisibility(page: Page): Promise<void> {
+  const button = getViewerContentsToggleButton(page);
+  await expect(button).toBeVisible();
+  const before = await readButtonPressed(button);
+  await button.click();
+  await expectButtonPressed(button, !before);
 }
 
 export async function syncCloudSyncSketchFromPanel(page: Page): Promise<void> {
-  await openMainTab(page, 'export');
+  await openMainTab(page, 'settings');
   await expectCloudSyncPanel(page);
   const beforeCount = (await readPerfSummary(page))['cloudSync.syncSketch']?.count || 0;
   const button = page.locator('button[data-testid="cloud-sync-sync-sketch-button"]');
@@ -1941,23 +2005,19 @@ export async function applyCellDimsToReachableLinearModuleViaBrowserPointer(
 }
 
 export async function setRenderSketchMode(page: Page, enabled: boolean): Promise<void> {
-  await openMainTab(page, 'render');
-  const input = getActiveTabPanel(page, 'render').locator('input[data-testid="toggle-sketch-mode"]');
-  await expect(input).toHaveCount(1);
-  const current = await input.isChecked();
+  const button = getHeaderSketchToggle(page);
+  await expect(button).toBeVisible();
+  const current = await readButtonPressed(button);
   if (current !== enabled) {
-    const label = input.locator('xpath=..');
-    await expect(label).toBeVisible();
-    await label.click();
+    await button.click();
   }
-  await expectCheckboxState(input, enabled);
+  await expectButtonPressed(button, enabled);
 }
 
 export async function readCabinetCoreFingerprint(page: Page): Promise<CabinetCoreFingerprint> {
   const uiState = await readUiStateFingerprint(page);
   const dimensions = await readStructureDimensions(page);
-  await openMainTab(page, 'render');
-  const sketchModeEnabled = await page.locator('input[data-testid="toggle-sketch-mode"]').isChecked();
+  const sketchModeEnabled = await readButtonPressed(getHeaderSketchToggle(page));
   return {
     ...uiState,
     ...dimensions,
@@ -1975,7 +2035,7 @@ export async function expectCabinetCoreFingerprint(
 }
 
 export async function importSettingsBackupFromFile(page: Page, filePath: string): Promise<void> {
-  await openMainTab(page, 'export');
+  await openMainTab(page, 'settings');
   const importButton = page.locator('button[data-testid="settings-backup-import-button"]');
   const importInput = page.locator('input[data-testid="settings-backup-import-input"]');
   await expect(importButton).toBeVisible();

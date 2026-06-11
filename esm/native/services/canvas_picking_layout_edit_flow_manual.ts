@@ -1,5 +1,5 @@
 import { getInternalGridMap } from '../runtime/cache_access.js';
-import { __wp_toModuleKey, __wp_ui } from './canvas_picking_core_helpers.js';
+import { __wp_toast, __wp_toModuleKey, __wp_ui } from './canvas_picking_core_helpers.js';
 import {
   __wp_clearSketchHover,
   __wp_isViewportRoot,
@@ -14,6 +14,8 @@ import { tryHandleManualLayoutSketchToolClick } from './canvas_picking_manual_la
 import { readActiveManualTool } from './canvas_picking_manual_tool_access.js';
 import {
   fillManualLayoutShelves,
+  type ManualLayoutShelfFillPlan,
+  type ManualLayoutShelfToggleResult,
   normalizeManualLayoutShelfVariant,
   toggleManualLayoutRod,
   toggleManualLayoutShelf,
@@ -64,6 +66,19 @@ function resolveManualLayoutToggleIndex(args: {
   if (gridIndex < 1) gridIndex = 1;
   if (gridIndex > divisions) gridIndex = divisions;
   return gridIndex - 1;
+}
+
+function toastManualLayoutSkippedShelves(App: CanvasLayoutEditClickArgs['App'], skippedCount: number): void {
+  if (!(skippedCount > 0)) return;
+  const message =
+    skippedCount === 1
+      ? 'מדף אחד לא נבנה בגלל התנגשות במגירות לפי סקיצה קיימות.'
+      : `${skippedCount} מדפים לא נבנו בגלל התנגשות במגירות לפי סקיצה קיימות.`;
+  __wp_toast(App, message, 'warning');
+}
+
+function toastManualLayoutShelfCollision(App: CanvasLayoutEditClickArgs['App']): void {
+  __wp_toast(App, 'לא ניתן לבנות מדף במיקום זה, כי הוא מתנגש במגירות לפי סקיצה קיימות.', 'error');
 }
 
 export function tryHandleCanvasManualLayoutClick(args: CanvasLayoutEditClickArgs): boolean {
@@ -128,18 +143,21 @@ export function tryHandleCanvasManualLayoutClick(args: CanvasLayoutEditClickArgs
     }
 
     if (isNewLayout && manualTool === 'shelf') {
+      const fillPlanRef: { current: ManualLayoutShelfFillPlan | null } = { current: null };
       __patchConfigForKey(
         __activeModuleKey,
         cfg => {
-          fillManualLayoutShelves(cfg, {
+          fillPlanRef.current = fillManualLayoutShelves(cfg, {
             divs: currentToolDivs,
             shelfVariant,
             topY,
             bottomY,
+            woodThick: gridInfo?.woodThick,
           });
         },
         { source: 'manualLayout.fillAllShelves', immediate: true }
       );
+      toastManualLayoutSkippedShelves(App, fillPlanRef.current?.skippedCount ?? 0);
       return;
     }
 
@@ -156,6 +174,7 @@ export function tryHandleCanvasManualLayoutClick(args: CanvasLayoutEditClickArgs
     });
     if (arrayIdx == null) return;
 
+    const shelfResultRef: { current: ManualLayoutShelfToggleResult | null } = { current: null };
     __patchConfigForKey(
       __activeModuleKey,
       cfg => {
@@ -173,13 +192,14 @@ export function tryHandleCanvasManualLayoutClick(args: CanvasLayoutEditClickArgs
         }
 
         if (manualTool === 'shelf') {
-          toggleManualLayoutShelf(cfg, {
+          shelfResultRef.current = toggleManualLayoutShelf(cfg, {
             divs: currentToolDivs,
             topY,
             bottomY,
             reset,
             arrayIdx,
             shelfVariant,
+            woodThick: gridInfo?.woodThick,
           });
           return;
         }
@@ -196,6 +216,7 @@ export function tryHandleCanvasManualLayoutClick(args: CanvasLayoutEditClickArgs
       },
       { source: 'manualLayout.toggleItem', immediate: true }
     );
+    if (shelfResultRef.current?.blockedBySketchDrawers) toastManualLayoutShelfCollision(App);
   })();
 
   return true;

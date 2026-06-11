@@ -11,7 +11,9 @@ import {
   DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M,
   readSketchDrawerHeightMFromItem,
   resolveSketchExternalDrawerMetrics,
+  sketchStackFitsAvailableHeight,
 } from '../features/sketch_drawer_sizing.js';
+import { resolveSketchStackCenterYFromNormalizedItem } from '../features/sketch_stack_positioning.js';
 
 import {
   asArray,
@@ -56,12 +58,6 @@ function readSketchExternalDrawerCutsForModule(cfg: unknown, gridEntry: unknown)
   const topY = parseNum(readKey(gridRec, 'effectiveTopY'));
   if (!Number.isFinite(bottomY) || !Number.isFinite(topY) || topY <= bottomY) return [];
   const spanH = topY - bottomY;
-  const clampCenter = (yCenter: number, stackH: number) => {
-    const lo = bottomY + stackH / 2;
-    const hi = topY - stackH / 2;
-    if (!(hi > lo)) return Math.max(bottomY, Math.min(topY, yCenter));
-    return Math.max(lo, Math.min(hi, yCenter));
-  };
 
   const cuts: SketchDrawerCutSegment[] = [];
   for (let i = 0; i < list.length; i++) {
@@ -77,17 +73,17 @@ function readSketchExternalDrawerCutsForModule(cfg: unknown, gridEntry: unknown)
     const metrics = resolveSketchExternalDrawerMetrics({
       drawerCount,
       drawerHeightM: readSketchDrawerHeightMFromItem(it, DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M),
-      availableHeightM: Math.max(0, topY - bottomY),
     });
     const stackH = metrics.stackH;
-    const yNormC = parseNum(readKey(it, 'yNormC'));
-    const yNormBase = parseNum(readKey(it, 'yNorm'));
-    let centerY = NaN;
-    if (Number.isFinite(yNormC))
-      centerY = clampCenter(bottomY + Math.max(0, Math.min(1, yNormC)) * spanH, stackH);
-    else if (Number.isFinite(yNormBase))
-      centerY = clampCenter(bottomY + Math.max(0, Math.min(1, yNormBase)) * spanH + stackH / 2, stackH);
-    if (!Number.isFinite(centerY)) continue;
+    if (!sketchStackFitsAvailableHeight(stackH, Math.max(0, topY - bottomY))) continue;
+    const centerY = resolveSketchStackCenterYFromNormalizedItem({
+      item: it,
+      bottomY,
+      topY,
+      totalHeight: spanH,
+      stackH,
+    });
+    if (centerY == null || !Number.isFinite(centerY)) continue;
     const baseY = centerY - stackH / 2;
     const frontInset = DRAWER_DIMENSIONS.sketch.externalDoorCutFrontInsetM;
     const surroundingGap = DRAWER_DIMENSIONS.sketch.externalDoorCutSurroundingGapM;
@@ -108,7 +104,6 @@ function collectSketchModuleExternalDrawerStackBounds(App: AppContainer): Sketch
     const g = getDrawerEntryGroup(entry);
     const ud = asRecord(g && g.userData);
     if (!g || !ud || ud.__wpSketchExtDrawer !== true) continue;
-    if (readStringOrNull(ud.__wpSketchBoxId)) continue;
     const stackKey = ud.__wpStack === 'bottom' ? 'bottom' : 'top';
     hasRuntimeModuleDrawers[stackKey] = true;
     const moduleKeyRaw = readStringOrNull(ud.__wpSketchModuleKey) || readStringOrNull(ud.moduleIndex);
@@ -166,6 +161,7 @@ export function applySketchExternalDrawerDoorCuts(args: {
   globalFrontMat: unknown;
   stackKey: 'top' | 'bottom';
   allowConfigDerivedCuts?: boolean;
+  collectSuppressedHandlePartIds?: (partIds: string[]) => void;
 }): void {
   const { App, THREE, ctx, cfg, bodyMat, globalFrontMat, stackKey } = args;
   const allowConfigDerivedCuts = args.allowConfigDerivedCuts !== false;
@@ -209,6 +205,7 @@ export function applySketchExternalDrawerDoorCuts(args: {
   if (!stacksByModule.size) return;
 
   const runtime = createSketchDoorCutsRuntime({
+    App,
     THREE,
     ctx,
     cfg,
@@ -220,7 +217,9 @@ export function applySketchExternalDrawerDoorCuts(args: {
   applySketchDrawerDoorCuts({
     App,
     runtime,
+    collectSuppressedHandlePartIds: args.collectSuppressedHandlePartIds,
     selectDoorCuts: (_entry, _g, ud) => {
+      if (readStringOrNull(ud.__wpSketchBoxId)) return null;
       const doorStack = typeof ud.__wpStack === 'string' ? String(ud.__wpStack) : 'top';
       if (doorStack !== stackKey) return null;
       const moduleKey = normalizeSketchModuleCutKey(

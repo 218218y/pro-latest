@@ -47,7 +47,6 @@ export const OrderPdfSketchShapeToolbar = memo(function OrderPdfSketchShapeToolb
             ? {
                 top: `${toolbarPlacement.top}px`,
                 left: `${toolbarPlacement.left}px`,
-                maxHeight: `${toolbarPlacement.maxHeight}px`,
               }
             : undefined
         }
@@ -55,9 +54,9 @@ export const OrderPdfSketchShapeToolbar = memo(function OrderPdfSketchShapeToolb
         <div className="wp-pdf-sketch-toolbar-stack">
           <button
             type="button"
-            className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-sketch-tool-btn--shape${tool === 'text' ? ' active-state' : ''}`}
+            className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-sketch-tool-btn--shape wp-pdf-ui-hint wp-pdf-ui-hint--side-right${tool === 'text' ? ' active-state' : ''}`}
             onClick={() => onSetTool('text')}
-            title="טקסט"
+            data-tooltip="טקסט"
             aria-label="טקסט"
             aria-pressed={tool === 'text'}
           >
@@ -70,9 +69,9 @@ export const OrderPdfSketchShapeToolbar = memo(function OrderPdfSketchShapeToolb
               <button
                 key={shape.tool}
                 type="button"
-                className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-sketch-tool-btn--shape${active ? ' active-state' : ''}`}
+                className={`toolbar-btn toolbar-btn--square wp-pdf-sketch-tool-btn wp-pdf-sketch-tool-btn--shape wp-pdf-ui-hint wp-pdf-ui-hint--side-right${active ? ' active-state' : ''}`}
                 onClick={() => onSetTool(shape.tool)}
-                title={shape.label}
+                data-tooltip={shape.label}
                 aria-label={shape.label}
                 aria-pressed={active}
               >

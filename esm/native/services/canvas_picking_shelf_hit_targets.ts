@@ -1,4 +1,18 @@
+import { isShelfBoardPartId } from '../features/shelf_part_identity.js';
 import type { RaycastHitLike } from './canvas_picking_engine.js';
+
+export const SHELF_PICK_VERTICAL_HALO_MIN_M = 0.035;
+export const SHELF_PICK_VERTICAL_HALO_MAX_M = 0.075;
+
+export function resolveShelfPickVerticalToleranceM(valueM: number, factor = 1): number {
+  const raw = Number.isFinite(valueM) ? Math.max(0, valueM * factor) : 0;
+  return Math.max(SHELF_PICK_VERTICAL_HALO_MIN_M, Math.min(SHELF_PICK_VERTICAL_HALO_MAX_M, raw));
+}
+
+export function resolveShelfSelectorPickToleranceM(stepM: number): number {
+  const step = Number.isFinite(stepM) && stepM > 0 ? stepM : 0;
+  return Math.max(step * 0.3, resolveShelfPickVerticalToleranceM(step, 0.18));
+}
 
 type ShelfBoardPickSource = 'board' | 'selector-hit';
 
@@ -24,7 +38,7 @@ function readUserData(value: unknown): Record<string, unknown> | null {
 function isShelfBoardUserData(userData: Record<string, unknown> | null): boolean {
   if (!userData) return false;
   if (userData.__kind === 'shelf_pin' || userData.__kind === 'brace_seam') return false;
-  return userData.partId === 'all_shelves' || userData.partId === 'corner_shelves';
+  return isShelfBoardPartId(userData.partId);
 }
 
 function resolveShelfIndexFromHitY(args: {

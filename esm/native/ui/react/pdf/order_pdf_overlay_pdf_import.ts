@@ -13,3 +13,7 @@ export {
   maybePreserveImportedImagePagesInInteractivePdf,
   buildInteractivePdfBlobForEditorDraft,
 } from './order_pdf_overlay_pdf_import_interactive.js';
+export {
+  extractLoadedPdfDraftFieldsFromTextLayer,
+  extractOrderPdfDraftFieldsFromPdfTextItems,
+} from './order_pdf_overlay_pdf_import_text.js';

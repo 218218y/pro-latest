@@ -85,12 +85,12 @@ export function readBraceShelves(cfgRef: HoverModuleConfigLike | null): number[]
   return readNumberArray(cfgRef?.braceShelves);
 }
 
-export function readIntDrawerSlots(cfgRef: HoverModuleConfigLike | null): number[] {
-  return readNumberArray(cfgRef?.intDrawersList);
+export function readIntDrawerSlots(_cfgRef: HoverModuleConfigLike | null): number[] {
+  return [];
 }
 
-export function readIntDrawerSlot(cfgRef: HoverModuleConfigLike | null): number | null {
-  return readNumber(cfgRef?.intDrawersSlot);
+export function readIntDrawerSlot(_cfgRef: HoverModuleConfigLike | null): number | null {
+  return null;
 }
 
 export function readLayoutType(App: AppContainer): string {

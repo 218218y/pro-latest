@@ -1,4 +1,5 @@
 import { getActiveHeightCmFromConfig, getActiveDepthCmFromConfig } from '../features/special_dims/index.js';
+import { resolveHexCellGeometry } from '../features/hex_cell/index.js';
 import { readModuleConfig } from './build_flow_readers.js';
 
 import type { ModuleConfigLike } from '../../../types';
@@ -42,10 +43,11 @@ export function collectModuleHeights(args: {
 
 export function collectModuleDepths(args: {
   moduleCfgList: ModuleConfigLike[];
+  moduleInternalWidths?: number[] | null;
   D: number;
   woodThick: number;
 }): { moduleDepthsTotal: number[]; carcassD: number } {
-  const { moduleCfgList, D, woodThick } = args;
+  const { moduleCfgList, moduleInternalWidths, D, woodThick } = args;
   const moduleDepthsTotal: number[] = [];
   let allDepthManual = true;
 
@@ -56,7 +58,16 @@ export function collectModuleDepths(args: {
     const active = typeof dCmActive === 'number' && Number.isFinite(dCmActive) && dCmActive > 0;
     allDepthManual = allDepthManual && !!active;
     const dm = active && typeof dCmActive === 'number' ? dCmActive / 100 : D;
-    moduleDepthsTotal.push(Math.max(woodThick, dm));
+    const hexGeometry = resolveHexCellGeometry({
+      cfgMod: m,
+      moduleWidthM:
+        Array.isArray(moduleInternalWidths) && Number.isFinite(moduleInternalWidths[i])
+          ? Math.max(woodThick * 2, Number(moduleInternalWidths[i]))
+          : D,
+      defaultDepthM: D,
+      woodThickM: woodThick,
+    });
+    moduleDepthsTotal.push(Math.max(woodThick, hexGeometry ? hexGeometry.sideDepthM : dm));
   }
 
   const carcassD = (() => {

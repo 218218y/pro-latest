@@ -1,4 +1,11 @@
-import type { Dispatch, KeyboardEvent, MouseEvent, MutableRefObject, SetStateAction } from 'react';
+import type {
+  Dispatch,
+  FocusEvent,
+  KeyboardEvent,
+  MouseEvent,
+  MutableRefObject,
+  SetStateAction,
+} from 'react';
 
 import type { TimeoutHandleLike } from '../../../../../types';
 
@@ -56,7 +63,7 @@ export type NotesOverlayEditorWorkflows = {
   updateNoteStyleDefaults: (index: number, patch: Partial<SavedNoteStyle>, source: string) => void;
   requestDeleteNote: (index: number) => void;
   onOverlayClick: (e: MouseEvent<HTMLDivElement>) => void;
-  onEditorBlur: (index: number) => void;
+  onEditorBlur: (index: number, e?: FocusEvent<HTMLDivElement>) => void;
   onEditorMouseUp: (index: number) => void;
   onEditorKeyUp: (index: number, e: KeyboardEvent<HTMLDivElement>) => void;
   onEditorInput: (index: number) => void;

@@ -15,6 +15,7 @@ import { getUiFeedback, setNotesScreenDrawMode } from '../../../services/api.js'
 import { toggleBodyClass, toggleElementClass } from '../../dom_helpers.js';
 import type { EnsureNotesDrawState, EnsureNotesRuntimeState } from './notes_overlay_controller_types.js';
 import { reconcileDraftNotesWithNormalized } from './notes_overlay_editor_state.js';
+import { isNotesOverlayCommitSuppressed } from './notes_overlay_editor_notes_runtime.js';
 import type { ReadSavedNoteStyle } from './notes_overlay_editor_state.js';
 
 type UseNotesOverlayControllerModeEffectsArgs = {
@@ -37,6 +38,7 @@ type UseNotesOverlayControllerModeEffectsArgs = {
   setToolbarColor: Dispatch<SetStateAction<string>>;
   setToolbarFontSize: Dispatch<SetStateAction<string>>;
   preExitDrawModeCommitRef: MutableRefObject<(() => void) | null>;
+  skipNextExitCleanupRef: MutableRefObject<boolean>;
   prevEditModeRef: MutableRefObject<boolean>;
 };
 
@@ -60,6 +62,7 @@ export function useNotesOverlayControllerModeEffects(args: UseNotesOverlayContro
     setToolbarColor,
     setToolbarFontSize,
     preExitDrawModeCommitRef,
+    skipNextExitCleanupRef,
     prevEditModeRef,
   } = args;
 
@@ -124,11 +127,22 @@ export function useNotesOverlayControllerModeEffects(args: UseNotesOverlayContro
       } catch (__wpErr) {
         notesOverlayReportNonFatal('CTRL_exitModePrev', __wpErr);
       }
+      let suppressExitCommit = false;
       try {
-        const fn = preExitDrawModeCommitRef.current;
-        if (typeof fn === 'function') fn();
+        suppressExitCommit = isNotesOverlayCommitSuppressed(App);
       } catch (__wpErr) {
-        notesOverlayReportNonFatal('CTRL_exitModeCommit', __wpErr);
+        notesOverlayReportNonFatal('CTRL_exitModeSuppressCheck', __wpErr);
+      }
+
+      if (suppressExitCommit) {
+        skipNextExitCleanupRef.current = true;
+      } else {
+        try {
+          const fn = preExitDrawModeCommitRef.current;
+          if (typeof fn === 'function') fn();
+        } catch (__wpErr) {
+          notesOverlayReportNonFatal('CTRL_exitModeCommit', __wpErr);
+        }
       }
       setEditMode(false);
     };
@@ -137,7 +151,7 @@ export function useNotesOverlayControllerModeEffects(args: UseNotesOverlayContro
       rt.onEnterDrawMode = prevEnter;
       rt.onExitDrawMode = prevExit;
     };
-  }, [App, ensureNotesRuntimeState, preExitDrawModeCommitRef, setEditMode]);
+  }, [App, ensureNotesRuntimeState, preExitDrawModeCommitRef, skipNextExitCleanupRef, setEditMode]);
 
   useEffect(() => {
     try {

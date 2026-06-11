@@ -1,7 +1,123 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { tryHandleCanvasManualSketchFreeBoxClick } from '../esm/native/services/canvas_picking_click_manual_sketch_free_box.ts';
 import { readSketchBoxFrontsBundle, readSourceFiles } from './sketch_box_runtime_helpers.ts';
+
+type RecordMap = Record<string, unknown>;
+
+function createFreeBoxClickHarness(overrides: RecordMap = {}) {
+  const cfg: RecordMap = {};
+  const calls = {
+    placements: 0,
+    patches: 0,
+  };
+  const App = {
+    actions: {
+      modules: {
+        patchForStack(_side: string, _moduleKey: unknown, patcher: (cfg: RecordMap) => void) {
+          calls.patches += 1;
+          patcher(cfg);
+        },
+      },
+    },
+  } as never;
+
+  return {
+    cfg,
+    calls,
+    args: {
+      App,
+      tool: 'sketch_box:40@45',
+      ndcX: 0,
+      ndcY: 0,
+      foundModuleIndex: null,
+      host: { moduleKey: 0, isBottom: false },
+      wardrobeBox: { centerX: 0, centerY: 1, centerZ: 0, width: 2, height: 2, depth: 0.6 },
+      raycaster: {},
+      mouse: {},
+      floorY: 0,
+      __wp_readSketchHover: () => null,
+      __wp_writeSketchHover: () => undefined,
+      __wp_clearSketchHover: () => undefined,
+      __wp_parseSketchBoxToolSpec: () => ({ heightCm: 40, widthCm: 45, depthCm: null }),
+      __wp_getViewportRoots: () => ({ camera: {}, wardrobeGroup: {} }),
+      __wp_intersectScreenWithLocalZPlane: () => ({ x: 0.1, y: 0.7, z: -0.3 }),
+      __wp_readInteriorModuleConfigRef: () => cfg,
+      __wp_resolveSketchFreeBoxHoverPlacement: () => {
+        calls.placements += 1;
+        return {
+          op: 'add',
+          previewX: 0.1,
+          previewY: 0.7,
+          previewH: 0.4,
+          previewW: 0.45,
+          previewD: 0.45,
+        };
+      },
+      ...overrides,
+    } as never,
+  };
+}
+
+test('free-box click fallback does not turn a module hit into a free-placement box', () => {
+  const { args, cfg, calls } = createFreeBoxClickHarness({ foundModuleIndex: 0 });
+
+  const handled = tryHandleCanvasManualSketchFreeBoxClick(args);
+
+  assert.equal(handled, false);
+  assert.equal(calls.placements, 0);
+  assert.equal(calls.patches, 0);
+  assert.deepEqual(cfg, {});
+});
+
+test('free-box click fallback still creates a free-placement box when no module was hit', () => {
+  const { args, cfg, calls } = createFreeBoxClickHarness();
+
+  const handled = tryHandleCanvasManualSketchFreeBoxClick(args);
+
+  assert.equal(handled, true);
+  assert.equal(calls.placements, 1);
+  assert.equal(calls.patches, 1);
+  const boxes = ((cfg.sketchExtras as RecordMap | undefined)?.boxes as RecordMap[] | undefined) ?? [];
+  assert.equal(boxes.length, 1);
+  assert.equal(boxes[0]?.freePlacement, true);
+  assert.equal(boxes[0]?.absY, 0.7);
+  assert.equal(boxes[0]?.widthM, 0.45);
+});
+
+test('free-box click preserves a real recent free-placement hover even when a module is behind it', () => {
+  const { args, cfg, calls } = createFreeBoxClickHarness({
+    foundModuleIndex: 0,
+    __wp_readSketchHover: () => ({
+      ts: Date.now(),
+      tool: 'sketch_box:40@45',
+      moduleKey: 0,
+      isBottom: false,
+      hostModuleKey: 0,
+      hostIsBottom: false,
+      kind: 'box',
+      op: 'add',
+      freePlacement: true,
+      xCenter: 0.2,
+      yCenter: 0.8,
+      heightM: 0.4,
+      widthM: 0.45,
+      depthM: 0.45,
+    }),
+  });
+
+  const handled = tryHandleCanvasManualSketchFreeBoxClick(args);
+
+  assert.equal(handled, true);
+  assert.equal(calls.placements, 0);
+  assert.equal(calls.patches, 1);
+  const boxes = ((cfg.sketchExtras as RecordMap | undefined)?.boxes as RecordMap[] | undefined) ?? [];
+  assert.equal(boxes.length, 1);
+  assert.equal(boxes[0]?.freePlacement, true);
+  assert.equal(boxes[0]?.absX, 0.2);
+  assert.equal(boxes[0]?.absY, 0.8);
+});
 
 test('sketch external drawers hover context loads persisted module stacks for remove/overlap handling', async () => {
   const src = await readSourceFiles([

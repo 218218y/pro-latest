@@ -1,4 +1,5 @@
 import { assertApp } from '../runtime/api.js';
+import { resolveCurrentDefaultCameraPresetPose } from './camera_presets.js';
 import {
   type AppLike,
   clearCameraMoveRenderingActive,
@@ -46,10 +47,12 @@ export function moveCamera(App: AppLike, view: string): void {
   const finalPos = new THREE.Vector3();
 
   switch (view) {
-    case 'front':
-      finalTarget.set(0, 1.4, 0);
-      finalPos.set(0, 2.2, 5.5);
+    case 'front': {
+      const preset = resolveCurrentDefaultCameraPresetPose(app);
+      finalTarget.set(preset.target.x, preset.target.y, preset.target.z);
+      finalPos.set(preset.pos.x, preset.pos.y, preset.pos.z);
       break;
+    }
 
     case 'front-zoom': {
       const distZoom = Math.max(w, h) * 0.85 + 0.5;

@@ -6,7 +6,9 @@ import {
   removeManualLayoutBaseRod,
   removeManualLayoutBaseShelf,
   removeManualLayoutSketchExtraByIndex,
+  resolveManualLayoutShelfFillPlan,
   toggleManualLayoutRod,
+  toggleManualLayoutShelf,
   toggleManualLayoutStorage,
 } from '../esm/native/services/canvas_picking_manual_layout_config_ops.ts';
 
@@ -46,6 +48,90 @@ test('manual-layout config ops fill all shelves seeds a clean brace layout grid'
   assert.deepEqual(customData.shelfVariants, ['brace', 'brace', 'brace', 'brace', 'brace']);
   assert.deepEqual(customData.rodOps, []);
   assert.deepEqual(cfg.braceShelves, [1, 2, 3, 4, 5]);
+});
+
+test('manual-layout config ops skip auto-filled shelves that collide with sketch drawer stacks', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      drawers: [{ id: 'internal-drawers', yNormC: 0.4, drawerHeightM: 0.18 }],
+      extDrawers: [{ id: 'external-drawers', yNormC: 0.6, count: 1, drawerHeightM: 0.18 }],
+    },
+    braceShelves: [],
+  };
+
+  const plan = fillManualLayoutShelves(cfg, {
+    divs: 5,
+    shelfVariant: 'brace',
+    topY: 1.2,
+    bottomY: 0,
+    pad: 0.02,
+    woodThick: 0.018,
+  });
+
+  const customData = cfg.customData as { shelves: boolean[]; shelfVariants: string[] };
+  assert.deepEqual(plan.skippedIndexes, [2, 3]);
+  assert.equal(plan.builtCount, 2);
+  assert.equal(plan.skippedCount, 2);
+  assert.deepEqual(customData.shelves, [true, false, false, true]);
+  assert.deepEqual(customData.shelfVariants, ['brace', '', '', 'brace']);
+  assert.deepEqual(cfg.braceShelves, [1, 4]);
+});
+
+test('manual-layout config ops expose a pure fill plan without mutating config state', () => {
+  const cfg: Record<string, unknown> = {
+    sketchExtras: {
+      drawers: [{ id: 'internal-drawers', yNormC: 0.5, drawerHeightM: 0.18 }],
+    },
+  };
+
+  const plan = resolveManualLayoutShelfFillPlan({
+    cfgRef: cfg,
+    divs: 4,
+    shelfVariant: 'regular',
+    topY: 1.2,
+    bottomY: 0,
+    pad: 0.02,
+    woodThick: 0.018,
+  });
+
+  assert.deepEqual(plan.allowedIndexes, [1, 3]);
+  assert.deepEqual(plan.skippedIndexes, [2]);
+  assert.deepEqual(
+    plan.shelfYs.map(value => Math.round(value * 100) / 100),
+    [0.3, 0.9]
+  );
+  assert.equal(cfg.customData, undefined);
+});
+
+test('manual-layout config ops block adding a single shelf over sketch drawers', () => {
+  const cfg: Record<string, unknown> = {
+    isCustom: true,
+    customData: {
+      shelves: [false, false],
+      rods: [],
+      shelfVariants: ['', ''],
+      storage: false,
+    },
+    sketchExtras: {
+      drawers: [{ id: 'internal-drawers', yNormC: 0.3333333333333333, drawerHeightM: 0.18 }],
+    },
+  };
+
+  const result = toggleManualLayoutShelf(cfg, {
+    divs: 3,
+    topY: 1.2,
+    bottomY: 0,
+    reset: false,
+    arrayIdx: 0,
+    shelfVariant: 'regular',
+    pad: 0.02,
+    woodThick: 0.018,
+  });
+
+  const customData = cfg.customData as { shelves: boolean[]; shelfVariants: string[] };
+  assert.deepEqual(result, { changed: false, blockedBySketchDrawers: true });
+  assert.deepEqual(customData.shelves, [false, false]);
+  assert.deepEqual(customData.shelfVariants, ['', '']);
 });
 
 test('manual-layout config ops toggle storage resets stale shelf and rod arrays for a new editable grid', () => {

@@ -6,6 +6,7 @@ import { installStableSurfaceMethod } from '../runtime/stable_surface_methods.js
 
 import { updateCameraAfterBuild } from './build_reactions_camera.js';
 import { updateLightsAfterBuild } from './build_reactions_lights.js';
+import { refreshPendingCanvasPostBuildHover } from './canvas_post_build_hover_refresh.js';
 import { reportBuildReactionsSoftError } from './build_reactions_shared.js';
 
 type BuildReactionsServiceWithCanonical = BuildReactionsServiceLike & {
@@ -17,7 +18,7 @@ const buildReactionsInstallContexts = new WeakMap<object, InstallContext<AppCont
 function createCanonicalAfterBuild(
   context: InstallContext<AppContainer>
 ): NonNullable<BuildReactionsServiceLike['afterBuild']> {
-  return (_ok?: boolean) => {
+  return (ok?: boolean) => {
     try {
       updateLightsAfterBuild(context.App);
     } catch (error) {
@@ -27,6 +28,12 @@ function createCanonicalAfterBuild(
       updateCameraAfterBuild(context.App);
     } catch (error) {
       reportBuildReactionsSoftError(context.App, 'updateCameraAfterBuild', error);
+    }
+    if (ok === false) return;
+    try {
+      refreshPendingCanvasPostBuildHover(context.App);
+    } catch (error) {
+      reportBuildReactionsSoftError(context.App, 'refreshPendingCanvasPostBuildHover', error);
     }
   };
 }

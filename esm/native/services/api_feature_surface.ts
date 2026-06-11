@@ -5,6 +5,7 @@
 // - Preserve the exact public API while grouping feature seams by ownership.
 
 export { handleCanvasClickNDC, handleCanvasHoverNDC } from './canvas_picking_core.js';
+export { syncCanvasPickingViewportMatrices } from './canvas_picking_viewport_matrices.js';
 export { __wp_clearSketchHover as clearSketchHoverPreview } from './canvas_picking_local_helpers.js';
 export { historyBatch } from '../runtime/app_helpers.js';
 

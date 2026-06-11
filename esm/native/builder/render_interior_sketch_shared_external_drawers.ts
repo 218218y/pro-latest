@@ -2,6 +2,18 @@ import { DRAWER_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared
 import type { InteriorValueRecord } from './render_interior_ops_contracts.js';
 import type { SketchExternalDrawerFaceVerticalAlignment } from './render_interior_sketch_shared_types.js';
 import { toFiniteNumber } from './render_interior_sketch_shared_numbers.js';
+import { asValueRecord } from './render_interior_sketch_shared_records.js';
+
+export function resolveSketchExternalDrawerDoorMountMode(input: unknown): 'overlay' | 'inset' {
+  const root = asValueRecord(input);
+  const cfg = asValueRecord(root?.cfg);
+  const config = asValueRecord(root?.config);
+  return root?.doorMountMode === 'inset' ||
+    cfg?.doorMountMode === 'inset' ||
+    config?.doorMountMode === 'inset'
+    ? 'inset'
+    : 'overlay';
+}
 
 export function applySketchExternalDrawerFaceOverrides(
   drawers: InteriorValueRecord[],

@@ -29,6 +29,7 @@ export type DesignTabCfgState = {
 export type DesignTabUiState = {
   doorStyle: DesignTabDoorStyle;
   colorChoice: string;
+  frontColorShelfInheritanceMode: 'all' | 'brace';
   groovesEnabled: boolean;
   splitDoors: boolean;
   removeDoorsEnabled: boolean;
@@ -57,6 +58,10 @@ function readBoolean(value: unknown): boolean {
   return !!value;
 }
 
+function normalizeFrontColorShelfInheritanceMode(value: unknown): 'all' | 'brace' {
+  return value === 'brace' ? 'brace' : 'all';
+}
+
 export function readDesignTabCfgState(cfg: unknown): DesignTabCfgState {
   const rec = asRecord(cfg);
   return {
@@ -75,6 +80,9 @@ export function readDesignTabUiState(ui: unknown): DesignTabUiState {
   return {
     doorStyle: readDesignTabDoorStyle(rec?.doorStyle),
     colorChoice: String(rec?.colorChoice || '#ffffff'),
+    frontColorShelfInheritanceMode: normalizeFrontColorShelfInheritanceMode(
+      rec?.frontColorShelfInheritanceMode
+    ),
     groovesEnabled: readBoolean(rec?.groovesEnabled),
     splitDoors: readBoolean(rec?.splitDoors),
     removeDoorsEnabled: readBoolean(rec?.removeDoorsEnabled),

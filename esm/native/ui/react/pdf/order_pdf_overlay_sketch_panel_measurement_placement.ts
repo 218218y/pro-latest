@@ -40,11 +40,20 @@ export function useOrderPdfSketchFloatingPalettePlacement(args: {
       paletteHeight: palette.getBoundingClientRect().height,
     });
   }, [paletteRef, toolbarRef, triggerRef]);
+  const resolveAnchor = useCallback(
+    () => triggerRef.current || paletteRef.current || toolbarRef.current,
+    [paletteRef, toolbarRef, triggerRef]
+  );
+  const resolveResizeTargets = useCallback(
+    () => [triggerRef.current, paletteRef.current, toolbarRef.current],
+    [paletteRef, toolbarRef, triggerRef]
+  );
   const { value } = useObservedViewportValue<SketchFloatingPalettePlacement | null>({
     enabled: open,
-    anchor: triggerRef.current || paletteRef.current || toolbarRef.current,
+    anchor: null,
+    resolveAnchor,
     initialValue: null,
-    resizeTargets: [triggerRef.current, paletteRef.current, toolbarRef.current],
+    resolveResizeTargets,
     measure,
     areEqual: (prev, next) => (!next ? !prev : areOrderPdfSketchFloatingPalettePlacementsEqual(prev, next)),
   });
@@ -68,11 +77,17 @@ export function useOrderPdfSketchToolbarPlacement(args: {
       side,
     });
   }, [side, toolbarRef]);
+  const resolveAnchor = useCallback(() => toolbarRef.current, [toolbarRef]);
+  const resolveResizeTargets = useCallback(
+    () => [toolbarRef.current, getClosestOrderPdfStage(toolbarRef.current)],
+    [toolbarRef]
+  );
   const { value } = useObservedViewportValue<SketchToolbarPlacement>({
     enabled: open,
-    anchor: toolbarRef.current,
+    anchor: null,
+    resolveAnchor,
     initialValue: DEFAULT_TOOLBAR_PLACEMENT,
-    resizeTargets: [toolbarRef.current, getClosestOrderPdfStage(toolbarRef.current)],
+    resolveResizeTargets,
     measure,
     areEqual: areOrderPdfSketchToolbarPlacementsEqual,
   });

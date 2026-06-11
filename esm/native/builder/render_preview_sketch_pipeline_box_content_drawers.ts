@@ -143,6 +143,64 @@ function applyExternalDrawersPreview(ctx: SketchPlacementPreviewContext): boolea
   return true;
 }
 
+function readFinitePreviewNumber(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function clearDrawerDividerMotionPreview(ctx: SketchPlacementPreviewContext): void {
+  try {
+    delete ctx.ud.__drawerDividerMotionPreview;
+  } catch {
+    // keep preview rendering resilient
+  }
+}
+
+function rememberDrawerDividerMotionPreview(
+  ctx: SketchPlacementPreviewContext,
+  args: {
+    drawerId: unknown;
+    boxX: number;
+    boxY: number;
+    boxZ: number;
+    shelfX: number;
+    shelfY: number;
+    shelfZ: number;
+  }
+): void {
+  if (ctx.input.drawerMotionPreview !== true) {
+    clearDrawerDividerMotionPreview(ctx);
+    return;
+  }
+
+  const closedX = readFinitePreviewNumber(ctx.input.drawerMotionClosedX);
+  const closedY = readFinitePreviewNumber(ctx.input.drawerMotionClosedY);
+  const closedZ = readFinitePreviewNumber(ctx.input.drawerMotionClosedZ);
+  const offsetX = readFinitePreviewNumber(ctx.input.drawerMotionOffsetX) || 0;
+  const offsetY = readFinitePreviewNumber(ctx.input.drawerMotionOffsetY) || 0;
+  const offsetZ = readFinitePreviewNumber(ctx.input.drawerMotionOffsetZ) || 0;
+  const drawerId =
+    typeof args.drawerId === 'string' || typeof args.drawerId === 'number' ? args.drawerId : null;
+
+  if (drawerId == null || closedX == null || closedY == null || closedZ == null) {
+    clearDrawerDividerMotionPreview(ctx);
+    return;
+  }
+
+  ctx.ud.__drawerDividerMotionPreview = {
+    drawerId,
+    closedX,
+    closedY,
+    closedZ,
+    boxBaseX: args.boxX - offsetX,
+    boxBaseY: args.boxY - offsetY,
+    boxBaseZ: args.boxZ - offsetZ,
+    shelfBaseX: args.shelfX - offsetX,
+    shelfBaseY: args.shelfY - offsetY,
+    shelfBaseZ: args.shelfZ - offsetZ,
+  };
+}
+
 function applyDrawerDividerPreview(ctx: SketchPlacementPreviewContext): boolean {
   if (ctx.kind !== 'drawer_divider') return false;
 
@@ -198,6 +256,15 @@ function applyDrawerDividerPreview(ctx: SketchPlacementPreviewContext): boolean 
   ctx.setVisible(ctx.boxBottom, false);
   ctx.setVisible(ctx.boxLeft, false);
   ctx.setVisible(ctx.boxRight, false);
+  rememberDrawerDividerMotionPreview(ctx, {
+    drawerId: ctx.input.drawerMotionDrawerId,
+    boxX,
+    boxY: ctx.y,
+    boxZ: ctx.z,
+    shelfX: ctx.x,
+    shelfY: ctx.y,
+    shelfZ: ctx.z,
+  });
   return true;
 }
 

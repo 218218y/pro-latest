@@ -60,12 +60,13 @@ export function OptionalDimField(props: StructureOptionalDimFieldProps) {
 
   const inputId = useStructureDimInputId(props.activeId, 'dimopt');
   const errorId = `${inputId}-error`;
+  const hasInputAddon = !!props.inputAddon || !!props.reserveInputAddon;
   const validationMessage = readStructureDimensionValidationMessage(draft, props.bounds, true);
 
   return (
     <div className="wp-r-field" data-wp-react-active={props.activeId}>
       <label htmlFor={inputId}>{props.label}</label>
-      <div className="wp-r-input-row">
+      <div className={hasInputAddon ? 'wp-r-input-row wp-r-input-row--with-addon' : 'wp-r-input-row'}>
         <input
           id={inputId}
           name={String(props.activeId || 'dim')}
@@ -74,9 +75,11 @@ export function OptionalDimField(props: StructureOptionalDimFieldProps) {
           aria-invalid={validationMessage ? true : undefined}
           aria-describedby={validationMessage ? errorId : undefined}
           type="number"
-          className="wp-r-input"
+          className={hasInputAddon ? 'wp-r-input wp-r-input--with-addon' : 'wp-r-input'}
           value={draft}
-          placeholder={props.placeholder != null ? String(props.placeholder) : undefined}
+          placeholder={
+            props.placeholderText ?? (props.placeholder != null ? String(props.placeholder) : undefined)
+          }
           min={props.bounds?.allowZero ? 0 : props.bounds?.min}
           max={props.bounds?.max}
           step={props.step}
@@ -127,6 +130,14 @@ export function OptionalDimField(props: StructureOptionalDimFieldProps) {
           }}
           onWheel={blurStructureDimOnWheel}
         />
+        {hasInputAddon ? (
+          <div
+            className={props.inputAddon ? 'wp-r-input-addon' : 'wp-r-input-addon wp-r-input-addon--spacer'}
+            aria-hidden={props.inputAddon ? undefined : true}
+          >
+            {props.inputAddon ?? null}
+          </div>
+        ) : null}
       </div>
       {validationMessage ? (
         <div id={errorId} className="wp-r-input-error" role="alert">

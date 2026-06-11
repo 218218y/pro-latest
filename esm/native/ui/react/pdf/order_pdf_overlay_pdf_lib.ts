@@ -41,8 +41,20 @@ export type PdfLibPageImageOptionsLike = {
   height: number;
 };
 
+export type PdfLibPageRectangleOptionsLike = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color?: unknown;
+  borderWidth?: number;
+  opacity?: number;
+};
+
 export type PdfLibDrawablePageLike = {
   drawImage: (image: unknown, options: PdfLibPageImageOptionsLike) => void;
+  drawRectangle?: (options: PdfLibPageRectangleOptionsLike) => void;
+  getSize?: () => { width: number; height: number };
 };
 
 export type PdfLibWritableDocumentLike = {

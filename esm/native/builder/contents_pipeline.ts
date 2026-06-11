@@ -27,8 +27,10 @@ type MakeRodCreatorArgs = {
   config?: unknown;
   moduleIndex?: number;
   effectiveBottomY?: number;
+  effectiveTopY?: number;
+  gridDivisions?: number;
   localGridStep?: number;
-  isInternalDrawersEnabled?: boolean;
+  woodThick?: number;
   innerW?: number;
   internalCenterX?: number;
   internalZ?: number;
@@ -79,10 +81,10 @@ function createRodArgs(
     cfg: baseArgs.cfg,
     config,
     effectiveBottomY: baseArgs.effectiveBottomY,
+    effectiveTopY: baseArgs.effectiveTopY,
+    gridDivisions: baseArgs.gridDivisions,
     localGridStep: baseArgs.localGridStep,
-    isInternalDrawersEnabled: baseArgs.isInternalDrawersEnabled,
-    intDrawersList: config?.intDrawersList,
-    intDrawersSlot: config?.intDrawersSlot,
+    woodThick: baseArgs.woodThick,
     innerW: baseArgs.innerW,
     internalCenterX: baseArgs.internalCenterX,
     internalZ: baseArgs.internalZ,

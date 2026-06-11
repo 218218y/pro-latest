@@ -3,6 +3,8 @@ import {
   resolveSketchModuleBoxAction,
 } from './canvas_picking_sketch_module_box_workflow.js';
 import { readManualLayoutSketchBoxHoverIntent } from './canvas_picking_manual_layout_sketch_hover_intent.js';
+import { __wp_toast } from './canvas_picking_core_helpers.js';
+import { buildSketchModuleBoxPlacementBlockers } from './canvas_picking_sketch_module_box_blockers.js';
 import {
   ensureRecord,
   ensureRecordList,
@@ -11,6 +13,26 @@ import {
   readRecordNumber,
   type CommitSketchModuleSurfaceToolArgs,
 } from './canvas_picking_sketch_module_surface_commit_shared.js';
+
+function readSketchExtrasRecordList(extra: Record<string, unknown>, key: string): Record<string, unknown>[] {
+  const value = extra[key];
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item)
+      )
+    : [];
+}
+
+function toastSketchModuleBoxCollisionFailure(args: {
+  App?: CommitSketchModuleSurfaceToolArgs['App'];
+}): void {
+  if (!args.App) return;
+  __wp_toast(
+    args.App,
+    'לא ניתן לבנות קופסא במיקום זה, כי היא מתנגשת במדפים, במגירות או בפריטים קיימים.',
+    'error'
+  );
+}
 
 export function tryCommitSketchModuleSurfaceBoxTool(args: CommitSketchModuleSurfaceToolArgs): boolean {
   if (!args.tool.startsWith(args.sketchBoxToolPrefix)) return false;
@@ -25,6 +47,20 @@ export function tryCommitSketchModuleSurfaceBoxTool(args: CommitSketchModuleSurf
   const boxTool = parseSketchModuleBoxTool({
     tool: args.tool,
     parseSketchBoxToolSpec: args.parseSketchBoxToolSpec,
+  });
+  const placementBlockers = buildSketchModuleBoxPlacementBlockers({
+    cfgRef: args.cfg,
+    info: args.cfg,
+    shelves: readSketchExtrasRecordList(extra, 'shelves'),
+    rods: readSketchExtrasRecordList(extra, 'rods'),
+    storageBarriers: readSketchExtrasRecordList(extra, 'storageBarriers'),
+    drawers: readSketchExtrasRecordList(extra, 'drawers'),
+    extDrawers: readSketchExtrasRecordList(extra, 'extDrawers'),
+    bottomY: args.bottomY,
+    topY: args.topY,
+    totalHeight: args.totalHeight,
+    pad: args.pad,
+    woodThick: args.woodThick,
   });
   const resolvedBoxAction = resolveSketchModuleBoxAction({
     boxes,
@@ -45,13 +81,17 @@ export function tryCommitSketchModuleSurfaceBoxTool(args: CommitSketchModuleSurf
     resolveSketchBoxGeometry: args.resolveSketchBoxGeometry,
     enableCenterSnap: !Number.isFinite(hoverBoxX),
     removeIdHint: hoverRemoveId || null,
+    placementBlockers,
   });
   if (resolvedBoxAction.op === 'remove' && resolvedBoxAction.removeId) {
     const idx = boxes.findIndex(it => String(it?.id ?? '') === resolvedBoxAction.removeId);
     if (idx >= 0) boxes.splice(idx, 1);
     return true;
   }
-  if (resolvedBoxAction.op === 'blocked') return true;
+  if (resolvedBoxAction.op === 'blocked') {
+    toastSketchModuleBoxCollisionFailure({ App: args.App });
+    return true;
+  }
 
   boxes.push(
     createSketchModuleBoxConfigItem({

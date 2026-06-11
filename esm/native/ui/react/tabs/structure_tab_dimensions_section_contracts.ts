@@ -5,7 +5,15 @@ import type { StructureTabNumericKey } from './structure_tab_shared.js';
 
 export const STRUCTURE_CELL_DIMS_SECTION_TEST_ID = 'structure-cell-dims-section';
 export const STRUCTURE_CELL_DIMS_MODE_BUTTON_TEST_ID = 'structure-cell-dims-mode-button';
+export const STRUCTURE_CELL_DIMS_HEX_MODE_BUTTON_TEST_ID = 'structure-cell-dims-hex-mode-button';
 export const STRUCTURE_CELL_DIMS_RESET_BUTTON_TEST_ID = 'structure-cell-dims-reset-button';
+export const STRUCTURE_CELL_DIMS_RESET_WIDTH_BUTTON_TEST_ID = 'structure-cell-dims-reset-width-button';
+export const STRUCTURE_CELL_DIMS_RESET_HEIGHT_BUTTON_TEST_ID = 'structure-cell-dims-reset-height-button';
+export const STRUCTURE_CELL_DIMS_RESET_DEPTH_BUTTON_TEST_ID = 'structure-cell-dims-reset-depth-button';
+export const STRUCTURE_CELL_DIMS_RESET_HEX_PROTRUSION_BUTTON_TEST_ID =
+  'structure-cell-dims-reset-hex-protrusion-button';
+export const STRUCTURE_CELL_DIMS_RESET_HEX_DOOR_WIDTH_BUTTON_TEST_ID =
+  'structure-cell-dims-reset-hex-door-width-button';
 export const STRUCTURE_LIBRARY_UPPER_DOORS_BUTTON_TEST_ID = 'structure-library-upper-doors-button';
 export const STRUCTURE_LIBRARY_GLASS_BUTTON_GROUP_TEST_ID = 'structure-library-glass-buttons';
 export const STRUCTURE_STACK_SPLIT_SECTION_TEST_ID = 'structure-stack-split-section';
@@ -60,6 +68,9 @@ export type StructureDimensionsContentProps = {
   cellDimsWidth: number | '';
   cellDimsHeight: number | '';
   cellDimsDepth: number | '';
+  cellDimsHexMode: boolean;
+  cellDimsHexProtrusion: number | '';
+  cellDimsHexDoorWidth: number | '';
   stackSplitEnabled: boolean;
   stackSplitDecorativeSeparatorEnabled: boolean;
   stackSplitLowerHeight: number;
@@ -73,9 +84,13 @@ export type StructureDimensionsContentProps = {
   onResetAllCellDimsOverrides: () => void;
   onEnterCellDimsMode: () => void;
   onExitCellDimsMode: () => void;
+  onEnterHexCellDimsMode: () => void;
+  onExitHexCellDimsMode: () => void;
   onClearCellDimsWidth: () => void;
   onClearCellDimsHeight: () => void;
   onClearCellDimsDepth: () => void;
+  onClearCellDimsHexProtrusion: () => void;
+  onClearCellDimsHexDoorWidth: () => void;
   onToggleStackSplit: () => void;
   onToggleStackSplitDecorativeSeparator: () => void;
   onToggleLibraryUpperDoors: () => void;

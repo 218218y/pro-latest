@@ -12,11 +12,7 @@ import {
   computeSlidingDoorSpecs,
   computeSlidingDoorOps,
 } from './core_doors_compute.js';
-import {
-  computeExternalDrawersOpsForModule,
-  computeInteriorCustomOps,
-  computeInternalDrawersOpsForSlot,
-} from './core_storage_compute.js';
+import { computeExternalDrawersOpsForModule, computeInteriorCustomOps } from './core_storage_compute.js';
 import { computeCarcassOps } from './core_carcass_compute.js';
 
 export { normalizeModulesConfiguration, computeModuleLayout } from './core_layout_compute.js';
@@ -25,11 +21,7 @@ export {
   computeSlidingDoorSpecs,
   computeSlidingDoorOps,
 } from './core_doors_compute.js';
-export {
-  computeExternalDrawersOpsForModule,
-  computeInteriorCustomOps,
-  computeInternalDrawersOpsForSlot,
-} from './core_storage_compute.js';
+export { computeExternalDrawersOpsForModule, computeInteriorCustomOps } from './core_storage_compute.js';
 export { computeCarcassOps } from './core_carcass_compute.js';
 
 export const builderCorePure = {
@@ -41,6 +33,5 @@ export const builderCorePure = {
   computeExternalDrawersOpsForModule,
   computeInteriorPresetOps,
   computeInteriorCustomOps,
-  computeInternalDrawersOpsForSlot,
   computeCarcassOps,
 };

@@ -4,7 +4,7 @@
 // without restricting the migration. We keep a fallback signature to allow
 // older/dynamic keys where necessary.
 
-import type { BoardMaterial, HandleType, WardrobeType } from './domain';
+import type { BoardMaterial, DoorMountMode, HandleType, WardrobeType } from './domain';
 import type { SavedColorLike } from './build';
 import type { ModulesConfigurationLike, CornerConfigurationLike } from './modules_configuration';
 import type { IndividualColorsMap } from './maps';
@@ -20,6 +20,7 @@ export type ConfigScalarKey =
   | 'customUploadedDataURL'
   | 'grooveLinesCount'
   | 'boardMaterial'
+  | 'doorMountMode'
   // Common persisted collections (treated as scalars in the write contract)
   | 'modulesConfiguration'
   | 'stackSplitLowerModulesConfiguration'
@@ -45,6 +46,7 @@ export type ConfigScalarValueMap = {
   customUploadedDataURL: string | null;
   grooveLinesCount: number | null;
   boardMaterial: BoardMaterial | '';
+  doorMountMode: DoorMountMode | '';
 
   modulesConfiguration: ModulesConfigurationLike;
   stackSplitLowerModulesConfiguration: ModulesConfigurationLike;

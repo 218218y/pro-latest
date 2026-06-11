@@ -25,11 +25,10 @@ export function applyLinearCellDimsWidthPolicy(
 ): LinearCellDimsWidthResult {
   const {
     cfg,
-    ui,
+    raw,
     idx,
     applyW,
     moduleCount,
-    wardrobeType,
     doorsPerModule,
     defaultWidths,
     prevModsCfg,
@@ -48,8 +47,8 @@ export function applyLinearCellDimsWidthPolicy(
   if (applyW != null) {
     setManualWidth = true;
 
-    const minDoorW = wardrobeType === 'sliding' ? 60 : 20;
-    const minW = doorsPerModule.map(d => Math.max(minDoorW * d, 1));
+    const minSpecialCellW = 20;
+    const minW = doorsPerModule.map(() => minSpecialCellW);
     const newWidths = widthsCurr.slice();
     if (Number.isFinite(tgtW) && tgtW > 0) newWidths[idx] = tgtW;
 
@@ -59,8 +58,7 @@ export function applyLinearCellDimsWidthPolicy(
       if (newWidths[i] < minW[i]) newWidths[i] = minW[i];
     }
 
-    const isChestMode = readBool(ui, 'isChestMode');
-    const minTotalW = isChestMode ? 20 : 40;
+    const minTotalW = 20;
     const maxTotalW = 560;
     const sumWidths = () => newWidths.reduce((a, b) => a + b, 0);
 
@@ -103,7 +101,9 @@ export function applyLinearCellDimsWidthPolicy(
     for (let i = 0; i < newWidths.length; i++) newWidths[i] = Math.round(newWidths[i] * 100) / 100;
     nextTotalW = Math.round(sumWidths() * 100) / 100;
     nextWidthForIdx = newWidths[idx];
-  } else if (readBool(cfg, 'isManualWidth')) {
+  } else if (
+    ctx.isBottomStack ? readBool(raw, 'stackSplitLowerWidthManual') : readBool(cfg, 'isManualWidth')
+  ) {
     let looksAuto = true;
     for (let i = 0; i < moduleCount; i++) {
       const prevSD = readSpecialDimsRecord(prevModsCfg[i]);

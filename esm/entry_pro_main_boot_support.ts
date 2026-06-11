@@ -215,7 +215,7 @@ export function resolveRuntimeConfig(
   // Optional per-site defaults supplied via HTML <meta> tags (no window globals).
   // Example (site2):
   //   <meta name="wp-site-variant" content="site2" />
-  //   <meta name="wp-site2-enabled-tabs" content="structure,design,interior,render,export" />
+  //   <meta name="wp-site2-enabled-tabs" content="structure,design,interior,sketch,settings" />
   try {
     const siteVariant = parseSiteVariantFromMeta(readMetaContent(doc, 'wp-site-variant'));
     if (siteVariant && typeof cfg.siteVariant === 'undefined') {

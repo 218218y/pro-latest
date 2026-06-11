@@ -17,6 +17,10 @@ import {
   resetProjectViaHeader,
   saveProjectViaHeader,
   toggleCloudSyncFloatingPin,
+  toggleHeaderSketchMode,
+  toggleViewerContentsVisibility,
+  toggleViewerNoteDrawMode,
+  toggleViewerNotesVisibility,
   toggleSwitchByTestId,
 } from './helpers/project_flows';
 
@@ -25,24 +29,23 @@ test.describe('Playwright smoke flows', () => {
     const issues = collectRuntimeIssues(page);
     await gotoSmokeApp(page);
 
-    const tabs = ['structure', 'design', 'interior', 'render', 'export'] as const;
+    const tabs = ['structure', 'design', 'interior', 'sketch', 'settings'] as const;
     for (const id of tabs) await openMainTab(page, id);
 
-    await openMainTab(page, 'render');
-    const renderPanel = page.locator('.tab-content[data-tab="render"]');
-    await toggleSwitchByTestId(renderPanel, 'toggle-global-click');
-    await toggleSwitchByTestId(renderPanel, 'toggle-sketch-mode');
-    await toggleSwitchByTestId(renderPanel, 'toggle-notes');
-    await expect(page.locator('#notes-overlay')).toBeVisible();
-    await toggleSwitchByTestId(renderPanel, 'toggle-notes');
+    await openMainTab(page, 'settings');
+    const settingsPanel = page.locator('.tab-content[data-tab="settings"]');
+    await toggleSwitchByTestId(settingsPanel, 'toggle-global-click');
+    await expect(settingsPanel.locator('input[data-testid="toggle-sketch-mode"]')).toHaveCount(0);
+    await expect(settingsPanel.locator('input[data-testid="toggle-notes"]')).toHaveCount(0);
 
-    const headerSketchToggle = page.locator('button[data-testid="header-sketch-toggle-button"]');
-    await expect(headerSketchToggle).toBeVisible();
-    const sketchBefore = await headerSketchToggle.getAttribute('aria-pressed');
-    await headerSketchToggle.click();
-    await expect(headerSketchToggle).not.toHaveAttribute('aria-pressed', sketchBefore ?? 'false');
-    await headerSketchToggle.click();
-    await expect(headerSketchToggle).toHaveAttribute('aria-pressed', sketchBefore ?? 'false');
+    await toggleViewerNoteDrawMode(page);
+    await toggleViewerNoteDrawMode(page);
+    await toggleViewerNotesVisibility(page);
+    await toggleViewerNotesVisibility(page);
+    await toggleViewerContentsVisibility(page);
+    await toggleViewerContentsVisibility(page);
+    await toggleHeaderSketchMode(page);
+    await toggleHeaderSketchMode(page);
 
     expectNoRuntimeIssues(issues);
   });
@@ -95,7 +98,7 @@ test.describe('Playwright smoke flows', () => {
     expectNoRuntimeIssues(issues);
   });
 
-  test('export tab keeps cloud-sync surface interactive', async ({ page }) => {
+  test('settings tab keeps cloud-sync surface interactive', async ({ page }) => {
     const issues = collectRuntimeIssues(page);
     await gotoSmokeApp(page);
 

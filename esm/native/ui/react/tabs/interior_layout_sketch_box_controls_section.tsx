@@ -66,7 +66,7 @@ export function InteriorSketchBoxControlsSection(props: InteriorSketchBoxControl
     <div className="wp-field">
       <div className="wp-sketch-box-grid wp-sketch-box-grid--stacked">
         <SketchBoxToolButton
-          label="קופסא פתוחה"
+          label="קופסא חופשית"
           active={isSketchBoxControlsOpen}
           iconClass="fas fa-vector-square"
           onClick={() => {

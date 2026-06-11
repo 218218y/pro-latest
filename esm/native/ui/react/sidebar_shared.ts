@@ -26,18 +26,18 @@ export const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'structure', label: 'מבנה' },
   { id: 'design', label: 'עיצוב' },
   { id: 'interior', label: 'פנים' },
-  { id: 'render', label: 'הדמיה' },
-  { id: 'export', label: 'ייצוא' },
+  { id: 'sketch', label: 'סקיצה' },
+  { id: 'settings', label: 'הגדרות' },
 ];
 
 // SITE2: which tabs are allowed to ever show (when the online gate is ON).
 // Configure via the runtime config module (wp_runtime_config.mjs), for example:
-//   export default { config: { site2EnabledTabs: ['export','render'] } };
+//   export default { config: { site2EnabledTabs: ['settings'] } };
 const SITE2_ENABLED_TABS_DEFAULT: TabId[] = [];
 
 function normalizeTabId(v: unknown): TabId | null {
   const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
-  if (s === 'structure' || s === 'design' || s === 'interior' || s === 'render' || s === 'export') return s;
+  if (s === 'structure' || s === 'design' || s === 'interior' || s === 'sketch' || s === 'settings') return s;
   return null;
 }
 

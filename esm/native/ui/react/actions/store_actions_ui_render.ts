@@ -55,6 +55,15 @@ function setUiGlobalClickUi(app: AppContainer, on: unknown, meta?: ActionMetaLik
   setUiScalarSoft(app, 'globalClickMode', !!on, meta);
 }
 
+function setUiDarkMode(app: AppContainer, on: unknown, meta?: ActionMetaLike): void {
+  const uiNs = getUiNamespace(app);
+  if (typeof uiNs.setDarkMode === 'function') {
+    uiNs.setDarkMode(asBoolean(on), meta);
+    return;
+  }
+  setUiScalarSoft(app, 'darkMode', !!on, meta);
+}
+
 function setUiShowContents(app: AppContainer, on: unknown, meta?: ActionMetaLike): void {
   const uiNs = getUiNamespace(app);
   if (typeof uiNs.setShowContents === 'function') {
@@ -158,6 +167,7 @@ export {
   patchUiLightingState,
   setUiCurrentFloorType,
   setUiCurrentLayoutType,
+  setUiDarkMode,
   setUiExtDrawerSelection,
   setUiGlobalClickUi,
   setUiGridDivisionsState,

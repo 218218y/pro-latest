@@ -53,6 +53,13 @@ export type RenderRuntimeStateLike = {
   lastPruneAt: number;
 };
 
+export type MirrorRefreshNowResult = {
+  refreshed: boolean;
+  mirrorCount: number;
+  materialSyncCount: number;
+  skippedReason: string | null;
+};
+
 function isRenderRuntimeStateBag(
   value: ReturnType<typeof ensureRenderBag>
 ): value is ReturnType<typeof ensureRenderBag> & RenderRuntimeStateLike {
@@ -196,6 +203,139 @@ export function getMirrorCubeCamera(App: unknown): Object3DLike | null {
 
 export function getMirrorHideScratch(App: unknown): Object3DLike[] {
   return ensureRenderRuntimeState(App).__mirrorHideScratch;
+}
+
+function readUnknownRecord(value: unknown): UnknownRecord | null {
+  return asRecord<UnknownRecord>(value);
+}
+
+function readMirrorMaterialRecords(obj: UnknownRecord | null): UnknownRecord[] {
+  if (!obj) return [];
+  const material = obj.material;
+  if (!material) return [];
+  if (Array.isArray(material))
+    return material.filter((entry): entry is UnknownRecord => !!readUnknownRecord(entry));
+  const single = readUnknownRecord(material);
+  return single ? [single] : [];
+}
+
+function isTrackedMirrorSurface(obj: UnknownRecord | null): boolean {
+  if (!obj || obj.isMesh !== true) return false;
+  const userData = readUnknownRecord(obj.userData);
+  return userData?.__wpMirrorSurface === true;
+}
+
+function syncMirrorMaterialEnvMap(obj: UnknownRecord | null, texture: unknown): number {
+  if (!obj || !texture) return 0;
+  let syncCount = 0;
+  const materials = readMirrorMaterialRecords(obj);
+  for (let i = 0; i < materials.length; i += 1) {
+    const material = materials[i];
+    if (!material) continue;
+    if (material.envMap === texture) continue;
+    material.envMap = texture;
+    material.needsUpdate = true;
+    syncCount += 1;
+  }
+  return syncCount;
+}
+
+function pruneTrackedMirrorList(mirrors: UnknownRecord[]): number {
+  const seen = new Set<UnknownRecord>();
+  let writeIndex = 0;
+  for (let i = 0; i < mirrors.length; i += 1) {
+    const mirror = readUnknownRecord(mirrors[i]);
+    if (!mirror || seen.has(mirror)) continue;
+    if (typeof mirror.parent === 'undefined') continue;
+    seen.add(mirror);
+    mirrors[writeIndex] = mirror;
+    writeIndex += 1;
+  }
+  if (mirrors.length !== writeIndex) mirrors.length = writeIndex;
+  return writeIndex;
+}
+
+function writeMirrorPresenceState(
+  renderBag: RenderRuntimeStateLike,
+  hasMirror: boolean,
+  nowMs: number
+): void {
+  renderBag.__mirrorDirty = false;
+  renderBag.__mirrorPresenceKnown = true;
+  renderBag.__mirrorPresenceHasMirror = hasMirror;
+  renderBag.__mirrorPresenceCheckedAtMs = nowMs;
+  if (hasMirror) {
+    renderBag.__mirrorLastUpdateMs = nowMs;
+    renderBag.__mirrorUpdateCount += 1;
+  }
+}
+
+export function refreshTrackedMirrorSurfacesNow(App: unknown): MirrorRefreshNowResult {
+  const result: MirrorRefreshNowResult = {
+    refreshed: false,
+    mirrorCount: 0,
+    materialSyncCount: 0,
+    skippedReason: null,
+  };
+
+  let renderBag: RenderRuntimeStateLike;
+  try {
+    renderBag = ensureRenderRuntimeState(App);
+  } catch {
+    result.skippedReason = 'render-state-unavailable';
+    return result;
+  }
+
+  const cube = readUnknownRecord(renderBag.mirrorCubeCamera);
+  const target = readUnknownRecord(renderBag.mirrorRenderTarget);
+  const scene = readUnknownRecord(readRenderSurface(App, 'scene'));
+  const renderer = readUnknownRecord(readRenderSurface(App, 'renderer'));
+  const update = cube && typeof cube.update === 'function' ? cube.update : null;
+  const texture = target ? target.texture : null;
+
+  if (!(cube && update && target && texture && scene && renderer)) {
+    result.skippedReason = 'mirror-refresh-surface-incomplete';
+    return result;
+  }
+
+  const mirrors = ensureRenderMetaArray<UnknownRecord>(App, 'mirrors');
+  pruneTrackedMirrorList(mirrors);
+
+  const restored: Array<{ obj: UnknownRecord; visible: unknown }> = [];
+  const nowMs = Date.now();
+  let hasMirror = false;
+
+  try {
+    for (let i = 0; i < mirrors.length; i += 1) {
+      const mirror = readUnknownRecord(mirrors[i]);
+      if (!isTrackedMirrorSurface(mirror)) continue;
+      hasMirror = true;
+      result.mirrorCount += 1;
+      result.materialSyncCount += syncMirrorMaterialEnvMap(mirror, texture);
+      if (mirror && mirror.visible !== false) {
+        restored.push({ obj: mirror, visible: mirror.visible });
+        mirror.visible = false;
+      }
+    }
+
+    if (!hasMirror) {
+      writeMirrorPresenceState(renderBag, false, nowMs);
+      result.skippedReason = 'no-tracked-mirror-surfaces';
+      return result;
+    }
+
+    update.call(cube, renderer, scene);
+    writeMirrorPresenceState(renderBag, true, nowMs);
+    result.refreshed = true;
+    return result;
+  } catch {
+    result.skippedReason = 'mirror-refresh-failed';
+    return result;
+  } finally {
+    for (let i = 0; i < restored.length; i += 1) {
+      restored[i].obj.visible = restored[i].visible;
+    }
+  }
 }
 
 export function invalidateMirrorTracking(App: unknown): void {

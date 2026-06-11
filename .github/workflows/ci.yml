@@ -7,33 +7,43 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      run_strict_gate:
+        description: Run strict policy, formatting, and refactor guardrails
+        required: false
+        type: boolean
+        default: true
       run_lint:
-        description: Run lint only
+        description: Run strict lint
         required: false
         type: boolean
         default: true
       run_typecheck:
-        description: Run TypeScript checks only
+        description: Run all TypeScript checks
         required: false
         type: boolean
         default: true
-      run_verify:
-        description: Run the regular CI verification suite
+      run_contracts:
+        description: Run architecture and public-surface contracts
         required: false
         type: boolean
-        default: false
-      run_strict_gate:
-        description: Run the strict gate that fails on formatting differences
+        default: true
+      run_tests:
+        description: Run runtime/unit tests
         required: false
         type: boolean
-        default: false
+        default: true
       run_audit:
         description: Run dependency audit
         required: false
         type: boolean
         default: false
-      run_release_smoke:
-        description: Run the release/build smoke job
+      run_build_smoke:
+        description: Run build and release-source smoke checks
+        required: false
+        type: boolean
+        default: false
+      run_release_gate:
+        description: Run the full release verification gate with bundles
         required: false
         type: boolean
         default: false
@@ -61,11 +71,11 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  verify:
-    name: Verify
+  strict-gate:
+    name: Strict gate
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    if: github.event_name != 'workflow_dispatch' || inputs.run_verify
+    if: github.event_name != 'workflow_dispatch' || inputs.run_strict_gate
 
     steps:
       - name: Checkout
@@ -74,33 +84,29 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          # Keep CI on the current stable runtime line supported by the project
-          # engines range (>=22.12), while avoiding Node 20 deprecation noise.
           node-version: 24
           cache: npm
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Run CI verification
-        run: npm run verify -- --ci
+      - name: Run migration policy gate
+        run: npm run check:gate
 
-      - name: Publish test failure summary
-        if: success() || failure()
-        run: |
-          if [ -f .artifacts/test-report/failed-tests.md ]; then
-            cat .artifacts/test-report/failed-tests.md >> "$GITHUB_STEP_SUMMARY"
-          fi
+      - name: Run format check
+        run: npm run format:check
 
-      - name: Upload failure diagnostics
+      - name: Run refactor guardrails
+        run: npm run check:refactor-guardrails
+
+      - name: Upload strict gate diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: verify-diagnostics
+          name: strict-gate-diagnostics
           path: |
             .artifacts/**
-            test-results/**
-            playwright-report/**
+            docs/*_AUDIT.*
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 7
@@ -109,7 +115,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event_name == 'workflow_dispatch' && inputs.run_lint
+    if: github.event_name != 'workflow_dispatch' || inputs.run_lint
 
     steps:
       - name: Checkout
@@ -124,8 +130,8 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Run lint
-        run: npm run lint
+      - name: Run strict lint
+        run: npm run lint:strict
 
       - name: Upload lint diagnostics
         if: failure()
@@ -141,8 +147,8 @@ jobs:
   typecheck:
     name: TypeScript
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    if: github.event_name == 'workflow_dispatch' && inputs.run_typecheck
+    timeout-minutes: 25
+    if: github.event_name != 'workflow_dispatch' || inputs.run_typecheck
 
     steps:
       - name: Checkout
@@ -171,11 +177,11 @@ jobs:
           include-hidden-files: true
           retention-days: 7
 
-  strict-gate:
-    name: Strict gate
+  contracts:
+    name: Contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 35
-    if: github.event_name == 'workflow_dispatch' && inputs.run_strict_gate
+    timeout-minutes: 25
+    if: github.event_name != 'workflow_dispatch' || inputs.run_contracts
 
     steps:
       - name: Checkout
@@ -190,8 +196,62 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Run strict gate
-        run: npm run gate
+      - name: Run PDF template contract
+        run: node tools/wp_pdf_template_check.js
+
+      - name: Run layer contract
+        run: npm run contract:layers
+
+      - name: Run public API contract
+        run: npm run contract:api
+
+      - name: Run UI contract
+        run: npm run ui:contract
+
+      - name: Run wiring guard
+        run: npm run wiring:guard
+
+      - name: Run UI DOM guard
+        run: npm run ui:dom-guard
+
+      - name: Run UI bindkey guard
+        run: npm run ui:bindkey-guard
+
+      - name: Run Three vendor contract
+        run: npm run contract:three-vendor
+
+      - name: Upload contract diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-diagnostics
+          path: |
+            .artifacts/**
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 7
+
+  runtime-tests:
+    name: Runtime tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    if: github.event_name != 'workflow_dispatch' || inputs.run_tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run runtime tests
+        run: npm run test
 
       - name: Publish test failure summary
         if: success() || failure()
@@ -200,15 +260,55 @@ jobs:
             cat .artifacts/test-report/failed-tests.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Upload failure diagnostics
+      - name: Upload test diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: strict-gate-diagnostics
+          name: runtime-test-diagnostics
           path: |
             .artifacts/**
             test-results/**
             playwright-report/**
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 7
+
+  build-smoke:
+    name: Build smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    if: github.event_name != 'workflow_dispatch' || inputs.run_build_smoke
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run ESM build check
+        run: npm run esm:check
+
+      - name: Run Vite production build
+        run: npm run vite:build
+
+      - name: Run release parity source smoke
+        run: npm run release:parity:source
+
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-smoke-diagnostics
+          path: |
+            .artifacts/**
+            dist/**
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 7
@@ -235,11 +335,54 @@ jobs:
       - name: Audit high severity dependencies
         run: npm audit --audit-level=high
 
-  build-smoke:
-    name: Build smoke
+  required-checks:
+    name: Required checks
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.run_release_smoke)
+    if: always() && github.event_name != 'workflow_dispatch'
+    needs:
+      - strict-gate
+      - lint
+      - typecheck
+      - contracts
+      - runtime-tests
+      - build-smoke
+      - audit
+
+    steps:
+      - name: Summarize required checks
+        env:
+          STRICT_GATE_RESULT: ${{ needs['strict-gate'].result }}
+          LINT_RESULT: ${{ needs['lint'].result }}
+          TYPECHECK_RESULT: ${{ needs['typecheck'].result }}
+          CONTRACTS_RESULT: ${{ needs['contracts'].result }}
+          RUNTIME_TESTS_RESULT: ${{ needs['runtime-tests'].result }}
+          BUILD_SMOKE_RESULT: ${{ needs['build-smoke'].result }}
+          AUDIT_RESULT: ${{ needs['audit'].result }}
+        run: |
+          failed=0
+          for check in \
+            "strict-gate:$STRICT_GATE_RESULT" \
+            "lint:$LINT_RESULT" \
+            "typecheck:$TYPECHECK_RESULT" \
+            "contracts:$CONTRACTS_RESULT" \
+            "runtime-tests:$RUNTIME_TESTS_RESULT" \
+            "build-smoke:$BUILD_SMOKE_RESULT" \
+            "audit:$AUDIT_RESULT"
+          do
+            name="${check%%:*}"
+            result="${check#*:}"
+            echo "- $name: $result" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$result" != "success" ]; then
+              failed=1
+            fi
+          done
+          exit "$failed"
+
+  release-gate:
+    name: Full release gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    if: github.event_name == 'workflow_dispatch' && inputs.run_release_gate
 
     steps:
       - name: Checkout
@@ -254,28 +397,34 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Run Vite production build
-        run: npm run vite:build
+      - name: Run full release verification gate
+        run: npm run gate:full
 
-      - name: Run release parity source smoke
-        run: npm run release:parity:source
+      - name: Publish test failure summary
+        if: success() || failure()
+        run: |
+          if [ -f .artifacts/test-report/failed-tests.md ]; then
+            cat .artifacts/test-report/failed-tests.md >> "$GITHUB_STEP_SUMMARY"
+          fi
 
-      - name: Upload build diagnostics
+      - name: Upload release gate diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-smoke-diagnostics
+          name: release-gate-diagnostics
           path: |
             .artifacts/**
+            test-results/**
+            playwright-report/**
             dist/**
           if-no-files-found: warn
           include-hidden-files: true
-          retention-days: 7
+          retention-days: 14
 
   e2e-smoke:
     name: Playwright smoke
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     if: github.event_name == 'workflow_dispatch' && inputs.run_e2e
 
     steps:

@@ -2,13 +2,142 @@ import type { ActionMetaLike, AppContainer, SavedNote, SavedNoteStyle } from '..
 
 import { normalizeSavedNotes } from '../../notes_service.js';
 import { readInnerHtml } from '../../dom_helpers.js';
-import { persistNotesViaService, sanitizeNotesHtmlViaService } from '../../../services/api.js';
+import {
+  getHistorySystemMaybe,
+  persistNotesViaService,
+  readConfigStateFromApp,
+  readRuntimeScalarOrDefaultFromApp,
+  sanitizeNotesHtmlViaService,
+} from '../../../services/api.js';
 import { setCfgSavedNotes } from '../actions/store_actions.js';
 import type { NotesOverlayApp } from './notes_overlay_helpers_services.js';
 import { isEmptyHtml } from './notes_overlay_helpers_shared.js';
 import { didNotesChange } from './notes_overlay_controller_interactions_shared.js';
 
 export type NotesEditorRefs = Array<HTMLDivElement | null>;
+
+type NotesHistoryIdentity = string;
+
+type NotesHistoryCommitMetaArgs = {
+  App: NotesOverlayApp;
+  next: SavedNote[];
+  source: string;
+};
+
+type NotesHistoryChange = {
+  identity: NotesHistoryIdentity;
+  prevNote: SavedNote | null;
+  nextNote: SavedNote | null;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function sanitizeHistoryIdentityPart(value: unknown): string {
+  const raw = value == null ? '' : String(value).trim();
+  if (!raw) return '';
+  return raw.replace(/[^a-zA-Z0-9_.:-]+/g, '_').slice(0, 96);
+}
+
+function readNoteIdentity(note: SavedNote | null | undefined, index: number): NotesHistoryIdentity {
+  const rec = isRecord(note) ? note : null;
+  const id = sanitizeHistoryIdentityPart(rec?.id);
+  if (id) return `id:${id}`;
+  return `index:${index}`;
+}
+
+function tryReadCurrentSavedNotes(App: NotesOverlayApp): SavedNote[] | null {
+  try {
+    const cfg = readConfigStateFromApp(App);
+    return normalizeSavedNotes(App, isRecord(cfg) ? cfg.savedNotes : undefined);
+  } catch {
+    return null;
+  }
+}
+
+function readCurrentSavedNotes(App: NotesOverlayApp): SavedNote[] {
+  return tryReadCurrentSavedNotes(App) || [];
+}
+
+function findChangedNoteChange(prev: SavedNote[], next: SavedNote[]): NotesHistoryChange {
+  const max = Math.max(prev.length, next.length);
+  for (let i = 0; i < max; i += 1) {
+    const prevNote = prev[i] || null;
+    const nextNote = next[i] || null;
+    if (prevNote && nextNote && !didNotesChange([prevNote], [nextNote])) continue;
+    return {
+      identity: readNoteIdentity(nextNote || prevNote || null, i),
+      prevNote,
+      nextNote,
+    };
+  }
+  return { identity: 'unchanged', prevNote: null, nextNote: null };
+}
+
+function shouldCoalesceCreateSource(source: string): boolean {
+  return String(source || '') === 'react:notes:create';
+}
+
+function shouldCoalesceNoteChangeAcrossIdle(change: NotesHistoryChange): boolean {
+  const prevNote = change.prevNote;
+  const nextNote = change.nextNote;
+  if (!prevNote) return false;
+  const prevEmpty = isEmptyHtml(String(prevNote.text || ''));
+  if (!prevEmpty) return false;
+  if (!nextNote) return true;
+  return !isEmptyHtml(String(nextNote.text || ''));
+}
+
+function isHistoryApplyInProgress(App: NotesOverlayApp): boolean {
+  try {
+    const historySystem = getHistorySystemMaybe(App) as {
+      __isApplyingState?: unknown;
+      __resumeAfterRestoreToken?: unknown;
+      isPaused?: unknown;
+    } | null;
+    if (!historySystem) return false;
+    if (historySystem.__isApplyingState === true) return true;
+    const token =
+      typeof historySystem.__resumeAfterRestoreToken === 'number'
+        ? historySystem.__resumeAfterRestoreToken
+        : 0;
+    return historySystem.isPaused === true && token > 0;
+  } catch {
+    return false;
+  }
+}
+
+export function isNotesOverlayCommitSuppressed(App: NotesOverlayApp): boolean {
+  try {
+    if (readRuntimeScalarOrDefaultFromApp(App, 'restoring', false)) return true;
+  } catch {
+    // Fall through to the history-system guard below.
+  }
+  return isHistoryApplyInProgress(App);
+}
+
+export function buildNotesHistoryCommitMeta(args: NotesHistoryCommitMetaArgs): ActionMetaLike {
+  const { App, next, source } = args;
+  const meta: ActionMetaLike = {
+    source,
+    immediate: true,
+  };
+
+  if (!String(source || '').startsWith('react:notes:') || source === 'react:notes:delete') return meta;
+
+  const prev = readCurrentSavedNotes(App);
+  const normalizedNext = normalizeSavedNotes(App, next);
+  const change = findChangedNoteChange(prev, normalizedNext);
+  const isFirstTextForEmptyNote = shouldCoalesceNoteChangeAcrossIdle(change);
+
+  if (!shouldCoalesceCreateSource(source) && !isFirstTextForEmptyNote) return meta;
+
+  meta.coalesceKey = `notes:${change.identity}`;
+  meta.coalesceMs = 1200;
+  if (isFirstTextForEmptyNote) meta.coalesceAcrossIdle = true;
+  return meta;
+}
 
 export function captureEditorsIntoNotesRuntime(
   App: NotesOverlayApp,
@@ -42,13 +171,17 @@ export function commitOverlayNotesRuntime(
   next: SavedNote[],
   source: string
 ): void {
-  const normalizedNext = normalizeSavedNotes(App, next);
-  const commitMeta: ActionMetaLike = {
-    source,
-    immediate: true,
-    coalesceKey: 'notes',
-    coalesceMs: 1200,
-  };
+  if (isNotesOverlayCommitSuppressed(App)) return;
+
+  const normalizedDraft = normalizeSavedNotes(App, next);
+  const normalizedNext = preserveEquivalentNoteSnapshotRuntime(
+    normalizedDraft,
+    filterEmptyNotesRuntime(normalizedDraft)
+  );
+  const current = tryReadCurrentSavedNotes(App);
+  if (current && !didNotesChange(current, normalizedNext)) return;
+
+  const commitMeta = buildNotesHistoryCommitMeta({ App, next: normalizedNext, source });
 
   setCfgSavedNotes(app, normalizedNext, commitMeta);
   persistNotesViaService(App, { source });

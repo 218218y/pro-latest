@@ -9,15 +9,17 @@ import { useSidebarViewState } from './use_sidebar_view_state.js';
 
 function SidebarLockedView({
   enabledTabs,
+  darkMode,
   onSidebarBackgroundClick,
   scrollRef,
 }: {
   enabledTabs: string[];
+  darkMode: boolean;
   onSidebarBackgroundClick: (e: MouseEvent<HTMLDivElement>) => void;
   scrollRef: MutableRefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="wp-react">
+    <div className={darkMode ? 'wp-react wp-r-theme-dark' : 'wp-react'}>
       <SidebarHeader />
       <div className="scroll-content wp-r-scroll" ref={scrollRef} onClick={onSidebarBackgroundClick}>
         <div className="wp-r-site2-locked" data-wp-site2-locked="1">
@@ -40,7 +42,9 @@ export function ReactSidebarApp() {
     canRenderTab,
     enabledSet,
     enabledTabs,
-    exportMounted,
+    settingsMounted,
+    sketchMounted,
+    darkMode,
     gateOpen,
     isSite2,
     onSidebarBackgroundClick,
@@ -54,6 +58,7 @@ export function ReactSidebarApp() {
     return (
       <SidebarLockedView
         enabledTabs={enabledTabs}
+        darkMode={darkMode}
         onSidebarBackgroundClick={onSidebarBackgroundClick}
         scrollRef={scrollRef}
       />
@@ -67,7 +72,7 @@ export function ReactSidebarApp() {
       : [];
 
   return (
-    <div className="wp-react">
+    <div className={darkMode ? 'wp-react wp-r-theme-dark' : 'wp-react'}>
       <SidebarHeader />
       {tabItems.length ? (
         <TabsBar
@@ -95,9 +100,10 @@ export function ReactSidebarApp() {
                 activeTab={activeSafe}
                 canRenderDesign={canRenderTab('design')}
                 canRenderInterior={canRenderTab('interior')}
-                canRenderRender={canRenderTab('render')}
-                canRenderExport={canRenderTab('export')}
-                exportMounted={exportMounted}
+                canRenderSettings={canRenderTab('settings')}
+                canRenderSketch={canRenderTab('sketch')}
+                settingsMounted={settingsMounted}
+                sketchMounted={sketchMounted}
               />
             </Suspense>
           </LazyErrorBoundary>

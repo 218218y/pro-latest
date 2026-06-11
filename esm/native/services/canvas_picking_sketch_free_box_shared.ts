@@ -16,6 +16,7 @@ export {
   getSketchFreePlacementRoomFloorY,
   clampSketchFreeBoxCenterYToWorkspace,
   isWithinSketchFreePlacementBounds,
+  isSketchFreeBoxUnderWardrobeColumn,
   doAxisIntervalsOverlap,
   doesSketchFreeBoxPartiallyOverlapWardrobe,
   resolveSketchFreeBoxOutsideWardrobeSnapX,

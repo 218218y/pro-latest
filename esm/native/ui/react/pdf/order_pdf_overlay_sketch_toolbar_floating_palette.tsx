@@ -30,7 +30,6 @@ export function OrderPdfSketchFloatingPalette(
               position: 'fixed',
               top: `${placement.top}px`,
               left: `${placement.left}px`,
-              maxHeight: `${placement.maxHeight}px`,
             }
           : { position: 'fixed', visibility: 'hidden', insetInlineStart: '-9999px', top: '0' }
       }

@@ -656,7 +656,7 @@ function getActiveTabPanelAnchor(page, id) {
       return page
         .locator('#reactSidebarRoot .control-section:has(input[data-testid="toggle-sketch-mode"]):visible')
         .last();
-    case 'export':
+    case 'settings':
       return page.locator('#reactSidebarRoot button[data-testid="export-snapshot-button"]:visible').last();
     default:
       return page.locator('#reactSidebarRoot .wp-react:visible').first();
@@ -786,7 +786,7 @@ async function installInitialStorageReset(page) {
 }
 
 async function runClipboardExportAction(page, buttonTestId, metricName) {
-  await openMainTab(page, 'export');
+  await openMainTab(page, 'settings');
   const button = page.locator(`button[data-testid="${buttonTestId}"]`);
   await expect(button).toBeVisible();
   const before = await readClipboardWriteCount(page);
@@ -840,7 +840,7 @@ async function dismissStickyEditModeToastIfPresent(page) {
 }
 
 async function toggleCloudSyncFloatingPin(page) {
-  await openMainTab(page, 'export');
+  await openMainTab(page, 'settings');
   const input = page.locator('input[data-testid="cloud-sync-floating-pin-toggle"]');
   await expect(input).toHaveCount(1);
   const beforeCount = (await readPerfSummary(page))['cloudSync.floatingSync.toggle']?.count || 0;
@@ -1539,7 +1539,7 @@ async function readBuildOptionFingerprint(page) {
 }
 
 async function setRenderSketchMode(page, enabled) {
-  await openMainTab(page, 'render');
+  await openMainTab(page, 'settings');
   const input = page.locator('input[data-testid="toggle-sketch-mode"]');
   await expect(input).toHaveCount(1);
   await setCheckboxState(input, enabled);
@@ -1551,7 +1551,7 @@ async function readCabinetCoreFingerprint(page) {
   const buildOptions = await readBuildOptionFingerprint(page);
   const savedSwatches = await readSavedDesignSwatchMeta(page);
   const selectedSwatch = await readSelectedDesignSwatchMeta(page);
-  await openMainTab(page, 'render');
+  await openMainTab(page, 'settings');
   const sketchModeEnabled = await page.locator('input[data-testid="toggle-sketch-mode"]').isChecked();
   return {
     ...uiState,
@@ -1786,7 +1786,7 @@ async function runProjectPersistenceRecoveryBurst(
 }
 
 async function importSettingsBackupFromFile(page, filePath) {
-  await openMainTab(page, 'export');
+  await openMainTab(page, 'settings');
   const importButton = page.locator('button[data-testid="settings-backup-import-button"]');
   const importInput = page.locator('input[data-testid="settings-backup-import-input"]');
   await expect(importButton).toBeVisible();
@@ -1890,58 +1890,58 @@ async function confirmRestoreLastSessionModalWithAutosave(page, filePath) {
     await withStep(
       result,
       page,
-      'tab.render.open',
+      'tab.settings.open',
       async () => {
-        await openMainTab(page, 'render');
+        await openMainTab(page, 'settings');
       },
-      { journey: USER_JOURNEYS.bootAndShell, tags: ['navigation', 'render'] }
+      { journey: USER_JOURNEYS.bootAndShell, tags: ['navigation', 'settings'] }
     );
 
-    const renderRoot = page.locator('.tab-content[data-tab="render"]');
-    const globalClickToggle = renderRoot.locator('input[data-testid="toggle-global-click"]');
+    const settingsRoot = page.locator('.tab-content[data-tab="settings"]');
+    const globalClickToggle = settingsRoot.locator('input[data-testid="toggle-global-click"]');
     await withStep(
       result,
       page,
-      'render.global-click.roundtrip',
+      'settings.visual.global-click.roundtrip',
       async () => {
         await toggleCheckboxTwice(globalClickToggle);
       },
-      { journey: USER_JOURNEYS.cabinetCoreAuthoring, tags: ['render', 'toggle'] }
+      { journey: USER_JOURNEYS.cabinetCoreAuthoring, tags: ['settings', 'visual', 'toggle'] }
     );
 
-    const sketchModeToggle = renderRoot.locator('input[data-testid="toggle-sketch-mode"]');
+    const sketchModeToggle = settingsRoot.locator('input[data-testid="toggle-sketch-mode"]');
     await withStep(
       result,
       page,
-      'render.sketch-mode.roundtrip',
+      'settings.visual.sketch-mode.roundtrip',
       async () => {
         await toggleCheckboxTwice(sketchModeToggle);
       },
-      { journey: USER_JOURNEYS.cabinetCoreAuthoring, tags: ['render', 'sketch'] }
+      { journey: USER_JOURNEYS.cabinetCoreAuthoring, tags: ['settings', 'visual', 'sketch'] }
     );
 
-    const notesToggle = renderRoot.locator('input[data-testid="toggle-notes"]');
+    const notesToggle = settingsRoot.locator('input[data-testid="toggle-notes"]');
     await withStep(
       result,
       page,
-      'render.notes.toggle-on',
+      'settings.visual.notes.toggle-on',
       async () => {
         await setCheckboxState(notesToggle, true);
         await expect(notesToggle).toBeChecked();
         await expect(page.locator('#notes-overlay')).toBeVisible();
       },
-      { journey: USER_JOURNEYS.cabinetCoreAuthoring, tags: ['render', 'notes'] }
+      { journey: USER_JOURNEYS.cabinetCoreAuthoring, tags: ['settings', 'visual', 'notes'] }
     );
 
     await withStep(
       result,
       page,
-      'render.notes.toggle-off',
+      'settings.visual.notes.toggle-off',
       async () => {
         await setCheckboxState(notesToggle, false);
         await expect(notesToggle).not.toBeChecked();
       },
-      { journey: USER_JOURNEYS.cabinetCoreAuthoring, tags: ['render', 'notes'] }
+      { journey: USER_JOURNEYS.cabinetCoreAuthoring, tags: ['settings', 'visual', 'notes'] }
     );
 
     const cabinetCoreSavedName = `Cabinet Browser Perf ${Date.now()}`;
@@ -2360,13 +2360,13 @@ async function confirmRestoreLastSessionModalWithAutosave(page, filePath) {
     await withStep(
       result,
       page,
-      'tab.export.open',
+      'tab.settings.open',
       async () => {
-        await openMainTab(page, 'export');
+        await openMainTab(page, 'settings');
         await expect(page.locator('[data-testid="cloud-sync-panel"]')).toBeVisible();
         await expect(page.locator('[data-testid="settings-backup-panel"]')).toBeVisible();
       },
-      { journey: USER_JOURNEYS.exportAuthoring, tags: ['navigation', 'export'] }
+      { journey: USER_JOURNEYS.exportAuthoring, tags: ['navigation', 'settings'] }
     );
 
     await withStep(
@@ -2444,7 +2444,7 @@ async function confirmRestoreLastSessionModalWithAutosave(page, filePath) {
         await expect(getSavedDesignColorSwatch(page, savedColorValue)).toHaveCount(1);
         expectedImportedState = await readUiStateFingerprint(page);
 
-        await openMainTab(page, 'export');
+        await openMainTab(page, 'settings');
         const downloadPromise = page.waitForEvent('download');
         await page.locator('button[data-testid="settings-backup-export-button"]').click();
         const download = await downloadPromise;
@@ -2504,7 +2504,7 @@ async function confirmRestoreLastSessionModalWithAutosave(page, filePath) {
       page,
       'order-pdf.open-close.initial',
       async () => {
-        await openMainTab(page, 'export');
+        await openMainTab(page, 'settings');
         await page.locator('button[data-testid="export-open-pdf-button"]').click();
         await expect(page.locator('[data-testid="order-pdf-overlay"]')).toBeVisible();
         await page.locator('button[data-testid="order-pdf-close-button"]').click();
@@ -2590,7 +2590,7 @@ async function confirmRestoreLastSessionModalWithAutosave(page, filePath) {
       'order-pdf.reopen.pressure',
       async () => {
         for (let i = 0; i < 2; i += 1) {
-          await openMainTab(page, 'export');
+          await openMainTab(page, 'settings');
           await page.locator('button[data-testid="export-open-pdf-button"]').click();
           await expect(page.locator('[data-testid="order-pdf-overlay"]')).toBeVisible();
           await page.locator('button[data-testid="order-pdf-close-button"]').click();

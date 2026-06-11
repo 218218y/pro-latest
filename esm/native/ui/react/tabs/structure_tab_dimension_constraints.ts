@@ -43,6 +43,8 @@ export type StructureDimensionKey =
   | 'cellDimsWidth'
   | 'cellDimsHeight'
   | 'cellDimsDepth'
+  | 'cellDimsHexProtrusion'
+  | 'cellDimsHexDoorWidth'
   | 'chestCommodeMirrorHeightCm'
   | 'chestCommodeMirrorWidthCm'
   | 'stackSplitLowerHeight'
@@ -107,6 +109,10 @@ export function readStructureDimensionBounds(args: StructureDimensionContext): S
       return { min: WARDROBE_CELL_HEIGHT_MIN, max: WARDROBE_CELL_HEIGHT_MAX };
     case 'cellDimsDepth':
       return { min: WARDROBE_CELL_DEPTH_MIN, max: WARDROBE_CELL_DEPTH_MAX };
+    case 'cellDimsHexProtrusion':
+      return { min: 0, max: WARDROBE_CELL_DEPTH_MAX };
+    case 'cellDimsHexDoorWidth':
+      return { min: WARDROBE_CELL_WIDTH_MIN, max: WARDROBE_CELL_WIDTH_MAX };
     case 'chestCommodeMirrorHeightCm':
       return readStructureChestCommodeMirrorBounds('height');
     case 'chestCommodeMirrorWidthCm':

@@ -7,12 +7,7 @@ import {
   __wp_projectWorldPointToLocal,
 } from './canvas_picking_local_helpers_runtime.js';
 
-export type CrossDrawerFamily =
-  | 'standard_external'
-  | 'sketch_external'
-  | 'standard_internal'
-  | 'sketch_internal'
-  | 'other';
+export type CrossDrawerFamily = 'standard_external' | 'sketch_external' | 'sketch_internal' | 'other';
 
 export type CrossDrawerPreviewBox = {
   centerX: number;
@@ -92,7 +87,6 @@ export function classifyCrossDrawerPart(partId: unknown, userData?: UnknownRecor
 
   if (pid.startsWith('div_int_sketch_')) return 'sketch_internal';
   if (/^d\d+_draw_(?:shoe|\d+)$/.test(pid)) return 'standard_external';
-  if (pid.startsWith('div_int_')) return 'standard_internal';
   return 'other';
 }
 
@@ -283,33 +277,11 @@ export function removeSketchExternalDrawerFromConfig(
 }
 
 export function removeStandardInternalDrawerFromConfig(
-  cfg: ModuleConfigLike | UnknownRecord,
-  partId: string,
-  slotHint?: number | null
+  _cfg: ModuleConfigLike | UnknownRecord,
+  _partId: string,
+  _slotHint?: number | null
 ): boolean {
-  const match = partId.match(/_slot_(\d+)/);
-  const slot = match ? Number(match[1]) : Number(slotHint);
-  if (!Number.isFinite(slot)) return false;
-  let changed = false;
-  const rec = cfg as UnknownRecord;
-  const list = Array.isArray(rec.intDrawersList) ? rec.intDrawersList : null;
-  if (list) {
-    for (let i = list.length - 1; i >= 0; i--) {
-      if (Number(list[i]) === slot) {
-        list.splice(i, 1);
-        changed = true;
-      }
-    }
-  }
-  if (Number(rec.intDrawersSlot) === slot) {
-    try {
-      delete rec.intDrawersSlot;
-    } catch {
-      rec.intDrawersSlot = null;
-    }
-    changed = true;
-  }
-  return changed;
+  return false;
 }
 
 export function removeStandardExternalDrawerFromConfig(

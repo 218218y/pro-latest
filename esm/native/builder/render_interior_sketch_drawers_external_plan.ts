@@ -1,3 +1,4 @@
+import { makeDrawerBoxPartId } from '../features/drawer_box_identity.js';
 import { computeExternalDrawersOpsForModule } from './pure_api.js';
 import {
   DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M,
@@ -5,11 +6,13 @@ import {
   SKETCH_EXTERNAL_DRAWER_COUNT_MIN,
   readSketchDrawerHeightMFromItem,
   resolveSketchExternalDrawerMetrics,
+  sketchStackFitsAvailableHeight,
 } from '../features/sketch_drawer_sizing.js';
 import {
   DRAWER_DIMENSIONS,
   resolveExternalDrawerGeometry,
 } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { resolveSketchStackCenterYFromNormalizedItem } from '../features/sketch_stack_positioning.js';
 
 import type {
   SketchExternalDrawerOpPlan,
@@ -20,6 +23,7 @@ import type { SketchExternalDrawerExtra } from './render_interior_sketch_shared.
 
 import {
   applySketchExternalDrawerFaceOverrides,
+  resolveSketchExternalDrawerDoorMountMode,
   asRecordArray,
   asValueRecord,
   resolveSketchExternalDrawerFaceVerticalAlignment,
@@ -44,10 +48,14 @@ export function createSketchExternalDrawerStackPlan(
   const metrics = resolveSketchExternalDrawerMetrics({
     drawerCount,
     drawerHeightM: readSketchDrawerHeightMFromItem(item, DEFAULT_SKETCH_EXTERNAL_DRAWER_HEIGHT_M),
-    availableHeightM: Math.max(0, context.effectiveTopY - context.effectiveBottomY),
   });
   const drawerH = metrics.drawerH;
   const stackH = metrics.stackH;
+  if (
+    !sketchStackFitsAvailableHeight(stackH, Math.max(0, context.effectiveTopY - context.effectiveBottomY))
+  ) {
+    return null;
+  }
   const centerY = resolveSketchExternalDrawerStackCenterY(context, item, stackH);
   if (centerY == null) return null;
 
@@ -70,6 +78,7 @@ export function createSketchExternalDrawerStackPlan(
       frontZ: context.frontZ,
       startY: baseY - context.woodThick,
       woodThick: context.woodThick,
+      doorMountMode: resolveSketchExternalDrawerDoorMountMode(context.input),
       keyPrefix,
       regCount: drawerCount,
       regDrawerHeight: drawerH,
@@ -113,12 +122,15 @@ export function createSketchExternalDrawerOpPlan(
     woodThicknessM: context.woodThick,
     frontZM: context.frontZ,
     drawerHeightM: stack.drawerH,
+    doorMountMode: resolveSketchExternalDrawerDoorMountMode(context.input),
   });
   const px = toFiniteNumber(closed?.x) ?? context.internalCenterX;
   const py = toFiniteNumber(closed?.y) ?? stack.centerY;
   const pz = toFiniteNumber(closed?.z) ?? fallbackGeom.zClosed;
   const partId = `${stack.keyPrefix}${opIndex + 1}`;
+  const boxPartId = makeDrawerBoxPartId(partId);
   const frontMat = context.resolvePartMaterial(partId);
+  const boxMat = context.resolveDrawerBoxMaterial(boxPartId);
   const visualW = Math.max(
     drawerDims.externalPreviewVisualMinWidthM,
     toFiniteNumber(op.visualW) ?? fallbackGeom.visualW
@@ -150,7 +162,9 @@ export function createSketchExternalDrawerOpPlan(
     py,
     pz,
     partId,
+    boxPartId,
     frontMat,
+    boxMat,
     visualW,
     faceW,
     faceOffsetX,
@@ -178,32 +192,11 @@ function resolveSketchExternalDrawerStackCenterY(
   item: SketchExternalDrawerExtra,
   stackH: number
 ): number | null {
-  const yNormC = toFiniteNumber(item.yNormC);
-  const yNormBase = toFiniteNumber(item.yNorm);
-  if (yNormC != null) {
-    return clampSketchExternalDrawerCenterY(
-      context,
-      context.effectiveBottomY + Math.max(0, Math.min(1, yNormC)) * context.spanH,
-      stackH
-    );
-  }
-  if (yNormBase != null) {
-    return clampSketchExternalDrawerCenterY(
-      context,
-      context.effectiveBottomY + Math.max(0, Math.min(1, yNormBase)) * context.spanH + stackH / 2,
-      stackH
-    );
-  }
-  return null;
-}
-
-function clampSketchExternalDrawerCenterY(
-  context: SketchExternalDrawerRenderContext,
-  yCenter: number,
-  stackH: number
-): number {
-  const lo = context.effectiveBottomY + stackH / 2;
-  const hi = context.effectiveTopY - stackH / 2;
-  if (!(hi > lo)) return Math.max(context.effectiveBottomY, Math.min(context.effectiveTopY, yCenter));
-  return Math.max(lo, Math.min(hi, yCenter));
+  return resolveSketchStackCenterYFromNormalizedItem({
+    item,
+    bottomY: context.effectiveBottomY,
+    topY: context.effectiveTopY,
+    totalHeight: context.spanH,
+    stackH,
+  });
 }

@@ -97,3 +97,40 @@ test('dom_access reads canonical DOM surfaces and creates the toast host on dema
   assert.match((toast as Elem).className || '', /toast-container--viewer/);
   assert.equal(body.children.includes(toast as Elem), false);
 });
+
+test('dom_access can pin the shared toast host to the document body for full-screen overlays', () => {
+  const viewer = makeElement('div', 'viewer-container');
+  const body = makeElement('body');
+  const html = makeElement('html');
+  const elements = new Map<string, Elem>([['viewer-container', viewer]]);
+
+  const doc = {
+    body,
+    documentElement: html,
+    getElementById(id: string) {
+      return elements.get(id) || null;
+    },
+    querySelector() {
+      return null;
+    },
+    querySelectorAll() {
+      return [];
+    },
+    createElement(tag: string) {
+      const el = makeElement(tag);
+      if (tag === 'div') elements.set('toastContainer', el);
+      return el;
+    },
+  };
+
+  const App = { deps: { browser: { document: doc } } };
+
+  const toast = ensureToastContainerMaybe(App, { preferBody: true });
+  assert.ok(toast);
+  assert.equal(toast?.id, 'toastContainer');
+  assert.equal((toast as Elem).parentElement, body);
+  assert.equal(body.children.includes(toast as Elem), true);
+  assert.equal(viewer.children.includes(toast as Elem), false);
+  assert.match((toast as Elem).className || '', /toast-container--body/);
+  assert.doesNotMatch((toast as Elem).className || '', /toast-container--viewer/);
+});

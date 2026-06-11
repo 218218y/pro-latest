@@ -25,17 +25,17 @@ test('react config selectors keep saved colors and swatch order typed with safe 
   assert.deepEqual(selectColorSwatchesOrder({} as never), []);
 });
 
-test('react config selectors detect internal drawer data in modules and corner config safely', () => {
+test('react config selectors detect sketch internal drawer data', () => {
   assert.equal(
-    selectHasInternalDrawersData({ modulesConfiguration: [{ intDrawersList: [{ id: 'd1' }] }] } as never),
+    selectHasInternalDrawersData({
+      modulesConfiguration: [{ sketchExtras: { drawers: [{ id: 'd1' }] } }],
+    } as never),
     true
   );
   assert.equal(
-    selectHasInternalDrawersData({ cornerConfiguration: { internalDrawers: [{ id: 'corner' }] } } as never),
+    selectHasInternalDrawersData({
+      cornerConfiguration: { sketchExtras: { drawers: [{ id: 'corner' }] } },
+    } as never),
     true
-  );
-  assert.equal(
-    selectHasInternalDrawersData({ modulesConfiguration: [{ intDrawersSlot: 0 }] } as never),
-    false
   );
 });

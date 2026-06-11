@@ -70,7 +70,9 @@ export function createExportOrderPdfBuilderOps(
         runtime,
         fieldOps,
         resolvedDraft: prepared.resolvedDraft,
+        draft: safeDraft,
         compositeImageSlotBytes: prepared.compositeImageSlotBytes,
+        captureOps,
         buildOrderPdfFileName: _buildOrderPdfFileName,
       });
     } catch (e) {

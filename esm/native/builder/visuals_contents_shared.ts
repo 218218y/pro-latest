@@ -11,6 +11,8 @@ import type {
   BuilderAddFoldedClothesFn,
   BuilderAddHangingClothesFn,
   BuilderAddRealisticHangerFn,
+  GeometryLike,
+  MaterialLike,
   ThreeLike,
   UnknownRecord,
 } from '../../../types/index.js';
@@ -141,7 +143,213 @@ export const BOOK_COLORS = [
   0x9a4f2f, 0x3f6f5f,
 ];
 
+export const BOOK_SET_PALETTES = Object.freeze([
+  Object.freeze([0x5a2f24, 0x6f3b2d, 0x7a3e2e]),
+  Object.freeze([0x1f4e5f, 0x2f5d7c, 0x24485f]),
+  Object.freeze([0x476a34, 0x3f6f5f, 0x31542f]),
+  Object.freeze([0x6b4e31, 0x8a6f2a, 0xb08d57]),
+  Object.freeze([0x36454f, 0x4a5562, 0x5a3f7a]),
+  Object.freeze([0x8c3d4b, 0x9a4f2f, 0x6a2f3a]),
+]);
+
+export const BOOK_SPINE_BAND_COLORS = Object.freeze([0xd6b45d, 0xc8a64f, 0xe8d9a5, 0xf2ead2]);
+
 export function getRandomBookColor() {
   const r = typeof seededRandom.random === 'function' ? seededRandom.random() : Math.random();
   return BOOK_COLORS[Math.floor(r * BOOK_COLORS.length)];
+}
+
+export function getRandomBookSetPalette(): readonly number[] {
+  const r = typeof seededRandom.random === 'function' ? seededRandom.random() : Math.random();
+  return BOOK_SET_PALETTES[Math.floor(r * BOOK_SET_PALETTES.length)] || BOOK_COLORS;
+}
+
+export function getBookSetColor(palette: readonly number[], volumeIndex: number): number {
+  if (!palette.length) return getRandomBookColor();
+  const accentRoll = typeof seededRandom.random === 'function' ? seededRandom.random() : Math.random();
+  const paletteIndex = accentRoll > 0.88 ? (volumeIndex + 1) % palette.length : 0;
+  return palette[paletteIndex] ?? palette[0] ?? getRandomBookColor();
+}
+
+export function getRandomBookSpineBandColor(): number {
+  const r = typeof seededRandom.random === 'function' ? seededRandom.random() : Math.random();
+  return BOOK_SPINE_BAND_COLORS[Math.floor(r * BOOK_SPINE_BAND_COLORS.length)] || 0xd6b45d;
+}
+
+type ThreeCacheHost = object;
+
+const GEOMETRY_CACHE_BY_THREE = new WeakMap<ThreeCacheHost, Map<string, GeometryLike>>();
+const MATERIAL_CACHE_BY_THREE = new WeakMap<ThreeCacheHost, Map<string, MaterialLike>>();
+const VISUAL_CONTENT_GEOMETRY_CACHE_LIMIT = 1200;
+const VISUAL_CONTENT_MATERIAL_CACHE_LIMIT = 320;
+const VISUAL_CONTENT_GEOMETRY_BUCKET_M = 0.001;
+
+function readThreeCacheHost(THREE: ThreeLike): ThreeCacheHost {
+  return THREE as unknown as ThreeCacheHost;
+}
+
+function readGeometryCache(THREE: ThreeLike): Map<string, GeometryLike> {
+  const host = readThreeCacheHost(THREE);
+  let cache = GEOMETRY_CACHE_BY_THREE.get(host);
+  if (!cache) {
+    cache = new Map<string, GeometryLike>();
+    GEOMETRY_CACHE_BY_THREE.set(host, cache);
+  }
+  return cache;
+}
+
+function readMaterialCache(THREE: ThreeLike): Map<string, MaterialLike> {
+  const host = readThreeCacheHost(THREE);
+  let cache = MATERIAL_CACHE_BY_THREE.get(host);
+  if (!cache) {
+    cache = new Map<string, MaterialLike>();
+    MATERIAL_CACHE_BY_THREE.set(host, cache);
+  }
+  return cache;
+}
+
+export function quantizeVisualContentMetric(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const sign = value < 0 ? -1 : 1;
+  const absValue = Math.abs(value);
+  const bucketed = Math.floor(absValue / VISUAL_CONTENT_GEOMETRY_BUCKET_M) * VISUAL_CONTENT_GEOMETRY_BUCKET_M;
+  return sign * Number(bucketed.toFixed(6));
+}
+
+function geometryKey(kind: string, ...values: Array<number | string | boolean | undefined>): string {
+  return `${kind}:${values
+    .map(value => (typeof value === 'number' ? quantizeVisualContentMetric(value) : String(value)))
+    .join(':')}`;
+}
+
+function putBoundedCacheValue<T>(cache: Map<string, T>, key: string, value: T, limit: number): T {
+  if (cache.size >= limit && !cache.has(key)) {
+    const oldestKey = cache.keys().next().value;
+    if (typeof oldestKey === 'string') cache.delete(oldestKey);
+  }
+  cache.set(key, value);
+  return value;
+}
+
+export function getCachedMeshStandardMaterial(
+  THREE: ThreeLike,
+  key: string,
+  opts: UnknownRecord
+): MaterialLike {
+  const cache = readMaterialCache(THREE);
+  const fullKey = `std:${key}`;
+  const cached = cache.get(fullKey);
+  if (cached) return cached;
+  const material = new THREE.MeshStandardMaterial(opts);
+  material.userData = material.userData || {};
+  material.userData.__sharedVisualContentMaterial = true;
+  return putBoundedCacheValue(cache, fullKey, material, VISUAL_CONTENT_MATERIAL_CACHE_LIMIT);
+}
+
+export function getCachedBoxGeometry(
+  THREE: ThreeLike,
+  width: number,
+  height: number,
+  depth: number
+): GeometryLike {
+  const cache = readGeometryCache(THREE);
+  const key = geometryKey('box', width, height, depth);
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const geometry = new THREE.BoxGeometry(
+    quantizeVisualContentMetric(width),
+    quantizeVisualContentMetric(height),
+    quantizeVisualContentMetric(depth)
+  );
+  geometry.userData = geometry.userData || {};
+  geometry.userData.__sharedVisualContentGeometry = true;
+  return putBoundedCacheValue(cache, key, geometry, VISUAL_CONTENT_GEOMETRY_CACHE_LIMIT);
+}
+
+export function getCachedRoundedBoxGeometry(
+  THREE: ThreeLike,
+  width: number,
+  height: number,
+  depth: number,
+  segments: number,
+  radius: number
+): GeometryLike {
+  if (typeof THREE.RoundedBoxGeometry === 'undefined')
+    return getCachedBoxGeometry(THREE, width, height, depth);
+  const cache = readGeometryCache(THREE);
+  const key = geometryKey('roundedBox', width, height, depth, segments, radius);
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const geometry = new THREE.RoundedBoxGeometry(
+    quantizeVisualContentMetric(width),
+    quantizeVisualContentMetric(height),
+    quantizeVisualContentMetric(depth),
+    segments,
+    quantizeVisualContentMetric(radius)
+  );
+  geometry.userData = geometry.userData || {};
+  geometry.userData.__sharedVisualContentGeometry = true;
+  return putBoundedCacheValue(cache, key, geometry, VISUAL_CONTENT_GEOMETRY_CACHE_LIMIT);
+}
+
+export function getCachedCylinderGeometry(
+  THREE: ThreeLike,
+  radiusTop: number,
+  radiusBottom: number,
+  height: number,
+  radialSegments: number
+): GeometryLike {
+  const cache = readGeometryCache(THREE);
+  const key = geometryKey('cylinder', radiusTop, radiusBottom, height, radialSegments);
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const geometry = new THREE.CylinderGeometry(
+    quantizeVisualContentMetric(radiusTop),
+    quantizeVisualContentMetric(radiusBottom),
+    quantizeVisualContentMetric(height),
+    radialSegments
+  );
+  geometry.userData = geometry.userData || {};
+  geometry.userData.__sharedVisualContentGeometry = true;
+  return putBoundedCacheValue(cache, key, geometry, VISUAL_CONTENT_GEOMETRY_CACHE_LIMIT);
+}
+
+export function getCachedTorusGeometry(
+  THREE: ThreeLike,
+  radius: number,
+  tube: number,
+  radialSegments: number,
+  tubularSegments: number,
+  arc: number
+): GeometryLike {
+  const cache = readGeometryCache(THREE);
+  const key = geometryKey('torus', radius, tube, radialSegments, tubularSegments, arc);
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const geometry = new THREE.TorusGeometry(
+    quantizeVisualContentMetric(radius),
+    quantizeVisualContentMetric(tube),
+    radialSegments,
+    tubularSegments,
+    quantizeVisualContentMetric(arc)
+  );
+  geometry.userData = geometry.userData || {};
+  geometry.userData.__sharedVisualContentGeometry = true;
+  return putBoundedCacheValue(cache, key, geometry, VISUAL_CONTENT_GEOMETRY_CACHE_LIMIT);
+}
+
+export function getCachedExtrudeGeometry(
+  THREE: ThreeLike,
+  key: string,
+  createShape: () => unknown,
+  opts: UnknownRecord
+): GeometryLike {
+  const cache = readGeometryCache(THREE);
+  const fullKey = `extrude:${key}`;
+  const cached = cache.get(fullKey);
+  if (cached) return cached;
+  const geometry = new THREE.ExtrudeGeometry(createShape(), opts);
+  geometry.userData = geometry.userData || {};
+  geometry.userData.__sharedVisualContentGeometry = true;
+  return putBoundedCacheValue(cache, fullKey, geometry, VISUAL_CONTENT_GEOMETRY_CACHE_LIMIT);
 }

@@ -23,6 +23,7 @@ export type PdfRenderApi = {
     reportNonFatal: (op: string, err: unknown, dedupeMs?: number) => void;
   }) => Promise<PdfJsLibLike>;
   fetchOrderPdfTemplateBytes: (args: {
+    app: unknown;
     pdfTemplateBytesRef: { current: Uint8Array | null };
     fetchFirstOk: (urls: string[]) => Promise<Uint8Array | null>;
     withV: (urls: string[]) => string[];

@@ -16,7 +16,6 @@ export function applyCustomInteriorGridLayout(args: {
   shelfSet: Record<number, true>;
   shelfVariantByIndex: Record<number, ShelfVariant>;
   addGridShelf: (gridIndex: number, variant: ShelfVariant | undefined) => void;
-  checkAndCreateInternalDrawer: unknown;
   createRod: (
     rodY: number,
     enableHangingClothes: boolean,
@@ -28,12 +27,10 @@ export function applyCustomInteriorGridLayout(args: {
   const {
     gridDivisions,
     effectiveBottomY,
-    effectiveTopY,
     localGridStep,
     shelfSet,
     shelfVariantByIndex,
     addGridShelf,
-    checkAndCreateInternalDrawer,
     createRod,
     rodMap,
   } = args;
@@ -41,19 +38,6 @@ export function applyCustomInteriorGridLayout(args: {
   for (let i = 1; i <= gridDivisions; i += 1) {
     if (i < gridDivisions && shelfSet[i]) {
       addGridShelf(i, shelfVariantByIndex[i]);
-    }
-
-    if (__isFn(checkAndCreateInternalDrawer)) {
-      let slotTopY = effectiveTopY;
-      for (let nextShelfIdx = i; nextShelfIdx < gridDivisions; nextShelfIdx += 1) {
-        if (shelfSet[nextShelfIdx]) {
-          slotTopY = effectiveBottomY + nextShelfIdx * localGridStep;
-          break;
-        }
-      }
-      const slotBottomY = effectiveBottomY + (i - 1) * localGridStep;
-      const slotAvailableHeight = slotTopY - slotBottomY;
-      checkAndCreateInternalDrawer(i, { slotBottomY, slotTopY, slotAvailableHeight });
     }
 
     const rodOp = rodMap[i];

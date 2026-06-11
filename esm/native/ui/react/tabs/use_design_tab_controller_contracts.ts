@@ -1,3 +1,4 @@
+import type { FrontColorShelfInheritanceMode } from '../../../features/front_color_shelf_inheritance.js';
 import type { DesignTabColorManagerModel } from './use_design_tab_color_manager.js';
 import type {
   DesignTabCorniceType,
@@ -13,6 +14,8 @@ export type DesignTabDoorStyleSectionModel = {
 
 export type DesignTabColorSectionModel = DesignTabColorManagerModel & {
   colorChoice: string;
+  frontColorShelfInheritanceMode: FrontColorShelfInheritanceMode;
+  toggleFrontColorShelfInheritanceMode: () => void;
 };
 
 export type DesignTabDoorFeaturesSectionModel = {
@@ -59,6 +62,7 @@ export type DesignTabControllerState = {
   removedDoorsDirty: boolean;
   doorStyle: DesignTabDoorStyle;
   colorChoice: string;
+  frontColorShelfInheritanceMode: FrontColorShelfInheritanceMode;
   groovesEnabled: boolean;
   splitDoors: boolean;
   removeDoorsEnabled: boolean;

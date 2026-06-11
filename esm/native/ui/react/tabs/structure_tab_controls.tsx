@@ -1,9 +1,13 @@
 import { OptionButton } from '../components/index.js';
 import { useApp, useCfgSelectorShallow } from '../hooks.js';
-import { setCfgBoardMaterial } from '../actions/store_actions.js';
+import { setCfgBoardMaterial, setCfgDoorMountMode } from '../actions/store_actions.js';
 import { setWardrobeType } from '../actions/room_actions.js';
 import { patchViaActions, requestBuilderStructuralRefresh } from '../../../services/api.js';
-import { selectBoardMaterial, selectWardrobeType } from '../selectors/config_selectors.js';
+import {
+  selectBoardMaterial,
+  selectDoorMountMode,
+  selectWardrobeType,
+} from '../selectors/config_selectors.js';
 
 export { DimField } from './structure_tab_dim_field.js';
 export { OptionalDimField } from './structure_tab_optional_dim_field.js';
@@ -20,6 +24,11 @@ type StructureBoardMaterialOption = {
   selected: (value: string) => boolean;
 };
 
+type StructureDoorMountOption = {
+  id: 'overlay' | 'inset';
+  label: string;
+};
+
 const STRUCTURE_TYPE_OPTIONS: readonly StructureTypeOption[] = [
   { id: 'hinged', iconClassName: 'fas fa-door-open wp-r-type-icon', label: 'פתיחה' },
   { id: 'sliding', iconClassName: 'fas fa-exchange-alt wp-r-type-icon', label: 'הזזה' },
@@ -28,6 +37,11 @@ const STRUCTURE_TYPE_OPTIONS: readonly StructureTypeOption[] = [
 const STRUCTURE_BOARD_MATERIAL_OPTIONS: readonly StructureBoardMaterialOption[] = [
   { id: 'sandwich', label: "סנדביץ'", selected: (value: string) => value !== 'melamine' },
   { id: 'melamine', label: 'מלמין', selected: (value: string) => value === 'melamine' },
+];
+
+const STRUCTURE_DOOR_MOUNT_OPTIONS: readonly StructureDoorMountOption[] = [
+  { id: 'overlay', label: 'דלת חיצונית' },
+  { id: 'inset', label: 'דלת שקועה' },
 ];
 
 function applyImmediateStructuralConfigMutation(
@@ -47,9 +61,10 @@ function applyImmediateStructuralConfigMutation(
 
 export function TypeSelector() {
   const app = useApp();
-  const { wardrobeType, boardMaterial } = useCfgSelectorShallow(cfg => ({
+  const { wardrobeType, boardMaterial, doorMountMode } = useCfgSelectorShallow(cfg => ({
     wardrobeType: selectWardrobeType(cfg),
     boardMaterial: selectBoardMaterial(cfg),
+    doorMountMode: selectDoorMountMode(cfg),
   }));
 
   return (
@@ -116,6 +131,46 @@ export function TypeSelector() {
           );
         })}
       </div>
+
+      {wardrobeType === 'hinged' ? (
+        <div
+          className="wp-r-wardrobe-door-mount-row"
+          aria-label="סוג התקנת דלת"
+          data-testid="structure-door-mount-row"
+        >
+          {STRUCTURE_DOOR_MOUNT_OPTIONS.map(option => {
+            const selected = doorMountMode === option.id;
+            return (
+              <OptionButton
+                key={option.id}
+                selected={selected}
+                density="compact"
+                className={readStructureTypeOptionClassName(selected, { compact: true, material: true })}
+                data-testid={`structure-door-mount-${option.id}-button`}
+                aria-pressed={selected}
+                data-door-mount-mode={option.id}
+                onClick={() => {
+                  if (selected) return;
+                  applyImmediateStructuralConfigMutation(
+                    app,
+                    'react:doorMountMode',
+                    { doorMountMode: option.id },
+                    () => {
+                      setCfgDoorMountMode(app, option.id, {
+                        source: 'react:doorMountMode',
+                        immediate: true,
+                        noBuild: true,
+                      });
+                    }
+                  );
+                }}
+              >
+                <span className="wp-r-btn-label">{option.label}</span>
+              </OptionButton>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

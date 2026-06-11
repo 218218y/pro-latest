@@ -7,6 +7,8 @@ export interface CorniceSegmentMeshArgs {
   THREE: CorniceThreeRuntime;
   seg: import('./render_carcass_ops_shared.js').CorniceSegment;
   segMat: unknown;
+  getPartMaterial?: RenderCarcassRuntime['getPartMaterial'];
+  segPid?: string;
 }
 
 export interface CorniceMeshPlacementArgs {

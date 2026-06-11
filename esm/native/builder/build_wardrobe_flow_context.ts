@@ -10,9 +10,14 @@ import { resolveBuildFlowPlan } from './build_flow_plan.js';
 import { createBuildFlowContext } from './build_flow_context_factory.js';
 import { prepareBuildWardrobeContextSetup } from './build_wardrobe_flow_context_setup.js';
 import { resolveBuildWardrobeSplitMetrics } from './build_wardrobe_flow_context_split.js';
-import { resolveBuildWardrobeCarcassMetrics } from './build_wardrobe_flow_context_carcass.js';
+import {
+  computeBuildWardrobeSplitLineY,
+  resolveBuildWardrobeCarcassMetrics,
+} from './build_wardrobe_flow_context_carcass.js';
 import { resolveBuildWardrobeHingedContext } from './build_wardrobe_flow_context_hinged.js';
 import { syncNoMainSketchWorkspaceMetrics } from './build_no_main_sketch_host.js';
+import { getWardrobeGroup } from '../runtime/render_access.js';
+import { readRecord, readUnknownArray } from './build_flow_readers.js';
 
 import type { BuildContextLike } from '../../../types';
 import type { BuildFlowPlan } from './build_flow_plan.js';
@@ -25,6 +30,11 @@ export type PreparedBuildWardrobeExecution = {
   splitDzTop: number;
   splitUpperStartIndex: number;
 };
+
+function getWardrobeChildCount(App: unknown): number {
+  const group = readRecord(getWardrobeGroup(App));
+  return group ? readUnknownArray(group.children).length : -1;
+}
 
 export function prepareBuildWardrobeExecution(
   prepared: PreparedBuildWardrobeFlow
@@ -118,12 +128,25 @@ export function prepareBuildWardrobeExecution(
     sketchMode,
     addOutlinesMesh,
   });
+  const effectiveSplitUpperStartIndex = plan.stackSplitUnifiedFrame
+    ? getWardrobeChildCount(App)
+    : splitUpperStartIndex;
+  const topStartY = plan.stackSplitUnifiedFrame ? 0 : startY;
+  const topCabinetBodyHeight = plan.stackSplitUnifiedFrame ? plan.H : cabinetBodyHeight;
+  const topCabinetTopY = plan.stackSplitUnifiedFrame ? topStartY + topCabinetBodyHeight : cabinetTopY;
+  const topSplitLineY = plan.stackSplitUnifiedFrame
+    ? computeBuildWardrobeSplitLineY({
+        startY: topStartY,
+        cabinetBodyHeight: topCabinetBodyHeight,
+        woodThick: plan.woodThick,
+      })
+    : splitLineY;
 
   const { useHingedDoorOps, hingedDoorOpsList, globalHingedHandleAbsY } = resolveBuildWardrobeHingedContext({
     App,
     cfg,
     plan,
-    startY,
+    startY: topStartY,
     splitY,
   });
 
@@ -141,10 +164,10 @@ export function prepareBuildWardrobeExecution(
     depthCm,
     doorsCount,
     chestDrawersCount,
-    startY,
-    cabinetBodyHeight,
-    cabinetTopY,
-    splitLineY,
+    startY: topStartY,
+    cabinetBodyHeight: topCabinetBodyHeight,
+    cabinetTopY: topCabinetTopY,
+    splitLineY: topSplitLineY,
     sketchMode,
     globalClickMode: !!globalClickMode,
     hadEditHold: !!hadEditHold,
@@ -191,6 +214,6 @@ export function prepareBuildWardrobeExecution(
     plan,
     splitY,
     splitDzTop,
-    splitUpperStartIndex,
+    splitUpperStartIndex: effectiveSplitUpperStartIndex,
   };
 }

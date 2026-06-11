@@ -1,3 +1,5 @@
+import type { RefObject } from 'react';
+
 import type {
   OrderPdfDraft,
   OrderPdfSketchAnnotationPageKey,
@@ -7,6 +9,7 @@ import type {
 } from './order_pdf_overlay_contracts.js';
 
 export type OrderPdfOverlaySketchPanelProps = {
+  panelRef?: RefObject<HTMLElement | null>;
   open: boolean;
   busy: boolean;
   error: string | null;

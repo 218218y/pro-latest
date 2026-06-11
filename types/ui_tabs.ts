@@ -1,9 +1,9 @@
 // Shared UI tab identifiers used by the React UI and (optionally) the store.
 // Keep this as a small, stable union so new tabs are an explicit, reviewed change.
 
-export type TabId = 'structure' | 'design' | 'interior' | 'render' | 'export' | 'sketch';
+export type TabId = 'structure' | 'design' | 'interior' | 'sketch' | 'settings';
 
-export const TAB_IDS: readonly TabId[] = ['structure', 'design', 'interior', 'render', 'export', 'sketch'];
+export const TAB_IDS: readonly TabId[] = ['structure', 'design', 'interior', 'sketch', 'settings'];
 
 const TAB_ID_SET = new Set<string>(TAB_IDS);
 

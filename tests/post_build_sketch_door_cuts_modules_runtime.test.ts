@@ -78,6 +78,40 @@ function createDoorGroup() {
   return door;
 }
 
+function createBoxDoorGroup() {
+  const door = new FakeGroup();
+  door.position.set(0, 1, 0);
+  door.userData = {
+    partId: 'box_1_door',
+    __wpStack: 'top',
+    __wpSketchModuleKey: '0',
+    __wpSketchBoxId: 'box-1',
+    __wpSketchBoxDoor: true,
+    __doorWidth: 0.7,
+    __doorHeight: 1,
+    __hingeLeft: true,
+  };
+  return door;
+}
+
+function createBoxExternalDrawerGroup() {
+  const drawer = new FakeGroup();
+  drawer.position.set(0, 0.95, 0);
+  drawer.userData = {
+    partId: 'box_1_ext_drawer_1',
+    __wpSketchExtDrawer: true,
+    __wpSketchExtDrawerId: 'box-drawer-stack',
+    __wpSketchModuleKey: '0',
+    __wpSketchBoxId: 'box-1',
+    __wpStack: 'top',
+    __doorWidth: 0.7,
+    __doorHeight: 0.3,
+    __wpFaceMinY: 0.8,
+    __wpFaceMaxY: 1.1,
+  };
+  return drawer;
+}
+
 function createCtx() {
   return {
     layout: {
@@ -141,6 +175,38 @@ test('module sketch door cuts do not use config-derived cuts when invalid runtim
 
   assert.deepEqual(doorGroup.children, [sentinel]);
   assert.equal(doorGroup.userData.__wpSketchSegmentedDoor, undefined);
+});
+
+test('module sketch door cuts use box external drawer bounds for cabinet doors without cutting box doors', () => {
+  const App: Record<string, unknown> = {};
+  const cabinetDoorGroup = createDoorGroup();
+  const cabinetSentinel = new FakeGroup();
+  cabinetDoorGroup.add(cabinetSentinel);
+  const boxDoorGroup = createBoxDoorGroup();
+  const boxSentinel = new FakeGroup();
+  boxDoorGroup.add(boxSentinel);
+
+  getDoorsArray(App).push(
+    { type: 'hinged', group: cabinetDoorGroup } as any,
+    { type: 'hinged', group: boxDoorGroup } as any
+  );
+  getDrawersArray(App).push({ group: createBoxExternalDrawerGroup() } as any);
+
+  applySketchExternalDrawerDoorCuts({
+    App: App as any,
+    THREE: FakeTHREE as any,
+    ctx: createCtx() as any,
+    cfg: {},
+    bodyMat: { name: 'body' },
+    globalFrontMat: { name: 'front' },
+    stackKey: 'top',
+    allowConfigDerivedCuts: false,
+  });
+
+  assert.equal(cabinetDoorGroup.userData.__wpSketchSegmentedDoor, true);
+  assert.notDeepEqual(cabinetDoorGroup.children, [cabinetSentinel]);
+  assert.equal(boxDoorGroup.userData.__wpSketchSegmentedDoor, undefined);
+  assert.deepEqual(boxDoorGroup.children, [boxSentinel]);
 });
 
 test('module sketch door cuts still use config-derived cuts when no runtime drawer owner exists', () => {

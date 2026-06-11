@@ -17,9 +17,11 @@ import {
   type ReportNonFatal,
   type ToastLike,
 } from './order_pdf_overlay_pdf_render_shared.js';
+import { resolveOrderPdfTemplateUrls } from '../../pdf/order_pdf_template_config.js';
 
 let orderPdfTemplateBytesShared: Uint8Array | null = null;
 let orderPdfTemplateBytesPromise: Promise<Uint8Array | null> | null = null;
+let orderPdfTemplateBytesCacheKey = '';
 
 function applyPdfJsWorkerAndVerbosity(args: {
   app: unknown;
@@ -70,17 +72,23 @@ async function loadOrderPdfJsModule(args: {
 }
 
 async function getSharedOrderPdfTemplateBytes(args: {
+  app: unknown;
   fetchFirstOk: (urls: string[]) => Promise<Uint8Array | null>;
   withV: (urls: string[]) => string[];
   fb: ToastLike;
 }): Promise<Uint8Array | null> {
-  const { fetchFirstOk, withV, fb } = args;
+  const { app, fetchFirstOk, withV, fb } = args;
+  const urls = resolveOrderPdfTemplateUrls(app);
+  const cacheKey = urls.join('\n');
+  if (orderPdfTemplateBytesCacheKey && orderPdfTemplateBytesCacheKey !== cacheKey) {
+    orderPdfTemplateBytesShared = null;
+    orderPdfTemplateBytesPromise = null;
+  }
+  orderPdfTemplateBytesCacheKey = cacheKey;
   if (orderPdfTemplateBytesShared) return orderPdfTemplateBytesShared;
 
   if (!orderPdfTemplateBytesPromise) {
-    orderPdfTemplateBytesPromise = fetchFirstOk(
-      withV(['/order_template.pdf', './order_template.pdf', 'order_template.pdf'])
-    )
+    orderPdfTemplateBytesPromise = fetchFirstOk(withV(urls))
       .then(pdfBytes => {
         if (!pdfBytes) {
           fb.toast('תבנית PDF חסרה (order_template.pdf)', 'error');
@@ -175,11 +183,9 @@ export async function loadOrderPdfFirstPage(args: {
   pdfDocTaskRef.current = task;
   const pdfDoc = await task.promise;
   if (isCancelled()) {
-    try {
-      if (pdfDoc && typeof pdfDoc.destroy === 'function') pdfDoc.destroy();
-    } catch (__wpErr) {
-      reportNonFatal('orderPdfRender:destroyCancelledDoc', __wpErr);
-    }
+    // PDF.js 6 removed PDFDocumentProxy.destroy(); the loading task is now the
+    // canonical cleanup owner. Keep cancellation cleanup centered there so the
+    // same code path is safe for both pdfjs-dist 5.x and 6.x.
     cleanupOrderPdfDocTask(pdfDocTaskRef, reportNonFatal);
     pdfDocRef.current = null;
     pageRef.current = null;
@@ -227,6 +233,7 @@ export async function warmOrderPdfEditorOpenPath(args: {
 
   if (typeof fetchFirstOk === 'function') {
     await getSharedOrderPdfTemplateBytes({
+      app,
       fetchFirstOk,
       withV,
       fb: { toast: () => undefined },
@@ -238,15 +245,16 @@ export async function warmOrderPdfEditorOpenPath(args: {
 }
 
 export async function fetchOrderPdfTemplateBytes(args: {
+  app: unknown;
   pdfTemplateBytesRef: RefBox<Uint8Array | null>;
   fetchFirstOk: (urls: string[]) => Promise<Uint8Array | null>;
   withV: (urls: string[]) => string[];
   fb: ToastLike;
 }): Promise<Uint8Array | null> {
-  const { pdfTemplateBytesRef, fetchFirstOk, withV, fb } = args;
+  const { app, pdfTemplateBytesRef, fetchFirstOk, withV, fb } = args;
   if (pdfTemplateBytesRef.current) return pdfTemplateBytesRef.current;
 
-  const pdfBytes = await getSharedOrderPdfTemplateBytes({ fetchFirstOk, withV, fb });
+  const pdfBytes = await getSharedOrderPdfTemplateBytes({ app, fetchFirstOk, withV, fb });
   if (!pdfBytes) return null;
   pdfTemplateBytesRef.current = pdfBytes;
   return pdfTemplateBytesRef.current;

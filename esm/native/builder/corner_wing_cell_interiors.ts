@@ -24,7 +24,7 @@ export function applyCornerWingCellInteriors(params: CornerWingCellFlowParams): 
     const cellRuntime = createCornerWingInteriorCellRuntime(runtime, cell);
     const layoutOps = createCornerWingInteriorLayoutOps(runtime, cellRuntime, shelfRuntime);
 
-    emitCornerWingExternalDrawers(runtime, cellRuntime, shelfRuntime);
+    emitCornerWingExternalDrawers(runtime, cellRuntime);
 
     applyCornerWingCellLayout({
       cfgCell: cellRuntime.cfgCell,
@@ -43,7 +43,6 @@ export function applyCornerWingCellInteriors(params: CornerWingCellFlowParams): 
       getCornerMat: runtime.getCornerMat,
       addGridShelf: layoutOps.addGridShelf,
       createRod: layoutOps.createRod,
-      checkAndCreateInternalDrawer: layoutOps.checkAndCreateInternalDrawer,
       __z: cellRuntime.__z,
     });
 

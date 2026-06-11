@@ -1,7 +1,12 @@
 import type { UnknownRecord } from '../../../types';
 
 import { asRecord } from './record.js';
-import { asKey, createNullProtoRecord, type MutableRecord } from './doors_access_shared.js';
+import {
+  asKey,
+  createNullProtoRecord,
+  type DrawerRuntimeLike,
+  type MutableRecord,
+} from './doors_access_shared.js';
 import {
   ensureDrawerService,
   getDrawerRuntime,
@@ -68,9 +73,13 @@ export function clearDrawerRebuildIntent(App: unknown): void {
   runtime.openAfterBuildId = null;
 }
 
+export function getDrawerRebuildIntent(App: unknown): unknown {
+  const runtime = asRecord<DrawerRuntimeLike>(getDrawerService(App)?.runtime);
+  return runtime ? runtime.snapAfterBuildId || runtime.openAfterBuildId || null : null;
+}
+
 export function consumeDrawerRebuildIntent(App: unknown): unknown {
-  const runtime = initDrawerRuntime(App);
-  const targetId = runtime.snapAfterBuildId || runtime.openAfterBuildId || null;
+  const targetId = getDrawerRebuildIntent(App);
   clearDrawerRebuildIntent(App);
   return targetId;
 }

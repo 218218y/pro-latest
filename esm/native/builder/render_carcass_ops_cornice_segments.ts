@@ -1,10 +1,18 @@
 import type { ProfilePoint, RenderCarcassRuntime } from './render_carcass_ops_shared.js';
 import { __asFinite } from './render_carcass_ops_shared.js';
-import type { CorniceSegmentMeshArgs, CorniceThreeRuntime } from './render_carcass_ops_cornice_types.js';
+import type { CorniceSegmentMeshArgs } from './render_carcass_ops_cornice_types.js';
 import { applyMiterTrims, computeCorniceVertexNormals } from './render_carcass_ops_cornice_miter.js';
 
+function resolveCorniceSegmentMaterial(
+  args: Pick<CorniceSegmentMeshArgs, 'segMat' | 'getPartMaterial' | 'segPid'>
+) {
+  const overrideMat = args.getPartMaterial && args.segPid ? args.getPartMaterial(args.segPid) : null;
+  return overrideMat || args.segMat;
+}
+
 export function createWaveFrontSegment(args: CorniceSegmentMeshArgs) {
-  const { THREE, seg, segMat } = args;
+  const { THREE, seg } = args;
+  const segMat = resolveCorniceSegmentMaterial(args);
   const w = __asFinite(seg.width);
   const d = __asFinite(seg.depth);
   const hMax = __asFinite(seg.heightMax);
@@ -41,7 +49,8 @@ export function createWaveFrontSegment(args: CorniceSegmentMeshArgs) {
 }
 
 export function createWaveSideSegment(args: CorniceSegmentMeshArgs) {
-  const { THREE, seg, segMat } = args;
+  const { THREE, seg } = args;
+  const segMat = resolveCorniceSegmentMaterial(args);
   const w = __asFinite(seg.width);
   const h = __asFinite(seg.height);
   const d = __asFinite(seg.depth);
@@ -64,16 +73,14 @@ export function createWaveSideSegment(args: CorniceSegmentMeshArgs) {
 }
 
 export function createProfileSegment(
-  args: {
-    THREE: CorniceThreeRuntime;
-    seg: import('./render_carcass_ops_shared.js').CorniceSegment;
-    segMat: unknown;
+  args: CorniceSegmentMeshArgs & {
     profile: ProfilePoint[];
     segLen: number;
   },
   runtime: RenderCarcassRuntime
 ) {
-  const { THREE, seg, segMat, profile, segLen } = args;
+  const { THREE, seg, profile, segLen } = args;
+  const segMat = resolveCorniceSegmentMaterial(args);
   const p0 = profile[0] || {};
   const x0 = __asFinite(p0.x);
   const y0 = __asFinite(p0.y);

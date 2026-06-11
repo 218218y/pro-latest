@@ -23,6 +23,7 @@ export interface KernelHistorySystem {
   _lastCoalesceKey: string;
   _lastCoalesceAt: number;
   __didInit: boolean;
+  __isApplyingState?: boolean;
   pause: () => void;
   resume: () => void;
   flushPendingPush: (opts?: HistoryPushRequestLike) => void;

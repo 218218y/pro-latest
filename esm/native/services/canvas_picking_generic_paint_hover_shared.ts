@@ -122,12 +122,41 @@ export function __applyCornicePreviewPadding(previewGroup: PaintPreviewGroupBox)
   };
 }
 
+function __isMainWaveCornicePaintKey(partKey: string): boolean {
+  return (
+    partKey === 'cornice_wave_front' ||
+    partKey === 'cornice_wave_side_left' ||
+    partKey === 'cornice_wave_side_right'
+  );
+}
+
+function __readDirectTargetPaintHoverOp(
+  colors: UnknownRecord,
+  effectiveKeys: string[],
+  selection: string
+): 'add' | 'remove' {
+  return effectiveKeys.every(
+    partKey => typeof colors[partKey] === 'string' && String(colors[partKey]) === selection
+  )
+    ? 'remove'
+    : 'add';
+}
+
 export function __readPaintHoverOp(
   colors: UnknownRecord,
   effectiveKeys: string[],
   selection: string
 ): 'add' | 'remove' {
   if (!effectiveKeys.length) return 'add';
+
+  // Main wave-cornice fascia parts are direct paint targets: clicking a painted
+  // front/side removes only that explicit override, even when the shared
+  // cornice_color base paint is different. Mirror that exact click behavior in
+  // hover so the second click previews as a red removal hover.
+  if (effectiveKeys.every(__isMainWaveCornicePaintKey)) {
+    return __readDirectTargetPaintHoverOp(colors, effectiveKeys, selection);
+  }
+
   const isCorniceGroup = effectiveKeys.some(__isCornicePaintKey);
   if (isCorniceGroup) {
     const baseCorniceKey = effectiveKeys.some(partKey => partKey.startsWith('lower_corner_cornice'))
@@ -143,11 +172,7 @@ export function __readPaintHoverOp(
     });
     return baseColor === selection && segmentOverridesCompatible ? 'remove' : 'add';
   }
-  return effectiveKeys.every(
-    partKey => typeof colors[partKey] === 'string' && String(colors[partKey]) === selection
-  )
-    ? 'remove'
-    : 'add';
+  return __readDirectTargetPaintHoverOp(colors, effectiveKeys, selection);
 }
 
 export function asObject3DRecord(value: unknown): UnknownRecord | null {

@@ -21,16 +21,12 @@ test('preset + stack runtime hardening: normalization stays useful without loose
   const topInput = {
     layout: '',
     extDrawersCount: '4',
-    intDrawersSlot: '2',
-    intDrawersList: [1, 2],
     customData: { shelves: [true], rods: [false], storage: 1 },
     doors: '3',
   };
   const top = normalizeTopModuleConfig(topInput, 1);
   assert.equal(top.layout, 'shelves');
   assert.equal(top.extDrawersCount, 4);
-  assert.equal(top.intDrawersSlot, 2);
-  assert.deepEqual(top.intDrawersList, [1, 2]);
   assert.equal(top.doors, 3);
   assert.notEqual(top.customData.shelves, topInput.customData.shelves);
 

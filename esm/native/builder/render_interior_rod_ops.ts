@@ -1,4 +1,5 @@
 import { INTERIOR_FITTINGS_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
+import { resolveInteriorRodAvailableHeight } from './render_interior_rod_clearance.js';
 import type { UnknownRecord } from '../../../types';
 import type {
   InteriorObjectLike,
@@ -32,8 +33,6 @@ type AddHangingClothesFn = (
 type RodConfigLike = {
   legMat?: unknown;
   rodMat?: unknown;
-  intDrawersList?: unknown[];
-  intDrawersSlot?: unknown;
   isCustom?: boolean;
   customData?: UnknownRecord & { storage?: unknown };
   layout?: string | null;
@@ -49,9 +48,10 @@ type RenderInteriorRodArgs = InteriorValueRecord & {
   config?: RodConfigLike | null;
   effectiveBottomY?: unknown;
   localGridStep?: unknown;
+  effectiveTopY?: unknown;
+  gridDivisions?: unknown;
+  woodThick?: unknown;
   isInternalDrawersEnabled?: boolean;
-  intDrawersList?: unknown[];
-  intDrawersSlot?: unknown;
   innerW?: unknown;
   internalCenterX?: unknown;
   internalZ?: unknown;
@@ -109,17 +109,6 @@ function resolveRodMaterial(args: {
   return cache.interiorRodMat;
 }
 
-function readDrawerSlots(args: RenderInteriorRodArgs, config: RodConfigLike): number[] {
-  if (Array.isArray(args.intDrawersList)) {
-    return args.intDrawersList.map(entry => Number(entry)).filter(entry => Number.isFinite(entry));
-  }
-  if (Array.isArray(config.intDrawersList)) {
-    return config.intDrawersList.map(entry => Number(entry)).filter(entry => Number.isFinite(entry));
-  }
-  const slot = readOptionalFiniteNumber(args.intDrawersSlot ?? config.intDrawersSlot);
-  return slot !== null ? [slot] : [];
-}
-
 export function createBuilderRenderInteriorRodOps(deps: RenderInteriorOpsDeps) {
   const __app = deps.app;
   const __ops = deps.ops;
@@ -147,6 +136,9 @@ export function createBuilderRenderInteriorRodOps(deps: RenderInteriorOpsDeps) {
 
     const effectiveBottomY = readFiniteNumber(safeArgs.effectiveBottomY);
     const localGridStep = readFiniteNumber(safeArgs.localGridStep);
+    const effectiveTopY = readOptionalFiniteNumber(safeArgs.effectiveTopY);
+    const gridDivisions = readOptionalFiniteNumber(safeArgs.gridDivisions);
+    const woodThick = readOptionalFiniteNumber(safeArgs.woodThick);
     const innerW = readFiniteNumber(safeArgs.innerW);
     const internalCenterX = readFiniteNumber(safeArgs.internalCenterX);
     const internalZ = readFiniteNumber(safeArgs.internalZ);
@@ -166,56 +158,21 @@ export function createBuilderRenderInteriorRodOps(deps: RenderInteriorOpsDeps) {
     const cfg = safeArgs.cfg || {};
     const config = safeArgs.config || {};
 
-    const isInternalDrawersEnabled = safeArgs.isInternalDrawersEnabled === true;
-    const activeSlots = isInternalDrawersEnabled ? readDrawerSlots(safeArgs, config) : [];
-
-    if (
-      isInternalDrawersEnabled &&
-      activeSlots.length &&
-      Number.isFinite(localGridStep) &&
-      localGridStep > 0
-    ) {
-      for (let slotIndex = 0; slotIndex < activeSlots.length; slotIndex++) {
-        const activeSlot = activeSlots[slotIndex];
-        const drawerBottomY =
-          effectiveBottomY +
-          (activeSlot - 1) * localGridStep -
-          INTERIOR_FITTINGS_DIMENSIONS.rods.drawerVerticalGuardM;
-        const drawerTopY =
-          effectiveBottomY +
-          activeSlot * localGridStep +
-          INTERIOR_FITTINGS_DIMENSIONS.rods.drawerVerticalGuardM;
-        if (yPos >= drawerBottomY && yPos <= drawerTopY) {
-          return true;
-        }
-      }
-    }
-
-    let availableHeight = manualHeightLimit != null ? manualHeightLimit : yPos - effectiveBottomY;
+    let availableHeight = resolveInteriorRodAvailableHeight({
+      config,
+      yPos,
+      effectiveBottomY,
+      effectiveTopY,
+      localGridStep,
+      gridDivisions,
+      manualHeightLimit,
+      woodThick,
+    });
 
     const hasStorageBarrier =
       (config.isCustom && !!config.customData?.storage) ||
       config.layout === 'storage_shelf' ||
       config.layout === 'storage';
-
-    if (
-      isInternalDrawersEnabled &&
-      activeSlots.length &&
-      Number.isFinite(localGridStep) &&
-      localGridStep > 0
-    ) {
-      let highestDrawerBelowRodY = effectiveBottomY;
-      for (let index = 0; index < activeSlots.length; index++) {
-        const slot = activeSlots[index];
-        const drawerTopEdge = effectiveBottomY + slot * localGridStep;
-        if (drawerTopEdge < yPos && drawerTopEdge > highestDrawerBelowRodY) {
-          highestDrawerBelowRodY = drawerTopEdge;
-        }
-      }
-      if (yPos - highestDrawerBelowRodY < INTERIOR_FITTINGS_DIMENSIONS.rods.minHangingHeightM)
-        enableHangingClothes = false;
-      if (manualHeightLimit == null) availableHeight = yPos - highestDrawerBelowRodY;
-    }
 
     const rodMat = resolveRodMaterial({
       THREE,

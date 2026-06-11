@@ -18,6 +18,8 @@ export type ResolveSketchModuleStackPreviewArgs = {
   cfgRef: RecordMap | null;
   info?: RecordMap;
   shelves?: RecordMap[];
+  rods?: RecordMap[];
+  storageBarriers?: RecordMap[];
   bottomY: number;
   topY: number;
   totalHeight: number;
@@ -29,6 +31,7 @@ export type ResolveSketchModuleStackPreviewArgs = {
   internalZ: number;
   drawers: RecordMap[];
   extDrawers: RecordMap[];
+  boxes?: RecordMap[];
   selectedDrawerCount?: number | null;
   drawerHeightM?: number | null;
   woodThick: number;
@@ -39,5 +42,5 @@ export type ResolveSketchModuleStackPreviewArgs = {
 
 export type ResolveSketchModuleStackPreviewResult = {
   hoverRecord: RecordMap;
-  preview: RecordMap;
-};
+  preview: RecordMap | null;
+} | null;

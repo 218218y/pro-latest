@@ -39,6 +39,7 @@ export type SketchBoxExternalDrawersContext = RenderSketchBoxExternalDrawersArgs
   drawersArray: DrawerVisualEntryLike[];
   resolveCachedMirrorMaterial: () => unknown;
   clampDrawerCenterY: (centerY: number, stackH: number) => number;
+  resolveDrawerBoxMaterial: (drawerBoxPartId: string) => unknown;
 };
 
 export type SketchBoxExternalDrawerStackPlan = {
@@ -52,6 +53,8 @@ export type SketchBoxExternalDrawerStackPlan = {
   drawerId: string;
   keyPrefix: string;
   outerW: number;
+  shelfInnerW: number;
+  shelfCenterX: number;
   drawerFaceW: number;
   drawerFaceOffsetX: number;
   drawerOps: InteriorValueRecord[];
@@ -66,7 +69,9 @@ export type SketchBoxExternalDrawerOpPlan = {
   py: number;
   pz: number;
   partId: string;
+  boxPartId: string;
   frontMat: unknown;
+  boxMat: unknown;
   visualW: number;
   faceW: number;
   faceOffsetX: number;

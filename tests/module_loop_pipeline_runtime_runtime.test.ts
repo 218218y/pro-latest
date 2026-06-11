@@ -4,6 +4,13 @@ import assert from 'node:assert/strict';
 import { resolveModuleLoopRuntime } from '../esm/native/builder/module_loop_pipeline_runtime.ts';
 import { resolveModuleLoopRuntimeBase } from '../esm/native/builder/module_loop_pipeline_runtime_base.ts';
 import { resolveModuleLoopRuntimeResolvers } from '../esm/native/builder/module_loop_pipeline_runtime_resolvers.ts';
+import { createInterDivider } from '../esm/native/builder/module_loop_pipeline_module_dividers.ts';
+import { resolveModuleDepthProfile } from '../esm/native/builder/module_loop_pipeline_module_depth.ts';
+import { computeModulesAndLayout } from '../esm/native/builder/module_layout_pipeline.ts';
+
+function closeTo(actual: number, expected: number, message: string): void {
+  assert.ok(Math.abs(actual - expected) < 1e-9, `${message}: ${actual} !== ${expected}`);
+}
 
 function createApp() {
   return {
@@ -181,6 +188,112 @@ test('module loop runtime base applies top-stack height offset when deriving cus
   assert.ok(Math.abs(runtime.moduleBodyHeights[0] - 1.8) < 1e-9);
   assert.ok(Math.abs(runtime.moduleBodyHeights[1] - 2.3) < 1e-9);
   assert.equal(runtime.internalGridMap, runtime.App.services.runtimeCache.internalGridMap);
+});
+
+test('module loop runtime base treats hex cells as custom boundary geometry without depth overrides', () => {
+  const ctx = createCtx({
+    layout: {
+      modules: [{ doors: 2 }, { doors: 2 }, { doors: 2 }],
+      moduleCfgList: [
+        {},
+        {
+          hexCell: {
+            enabled: true,
+            protrusionCm: 10,
+          },
+        },
+        {},
+      ],
+      moduleInternalWidths: [0.55, 0.55, 0.55],
+      singleUnitWidth: 0.275,
+    },
+  });
+
+  const runtime = resolveModuleLoopRuntimeBase(ctx);
+
+  assert.deepEqual(runtime.moduleIsCustom, [false, true, false]);
+});
+
+test('module loop runtime keeps hex-cell divider placement aligned with compensated door pivots', () => {
+  const modules = [{ doors: 2 }, { doors: 2 }, { doors: 2 }];
+  const moduleCfgList = [
+    {},
+    {
+      hexCell: {
+        enabled: true,
+        protrusionCm: 10,
+      },
+    },
+    {},
+  ];
+  const App = createApp();
+  const totalW = 3;
+  const woodThick = 0.018;
+  const depthM = 0.6;
+  const layout = computeModulesAndLayout({
+    App,
+    state: { build: { modulesStructure: modules } } as any,
+    cfg: {
+      wardrobeType: 'hinged',
+      modulesConfiguration: moduleCfgList,
+    } as any,
+    ui: {} as any,
+    totalW,
+    woodThick,
+    doorsCount: 6,
+  });
+  const ctx = createCtx({
+    App,
+    cfg: { wardrobeType: 'hinged', modulesConfiguration: moduleCfgList },
+    layout,
+    dims: {
+      totalW,
+      woodThick,
+      cabinetBodyHeight: 2.4,
+      startY: 0,
+      D: depthM,
+      H: 2.4,
+      internalDepth: 0.57,
+      internalZ: 0,
+      defaultH: 2.4,
+    },
+  });
+  const baseRuntime = resolveModuleLoopRuntimeBase(ctx);
+  const calls: unknown[][] = [];
+  const runtime = {
+    ...baseRuntime,
+    createBoard: (...args: unknown[]) => {
+      calls.push(args);
+      return { args };
+    },
+    getPartMaterial: (partId: string) => ({ partId }),
+  } as any;
+  const middleIndex = 1;
+  const firstX = -totalW / 2 + woodThick;
+  const middleX = firstX + Number(layout.moduleInternalWidths?.[0]) + woodThick;
+  const middleDepth = resolveModuleDepthProfile(runtime, layout.moduleCfgList[middleIndex]);
+  const frame = {
+    modWidth: Number(layout.moduleInternalWidths?.[middleIndex]),
+    ...middleDepth,
+  } as any;
+
+  createInterDivider(runtime, { currentX: middleX } as any, middleIndex, frame);
+
+  const rightDivider = calls.find(call => call[7] === 'divider_inter_fullR_1');
+  assert.ok(rightDivider, 'right cell should receive its own full-depth wall next to a hex cell');
+
+  const rightFirstDoor = (layout.hingedDoorPivotMap as any)?.[5];
+  assert.ok(rightFirstDoor, 'six-door layout should have a first right-cell door pivot');
+  closeTo(
+    Number(rightDivider[3]),
+    Number(rightFirstDoor.doorLeftEdge),
+    'right-cell wall center should align with the compensated left door edge'
+  );
+  closeTo(
+    Number(rightDivider[5]) + Number(rightDivider[2]) / 2,
+    depthM / 2,
+    'right-cell full-depth wall should reach the door plane'
+  );
 });
 
 test('module loop runtime resolvers fail fast when createBoard is missing', () => {

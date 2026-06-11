@@ -68,10 +68,15 @@ export type RoomCanvasLike = {
 
 export type FloorType = 'parquet' | 'tiles' | 'none';
 
-export type FloorStyleEntry =
-  | { id: string; color1: string; color2: string; name: string }
-  | { id: string; color: string; lines: string; size: number; name: string }
-  | { id: string; color: string; name: string };
+export type FloorStyleEntry = {
+  id: string;
+  name: string;
+  color?: string;
+  color1?: string;
+  color2?: string;
+  lines?: string;
+  size?: number;
+};
 
 export const ROOM_GROUP_OBJECT_NAME = 'wpRoomGroup';
 export type RoomUiLike = AnyObj & {
@@ -114,23 +119,63 @@ export const ROOM_RESET_DEFAULT_META: ActionMetaLike = { source: 'room:resetDefa
 // Floor styles are referenced by the room widget (UI) and by room design helpers.
 export const FLOOR_STYLES: Record<FloorType, readonly FloorStyleEntry[]> = {
   parquet: [
-    { id: 'oak_light', color1: '#eaddcf', color2: '#d4c5b0', name: 'אלון בהיר' },
+    { id: 'oak_light', color1: '#dfd0bc', color2: '#cdbda7', name: 'אלון בהיר' },
     { id: 'oak_honey', color1: '#d4a373', color2: '#cd9763', name: 'אלון דבש' },
     { id: 'walnut', color1: '#8d6e63', color2: '#795548', name: 'אגוז כהה' },
     { id: 'grey_wood', color1: '#cfd8dc', color2: '#b0bec5', name: 'עץ אפור' },
     { id: 'mahogany', color1: '#5d4037', color2: '#4e342e', name: 'מהגוני אדמדם' },
   ],
   tiles: [
-    { id: 'marble_white', color: '#f5f5f5', lines: '#e0e0e0', size: 4, name: 'שיש לבן' },
-    { id: 'beige', color: '#efebe9', lines: '#d7ccc8', size: 4, name: "אבן בז'" },
-    { id: 'concrete', color: '#bdbdbd', lines: '#9e9e9e', size: 2, name: 'בטון' },
-    { id: 'dark_slate', color: '#546e7a', lines: '#455a64', size: 4, name: 'צפחה כהה' },
-    { id: 'terrazzo', color: '#e0f7fa', lines: '#b2ebf2', size: 3, name: 'טרצו בהיר' },
+    {
+      id: 'oak_light',
+      color: '#dfd0bc',
+      color1: '#dfd0bc',
+      color2: '#cdbda7',
+      lines: '#b9a993',
+      size: 4,
+      name: 'אריח אלון בהיר',
+    },
+    {
+      id: 'oak_honey',
+      color: '#d4a373',
+      color1: '#d4a373',
+      color2: '#cd9763',
+      lines: '#a8754a',
+      size: 4,
+      name: 'אריח אלון דבש',
+    },
+    {
+      id: 'walnut',
+      color: '#8d6e63',
+      color1: '#8d6e63',
+      color2: '#795548',
+      lines: '#5d4037',
+      size: 4,
+      name: 'אריח אגוז כהה',
+    },
+    {
+      id: 'grey_wood',
+      color: '#cfd8dc',
+      color1: '#cfd8dc',
+      color2: '#b0bec5',
+      lines: '#90a4ae',
+      size: 4,
+      name: 'אריח אפור מעודן',
+    },
+    {
+      id: 'mahogany',
+      color: '#5d4037',
+      color1: '#5d4037',
+      color2: '#4e342e',
+      lines: '#3e2723',
+      size: 4,
+      name: 'אריח מהגוני אדמדם',
+    },
   ],
   none: [
     { id: 'solid_white', color: '#ffffff', name: 'לבן נקי' },
-    { id: 'solid_grey', color: '#e0e0e0', name: 'אפור בהיר' },
-    { id: 'oak_light', color: '#eaddcf', name: 'אלון' },
+    { id: 'solid_grey', color: '#c3ccd1', name: 'אפור בטון' },
+    { id: 'oak_light', color: '#dfd0bc', name: 'אלון' },
     { id: 'terrazzo', color: '#b2ebf2', name: 'טרצו בהיר' },
     { id: 'solid_black', color: '#424242', name: 'שחור' },
   ],
@@ -140,8 +185,8 @@ export const FLOOR_STYLES: Record<FloorType, readonly FloorStyleEntry[]> = {
 export type WallColorEntry = { id: string; val: string; name: string };
 export const WALL_COLORS: readonly WallColorEntry[] = [
   { id: 'white', val: '#ffffff', name: 'לבן קלאסי' },
-  { id: 'cream', val: '#fdfbf7', name: 'שמנת רכה' },
-  { id: 'grey', val: '#eceff1', name: 'אפור בהיר' },
+  { id: 'cream', val: '#d8c7aa', name: 'חול חמים' },
+  { id: 'grey', val: '#c3ccd1', name: 'אפור בטון' },
   { id: 'blue', val: '#e3f2fd', name: 'תכלת עדין' },
   { id: 'dark', val: '#37474f', name: 'אפור גרפיט' },
 ];

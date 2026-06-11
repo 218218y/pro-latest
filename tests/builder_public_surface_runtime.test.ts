@@ -696,6 +696,66 @@ test('builder public surface runtime: chest-mode follow-through wakes the render
   assert.equal(calls.triggerRender.length, 0);
 });
 
+test('builder public surface runtime: chest-mode follow-through refreshes tracked mirror before first viewport render', () => {
+  const { App, calls } = createHarness();
+  const order: string[] = [];
+  const texture = { id: 'mirror-texture' };
+  const mirrorMaterial: AnyRecord = { envMap: null, needsUpdate: false };
+  const mirror: AnyRecord = {
+    isMesh: true,
+    parent: { id: 'wardrobe-group' },
+    visible: true,
+    userData: { __wpMirrorSurface: true },
+    material: mirrorMaterial,
+  };
+
+  App.render.__mirrorDirty = true;
+  App.render.meta = { mirrors: [mirror] };
+  App.render.mirrorRenderTarget = { texture };
+  App.render.mirrorCubeCamera = {
+    update(renderer: unknown, scene: unknown) {
+      order.push('cube');
+      assert.equal(renderer, App.render.renderer);
+      assert.equal(scene, App.render.scene);
+      assert.equal(mirror.visible, false, 'mirror should be hidden while the cube map is captured');
+      assert.equal(mirrorMaterial.envMap, texture);
+    },
+  };
+  App.render.renderer.render = (scene: unknown, camera: unknown) => {
+    order.push('render');
+    assert.equal(App.render.__mirrorDirty, false, 'dirty mirror must be resolved before visible render');
+    assert.equal(mirror.visible, true, 'mirror visibility must be restored before viewport render');
+    calls.viewportRender.push({ scene, camera });
+  };
+
+  assert.deepEqual(
+    runBuilderChestModeFollowThrough(App, {
+      applyHandles: false,
+      renderViewport: true,
+      finalizeRegistry: false,
+    }),
+    {
+      finalizedRegistry: false,
+      rebuiltDrawerMeta: false,
+      appliedHandles: false,
+      prunedCaches: false,
+      clearedBuildUi: false,
+      triggeredRender: false,
+      ensuredRenderLoop: false,
+      renderedViewport: true,
+      updatedControls: true,
+    }
+  );
+
+  assert.deepEqual(order, ['cube', 'render']);
+  assert.equal(mirrorMaterial.envMap, texture);
+  assert.equal(mirrorMaterial.needsUpdate, true);
+  assert.equal(App.render.__mirrorPresenceKnown, true);
+  assert.equal(App.render.__mirrorPresenceHasMirror, true);
+  assert.equal(App.render.__mirrorUpdateCount, 1);
+  assert.equal(calls.ensureRenderLoop.length, 0);
+});
+
 test('builder public surface runtime: bootstrap seeds canonical builder deps namespaces and heals missing slots on reinstall', () => {
   const { App, calls } = createHarness();
   const customCalc = () => ({ kept: true });

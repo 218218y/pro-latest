@@ -1,5 +1,6 @@
 import { CORNER_WING_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import type { CornerWingCarcassFlowParams } from './corner_wing_carcass_shared.js';
+import { addCornerHexHorizontalBoard } from './corner_wing_hex_cell_geometry.js';
 import {
   type CornerWingCarcassShellMetrics,
   resolveCornerWingHorizPlacement,
@@ -81,10 +82,24 @@ export function applyCornerWingCarcassCeiling(
     );
     const topX = __cellStartX + __leftInsetX + topW / 2;
     const topY = startY + __h - woodThick / 2;
+    const partId = `corner_cell_top_c${cell.idx}`;
+    if (
+      cell.__hexCellGeometry &&
+      addCornerHexHorizontalBoard({
+        params,
+        metrics,
+        cell,
+        partId,
+        y: topY,
+        material: __wingCeilMat,
+      })
+    ) {
+      continue;
+    }
     const top = new THREE.Mesh(new THREE.BoxGeometry(topW, woodThick, __hz.depth), __wingCeilMat);
     top.position.set(topX, topY, __hz.z);
     top.userData = {
-      partId: `corner_cell_top_c${cell.idx}`,
+      partId,
       moduleIndex: cell.key,
       kind: 'cellTop',
     };

@@ -148,6 +148,7 @@ export function createKernelStateKernelConfigMapsTools(
         return !!value;
       case 'wardrobeType':
       case 'boardMaterial':
+      case 'doorMountMode':
       case 'globalHandleType':
         return value == null ? '' : String(value);
       case 'customUploadedDataURL':

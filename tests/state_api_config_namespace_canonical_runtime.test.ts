@@ -71,7 +71,7 @@ test('[state-api.config] captureSnapshot rematerializes top modules and detaches
     ui: { doors: 5, singleDoorPos: 'right', structureSelect: '', raw: { doors: 5, singleDoorPos: 'right' } },
     config: {
       wardrobeType: 'hinged',
-      modulesConfiguration: [{ doors: 9, extDrawersCount: '4', intDrawersList: null, customData: {} }],
+      modulesConfiguration: [{ doors: 9, extDrawersCount: '4', customData: {} }],
       stackSplitLowerModulesConfiguration: [{ extDrawersCount: '2', customData: { storage: true } }],
       cornerConfiguration: {
         layout: 'drawers',
@@ -106,7 +106,6 @@ test('[state-api.config] captureSnapshot rematerializes top modules and detaches
     [2, 2, 1]
   );
   assert.equal(top[0].extDrawersCount, 4);
-  assert.deepEqual(top[0].intDrawersList, []);
   assert.equal(asRec(corner).extDrawersCount, 3);
 
   lower[0].extDrawersCount = 99;

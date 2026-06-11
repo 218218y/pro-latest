@@ -1,11 +1,5 @@
 import { INTERIOR_FITTINGS_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
-import type {
-  CornerCell,
-  CornerCellCfg,
-  GroupLike,
-  SlotMetaLike,
-  ThreeCornerCellLike,
-} from './corner_wing_cell_shared.js';
+import type { CornerCell, CornerCellCfg, GroupLike, ThreeCornerCellLike } from './corner_wing_cell_shared.js';
 
 type StorageBarrierParams = {
   THREE: ThreeCornerCellLike;
@@ -38,7 +32,6 @@ type CornerWingCellLayoutParams = {
   getCornerMat: (partId: string, defaultMaterial: unknown) => unknown;
   addGridShelf: (gridIndex: number) => void;
   createRod: (yPos: number, limitHeight?: number | null) => void;
-  checkAndCreateInternalDrawer: (slotIndex: number, slotMeta?: SlotMetaLike) => boolean;
   __z: (z: number) => number;
 };
 
@@ -80,36 +73,10 @@ function addCornerStorageBarrier(params: StorageBarrierParams): void {
 }
 
 function applyCornerWingCustomLayout(params: CornerWingCellLayoutParams): void {
-  const {
-    cfgCell,
-    gridDivisions,
-    localGridStep,
-    effectiveBottomY,
-    effectiveTopY,
-    woodThick,
-    addGridShelf,
-    createRod,
-    checkAndCreateInternalDrawer,
-  } = params;
-  const activeDrawerSlots = cfgCell.intDrawersList || [];
+  const { cfgCell, gridDivisions, localGridStep, effectiveBottomY, woodThick, addGridShelf, createRod } =
+    params;
   for (let i = 1; i <= gridDivisions; i++) {
     if (i < gridDivisions && cfgCell.customData.shelves[i - 1]) addGridShelf(i);
-    {
-      let __slotTopY = effectiveTopY;
-      for (let __nextShelfIdx = i; __nextShelfIdx < gridDivisions; __nextShelfIdx++) {
-        if (cfgCell.customData.shelves[__nextShelfIdx - 1]) {
-          __slotTopY = effectiveBottomY + __nextShelfIdx * localGridStep;
-          break;
-        }
-      }
-      const __slotBottomY = effectiveBottomY + (i - 1) * localGridStep;
-      checkAndCreateInternalDrawer(i, {
-        slotBottomY: __slotBottomY,
-        slotTopY: __slotTopY,
-        slotAvailableHeight: __slotTopY - __slotBottomY,
-      });
-    }
-
     if (cfgCell.customData.rods[i - 1]) {
       const rodY = effectiveBottomY + i * localGridStep + INTERIOR_FITTINGS_DIMENSIONS.rods.defaultYOffsetM;
       let limitHeight = null;
@@ -118,10 +85,6 @@ function applyCornerWingCustomLayout(params: CornerWingCellLayoutParams): void {
         const gridLineY = effectiveBottomY + k * localGridStep;
         if (cfgCell.customData.shelves[k - 1]) {
           limitHeight = rodY - (gridLineY + woodThick / 2);
-          break;
-        }
-        if (activeDrawerSlots.includes(k)) {
-          limitHeight = rodY - gridLineY;
           break;
         }
         if (cfgCell.customData.rods[k - 1]) {
@@ -139,15 +102,6 @@ function applyCornerWingCustomLayout(params: CornerWingCellLayoutParams): void {
 
       createRod(rodY, limitHeight);
     }
-  }
-
-  {
-    const __slotBottomY = effectiveBottomY + (gridDivisions - 1) * localGridStep;
-    checkAndCreateInternalDrawer(gridDivisions, {
-      slotBottomY: __slotBottomY,
-      slotTopY: effectiveTopY,
-      slotAvailableHeight: effectiveTopY - __slotBottomY,
-    });
   }
 
   if (cfgCell.customData.storage) {
@@ -168,16 +122,8 @@ function applyCornerWingCustomLayout(params: CornerWingCellLayoutParams): void {
 }
 
 function applyCornerWingPresetLayout(params: CornerWingCellLayoutParams): void {
-  const {
-    cfgCell,
-    gridDivisions,
-    localGridStep,
-    effectiveBottomY,
-    effectiveTopY,
-    addGridShelf,
-    createRod,
-    checkAndCreateInternalDrawer,
-  } = params;
+  const { cfgCell, gridDivisions, localGridStep, effectiveBottomY, effectiveTopY, addGridShelf, createRod } =
+    params;
   const layoutType = cfgCell.layout;
   const presetDims = INTERIOR_FITTINGS_DIMENSIONS.presets;
   const __presetShelfSet: Record<number, true> = Object.create(null);
@@ -209,11 +155,6 @@ function applyCornerWingPresetLayout(params: CornerWingCellLayoutParams): void {
       }
     }
     const __slotBottomY = effectiveBottomY + (s - 1) * localGridStep;
-    checkAndCreateInternalDrawer(s, {
-      slotBottomY: __slotBottomY,
-      slotTopY: __slotTopY,
-      slotAvailableHeight: __slotTopY - __slotBottomY,
-    });
   }
 
   switch (layoutType) {

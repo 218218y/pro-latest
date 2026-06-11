@@ -1,6 +1,14 @@
 import type { UnknownRecord } from '../../../types';
 import { DOOR_SYSTEM_DIMENSIONS } from '../../shared/wardrobe_dimension_tokens_shared.js';
 import { getThreeMaybe } from '../runtime/three_access.js';
+import { resolveCanvasDoorSplitPointerWorldY } from './canvas_picking_door_split_pointer_y.js';
+import { validateCanvasDoorCustomSplitAdd } from './canvas_picking_door_split_click_custom.js';
+import {
+  resolveCanvasDoorCustomSplitRemoveTarget,
+  resolveCanvasDoorCustomSplitRemoveTolerance,
+  resolveCanvasDoorCustomSplitScreenRemoveCandidate,
+  type CanvasDoorCustomSplitScreenRemoveCandidate,
+} from './canvas_picking_door_split_remove_target.js';
 import {
   type MarkerLike,
   type MarkerUserDataLike,
@@ -14,6 +22,7 @@ import {
   __resolveHoverHit,
   __reuseValue,
 } from './canvas_picking_door_hover_targets.js';
+import type { HitObjectLike } from './canvas_picking_engine.js';
 
 export function tryHandleSplitDoorHover(args: SplitDoorHoverArgs): boolean {
   const {
@@ -25,17 +34,30 @@ export function tryHandleSplitDoorHover(args: SplitDoorHoverArgs): boolean {
     readSplitHoverDoorBounds,
     getCanvasPickingRuntime,
     readSplitPosList,
+    getSplitHoverRaycastRoots,
     getRegularSplitPreviewLineY,
     reportPickingIssue,
   } = args;
 
-  const hit = __resolveHoverHit(args, args.isDoorLikePartId);
-
   if (marker) marker.visible = false;
   const isSplitCustom = splitVariant === 'custom';
   const activeMarker: MarkerLike | null = (isSplitCustom ? cutMarker : marker) || null;
+  const hit = __resolveHoverHit(args, args.isDoorLikePartId);
+  let screenRemoveCandidate: CanvasDoorCustomSplitScreenRemoveCandidate | null = null;
+  if (!hit && isSplitCustom) {
+    screenRemoveCandidate = resolveCanvasDoorCustomSplitScreenRemoveCandidate({
+      App,
+      roots: getSplitHoverRaycastRoots(App),
+      ndcX: args.ndcX,
+      ndcY: args.ndcY,
+      camera: args.getViewportRoots(App).camera,
+      readBounds: readSplitHoverDoorBounds,
+      readPosList: readSplitPosList,
+      normalizeDoorBaseKey,
+    });
+  }
 
-  if (!hit || !activeMarker) {
+  if ((!hit && !screenRemoveCandidate) || !activeMarker) {
     if (marker) marker.visible = false;
     if (cutMarker) cutMarker.visible = false;
     return false;
@@ -47,21 +69,40 @@ export function tryHandleSplitDoorHover(args: SplitDoorHoverArgs): boolean {
     cutMarker.visible = false;
   }
 
-  const { hitDoorPid, hitDoorGroup, hitY, wardrobeGroup } = hit;
+  const viewportRoots = args.getViewportRoots(App);
+  const hitDoorPid = hit ? hit.hitDoorPid : screenRemoveCandidate?.doorBaseKey || '';
+  const hitDoorGroup: HitObjectLike | null = hit
+    ? hit.hitDoorGroup
+    : screenRemoveCandidate?.hitDoorGroup || null;
+  const wardrobeGroup = hit ? hit.wardrobeGroup : viewportRoots.wardrobeGroup;
+  const hitY = screenRemoveCandidate
+    ? screenRemoveCandidate.target.yAbs
+    : resolveCanvasDoorSplitPointerWorldY({
+        App,
+        raycaster: args.raycaster,
+        mouse: args.mouse,
+        camera: viewportRoots.camera,
+        ndcX: args.ndcX,
+        ndcY: args.ndcY,
+        hitDoorGroup,
+        referenceY: hit ? hit.hitY : null,
+      });
 
-  let doorBaseKey = hitDoorPid;
-  try {
-    doorBaseKey = normalizeDoorBaseKey(App, hitDoorGroup, hitDoorPid);
-  } catch (err) {
-    reportPickingIssue(App, err, {
-      where: 'canvasPicking',
-      op: 'hover.normalizeDoorBaseKey',
-      throttleMs: 1000,
-    });
-    doorBaseKey = hitDoorPid;
+  let doorBaseKey = screenRemoveCandidate?.doorBaseKey || hitDoorPid;
+  if (!screenRemoveCandidate && hit) {
+    try {
+      doorBaseKey = normalizeDoorBaseKey(App, hit.hitDoorGroup, hitDoorPid);
+    } catch (err) {
+      reportPickingIssue(App, err, {
+        where: 'canvasPicking',
+        op: 'hover.normalizeDoorBaseKey',
+        throttleMs: 1000,
+      });
+      doorBaseKey = hitDoorPid;
+    }
   }
 
-  const bounds = readSplitHoverDoorBounds(App, String(doorBaseKey || ''));
+  const bounds = screenRemoveCandidate?.bounds || readSplitHoverDoorBounds(App, String(doorBaseKey || ''));
   const minY = bounds ? bounds.minY : Infinity;
   const maxY = bounds ? bounds.maxY : -Infinity;
   const splitHoverDims = DOOR_SYSTEM_DIMENSIONS.hinged.split;
@@ -81,7 +122,7 @@ export function tryHandleSplitDoorHover(args: SplitDoorHoverArgs): boolean {
   const w =
     userData && typeof userData.__doorWidth === 'number'
       ? userData.__doorWidth
-      : splitHoverDims.hoverFallbackDoorWidthM;
+      : splitHoverDims.hoverDefaultDoorWidthM;
   const hingeLeft = userData && typeof userData.__hingeLeft === 'boolean' ? !!userData.__hingeLeft : true;
   const anchorX = __getDoorHoverAnchorX(hitDoorGroup, userData, w, hingeLeft);
 
@@ -92,6 +133,10 @@ export function tryHandleSplitDoorHover(args: SplitDoorHoverArgs): boolean {
   let standardLineH = 0.02;
 
   if (!isSplitCustom) {
+    if (!hit) {
+      activeMarker.visible = false;
+      return false;
+    }
     const threshold = minY + (maxY - minY) / 3;
     const isBottom = hitY <= threshold;
     const regionMinY = isBottom ? minY : threshold;
@@ -101,7 +146,7 @@ export function tryHandleSplitDoorHover(args: SplitDoorHoverArgs): boolean {
     material = isBottom ? marker?.userData?.__matBottom : marker?.userData?.__matTop;
     standardLineY = getRegularSplitPreviewLineY({
       App,
-      hitDoorGroup,
+      hitDoorGroup: hit.hitDoorGroup,
       bounds: { minY, maxY },
       isBottomRegion: isBottom,
     });
@@ -114,40 +159,42 @@ export function tryHandleSplitDoorHover(args: SplitDoorHoverArgs): boolean {
     );
   } else {
     const H = maxY - minY;
-    const padAbs = splitHoverDims.hoverCustomEdgePadM;
-    const yAbs = Math.max(minY + padAbs, Math.min(maxY - padAbs, hitY));
     const prevList = readSplitPosList(App, doorBaseKey);
-    const tolAbs = Math.max(
-      splitHoverDims.hoverCustomRemoveToleranceMinM,
-      Math.min(
-        splitHoverDims.hoverCustomRemoveToleranceMaxM,
-        H * splitHoverDims.hoverCustomRemoveToleranceRatio
-      )
-    );
+    const pointerY = Number(hitY);
+    const removeTarget =
+      screenRemoveCandidate?.target ||
+      resolveCanvasDoorCustomSplitRemoveTarget({
+        App,
+        bounds: { minY, maxY },
+        prevList,
+        pointerY,
+        ndcX: args.ndcX,
+        ndcY: args.ndcY,
+        camera: viewportRoots.camera,
+        hitDoorGroup,
+        toleranceAbs: resolveCanvasDoorCustomSplitRemoveTolerance({ minY, maxY }),
+      });
 
-    let nearestAbs = NaN;
-    let nearestDy = Infinity;
-    for (let i = 0; i < prevList.length; i++) {
-      const n = prevList[i];
-      if (!Number.isFinite(n)) continue;
-      let y0 = minY + Math.max(0, Math.min(1, n)) * H;
-      y0 = Math.max(minY + padAbs, Math.min(maxY - padAbs, y0));
-      const dy = Math.abs(y0 - yAbs);
-      if (dy < nearestDy) {
-        nearestDy = dy;
-        nearestAbs = y0;
-      }
+    const isRemove = !!removeTarget;
+    let isBlocked = false;
+    let yUse = removeTarget ? removeTarget.yAbs : Math.max(minY, Math.min(maxY, pointerY));
+    if (!isRemove) {
+      const addValidation = validateCanvasDoorCustomSplitAdd({
+        bounds: { minY, maxY },
+        prevList,
+        pointerY,
+      });
+      yUse = addValidation.yAbs;
+      isBlocked = !addValidation.canAdd;
     }
 
-    const isRemove = Number.isFinite(nearestAbs) && nearestDy <= tolAbs;
-    const yUse = isRemove && Number.isFinite(nearestAbs) ? nearestAbs : yAbs;
     regionCenterY = yUse;
     regionH = Math.max(
       splitHoverDims.hoverCustomMarkerMinHeightM,
       Math.min(splitHoverDims.hoverCustomMarkerMaxHeightM, H * splitHoverDims.hoverCustomMarkerHeightRatio)
     );
     const activeUd = __asObject<MarkerUserDataLike>(activeMarker.userData) || {};
-    material = isRemove ? activeUd.__matRemove : activeUd.__matAdd;
+    material = isRemove || isBlocked ? activeUd.__matRemove || activeUd.__matAdd : activeUd.__matAdd;
   }
 
   try {

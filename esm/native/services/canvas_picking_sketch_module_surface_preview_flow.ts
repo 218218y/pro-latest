@@ -12,6 +12,7 @@ import {
 } from './canvas_picking_sketch_module_surface_preview_shared.js';
 
 import { resolveSketchModuleRodRemovePreview } from './canvas_picking_sketch_module_surface_preview_rod.js';
+import { resolveSketchModuleStorageRemovePreview } from './canvas_picking_sketch_module_surface_preview_storage.js';
 import { resolveSketchModuleContentPreview } from './canvas_picking_sketch_module_surface_preview_content.js';
 
 export function resolveSketchModuleSurfacePreview(
@@ -40,7 +41,16 @@ export function resolveSketchModuleSurfacePreview(
   } = args;
   const allowExistingShelfRemove = isShelf || args.allowExistingShelfRemove === true;
   const allowExistingRodRemove = isRod || args.allowExistingRodRemove === true;
-  if (!isBox && !isStorage && !isShelf && !isRod && !allowExistingShelfRemove && !allowExistingRodRemove)
+  const allowExistingStorageRemove = isStorage || args.allowExistingStorageRemove === true;
+  if (
+    !isBox &&
+    !isStorage &&
+    !isShelf &&
+    !isRod &&
+    !allowExistingShelfRemove &&
+    !allowExistingRodRemove &&
+    !allowExistingStorageRemove
+  )
     return { handled: false };
 
   let yClamped = args.yClamped;
@@ -95,6 +105,25 @@ export function resolveSketchModuleSurfacePreview(
   variantPreview = shelfRemovePreview.variantPreview;
   let shelfDepthOverrideM = shelfRemovePreview.shelfDepthOverrideM;
   if (shelfRemovePreview.handled && shelfRemovePreview.result) return shelfRemovePreview.result;
+
+  if (allowExistingStorageRemove) {
+    const storageRemovePreview = resolveSketchModuleStorageRemovePreview({
+      source: args,
+      removeEpsBox,
+      bottomY,
+      topY,
+      pad,
+      spanH,
+      internalCenterX,
+      internalDepth,
+      internalZ,
+      innerW,
+      woodThick,
+      yClamped,
+      storageBarriers,
+    });
+    if (storageRemovePreview) return storageRemovePreview;
+  }
 
   if (allowExistingRodRemove) {
     const rodRemovePreview = resolveSketchModuleRodRemovePreview({
