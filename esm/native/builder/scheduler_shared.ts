@@ -11,6 +11,8 @@ export {
   createPendingPlanFromState,
   readBuildPlan,
   readBuildSignature,
+  readPlanInputFingerprint,
+  readStateInputFingerprint,
   readBuildState,
   readObject,
   readPlanState,

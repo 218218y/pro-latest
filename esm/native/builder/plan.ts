@@ -12,6 +12,7 @@ import { ensureBuilderService } from '../runtime/builder_service_access.js';
 import { assertApp } from '../runtime/api.js';
 import { installStableSurfaceMethod } from '../runtime/stable_surface_methods.js';
 import { getBuildStateMaybe } from './store_access.js';
+import { readBuildInputFingerprintFromState } from './build_input_fingerprint.js';
 
 import type { AppContainer, BuildPlanLike, BuildStateLike, BuilderPlanServiceLike } from '../../../types';
 
@@ -140,6 +141,12 @@ function ensureState(input: unknown, deps: PlanDepsLike): BuildStateLike {
   return { ui, config: {}, mode: { primary: 'none', opts: {} }, runtime: {}, build: {} };
 }
 
+function readBuildInputSignatureValue(state: BuildStateLike): unknown {
+  const build = readBuildShape(state);
+  if (build && Object.prototype.hasOwnProperty.call(build, 'signature')) return build.signature;
+  return computeSignature(state);
+}
+
 function computeSignature(state: BuildStateLike): number[] | null {
   try {
     const build = readBuildShape(state);
@@ -171,12 +178,16 @@ export function createBuildPlan(
   const d = __readPlanDeps(deps) || {};
   const st = ensureState(input, d);
   const sig = computeSignature(st);
+  const inputFingerprint = readBuildInputFingerprintFromState(st, next =>
+    readBuildInputSignatureValue(next as BuildStateLike)
+  );
 
   return {
     kind: 'buildPlan_v1',
     createdAt: Date.now(),
     state: st,
     signature: sig,
+    inputFingerprint,
     meta: readValueRecord(meta) || {},
   };
 }

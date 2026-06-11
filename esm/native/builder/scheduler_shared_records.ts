@@ -4,6 +4,8 @@ import type {
   BuilderSchedulerStateInternalLike,
 } from '../../../types/index.js';
 
+import { readBuildDedupeSignatureFromState } from './build_dedupe_signature.js';
+
 export type AnyObj = Record<string, unknown>;
 export type SchedulerPendingPlan = BuilderSchedulerStateInternalLike['pendingPlan'];
 
@@ -34,12 +36,23 @@ export function readBuildSignature(state: BuildStateLike): unknown {
   return build?.signature ?? null;
 }
 
+export function readStateInputFingerprint(state: BuildStateLike | null | undefined): unknown {
+  return readBuildDedupeSignatureFromState(state, next => readBuildSignature(next as BuildStateLike));
+}
+
+export function readPlanInputFingerprint(plan: unknown): unknown {
+  const rec = readObject(plan);
+  if (!rec || !Object.prototype.hasOwnProperty.call(rec, 'inputFingerprint')) return null;
+  return rec.inputFingerprint;
+}
+
 export function createFallbackBuildPlan(state: BuildStateLike): BuildPlanLike {
   return {
     kind: 'buildPlan_v1',
     createdAt: Date.now(),
     state,
     signature: readBuildSignature(state),
+    inputFingerprint: readStateInputFingerprint(state),
   };
 }
 
@@ -48,8 +61,8 @@ export function readPlanState(plan: unknown): BuildStateLike | null {
   return readBuildState(rec?.state);
 }
 
-export function createPendingPlanFromState(state: BuildStateLike): { state: BuildStateLike } {
-  return { state };
+export function createPendingPlanFromState(state: BuildStateLike): { state: BuildStateLike; inputFingerprint: unknown } {
+  return { state, inputFingerprint: readStateInputFingerprint(state) };
 }
 
 export function withTransientBuildFlags(

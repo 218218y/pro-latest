@@ -1,6 +1,11 @@
 import type { BuildStateLike, BuilderSchedulerStateInternalLike } from '../../../types/index.js';
 
-import { type SchedulerPendingPlan, readBuildSignature, readPlanState } from './scheduler_shared.js';
+import {
+  type SchedulerPendingPlan,
+  readBuildSignature,
+  readPlanInputFingerprint,
+  readPlanState,
+} from './scheduler_shared.js';
 import { readBuildDedupeSignatureFromState } from './build_dedupe_signature.js';
 
 export function readBuildDedupeSignature(state: BuildStateLike | null | undefined): unknown {
@@ -13,6 +18,8 @@ export function readStateSignature(state: BuildStateLike | null | undefined): un
 
 export function readPendingSignature(plan: SchedulerPendingPlan | null | undefined): unknown {
   if (!plan) return null;
+  const fingerprint = readPlanInputFingerprint(plan);
+  if (fingerprint !== null) return fingerprint;
   return readStateSignature(readPlanState(plan));
 }
 

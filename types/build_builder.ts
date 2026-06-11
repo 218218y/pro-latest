@@ -568,6 +568,7 @@ export interface BuildPlanLike extends UnknownRecord {
   createdAt: number;
   state: BuildStateLike;
   signature?: unknown;
+  inputFingerprint?: unknown;
   meta?: UnknownRecord;
 }
 
