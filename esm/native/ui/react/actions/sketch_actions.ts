@@ -2,7 +2,6 @@
 
 import type { AppContainer, ActionMetaLike, UnknownRecord } from '../../../../../types';
 
-import { requestBuilderForcedBuild } from '../../../services/api.js';
 import { getMetaActionFn } from '../../../services/api.js';
 import { readStoreStateMaybe } from '../../../services/api.js';
 import { setRuntimeSketchMode, setUiSketchModeMirror } from './store_actions.js';
@@ -19,8 +18,15 @@ function emptyRecord(): UnknownRecord {
   return {};
 }
 
-function readActionMeta(value: ActionMetaLike | undefined, fallbackSource: string): ActionMetaLike {
-  return value ? { ...value } : { source: fallbackSource };
+function readImmediateStructuralActionMeta(
+  value: ActionMetaLike | undefined,
+  fallbackSource: string
+): ActionMetaLike {
+  const meta: ActionMetaLike = value ? { ...value } : { source: fallbackSource };
+  meta.source = typeof meta.source === 'string' && meta.source ? meta.source : fallbackSource;
+  meta.immediate = true;
+  delete meta.noBuild;
+  return meta;
 }
 
 function getRuntimeSketchMode(app: AppContainer): boolean {
@@ -46,7 +52,7 @@ function getUiOnlyImmediateMeta(app: AppContainer, source: string): ActionMetaLi
 }
 
 export function toggleSketchMode(app: AppContainer, meta?: ActionMetaLike): void {
-  const m = readActionMeta(meta, 'react:sketch');
+  const m = readImmediateStructuralActionMeta(meta, 'react:sketch');
   const cur = getRuntimeSketchMode(app);
   const next = !cur;
 
@@ -57,9 +63,4 @@ export function toggleSketchMode(app: AppContainer, meta?: ActionMetaLike): void
   try {
     setUiSketchModeMirror(app, !!next, getUiOnlyImmediateMeta(app, 'react:sketch:syncUi'));
   } catch {}
-
-  requestBuilderForcedBuild(app, {
-    source: m.source || 'react:sketch',
-    reason: 'react.action',
-  });
 }

@@ -142,8 +142,10 @@ test('[cell-dims/free-box] applies width height and depth to the clicked free-st
     depthCm: 40,
   });
   assert.equal(state.config.modulesConfiguration[0].specialDims, undefined);
-  assert.equal(calls.builds.length, 1);
-  assert.equal(calls.touches.length, 1);
+  // The structural write itself is immediate; store reactivity owns the build request.
+  // This helper must not add a second explicit build/history refresh.
+  assert.equal(calls.builds.length, 0);
+  assert.equal(calls.touches.length, 0);
   assert.match(calls.toasts[0]?.message || '', /הוחלו מידות מיוחדות על הקופסא/);
 });
 

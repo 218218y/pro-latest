@@ -503,13 +503,13 @@ test('[builder-surface-family] orchestration owners stay named-only and request-
   assertMatchesAll(
     assert,
     sketchActionsOwner,
-    [/requestBuilderForcedBuild\(app, \{/, /reason:\s*'react\.action'/],
+    [/readImmediateStructuralActionMeta/, /meta\.immediate = true/, /delete meta\.noBuild/],
     'sketch actions canonical build policy'
   );
   assertLacksAll(
     assert,
     sketchActionsOwner,
-    [/requestBuilderBuild\(app,/],
+    [/requestBuilderBuild\(app,/, /requestBuilderForcedBuild\(app,/, /reason:\s*'react\.action'/],
     'sketch actions canonical build policy'
   );
 

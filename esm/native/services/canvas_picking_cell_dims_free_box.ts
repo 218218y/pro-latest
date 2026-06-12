@@ -23,9 +23,8 @@ import {
   ensureSketchModuleBoxes,
   findSketchModuleBoxById,
 } from './canvas_picking_sketch_box_content_commit.js';
-import { __wp_commitHistoryTouch, __wp_toModuleKey, __wp_toast } from './canvas_picking_core_helpers.js';
+import { __wp_toModuleKey, __wp_toast } from './canvas_picking_core_helpers.js';
 import { readToastFn } from './canvas_picking_cell_dims_linear_shared.js';
-import { requestCanvasPickingCommitStructuralRefresh } from './canvas_picking_structural_refresh.js';
 
 export type CanvasFreeBoxCellDimsArgs = {
   App: AppContainer;
@@ -232,11 +231,6 @@ function emitToast(App: AppContainer, message: string): void {
   if (typeof fn === 'function') fn(message, true);
 }
 
-function refreshAfterFreeBoxCellDims(App: AppContainer, source: string): void {
-  __wp_commitHistoryTouch(App, source);
-  requestCanvasPickingCommitStructuralRefresh(App, source);
-}
-
 function updateFreeBox(args: {
   cfg: ModuleConfigLike | UnknownRecord;
   boxId: string;
@@ -363,7 +357,6 @@ export function tryHandleCanvasFreeBoxCellDimsClick(args: CanvasFreeBoxCellDimsA
 
   if (!outcome.changed) return true;
 
-  refreshAfterFreeBoxCellDims(args.App, outcome.removedHex ? 'cellDims.freeBox.hex.remove' : source);
   if (outcome.removedHex) emitToast(args.App, 'הקופסא חזרה לתא רגיל');
   else if (outcome.appliedHex) emitToast(args.App, 'הקופסא הוגדרה כתא משושה');
   else emitToast(args.App, 'הוחלו מידות מיוחדות על הקופסא');

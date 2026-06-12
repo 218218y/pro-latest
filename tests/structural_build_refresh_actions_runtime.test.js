@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { loadStructuralBuildRefreshActionsModule } from './_load_structural_build_refresh_actions.js';
 
-test('[structural-build-refresh-actions] config mutation writes no-build patch, fallback, then structural refresh', () => {
+test('[structural-build-refresh-actions] config mutation writes immediate patch and fallback without duplicate refresh', () => {
   const calls = [];
   const app = { id: 'app' };
   const mod = loadStructuralBuildRefreshActionsModule({ calls });
@@ -24,18 +24,13 @@ test('[structural-build-refresh-actions] config mutation writes no-build patch, 
         'patchViaActions',
         app,
         { config: { frameThicknessCm: 2.4 } },
-        { source: 'react:test:config', immediate: true, noBuild: true },
+        { source: 'react:test:config', immediate: true },
       ],
-      ['directConfigMutation', { source: 'react:test:config', immediate: true, noBuild: true }],
-      [
-        'requestBuilderStructuralRefresh',
-        app,
-        { source: 'react:test:config', immediate: false, force: false, triggerRender: false },
-      ],
+      ['directConfigMutation', { source: 'react:test:config', immediate: true }],
     ])
   );
   assert.equal(result.appliedViaActions, false);
-  assert.equal(result.requestedBuild, true);
+  assert.equal(result.requestedBuild, false);
 });
 
 test('[structural-build-refresh-actions] ui mutation skips direct fallback when canonical patch applies', () => {
@@ -62,15 +57,10 @@ test('[structural-build-refresh-actions] ui mutation skips direct fallback when 
         'patchViaActions',
         app,
         { ui: { doorStyle: 'profile' } },
-        { source: 'react:test:ui', immediate: true, noBuild: true },
-      ],
-      [
-        'requestBuilderStructuralRefresh',
-        app,
-        { source: 'react:test:ui', immediate: false, force: false, triggerRender: false },
+        { source: 'react:test:ui', immediate: true },
       ],
     ])
   );
   assert.equal(result.appliedViaActions, true);
-  assert.equal(result.requestedBuild, true);
+  assert.equal(result.requestedBuild, false);
 });

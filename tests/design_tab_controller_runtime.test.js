@@ -90,7 +90,7 @@ function loadDesignTabControllerRuntimeModule(stubs = {}) {
   return mod.exports;
 }
 
-test('[design-tab-controller-runtime] delegates structural ui writes through canonical no-build patch + refresh', () => {
+test('[design-tab-controller-runtime] delegates structural ui writes through canonical immediate structural patch without duplicate refresh', () => {
   const calls = [];
   const mod = loadDesignTabControllerRuntimeModule({
     calls,
@@ -122,23 +122,13 @@ test('[design-tab-controller-runtime] delegates structural ui writes through can
         'patchViaActions',
         app,
         { ui: { doorStyle: 'profile' } },
-        { source: 'react:design:doorStyle', immediate: true, noBuild: true },
-      ],
-      [
-        'requestBuilderStructuralRefresh',
-        app,
-        { source: 'react:design:doorStyle', immediate: false, force: false, triggerRender: false },
+        { source: 'react:design:doorStyle', immediate: true },
       ],
       [
         'patchViaActions',
         app,
         { ui: { corniceType: 'wave' } },
-        { source: 'react:design:corniceType', immediate: true, noBuild: true },
-      ],
-      [
-        'requestBuilderStructuralRefresh',
-        app,
-        { source: 'react:design:corniceType', immediate: false, force: false, triggerRender: false },
+        { source: 'react:design:corniceType', immediate: true },
       ],
       ['runHistoryBatch', app, { source: 'react:design:grooveLinesCount', immediate: true }],
       ['materializeActiveGrooveLinesCountMap', app],

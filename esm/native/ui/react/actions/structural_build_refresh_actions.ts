@@ -1,6 +1,6 @@
 import type { ActionMetaLike, UnknownRecord } from '../../../../../types';
 
-import { patchViaActions, requestBuilderStructuralRefresh } from '../../../services/api.js';
+import { patchViaActions } from '../../../services/api.js';
 
 export type StructuralMutationSlice = 'config' | 'ui';
 
@@ -18,17 +18,7 @@ type ApplyImmediateStructuralMutationArgs = {
 };
 
 export function createImmediateStructuralMutationMeta(source: string): ActionMetaLike {
-  return { source, immediate: true, noBuild: true };
-}
-
-function requestStructuralRefreshAfterMutation(app: unknown, source: string): boolean {
-  const result = requestBuilderStructuralRefresh(app, {
-    source,
-    immediate: false,
-    force: false,
-    triggerRender: false,
-  });
-  return !!result.requestedBuild;
+  return { source, immediate: true };
 }
 
 export function applyImmediateStructuralMutation(
@@ -44,7 +34,10 @@ export function applyImmediateStructuralMutation(
 
   return {
     appliedViaActions,
-    requestedBuild: requestStructuralRefreshAfterMutation(args.app, args.source),
+    // Build scheduling is intentionally delegated to canonical store reactivity.
+    // The immediate semantic meta above is the build request contract; this helper
+    // must not add a second explicit structural-refresh request.
+    requestedBuild: false,
   };
 }
 

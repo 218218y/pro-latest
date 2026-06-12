@@ -168,15 +168,21 @@ test('[stageF] React write hotspots use canonical wrapper sweep for common ui/co
     structuralBuildRefreshActions,
     [
       /export function createImmediateStructuralMutationMeta\(source: string\): ActionMetaLike/,
-      /return \{ source, immediate: true, noBuild: true \}/,
+      /return \{ source, immediate: true \}/,
       /const payload: UnknownRecord = \{ \[args\.slice\]: args\.patch \}/,
       /patchViaActions\(args\.app, payload, meta\)/,
-      /requestBuilderStructuralRefresh\(app, \{\s*source,\s*immediate: false,\s*force: false,\s*triggerRender: false,\s*\}\)/,
       /slice: 'config'/,
       /slice: 'ui'/,
     ],
     'structuralBuildRefreshActions'
   );
+  assertLacksAll(
+    assert,
+    structuralBuildRefreshActions,
+    [/requestBuilderStructuralRefresh\(/, /noBuild:\s*true/],
+    'structuralBuildRefreshActions'
+  );
+
   assertLacksAll(
     assert,
     structureBundle,
