@@ -1,8 +1,9 @@
-import type { ActionMetaLike, AppContainer, UnknownRecord } from '../../../types';
+import type { AppContainer, UnknownRecord } from '../../../types';
 
 import { getModulesActions } from '../runtime/actions_access_domains.js';
 import { readRootState } from '../runtime/root_state_access.js';
 import { asRecord, ensureRecordSlot } from './canvas_picking_door_edit_shared.js';
+import { createCanvasPickingModulesStructuralPatchMeta } from './canvas_picking_modules_patch_meta.js';
 
 export type SketchBoxDoorTarget = {
   moduleKey: string | null;
@@ -14,9 +15,8 @@ export type SketchBoxDoorPatchOptions = {
   source?: string;
 };
 
-function createSketchBoxDoorPatchMeta(options?: SketchBoxDoorPatchOptions | null): ActionMetaLike {
-  const source = typeof options?.source === 'string' && options.source ? options.source : 'sketchBoxDoorEdit';
-  return { source, immediate: true };
+function readSketchBoxDoorPatchSource(options?: SketchBoxDoorPatchOptions | null): string {
+  return typeof options?.source === 'string' && options.source.trim() ? options.source : 'sketchBoxDoorEdit';
 }
 
 function stripSketchBoxDoorSegmentSuffix(partId: string): string {
@@ -260,7 +260,7 @@ export function patchSketchBoxDoor(
           return;
         }
       },
-      createSketchBoxDoorPatchMeta(options)
+      createCanvasPickingModulesStructuralPatchMeta(readSketchBoxDoorPatchSource(options))
     );
     if (changed) return true;
   }

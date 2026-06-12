@@ -26,6 +26,7 @@ import {
 import { __wp_toModuleKey, __wp_toast } from './canvas_picking_core_helpers.js';
 import { readCellDimsFreeBoxIdFromPartId } from './canvas_picking_cell_dims_free_box_identity.js';
 import { readToastFn } from './canvas_picking_cell_dims_linear_shared.js';
+import { createCanvasPickingModulesStructuralPatchMeta } from './canvas_picking_modules_patch_meta.js';
 
 export type CanvasFreeBoxCellDimsArgs = {
   App: AppContainer;
@@ -337,7 +338,7 @@ export function tryHandleCanvasFreeBoxCellDimsClick(args: CanvasFreeBoxCellDimsA
     (cfg: ModuleConfigLike) => {
       outcome = updateFreeBox({ cfg, boxId, clickArgs: args });
     },
-    { source, immediate: true }
+    createCanvasPickingModulesStructuralPatchMeta(source)
   );
 
   if (!outcome.changed) return true;

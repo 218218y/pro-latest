@@ -9,6 +9,7 @@ import {
   setPendingSketchBoxDoorState,
 } from './canvas_picking_toggle_flow_sketch_box_runtime.js';
 import { asRecord, ensureChildRecord, markLocalDoorMotion } from './canvas_picking_toggle_flow_shared.js';
+import { createCanvasPickingModulesMotionPatchMeta } from './canvas_picking_modules_patch_meta.js';
 
 export function toggleSketchBoxDoor(
   App: AppContainer,
@@ -78,12 +79,7 @@ export function toggleSketchBoxDoor(
           return;
         }
       },
-      {
-        source: 'sketchBoxDoorToggle',
-        immediate: false,
-        noBuild: true,
-        noHistory: true,
-      }
+      createCanvasPickingModulesMotionPatchMeta('sketchBoxDoorToggle')
     );
 
     if (changed) {

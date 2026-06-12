@@ -9,6 +9,7 @@ const owner = read('esm/native/services/canvas_picking_core.ts');
 const clickFlow = read('esm/native/services/canvas_picking_click_flow.ts');
 const clickModeState = read('esm/native/services/canvas_picking_click_mode_state.ts');
 const clickModuleRefs = read('esm/native/services/canvas_picking_click_module_refs.ts');
+const modulesPatchMeta = read('esm/native/services/canvas_picking_modules_patch_meta.ts');
 const clickRoute = read('esm/native/services/canvas_picking_click_route.ts');
 const clickRouteShared = read('esm/native/services/canvas_picking_click_route_shared.ts');
 const clickRouteManual = read('esm/native/services/canvas_picking_click_route_manual.ts');
@@ -26,10 +27,14 @@ const cellDimsCornerGlobalState = read('esm/native/services/canvas_picking_cell_
 const cellDimsCornerGlobalApply = read('esm/native/services/canvas_picking_cell_dims_corner_global_apply.ts');
 const cellDimsLinear = read('esm/native/services/canvas_picking_cell_dims_linear.ts');
 const cellDimsLinearApply = read('esm/native/services/canvas_picking_cell_dims_linear_apply.ts');
+const cellDimsFreeBox = read('esm/native/services/canvas_picking_cell_dims_free_box.ts');
 const layoutFlow = read('esm/native/services/canvas_picking_layout_edit_flow.ts');
 const layoutFlowManual = read('esm/native/services/canvas_picking_layout_edit_flow_manual.ts');
 const layoutFlowBrace = read('esm/native/services/canvas_picking_layout_edit_flow_brace.ts');
 const layoutFlowShared = read('esm/native/services/canvas_picking_layout_edit_flow_shared.ts');
+const manualLayoutFreeBoxContent = read(
+  'esm/native/services/canvas_picking_manual_layout_free_box_content.ts'
+);
 const drawerFlow = read('esm/native/services/canvas_picking_drawer_mode_flow.ts');
 const drawerFlowExternal = read('esm/native/services/canvas_picking_drawer_mode_flow_external.ts');
 const drawerFlowDivider = read('esm/native/services/canvas_picking_drawer_mode_flow_divider.ts');
@@ -51,6 +56,8 @@ const toggleFlowSketchBoxRuntime = read(
   'esm/native/services/canvas_picking_toggle_flow_sketch_box_runtime.ts'
 );
 const toggleFlowSketchBoxToggle = read('esm/native/services/canvas_picking_toggle_flow_sketch_box_toggle.ts');
+const toggleFlowSketchFreeBox = read('esm/native/services/canvas_picking_toggle_flow_sketch_free_box.ts');
+const sketchFreeCommit = read('esm/native/services/canvas_picking_sketch_free_commit.ts');
 const audit = read('docs/layering_completion_audit.md');
 
 test('canvas picking click owner stays thin and routes edit families through focused helper modules', () => {
@@ -80,6 +87,19 @@ test('canvas picking click owner stays thin and routes edit families through foc
   assert.match(clickModuleRefs, /typeof mods\.ensureForStack === 'function'/);
   assert.match(clickModuleRefs, /mods\.ensureForStack\('top', `corner:\$\{cellIdx\}`\)/);
   assert.match(clickModuleRefs, /mods\.patchForStack\(__activeStack, mk, patchFn, meta\)/);
+  assert.match(
+    modulesPatchMeta,
+    /export function createCanvasPickingModulesStructuralPatchMeta\(source: string\): ActionMetaLike/
+  );
+  assert.match(
+    modulesPatchMeta,
+    /export function createCanvasPickingModulesMotionPatchMeta\(source: string\): ActionMetaLike/
+  );
+  assert.match(modulesPatchMeta, /Canvas picking modules \$\{profile\} patch requires a source/);
+  assert.match(modulesPatchMeta, /immediate: true/);
+  assert.match(modulesPatchMeta, /immediate: false/);
+  assert.match(modulesPatchMeta, /noBuild: true/);
+  assert.match(modulesPatchMeta, /noHistory: true/);
 
   assert.match(clickRoute, /export function routeCanvasPickingClick\(/);
   assert.match(clickRoute, /canvas_picking_click_route_shared\.js/);
@@ -161,6 +181,8 @@ test('canvas picking click owner stays thin and routes edit families through foc
     /export function handleCanvasLinearCellDimsClick\(args: CanvasLinearCellDimsArgs\): void/
   );
   assert.match(cellDimsLinearApply, /export function applyCanvasLinearCellDimsContext\(/);
+  assert.match(cellDimsFreeBox, /createCanvasPickingModulesStructuralPatchMeta\(source\)/);
+  assert.doesNotMatch(cellDimsFreeBox, /noBuild:/);
 
   assert.match(layoutFlow, /export function tryHandleCanvasLayoutEditClick\(/);
   assert.match(layoutFlow, /tryHandleCanvasLayoutPresetClick\(/);
@@ -180,6 +202,19 @@ test('canvas picking click owner stays thin and routes edit families through foc
   assert.match(layoutFlowBrace, /source: 'braceShelves\.toggle'/);
   assert.match(layoutFlowShared, /export type CanvasLayoutEditClickArgs = \{/);
   assert.match(layoutFlowShared, /export function ensureCustomData\(/);
+  assert.match(
+    manualLayoutFreeBoxContent,
+    /createCanvasPickingModulesStructuralPatchMeta\('manualLayout\.freeBoxShelfGrid'\)/
+  );
+  assert.match(
+    manualLayoutFreeBoxContent,
+    /createCanvasPickingModulesStructuralPatchMeta\('layoutPreset\.freeBox'\)/
+  );
+  assert.match(
+    manualLayoutFreeBoxContent,
+    /createCanvasPickingModulesStructuralPatchMeta\('braceShelves\.freeBoxToggle'\)/
+  );
+  assert.doesNotMatch(manualLayoutFreeBoxContent, /noBuild:/);
 
   assert.match(
     drawerFlow,
@@ -216,11 +251,23 @@ test('canvas picking click owner stays thin and routes edit families through foc
   assert.doesNotMatch(doorEdit, /const nextGroove = !\(current\.groove === true\);/);
   assert.match(doorHingeGroove, /requestDoorAuthoringImmediateRefresh\(App, 'hinge:click'\)/);
   assert.match(doorHingeGroove, /requestDoorAuthoringImmediateRefresh\(App, 'groove:click'\)/);
-  assert.match(doorSketchBoxEdit, /function createSketchBoxDoorPatchMeta\(/);
-  assert.match(doorSketchBoxEdit, /return \{ source, immediate: true \};/);
+  assert.match(doorSketchBoxEdit, /function readSketchBoxDoorPatchSource\(/);
+  assert.match(
+    doorSketchBoxEdit,
+    /createCanvasPickingModulesStructuralPatchMeta\(readSketchBoxDoorPatchSource\(options\)\)/
+  );
   assert.doesNotMatch(doorSketchBoxEdit, /noBuild:/);
   assert.match(doorRemove, /patchSketchBoxDoor\([\s\S]*source: 'removeDoors:smart'/);
   assert.match(doorHingeGroove, /patchSketchBoxDoor\([\s\S]*source: 'groove:click'/);
+  assert.match(
+    sketchFreeCommit,
+    /createCanvasPickingModulesStructuralPatchMeta\(args\.contentSource \|\| 'manualSketchBoxContentFree'\)/
+  );
+  assert.match(
+    sketchFreeCommit,
+    /createCanvasPickingModulesStructuralPatchMeta\(args\.boxSource \|\| 'manualSketchBoxFree'\)/
+  );
+  assert.doesNotMatch(sketchFreeCommit, /noBuild:/);
 
   assert.match(
     paintFlow,
@@ -258,6 +305,14 @@ test('canvas picking click owner stays thin and routes edit families through foc
     /export const __SKETCH_BOX_DOOR_MOTION_SEED_KEY = '__wpSketchBoxDoorMotionSeed';/
   );
   assert.match(toggleFlowSketchBoxToggle, /export function toggleSketchBoxDoor\(/);
+  assert.match(
+    toggleFlowSketchBoxToggle,
+    /createCanvasPickingModulesMotionPatchMeta\('sketchBoxDoorToggle'\)/
+  );
+  assert.match(
+    toggleFlowSketchFreeBox,
+    /createCanvasPickingModulesMotionPatchMeta\('sketchFreeBoxGlobalToggle'\)/
+  );
 
   assert.ok(
     audit.includes(
@@ -281,7 +336,7 @@ test('canvas picking click owner stays thin and routes edit families through foc
   );
   assert.ok(
     audit.includes(
-      '`services/canvas_picking_door_sketch_box_edit.ts` owns the immediate no-build-free modules patch meta for sketch-box door edits while remove/groove callers preserve semantic action sources'
+      '`services/canvas_picking_modules_patch_meta.ts` owns the direct Canvas picking `modules.patchForStack` meta profiles: structural module edits are immediate build-visible writes, while motion/open-state toggles persist with no-build/no-history meta'
     )
   );
   assert.ok(

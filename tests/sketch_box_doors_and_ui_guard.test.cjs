@@ -65,7 +65,8 @@ test('manual sketch box UI exposes 40cm default and box-door controls', () => {
   assert.match(helpers, /SKETCH_TOOL_BOX_DOOR_HINGE = 'sketch_box_door_hinge'/);
   assert.match(sections, /דלת לקופסא/);
   assert.match(sections, /כיוון פתיחת דלת לקופסא/);
-  assert.match(sections, /מחיצה לקופסא/);
+  assert.match(sections, /מחיצה עומדת/);
+  assert.match(sections, /מחיצה שוכבת/);
 });
 
 test('sketch box renderer keeps the flat-slab path but upgrades free-box profile/double_profile doors through the canonical door visual factory', () => {
@@ -91,9 +92,10 @@ test('sketch box renderer keeps the flat-slab path but upgrades free-box profile
   assert.match(render, /const doorGroup = new THREE\.Group\(\)/);
   assert.match(render, /segment: resolveSketchBoxSegmentForContent\(/);
   assert.match(render, /const doorStyle = resolveSketchDoorStyle\(App, input\);/);
+  assert.match(render, /export function resolveSketchBoxDoorVisualRoute\(/);
   assert.match(
     render,
-    /const canUseStyledDoorVisual = !!\([\s\S]*isFreePlacement === true[\s\S]*effectiveDoorStyle === 'profile' \|\| effectiveDoorStyle === 'double_profile'/
+    /const canUseStyledDoorVisual = !!\([\s\S]*hasDoorVisualFactory[\s\S]*effectiveDoorStyle === 'profile' \|\| effectiveDoorStyle === 'double_profile'[\s\S]*!isSpecialVisual/
   );
   assert.match(
     render,
@@ -124,6 +126,7 @@ test('free box hover preview stays on the classic path and sketch box clicks tog
     read('esm/native/services/canvas_picking_toggle_flow_sketch_box_target.ts'),
     read('esm/native/services/canvas_picking_toggle_flow_sketch_box_runtime.ts'),
     read('esm/native/services/canvas_picking_toggle_flow_sketch_box_toggle.ts'),
+    read('esm/native/services/canvas_picking_modules_patch_meta.ts'),
   ].join('\n');
   const render = [
     read('esm/native/builder/render_interior_sketch_ops.ts'),
@@ -134,7 +137,7 @@ test('free box hover preview stays on the classic path and sketch box clicks tog
   assert.match(freeHover, /resolveSketchFreePlacementBoxPreview\(\{/);
   assert.match(toggle, /resolveSketchBoxToggleTarget\(/);
   assert.match(toggle, /seedSketchBoxDoorMotion\(App, runtimeTarget, nextOpen\)/);
-  assert.match(toggle, /source: 'sketchBoxDoorToggle'/);
+  assert.match(toggle, /createCanvasPickingModulesMotionPatchMeta\('sketchBoxDoorToggle'\)/);
   assert.match(
     render,
     /const motionSeed = consumeSketchBoxDoorMotionSeed\(App, moduleKeyStr, bid, (?:doorId|layout\.doorId)\);/
@@ -150,6 +153,7 @@ test('sketch box door toggles preserve motion seeds for free boxes, patch saved 
     read('esm/native/services/canvas_picking_toggle_flow_sketch_box_runtime.ts'),
     read('esm/native/services/canvas_picking_toggle_flow_sketch_box_toggle.ts'),
     read('esm/native/services/canvas_picking_toggle_flow_shared.ts'),
+    read('esm/native/services/canvas_picking_modules_patch_meta.ts'),
   ].join('\n');
   const render = [
     read('esm/native/builder/render_interior_sketch_ops.ts'),
@@ -189,8 +193,10 @@ test('sketch box door toggles preserve motion seeds for free boxes, patch saved 
     /export function consumeSketchBoxDoorMotionSeed\([\s\S]*boxId: string,[\s\S]*doorId\?: string \| null[\s\S]*\):/
   );
   assert.match(renderSharedBundle, /const key = getSketchBoxDoorMotionSeedKey\(moduleKey, boxId, doorId\);/);
-  assert.match(handleAssign, /partId\.startsWith\('sketch_box_'\)/);
-  assert.match(handleAssign, /partId\.startsWith\('sketch_box_free_'\)/);
+  assert.match(handleAssign, /function isDoorPartId\(partId: string\): boolean \{/);
+  assert.match(handleAssign, /return __wp_isDoorLikePartId\(partId\);/);
+  assert.match(handleAssign, /function isDrawerPartId\(partId: string\): boolean \{/);
+  assert.match(handleAssign, /return __wp_isDrawerLikePartId\(partId\);/);
 });
 
 test('sketch box door preview and edit flows track segment xNorm and route groove/remove through regular door modes', () => {
@@ -218,7 +224,7 @@ test('sketch box door preview and edit flows track segment xNorm and route groov
   assert.match(hoverTargets, /__wpSketchBoxDoor === true/);
   assert.match(
     doorEdit,
-    /const nextGroove = !\(current\.groove === true\);[\s\S]*if \(!nextGroove\) return \{ \.\.\.current, groove: false, grooveLinesCount: null \};[\s\S]*return \{[\s\S]*groove: true,[\s\S]*grooveLinesCount: grooveLinesCountForClick,/
+    /const currentGrooveOn = current\.groove === true;[\s\S]*const nextGroove = !currentGrooveOn;[\s\S]*if \(!nextGroove\) return \{ \.\.\.current, groove: false, grooveLinesCount: null \};[\s\S]*return \{[\s\S]*groove: true,[\s\S]*grooveLinesCount: grooveLinesCountForClick,/
   );
 });
 
@@ -264,11 +270,19 @@ test('door-action hover supports dedicated handle and hinge face previews', () =
   assert.match(hoverTargetsFace, /export function __resolvePreferredFacePreviewHit\(args:/);
   assert.match(
     hoverModes,
-    /const preferredFaceHit =[\s\S]*hoverArgs\.preferredFacePreviewPartId[\s\S]*\? __resolvePreferredFacePreviewHit\(/
+    /const preferredFacePreviewPartId = hoverArgs\.preferredFacePreviewPartId \|\| null;/
   );
   assert.match(
     hoverModes,
-    /modeState\.isPaintHoverMode \|\| modeState\.isHandleHoverMode[\s\S]*hoverArgs\.isDoorOrDrawerLikePartId[\s\S]*hoverArgs\.isDoorLikePartId/
+    /const canUsePreferredFacePreviewHit =[\s\S]*modeState\.isFacePreviewMode[\s\S]*!!preferredFacePreviewPartId/
+  );
+  assert.match(
+    hoverModes,
+    /const preferredFaceHit = canUsePreferredFacePreviewHit[\s\S]*\? __resolvePreferredFacePreviewHit\(/
+  );
+  assert.match(
+    hoverModes,
+    /modeState\.isHandleHoverMode \|\| hoverArgs\.isGrooveEditMode \|\| modeState\.isTrimHoverMode[\s\S]*\? hoverArgs\.isDoorOrDrawerLikePartId[\s\S]*: hoverArgs\.isDoorLikePartId/
   );
   assert.match(
     hoverModes,

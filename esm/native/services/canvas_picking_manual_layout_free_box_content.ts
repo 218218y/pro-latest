@@ -44,6 +44,7 @@ import {
   pickSketchFreeBoxHost,
   resolveSketchFreeBoxGeometry,
 } from './canvas_picking_sketch_free_boxes.js';
+import { createCanvasPickingModulesStructuralPatchMeta } from './canvas_picking_modules_patch_meta.js';
 import {
   pickSketchBoxSegment,
   pickSketchBoxVerticalSegment,
@@ -1194,7 +1195,7 @@ function commitShelfGridHover(args: {
         });
       }
     },
-    { source: 'manualLayout.freeBoxShelfGrid', immediate: true }
+    createCanvasPickingModulesStructuralPatchMeta('manualLayout.freeBoxShelfGrid')
   );
   __wp_clearSketchHover(args.App);
   return true;
@@ -1271,7 +1272,7 @@ function commitPresetLayoutHover(args: {
         });
       }
     },
-    { source: 'layoutPreset.freeBox', immediate: true }
+    createCanvasPickingModulesStructuralPatchMeta('layoutPreset.freeBox')
   );
   __wp_clearSketchHover(args.App);
   return true;
@@ -1300,7 +1301,7 @@ function commitBraceShelvesHover(args: {
       if (!box) return;
       updated = updateFreeBoxShelfVariant({ box, hoverRec: args.hoverRec });
     },
-    { source: 'braceShelves.freeBoxToggle', immediate: true }
+    createCanvasPickingModulesStructuralPatchMeta('braceShelves.freeBoxToggle')
   );
   __wp_clearSketchHover(args.App);
   return updated;

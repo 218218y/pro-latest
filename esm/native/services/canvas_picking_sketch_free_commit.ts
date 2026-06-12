@@ -8,6 +8,7 @@ import {
   findSketchModuleBoxById,
 } from './canvas_picking_sketch_box_content_commit.js';
 import { toastSketchBoxContentBlocked } from './canvas_picking_sketch_box_content_blocked.js';
+import { createCanvasPickingModulesStructuralPatchMeta } from './canvas_picking_modules_patch_meta.js';
 
 type RecordMap = UnknownRecord;
 
@@ -200,7 +201,7 @@ export function commitSketchFreePlacementHoverRecord(
         });
         touched = true;
       },
-      { source: args.contentSource || 'manualSketchBoxContentFree', immediate: true }
+      createCanvasPickingModulesStructuralPatchMeta(args.contentSource || 'manualSketchBoxContentFree')
     );
     return touched ? { committed: true, nextHover } : { committed: false };
   }
@@ -216,7 +217,7 @@ export function commitSketchFreePlacementHoverRecord(
     (cfg: RecordMap) => {
       committed = commitSketchFreePlacementBox({ cfg, hoverRec: args.hoverRec });
     },
-    { source: args.boxSource || 'manualSketchBoxFree', immediate: true }
+    createCanvasPickingModulesStructuralPatchMeta(args.boxSource || 'manualSketchBoxFree')
   );
   return committed ? { committed: true, nextHover: null } : { committed: false };
 }
