@@ -1,4 +1,4 @@
-import type { AppContainer, UnknownRecord } from '../../../types';
+import type { ActionMetaLike, AppContainer, UnknownRecord } from '../../../types';
 
 import { getModulesActions } from '../runtime/actions_access_domains.js';
 import { readRootState } from '../runtime/root_state_access.js';
@@ -9,6 +9,15 @@ export type SketchBoxDoorTarget = {
   boxId: string;
   doorId: string | null;
 };
+
+export type SketchBoxDoorPatchOptions = {
+  source?: string;
+};
+
+function createSketchBoxDoorPatchMeta(options?: SketchBoxDoorPatchOptions | null): ActionMetaLike {
+  const source = typeof options?.source === 'string' && options.source ? options.source : 'sketchBoxDoorEdit';
+  return { source, immediate: true };
+}
 
 function stripSketchBoxDoorSegmentSuffix(partId: string): string {
   return String(partId || '').replace(
@@ -190,7 +199,8 @@ export function patchSketchBoxDoor(
   App: AppContainer,
   target: SketchBoxDoorTarget | null,
   preferredStack: 'top' | 'bottom',
-  mutate: (door: UnknownRecord | null) => UnknownRecord | null
+  mutate: (door: UnknownRecord | null) => UnknownRecord | null,
+  options?: SketchBoxDoorPatchOptions | null
 ): boolean {
   if (!target) return false;
   const { boxId, doorId: rawDoorId } = target;
@@ -250,7 +260,7 @@ export function patchSketchBoxDoor(
           return;
         }
       },
-      { source: 'sketchBoxDoorEdit', immediate: true }
+      createSketchBoxDoorPatchMeta(options)
     );
     if (changed) return true;
   }

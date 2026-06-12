@@ -175,29 +175,35 @@ export function handleCanvasDoorGrooveClick(args: CanvasDoorGrooveClickArgs): bo
   const sketchTarget = parseSketchBoxDoorTarget(targetId || effectiveDoorId || foundPartId);
   const isSketchBoxSegmentTarget = isSketchBoxDoorSegmentPartId(targetId || effectiveDoorId || foundPartId);
   if (sketchTarget && !isSketchBoxSegmentTarget) {
-    const patchedSketchDoor = patchSketchBoxDoor(App, sketchTarget, foundModuleStack, current => {
-      if (!(current && current.enabled !== false)) return current;
-      const currentGrooveOn = current.groove === true;
-      const currentGrooveLinesCount = normalizeGrooveLinesCount(current.grooveLinesCount);
-      if (
-        currentGrooveOn &&
-        explicitGrooveLinesCountForClick !== null &&
-        currentGrooveLinesCount !== grooveLinesCountForClick
-      ) {
+    const patchedSketchDoor = patchSketchBoxDoor(
+      App,
+      sketchTarget,
+      foundModuleStack,
+      current => {
+        if (!(current && current.enabled !== false)) return current;
+        const currentGrooveOn = current.groove === true;
+        const currentGrooveLinesCount = normalizeGrooveLinesCount(current.grooveLinesCount);
+        if (
+          currentGrooveOn &&
+          explicitGrooveLinesCountForClick !== null &&
+          currentGrooveLinesCount !== grooveLinesCountForClick
+        ) {
+          return {
+            ...current,
+            groove: true,
+            grooveLinesCount: grooveLinesCountForClick,
+          };
+        }
+        const nextGroove = !currentGrooveOn;
+        if (!nextGroove) return { ...current, groove: false, grooveLinesCount: null };
         return {
           ...current,
           groove: true,
           grooveLinesCount: grooveLinesCountForClick,
         };
-      }
-      const nextGroove = !currentGrooveOn;
-      if (!nextGroove) return { ...current, groove: false, grooveLinesCount: null };
-      return {
-        ...current,
-        groove: true,
-        grooveLinesCount: grooveLinesCountForClick,
-      };
-    });
+      },
+      { source: 'groove:click' }
+    );
     if (patchedSketchDoor) return true;
   }
 

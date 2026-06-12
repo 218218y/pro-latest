@@ -32,10 +32,16 @@ export function handleCanvasDoorRemoveClick(args: CanvasDoorRemoveClickArgs): bo
   const { App, effectiveDoorId, foundPartId, foundModuleStack } = args;
   const sketchTarget = parseSketchBoxDoorTarget(effectiveDoorId || foundPartId);
   if (sketchTarget) {
-    patchSketchBoxDoor(App, sketchTarget, foundModuleStack, current => {
-      if (!(current && current.enabled !== false)) return current;
-      return { ...current, enabled: false, open: false };
-    });
+    patchSketchBoxDoor(
+      App,
+      sketchTarget,
+      foundModuleStack,
+      current => {
+        if (!(current && current.enabled !== false)) return current;
+        return { ...current, enabled: false, open: false };
+      },
+      { source: 'removeDoors:smart' }
+    );
     return true;
   }
 

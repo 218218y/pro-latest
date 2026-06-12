@@ -34,7 +34,9 @@ const drawerFlow = read('esm/native/services/canvas_picking_drawer_mode_flow.ts'
 const drawerFlowExternal = read('esm/native/services/canvas_picking_drawer_mode_flow_external.ts');
 const drawerFlowDivider = read('esm/native/services/canvas_picking_drawer_mode_flow_divider.ts');
 const doorEdit = read('esm/native/services/canvas_picking_door_edit_flow.ts');
+const doorRemove = read('esm/native/services/canvas_picking_door_remove_click.ts');
 const doorHingeGroove = read('esm/native/services/canvas_picking_door_hinge_groove_click.ts');
+const doorSketchBoxEdit = read('esm/native/services/canvas_picking_door_sketch_box_edit.ts');
 const paintFlow = read('esm/native/services/canvas_picking_paint_flow.ts');
 const paintApply = read('esm/native/services/canvas_picking_paint_flow_apply.ts');
 const paintApplyState = read('esm/native/services/canvas_picking_paint_flow_apply_state.ts');
@@ -214,6 +216,11 @@ test('canvas picking click owner stays thin and routes edit families through foc
   assert.doesNotMatch(doorEdit, /const nextGroove = !\(current\.groove === true\);/);
   assert.match(doorHingeGroove, /requestDoorAuthoringImmediateRefresh\(App, 'hinge:click'\)/);
   assert.match(doorHingeGroove, /requestDoorAuthoringImmediateRefresh\(App, 'groove:click'\)/);
+  assert.match(doorSketchBoxEdit, /function createSketchBoxDoorPatchMeta\(/);
+  assert.match(doorSketchBoxEdit, /return \{ source, immediate: true \};/);
+  assert.doesNotMatch(doorSketchBoxEdit, /noBuild:/);
+  assert.match(doorRemove, /patchSketchBoxDoor\([\s\S]*source: 'removeDoors:smart'/);
+  assert.match(doorHingeGroove, /patchSketchBoxDoor\([\s\S]*source: 'groove:click'/);
 
   assert.match(
     paintFlow,
@@ -270,6 +277,11 @@ test('canvas picking click owner stays thin and routes edit families through foc
   assert.ok(
     audit.includes(
       '`canvas_picking_click_flow.ts` split/remove/hinge/groove door edit routing now lives in `services/canvas_picking_door_edit_flow.ts`, while focused trim/split/remove/hinge/groove policy lives in `services/canvas_picking_door_trim_click.ts`, `services/canvas_picking_door_split_click.ts`, `services/canvas_picking_door_remove_click.ts`, and `services/canvas_picking_door_hinge_groove_click.ts`'
+    )
+  );
+  assert.ok(
+    audit.includes(
+      '`services/canvas_picking_door_sketch_box_edit.ts` owns the immediate no-build-free modules patch meta for sketch-box door edits while remove/groove callers preserve semantic action sources'
     )
   );
   assert.ok(

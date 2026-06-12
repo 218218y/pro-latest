@@ -5,6 +5,7 @@ import {
   handleCanvasDoorGrooveClick,
   handleCanvasDoorHingeClick,
 } from '../esm/native/services/canvas_picking_door_hinge_groove_click.ts';
+import { handleCanvasDoorRemoveClick } from '../esm/native/services/canvas_picking_door_remove_click.ts';
 import {
   isSketchBoxDoorSegmentPartId,
   parseSketchBoxDoorTarget,
@@ -184,6 +185,11 @@ test('regular door groove click updates an existing grooved door count instead o
 
 test('free sketch-box door groove click updates changed line count without requiring remove and re-add', () => {
   const { App, state } = createApp();
+  const patchCalls: Array<{
+    stack: string;
+    moduleKey: string;
+    meta: Record<string, unknown>;
+  }> = [];
   state.config.grooveLinesCount = 11;
   state.modulesConfiguration = [
     {
@@ -212,10 +218,12 @@ test('free sketch-box door groove click updates changed line count without requi
       return state.modulesConfiguration[Number(moduleKey)];
     },
     patchForStack(
-      _stack: 'top' | 'bottom',
+      stack: 'top' | 'bottom',
       moduleKey: string,
-      mutate: (cfg: Record<string, unknown>) => void
+      mutate: (cfg: Record<string, unknown>) => void,
+      meta?: Record<string, unknown>
     ) {
+      patchCalls.push({ stack, moduleKey, meta: { ...(meta || {}) } });
       mutate(state.modulesConfiguration[Number(moduleKey)]);
     },
   };
@@ -238,6 +246,77 @@ test('free sketch-box door groove click updates changed line count without requi
   assert.equal(handled, true);
   assert.equal(door.groove, true);
   assert.equal(door.grooveLinesCount, 11);
+  assert.deepEqual(patchCalls, [
+    {
+      stack: 'top',
+      moduleKey: '0',
+      meta: { source: 'groove:click', immediate: true },
+    },
+  ]);
+  assert.equal('noBuild' in patchCalls[0].meta, false);
+});
+
+test('free sketch-box door remove click patches through the semantic remove source without suppressing build', () => {
+  const { App, state } = createApp();
+  const patchCalls: Array<{
+    stack: string;
+    moduleKey: string;
+    meta: Record<string, unknown>;
+  }> = [];
+  state.modulesConfiguration = [
+    {
+      sketchExtras: {
+        boxes: [
+          {
+            id: 'sbf_alpha',
+            doors: [
+              {
+                id: 'sbdr_1',
+                xNorm: 0.5,
+                hinge: 'left',
+                enabled: true,
+                open: true,
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ];
+  App.actions.modules = {
+    ensureForStack(stack: 'top' | 'bottom', moduleKey: string) {
+      return stack === 'top' ? state.modulesConfiguration[Number(moduleKey)] : null;
+    },
+    patchForStack(
+      stack: 'top' | 'bottom',
+      moduleKey: string,
+      mutate: (cfg: Record<string, unknown>) => void,
+      meta?: Record<string, unknown>
+    ) {
+      patchCalls.push({ stack, moduleKey, meta: { ...(meta || {}) } });
+      mutate(state.modulesConfiguration[Number(moduleKey)]);
+    },
+  };
+
+  const handled = handleCanvasDoorRemoveClick({
+    App,
+    effectiveDoorId: 'sketch_box_free_0_sbf_alpha_door_sbdr_1',
+    foundPartId: null,
+    foundModuleStack: 'top',
+  });
+
+  const door = state.modulesConfiguration[0].sketchExtras.boxes[0].doors[0];
+  assert.equal(handled, true);
+  assert.equal(door.enabled, false);
+  assert.equal(door.open, false);
+  assert.deepEqual(patchCalls, [
+    {
+      stack: 'top',
+      moduleKey: '0',
+      meta: { source: 'removeDoors:smart', immediate: true },
+    },
+  ]);
+  assert.equal('noBuild' in patchCalls[0].meta, false);
 });
 
 test('sketch-box door target parser normalizes segmented door suffixes before patching door config', () => {
