@@ -3,6 +3,7 @@ import type { AppContainer, DoorVisualEntryLike } from '../../../types';
 import { getDoorsArray } from '../runtime/render_access.js';
 import { callDoorsAction, hasDoorsAction } from '../runtime/actions_access_domains.js';
 import { asRecord } from './canvas_picking_door_edit_shared.js';
+import { createCanvasPickingDoorAuthoringStructuralMeta } from './canvas_picking_door_authoring_meta.js';
 import { parseSketchBoxDoorTarget, patchSketchBoxDoor } from './canvas_picking_door_sketch_box_edit.js';
 import { requestDoorAuthoringBurstRefresh } from './canvas_picking_door_authoring_burst.js';
 import {
@@ -49,7 +50,11 @@ export function handleCanvasDoorRemoveClick(args: CanvasDoorRemoveClickArgs): bo
   const clickedId = __wp_scopeCornerPartKeyForStack(clickedIdRaw, foundModuleStack);
   if (!clickedId) return true;
 
-  const meta = __wp_metaNoBuild(App, 'removeDoors:smart', { immediate: true });
+  const meta = __wp_metaNoBuild(
+    App,
+    'removeDoors:smart',
+    createCanvasPickingDoorAuthoringStructuralMeta('removeDoors:smart')
+  );
 
   const hasRemoved = (pid: string): boolean => {
     try {
@@ -98,7 +103,7 @@ export function handleCanvasDoorRemoveClick(args: CanvasDoorRemoveClickArgs): bo
     __wp_isSegmentedDoorBaseId(clickedId);
 
   if (!isSegmentedDoor) {
-    __wp_historyBatch(App, { source: 'removeDoors:smart', immediate: true }, () => {
+    __wp_historyBatch(App, createCanvasPickingDoorAuthoringStructuralMeta('removeDoors:smart'), () => {
       const now = hasRemoved(clickedId);
       set(clickedId, !now);
       return undefined;
@@ -172,7 +177,7 @@ export function handleCanvasDoorRemoveClick(args: CanvasDoorRemoveClickArgs): bo
     return false;
   })();
 
-  __wp_historyBatch(App, { source: 'removeDoors:smart', immediate: true }, () => {
+  __wp_historyBatch(App, createCanvasPickingDoorAuthoringStructuralMeta('removeDoors:smart'), () => {
     if (isPart) {
       const fullRemoved = hasRemoved(fullId);
       if (fullRemoved) {

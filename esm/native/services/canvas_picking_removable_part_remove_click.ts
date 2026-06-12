@@ -7,6 +7,7 @@ import {
   readRemovableFrameSideFromPartId,
   readRemovableSketchBoxSideFromPartId,
 } from '../features/removable_parts.js';
+import { createCanvasPickingDoorAuthoringStructuralMeta } from './canvas_picking_door_authoring_meta.js';
 import {
   __wp_metaNoBuild,
   __wp_reportPickingIssue,
@@ -26,7 +27,11 @@ export function handleCanvasRemovablePartRemoveClick(args: CanvasRemovablePartRe
   const partId = canonicalRemovablePartKey(args.partId);
   if (!partId || !isCanvasRemovablePartId(partId)) return false;
 
-  const meta = __wp_metaNoBuild(App, 'removeParts:smart', { immediate: true });
+  const meta = __wp_metaNoBuild(
+    App,
+    'removeParts:smart',
+    createCanvasPickingDoorAuthoringStructuralMeta('removeParts:smart')
+  );
 
   const hasRemoved = (pid: string): boolean => {
     try {
@@ -61,7 +66,7 @@ export function handleCanvasRemovablePartRemoveClick(args: CanvasRemovablePartRe
 
   const nextRemoved = !hasRemoved(partId);
 
-  __wp_historyBatch(App, { source: 'removeParts:smart', immediate: true }, () => {
+  __wp_historyBatch(App, createCanvasPickingDoorAuthoringStructuralMeta('removeParts:smart'), () => {
     setRemoved(partId, nextRemoved);
     return undefined;
   });

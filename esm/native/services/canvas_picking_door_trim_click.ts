@@ -19,6 +19,7 @@ import {
   resolveDoorTrimTargetFromHitObject,
 } from './canvas_picking_door_shared.js';
 import { asRecord, readDoorTrimConfigMap, readDoorTrimModeOpts } from './canvas_picking_door_edit_shared.js';
+import { createCanvasPickingDoorAuthoringStructuralMeta } from './canvas_picking_door_authoring_meta.js';
 import { __wp_historyBatch, __wp_map } from './canvas_picking_core_helpers.js';
 
 export interface CanvasDoorTrimClickArgs {
@@ -120,8 +121,9 @@ export function handleCanvasDoorTrimClick(args: CanvasDoorTrimClickArgs): boolea
   if (nextList.length) nextMap[trimPartId] = nextList;
   else delete nextMap[trimPartId];
 
-  __wp_historyBatch(App, { source: 'doorTrim:click', immediate: true }, () => {
-    cfgSetMap(App, 'doorTrimMap', nextMap, { source: 'doorTrim:click', immediate: true });
+  const meta = createCanvasPickingDoorAuthoringStructuralMeta('doorTrim:click');
+  __wp_historyBatch(App, meta, () => {
+    cfgSetMap(App, 'doorTrimMap', nextMap, meta);
     return undefined;
   });
   return true;

@@ -11,6 +11,7 @@ const clickModeState = read('esm/native/services/canvas_picking_click_mode_state
 const clickModuleRefs = read('esm/native/services/canvas_picking_click_module_refs.ts');
 const modulesPatchMeta = read('esm/native/services/canvas_picking_modules_patch_meta.ts');
 const configPatchMeta = read('esm/native/services/canvas_picking_config_patch_meta.ts');
+const doorAuthoringMeta = read('esm/native/services/canvas_picking_door_authoring_meta.ts');
 const clickRoute = read('esm/native/services/canvas_picking_click_route.ts');
 const clickRouteShared = read('esm/native/services/canvas_picking_click_route_shared.ts');
 const clickRouteManual = read('esm/native/services/canvas_picking_click_route_manual.ts');
@@ -107,6 +108,12 @@ test('canvas picking click owner stays thin and routes edit families through foc
   );
   assert.match(configPatchMeta, /Canvas picking config structural patch requires a source/);
   assert.match(configPatchMeta, /immediate: true/);
+  assert.match(
+    doorAuthoringMeta,
+    /export function createCanvasPickingDoorAuthoringStructuralMeta\(source: string\): ActionMetaLike/
+  );
+  assert.match(doorAuthoringMeta, /Canvas picking door-authoring structural meta requires a source/);
+  assert.match(doorAuthoringMeta, /immediate: true/);
 
   assert.match(clickRoute, /export function routeCanvasPickingClick\(/);
   assert.match(clickRoute, /canvas_picking_click_route_shared\.js/);
@@ -264,6 +271,8 @@ test('canvas picking click owner stays thin and routes edit families through foc
   assert.doesNotMatch(doorEdit, /const nextGroove = !\(current\.groove === true\);/);
   assert.match(doorHingeGroove, /requestDoorAuthoringImmediateRefresh\(App, 'hinge:click'\)/);
   assert.match(doorHingeGroove, /requestDoorAuthoringImmediateRefresh\(App, 'groove:click'\)/);
+  assert.match(doorHingeGroove, /createCanvasPickingDoorAuthoringStructuralMeta\('hinge:click'\)/);
+  assert.match(doorHingeGroove, /createCanvasPickingDoorAuthoringStructuralMeta\('groove:click'\)/);
   assert.match(doorSketchBoxEdit, /function readSketchBoxDoorPatchSource\(/);
   assert.match(
     doorSketchBoxEdit,
@@ -271,6 +280,7 @@ test('canvas picking click owner stays thin and routes edit families through foc
   );
   assert.doesNotMatch(doorSketchBoxEdit, /noBuild:/);
   assert.match(doorRemove, /patchSketchBoxDoor\([\s\S]*source: 'removeDoors:smart'/);
+  assert.match(doorRemove, /createCanvasPickingDoorAuthoringStructuralMeta\('removeDoors:smart'\)/);
   assert.match(doorHingeGroove, /patchSketchBoxDoor\([\s\S]*source: 'groove:click'/);
   assert.match(
     sketchFreeCommit,
@@ -355,6 +365,11 @@ test('canvas picking click owner stays thin and routes edit families through foc
   assert.ok(
     audit.includes(
       '`services/canvas_picking_config_patch_meta.ts` owns Canvas picking `__patchConfigForKey` structural patch meta so layout/manual/sketch/drawer config writes remain immediate build-visible writes without no-build/no-history flags'
+    )
+  );
+  assert.ok(
+    audit.includes(
+      '`services/canvas_picking_door_authoring_meta.ts` owns Canvas picking door-authoring structural meta so hinge/groove/split/trim/remove/removable-part action, map, and history writes stay immediate build-visible writes from one source-normalized contract'
     )
   );
   assert.ok(

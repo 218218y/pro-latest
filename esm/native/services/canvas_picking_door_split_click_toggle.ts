@@ -174,10 +174,7 @@ function handleSketchBoxStandardSplitClick(args: {
 
   runCanvasDoorSplitHistoryBatch(
     click.App,
-    {
-      source: isBottomRegion ? 'splitDoorsBottom:click:sketchBox' : 'splitDoors:click:sketchBox',
-      immediate: true,
-    },
+    isBottomRegion ? 'splitDoorsBottom:click:sketchBox' : 'splitDoors:click:sketchBox',
     () => {
       callCanvasDoorSplitBottomAction({
         App: click.App,
@@ -234,7 +231,7 @@ export function handleCanvasDoorToggleSplitClick(args: {
 
   if (isCanvasDoorSplitBottomClick(bounds, splitHitY)) {
     const next = !isCanvasDoorSplitBottomEnabled(App, doorBaseKey);
-    runCanvasDoorSplitHistoryBatch(App, { source: 'splitDoorsBottom:click', immediate: true }, () => {
+    runCanvasDoorSplitHistoryBatch(App, 'splitDoorsBottom:click', () => {
       callCanvasDoorSplitBottomAction({
         App,
         key: splitBottomKey,
@@ -253,7 +250,7 @@ export function handleCanvasDoorToggleSplitClick(args: {
       : isCanvasDoorSplitEnabled(App, doorBaseKey);
   const nextSplit = !isCurrentlySplit;
 
-  runCanvasDoorSplitHistoryBatch(App, { source: 'splitDoors:click', immediate: true }, () => {
+  runCanvasDoorSplitHistoryBatch(App, 'splitDoors:click', () => {
     callCanvasDoorSplitAction({
       App,
       key: splitKey,

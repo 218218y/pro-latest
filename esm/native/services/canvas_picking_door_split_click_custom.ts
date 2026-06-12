@@ -161,7 +161,7 @@ function commitCanvasDoorCustomSplitList(args: {
   const hasAnyCuts = nextList.length > 0;
   const { splitKey, splitBottomKey, splitPosKey } = createCanvasDoorSplitKeyState(doorBaseKey);
 
-  runCanvasDoorSplitHistoryBatch(App, { source: 'splitDoors:custom', immediate: true }, () => {
+  runCanvasDoorSplitHistoryBatch(App, 'splitDoors:custom', () => {
     callCanvasDoorSplitBottomAction({
       App,
       key: splitBottomKey,

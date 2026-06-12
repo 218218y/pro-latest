@@ -8,8 +8,9 @@ import {
   splitPosKey as __splitPosKey,
 } from '../runtime/maps_access.js';
 import { callDoorsAction, hasDoorsAction } from '../runtime/actions_access_domains.js';
-import type { AppContainer, ActionMetaLike } from '../../../types';
+import type { AppContainer } from '../../../types';
 import type { CanvasDoorSplitBounds } from './canvas_picking_door_split_click_contracts.js';
+import { createCanvasPickingDoorAuthoringStructuralMeta } from './canvas_picking_door_authoring_meta.js';
 import {
   __wp_reportPickingIssue,
   __wp_historyBatch,
@@ -98,7 +99,7 @@ export function callCanvasDoorSplitAction(args: {
 }): void {
   const { App, key, next, source, op } = args;
   if (hasDoorsAction(App, 'setSplit')) {
-    callDoorsAction(App, 'setSplit', key, next, { immediate: true, source });
+    callDoorsAction(App, 'setSplit', key, next, createCanvasPickingDoorAuthoringStructuralMeta(source));
     return;
   }
   const err = new Error('[WardrobePro] Missing doors.setSplit action (domain API not loaded)');
@@ -114,7 +115,7 @@ export function callCanvasDoorSplitBottomAction(args: {
 }): void {
   const { App, key, next, source, op } = args;
   if (hasDoorsAction(App, 'setSplitBottom')) {
-    callDoorsAction(App, 'setSplitBottom', key, next, { immediate: true, source });
+    callDoorsAction(App, 'setSplitBottom', key, next, createCanvasPickingDoorAuthoringStructuralMeta(source));
     return;
   }
   const err = new Error('[WardrobePro] Missing doors.setSplitBottom action (domain API not loaded)');
@@ -130,10 +131,13 @@ export function writeCanvasDoorSplitPosList(args: {
   const { App, splitPosKey, nextList, source } = args;
   try {
     const stored: number[] | null = nextList.length > 0 ? nextList : null;
-    writeMapKey(App, 'splitDoorsMap', splitPosKey, stored, {
-      immediate: true,
-      source,
-    });
+    writeMapKey(
+      App,
+      'splitDoorsMap',
+      splitPosKey,
+      stored,
+      createCanvasPickingDoorAuthoringStructuralMeta(source)
+    );
   } catch (error) {
     __wp_reportPickingIssue(App, error, { where: 'canvasPicking', op: 'split.custom.writeSplitPos' });
   }
@@ -141,10 +145,10 @@ export function writeCanvasDoorSplitPosList(args: {
 
 export function runCanvasDoorSplitHistoryBatch(
   App: AppContainer,
-  meta: ActionMetaLike,
+  source: string,
   fn: () => unknown
 ): unknown {
-  return __wp_historyBatch(App, meta, fn);
+  return __wp_historyBatch(App, createCanvasPickingDoorAuthoringStructuralMeta(source), fn);
 }
 
 export function isCanvasDoorSplitBottomEnabled(App: AppContainer, doorBaseKey: string): boolean {

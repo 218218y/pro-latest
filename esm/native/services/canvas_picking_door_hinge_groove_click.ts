@@ -6,6 +6,7 @@ import { toggleGrooveKey, writeHinge } from '../runtime/maps_access.js';
 import { callDoorsAction, hasDoorsAction } from '../runtime/actions_access_domains.js';
 import { toggleGrooveViaActions } from '../runtime/actions_access_mutations.js';
 import { cfgSetMap } from '../runtime/cfg_access.js';
+import { createCanvasPickingDoorAuthoringStructuralMeta } from './canvas_picking_door_authoring_meta.js';
 import {
   normalizeGrooveLinesCount,
   readGrooveLinesCountOverride,
@@ -72,12 +73,15 @@ export function handleCanvasDoorHingeClick(args: CanvasDoorHingeClickArgs): bool
 
   const nextHinge = currentDir === 'left' ? 'right' : 'left';
   if (hasDoorsAction(App, 'setHinge')) {
-    callDoorsAction(App, 'setHinge', hingeKey, nextHinge, {
-      immediate: true,
-      source: 'hinge:click',
-    });
+    callDoorsAction(
+      App,
+      'setHinge',
+      hingeKey,
+      nextHinge,
+      createCanvasPickingDoorAuthoringStructuralMeta('hinge:click')
+    );
   } else {
-    writeHinge(App, hingeKey, nextHinge, { immediate: true });
+    writeHinge(App, hingeKey, nextHinge, createCanvasPickingDoorAuthoringStructuralMeta('hinge:click'));
   }
   requestDoorAuthoringImmediateRefresh(App, 'hinge:click');
   setDoorsOpenViaService(App, false, { forceUpdate: true });
@@ -259,7 +263,7 @@ export function handleCanvasDoorGrooveClick(args: CanvasDoorGrooveClickArgs): bo
       nextGrooveLinesCountMap[targetId] = grooveLinesCountForClick;
     else delete nextGrooveLinesCountMap[targetId];
 
-    __wp_historyBatch(App, { source: 'groove:click', immediate: true }, () => {
+    __wp_historyBatch(App, createCanvasPickingDoorAuthoringStructuralMeta('groove:click'), () => {
       writePendingGrooveLinesCountForPart(
         App,
         targetId,
@@ -270,10 +274,11 @@ export function handleCanvasDoorGrooveClick(args: CanvasDoorGrooveClickArgs): bo
         App,
         'grooveLinesCountMap',
         nextGrooveLinesCountMap,
-        __wp_metaNoBuild(App, 'groove:click:count', {
-          immediate: true,
-          source: 'groove:click:count',
-        })
+        __wp_metaNoBuild(
+          App,
+          'groove:click:count',
+          createCanvasPickingDoorAuthoringStructuralMeta('groove:click:count')
+        )
       );
       if (isInheritedSketchSegmentGrooveOn) {
         const nextGroovesMap = { ...groovesMap };
@@ -288,29 +293,32 @@ export function handleCanvasDoorGrooveClick(args: CanvasDoorGrooveClickArgs): bo
           App,
           'groovesMap',
           nextGroovesMap,
-          __wp_metaNoBuild(App, 'groove:click', {
-            immediate: true,
-            source: 'groove:click',
-          })
+          __wp_metaNoBuild(
+            App,
+            'groove:click',
+            createCanvasPickingDoorAuthoringStructuralMeta('groove:click')
+          )
         );
       } else if (!shouldUpdateExistingGrooveLinesCount) {
         if (
           !toggleGrooveViaActions(
             App,
             grooveKey,
-            __wp_metaNoBuild(App, 'groove:click', {
-              immediate: true,
-              source: 'groove:click',
-            })
+            __wp_metaNoBuild(
+              App,
+              'groove:click',
+              createCanvasPickingDoorAuthoringStructuralMeta('groove:click')
+            )
           )
         ) {
           toggleGrooveKey(
             App,
             grooveKey,
-            __wp_metaNoBuild(App, 'groove:click', {
-              immediate: true,
-              source: 'groove:click',
-            })
+            __wp_metaNoBuild(
+              App,
+              'groove:click',
+              createCanvasPickingDoorAuthoringStructuralMeta('groove:click')
+            )
           );
         }
       }
