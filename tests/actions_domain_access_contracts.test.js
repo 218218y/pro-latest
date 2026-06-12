@@ -264,7 +264,8 @@ test('[actions-domain] smoke checks, camera, and canvas flows stay on canonical 
   assert.match(doorEditFlow, /canvas_picking_door_split_click_shared\.js/);
   assert.match(doorEditFlow, /handleCanvasDoorSplitClick\(\{/);
   assert.match(doorEditFlow, /callDoorsAction\(App, 'setRemoved'/);
-  assert.match(doorEditFlow, /callDoorsAction\(App, 'setHinge'/);
+  assert.match(doorEditFlow, /callDoorsAction\(\s*App,\s*'setHinge'/);
+  assert.match(doorEditFlow, /createCanvasPickingDoorAuthoringStructuralMeta\('hinge:click'\)/);
   assertLacksAll(
     assert,
     canvasBundle,

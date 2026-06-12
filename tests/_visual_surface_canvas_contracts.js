@@ -389,9 +389,9 @@ test('[canvas-family] layout-edit + manual/free sketch flows stay decomposed by 
       /export function ensureCustomData\(/,
       /export function ensureBraceShelves\(/,
       /export function readGridInfo\(/,
-      /source: 'manualLayout\.fillAllShelves'/,
-      /source: 'manualLayout\.toggleItem'/,
-      /source: 'braceShelves\.toggle'/,
+      /createCanvasPickingConfigStructuralPatchMeta\('manualLayout\.fillAllShelves'\)/,
+      /createCanvasPickingConfigStructuralPatchMeta\('manualLayout\.toggleItem'\)/,
+      /createCanvasPickingConfigStructuralPatchMeta\('braceShelves\.toggle'\)/,
       /tryHandleManualLayoutSketchToolClick\(/,
     ],
     'layout-edit bundle'
