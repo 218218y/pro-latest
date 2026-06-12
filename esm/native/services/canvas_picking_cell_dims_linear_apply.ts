@@ -3,10 +3,10 @@ import type {
   EnsureOwnLinearModule,
   LinearCellDimsContext,
 } from './canvas_picking_cell_dims_linear_shared.js';
-import { requestBuilderStructuralRefresh } from '../runtime/builder_service_access.js';
 import { patchUiSoft } from '../runtime/ui_write_access.js';
 import { applyCellDimsConfigSnapshot } from './canvas_picking_config_actions.js';
 import { __wp_reportPickingIssue, __wp_commitHistoryTouch } from './canvas_picking_core_helpers.js';
+import { requestCanvasPickingCommitStructuralRefresh } from './canvas_picking_structural_refresh.js';
 import {
   applyOverrideToSpecialDims,
   assignSpecialDimsToConfig,
@@ -190,13 +190,7 @@ export function applyCanvasLinearCellDimsContextWithOptions(
   else __wp_commitHistoryTouch(App, source);
 
   try {
-    requestBuilderStructuralRefresh(App, {
-      source,
-      immediate: true,
-      force: true,
-      triggerRender: true,
-      updateShadows: false,
-    });
+    requestCanvasPickingCommitStructuralRefresh(App, source);
   } catch (err) {
     __wp_reportPickingIssue(App, err, { where: 'canvasPicking', op: 'cellDims.refresh' }, { failFast: true });
   }

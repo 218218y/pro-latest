@@ -19,13 +19,13 @@ import {
   type SpecialDimsKey,
 } from '../features/special_dims/index.js';
 import { getModulesActions } from '../runtime/actions_access_domains.js';
-import { requestBuilderStructuralRefresh } from '../runtime/builder_service_access.js';
 import {
   ensureSketchModuleBoxes,
   findSketchModuleBoxById,
 } from './canvas_picking_sketch_box_content_commit.js';
 import { __wp_commitHistoryTouch, __wp_toModuleKey, __wp_toast } from './canvas_picking_core_helpers.js';
 import { readToastFn } from './canvas_picking_cell_dims_linear_shared.js';
+import { requestCanvasPickingCommitStructuralRefresh } from './canvas_picking_structural_refresh.js';
 
 export type CanvasFreeBoxCellDimsArgs = {
   App: AppContainer;
@@ -234,13 +234,7 @@ function emitToast(App: AppContainer, message: string): void {
 
 function refreshAfterFreeBoxCellDims(App: AppContainer, source: string): void {
   __wp_commitHistoryTouch(App, source);
-  requestBuilderStructuralRefresh(App, {
-    source,
-    immediate: true,
-    force: true,
-    triggerRender: true,
-    updateShadows: false,
-  });
+  requestCanvasPickingCommitStructuralRefresh(App, source);
 }
 
 function updateFreeBox(args: {

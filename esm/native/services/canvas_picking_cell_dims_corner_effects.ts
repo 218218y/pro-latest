@@ -1,11 +1,11 @@
 import type { ActionMetaLike, AppContainer, UnknownRecord } from '../../../types';
 
 import { getUiFeedback } from '../runtime/service_access.js';
-import { requestBuilderStructuralRefresh } from '../runtime/builder_service_access.js';
 import { setCfgCornerConfiguration } from '../runtime/cfg_access.js';
 import { getCfg } from '../kernel/api.js';
 import { patchUiSoft } from '../runtime/ui_write_access.js';
 import { __wp_commitHistoryTouch, __wp_metaNoBuild } from './canvas_picking_core_helpers.js';
+import { requestCanvasPickingCommitStructuralRefresh } from './canvas_picking_structural_refresh.js';
 import {
   patchCornerConfigurationForStack,
   readCornerConfigurationFromConfigSnapshot,
@@ -90,13 +90,7 @@ export function commitCornerHistory(source: string, App: AppContainer): void {
 
 export function refreshCornerStructure(App: AppContainer, source: string, op: string): void {
   try {
-    requestBuilderStructuralRefresh(App, {
-      source,
-      immediate: true,
-      force: true,
-      triggerRender: true,
-      updateShadows: false,
-    });
+    requestCanvasPickingCommitStructuralRefresh(App, source);
   } catch (_e) {
     reportCornerDimsIssue(App, _e, op);
   }

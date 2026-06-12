@@ -141,6 +141,10 @@ const cornerDimsEffects = readSource(
   '../esm/native/services/canvas_picking_cell_dims_corner_effects.ts',
   import.meta.url
 );
+const canvasPickingStructuralRefresh = readSource(
+  '../esm/native/services/canvas_picking_structural_refresh.ts',
+  import.meta.url
+);
 const structureWorkflowShared = readSource(
   '../esm/native/ui/react/tabs/use_structure_tab_workflows_shared.ts',
   import.meta.url
@@ -225,27 +229,47 @@ test('[builder-surface-family] orchestration owners stay named-only and request-
   assertMatchesAll(
     assert,
     cellDimsLinearApply,
-    [/requestBuilderStructuralRefresh\(App, \{/, /triggerRender:\s*true/, /force:\s*true/],
+    [/requestCanvasPickingCommitStructuralRefresh\(App, source\)/],
     'linear cell-dims structural refresh owner'
   );
   assertLacksAll(
     assert,
     cellDimsLinearApply,
-    [/requestBuilderBuild\(/, /__wp_triggerRender\(/],
+    [/requestBuilderBuild\(/, /requestBuilderStructuralRefresh\(/, /__wp_triggerRender\(/],
     'linear cell-dims structural refresh owner'
   );
 
   assertMatchesAll(
     assert,
     cornerDimsEffects,
-    [/export function refreshCornerStructure\(/, /requestBuilderStructuralRefresh\(App, \{/],
+    [
+      /export function refreshCornerStructure\(/,
+      /requestCanvasPickingCommitStructuralRefresh\(App, source\)/,
+    ],
     'corner dims structural refresh owner'
   );
   assertLacksAll(
     assert,
     cornerDimsEffects,
-    [/requestCornerBuild\(/, /triggerCornerRender\(/, /requestBuilderBuild\(/],
+    [
+      /requestCornerBuild\(/,
+      /triggerCornerRender\(/,
+      /requestBuilderBuild\(/,
+      /requestBuilderStructuralRefresh\(/,
+    ],
     'corner dims structural refresh owner'
+  );
+
+  assertMatchesAll(
+    assert,
+    canvasPickingStructuralRefresh,
+    [
+      /CANVAS_PICKING_COMMIT_REFRESH_PROFILE[\s\S]*immediate: true,[\s\S]*force: true,[\s\S]*triggerRender: true,[\s\S]*updateShadows: false/,
+      /CANVAS_PICKING_DEBOUNCED_AUTHORING_REFRESH_PROFILE[\s\S]*immediate: false,[\s\S]*force: false,[\s\S]*triggerRender: false,[\s\S]*updateShadows: false/,
+      /CANVAS_PICKING_IMMEDIATE_AUTHORING_REFRESH_PROFILE[\s\S]*immediate: true,[\s\S]*force: false,[\s\S]*triggerRender: false,[\s\S]*updateShadows: false/,
+      /requestBuilderStructuralRefresh\(App, \{/,
+    ],
+    'canvas picking structural refresh policy owner'
   );
 
   assertMatchesAll(
